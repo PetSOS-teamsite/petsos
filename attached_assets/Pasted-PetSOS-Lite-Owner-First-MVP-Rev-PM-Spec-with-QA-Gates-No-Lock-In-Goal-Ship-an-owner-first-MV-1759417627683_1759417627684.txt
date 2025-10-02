@@ -1,0 +1,254 @@
+PetSOS Lite — Owner-First MVP (Rev. PM Spec with QA Gates & No-Lock-In)
+Goal
+
+Ship an owner-first MVP that lets users one-tap broadcast emergency cases to HK 24-hour clinics while showing direct Call/WhatsApp buttons to nearby clinics. Include user/pet profiles. App is global-ready (auto region detection), not tied to Replit at runtime, and can be updated post-launch via admin CMS + remote config + OTA.
+
+Non-negotiables
+
+Single Source of Truth (SSOT) Clinic Service (one canonical DB + API; no client-side authoritative copies).
+
+Global region model (auto-detect + manual override; region-scoped data and caches).
+
+Queue + retry + DLQ for broadcasts; fallback to email/SMS if WhatsApp fails.
+
+Privacy & consent logging; data retention/deletion endpoints.
+
+Observability from day 1 (metrics, logs, alerts).
+
+Accessibility (large emergency button, WCAG AA basics).
+
+No Replit lock-in: source hosted on GitHub; build & deploy via CI/CD to cloud; Docker for parity.
+
+Architecture (high level)
+
+Mobile app: React Native (Expo) with i18n JSON (EN, zh-HK); OTA updates enabled (Expo EAS Update or CodePush).
+
+Backend: Node.js (NestJS/Express) + Postgres (Supabase/Aurora) + PostGIS for geosearch; Redis/Cloud Tasks for queues.
+
+Messaging: WhatsApp Business API provider + Email fallback (SendGrid). Optional SMS.
+
+Infra: Dockerized services; deploy via Render/Fly.io/Vercel API or your cloud. IaC (Terraform) recommended.
+
+Edge: Cloudflare cache for read-only clinic endpoints.
+
+Admin: Web dashboard for Clinics CRUD, region config, copy management, broadcast logs, feature flags.
+
+Globalization
+
+Tables: Country, Region (has country_id, centroid), Clinic (has region_id).
+
+App: auto-detect GPS → resolve region_id; user can override region.
+
+Content: i18n packs per locale; region-specific copy allowed.
+
+Product Scope (Phase 1)
+
+Owner flow: Splash + disclaimer → (optional) account → (optional) pet → Emergency 3Q (symptom, location, contact) → Results (nearest clinics + one-tap broadcast).
+
+Profiles: user + pet (auto-fill later).
+
+Directory: 24-hour clinics list (filters: HKI/KLN/NTI; global-ready).
+
+Broadcast: WA primary, email fallback; queue/retry; per-clinic delivery log.
+
+Admin dashboard: Clinic SSOT CRUD, import, status toggle (Available/Busy/Full), region settings, symptom enum, copy editor, feature flags, broadcast logs.
+
+Data Model (key entities)
+
+User, Pet, Clinic, EmergencyCase, MessageLog (as you already had), plus:
+
+Region { id, country_code, name_en, name_tc, center_lat, center_lng, active }
+
+FeatureFlag { key, value_json, region_id|null, updated_at }
+
+CopyBundle { locale, json, version } (for server-side strings/admin push)
+
+APIs (additions)
+
+GET /v1/regions/resolve?lat=..&lng=..
+
+GET /v1/config?region_id=.. → remote config + feature flags
+
+GET /v1/copy?locale=en → server-delivered copy overrides (optional)
+
+POST /admin/clinics/import (CSV/XLSX) + validation preview
+
+GET /admin/logs/messages?case_id=.. (delivery audit)
+
+Replit usage policy (no lock-in)
+
+Replit is dev sandbox only. All services containerized.
+
+Source of truth: GitHub/GitLab repo.
+
+Secrets managed via .env templates + cloud secrets (no plaintext in code).
+
+Local parity: docker compose up spins full stack (DB, Redis, API, Admin).
+
+CI/CD runs outside Replit (GitHub Actions): lint → test → build → push image → deploy.
+
+App binaries built via EAS/CI, not via Replit.
+
+Post-launch updates (without app store resubmission)
+
+Content & clinics: live via Admin dashboard → API → app fetch (cache TTL short).
+
+Behavior toggles: remote config / feature flags.
+
+Copy: i18n packs fetched from API or bundled; admin can hot-patch select strings.
+
+Bugfix/UI: OTA updates (Expo EAS Update/CodePush) for JS bundle.
+
+Native SDK changes: go through normal App Store/Play Store release.
+
+Quality Gates — “Build, Self-Review & Debug” Checkpoints
+
+Every milestone must pass Definition of Ready (DoR), Self-Review/Debug, and Definition of Done (DoD) before moving on.
+
+M1 — Clinic SSOT + Region
+
+DoR: ERD approved; PostGIS ready; seed HK regions/clinics.
+
+Build: CRUD + import validator + /clinics?near=.. (p95 <150ms cached).
+
+Self-Review & Debug:
+
+Import rejects bad rows with line numbers & reasons.
+
+Nearest-N returns correct order; unit tests for edge geos.
+
+Cache invalidates on update in ≤30s.
+
+DoD: Admin can import/edit clinics; mobile can read lists; logs & metrics live.
+
+M2 — Emergency Flow (3Q)
+
+DoR: i18n keys ready; symptom enum finalized; consent text approved.
+
+Build: form with GPS + manual; contact validation; pet snapshot logic.
+
+Self-Review & Debug:
+
+Complete flow in ≤30s on mid-range Android.
+
+GPS denied → manual address works, maps link renders.
+
+Analytics events fire (view, submit).
+
+DoD: E2E test green (happy path + GPS denied + offline cache).
+
+M3 — Broadcast Service
+
+DoR: WA templates approved; email fallback set; rate limits defined.
+
+Build: queue/retry/DLQ; per-clinic channel selection; delivery status capture.
+
+Self-Review & Debug:
+
+Simulate WA outage → email fallback within 10s.
+
+Throttle & captcha if >N submits/hour/device.
+
+Duplicate bundling (same owner within 10m) tested.
+
+DoD: Owner sees “Sent to X clinics”; MessageLog shows per-clinic send/deliver/failed.
+
+M4 — Profiles (User/Pet)
+
+DoR: fields locked; privacy copy approved.
+
+Build: create/edit; auto-fill emergency; local secure store for session.
+
+Self-Review & Debug:
+
+Profile optional; skipping never blocks emergency.
+
+Auto-fill correct; data deletion works.
+
+DoD: Unit + E2E passing; analytics for profile creation.
+
+M5 — Admin Dashboard
+
+DoR: roles, routes, RBAC defined.
+
+Build: Clinics CRUD, import, status toggle; regions; flags; logs.
+
+Self-Review & Debug:
+
+Only admins see write ops; audit trail records who/when/what.
+
+Status toggle changes propagate to app cards ≤30s.
+
+DoD: Ops can run without dev help.
+
+M6 — Reliability & Security
+
+DoR: SLOs set (submit→first send p95 <3s).
+
+Build: structured logs; metrics dashboards; alerts; backups; disaster plan.
+
+Self-Review & Debug:
+
+Load test: 200 concurrent submits sustained; queue stable.
+
+Secrets not in repo; TLS enforced; OWASP top 10 quick scan.
+
+DoD: On-call runbook written; chaos test for provider outage.
+
+M7 — Release & Update
+
+DoR: Store assets; privacy policy; DPO contact; versioning plan.
+
+Build: EAS/CI pipelines; OTA channel strategy (prod/beta).
+
+Self-Review & Debug:
+
+OTA smoke test: push copy hotfix → device updates.
+
+Kill-switch flag tested to hide features if needed.
+
+DoD: v1.0 tagged; rollout staged; rollback plan documented.
+
+Test Plan (concise)
+
+Unit: geosearch utils; validation; i18n keys exist.
+
+Integration: /clinics proximity; /cases create + broadcast; fallback logic.
+
+E2E: Detox/Appium flows (no-login emergency happy path; GPS denied; offline directory; profile auto-fill).
+
+Manual QA: Device matrix (iOS/Android; low memory; poor network); accessibility checks; bilingual copy proofing.
+
+Security & Compliance
+
+Consent checkbox on submit; consent timestamp stored per case.
+
+Data retention: cases kept 12 months (configurable); delete/export on request.
+
+PII encrypted at rest; RBAC; least privilege; admin audit trail.
+
+Acceptance Criteria (v1)
+
+Emergency flow ≤30s; user immediately sees 3–5 nearest clinics with Call/WhatsApp.
+
+Broadcast confirmation in <5s; fallback kicks in under provider failure.
+
+Region auto-resolve works; manual override persists.
+
+Admin can update clinics/copy/flags without a new app build.
+
+OTA updates verified; crash-free sessions ≥99.5%.
+
+Delivery Rules of Engagement
+
+Every PR must include:
+
+Self-Review checklist (what you tested, screenshots/recordings, logs)
+
+Test coverage note (new/updated tests)
+
+Roll-forward/rollback note
+
+No milestone merges without DoD checklist signed by dev + PM.
+
+Feature flags wrap any risky change; defaults safe-off.
