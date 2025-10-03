@@ -20,20 +20,23 @@ import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft } from "lucide-react"
 import { Link } from "wouter";
 import type { User as UserType, Region } from "@shared/schema";
 
-const profileSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Please enter a valid email"),
-  phone: z.string().min(8, "Please enter a valid phone number"),
+const createProfileSchema = (t: (key: string, fallback: string) => string) => z.object({
+  username: z.string().min(3, t("profile.validation.username", "Username must be at least 3 characters")),
+  email: z.string().email(t("profile.validation.email", "Please enter a valid email")),
+  phone: z.string().min(8, t("profile.validation.phone", "Please enter a valid phone number")),
   languagePreference: z.enum(['en', 'zh-HK']),
   regionPreference: z.string().optional(),
 });
 
-type ProfileFormData = z.infer<typeof profileSchema>;
+type ProfileSchemaType = ReturnType<typeof createProfileSchema>;
+type ProfileFormData = z.infer<ProfileSchemaType>;
 
 export default function ProfilePage() {
   const userId = "temp-user-id";
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  
+  const profileSchema = createProfileSchema(t);
 
   const { data: user, isLoading: userLoading } = useQuery<UserType>({
     queryKey: ['/api/users', userId],
@@ -66,13 +69,13 @@ export default function ProfilePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId] });
       toast({
-        title: "Profile updated successfully!",
-        description: "Your changes have been saved.",
+        title: t("profile.success.title", "Profile updated successfully!"),
+        description: t("profile.success.desc", "Your changes have been saved."),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Update failed",
+        title: t("profile.error.title", "Update failed"),
         description: error.message,
         variant: "destructive",
       });
@@ -98,7 +101,7 @@ export default function ProfilePage() {
           <Link href="/">
             <Button variant="ghost" size="sm" data-testid="button-back">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
+              {t("button.back_home", "Back to Home")}
             </Button>
           </Link>
         </div>
@@ -107,10 +110,10 @@ export default function ProfilePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="w-6 h-6" />
-              My Profile
+              {t("profile.title", "My Profile")}
             </CardTitle>
             <CardDescription>
-              Manage your account information and preferences
+              {t("profile.desc", "Manage your account information and preferences")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -121,14 +124,14 @@ export default function ProfilePage() {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>{t("profile.username", "Username")}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
                           <Input
                             {...field}
                             className="pl-10"
-                            placeholder="Enter username"
+                            placeholder={t("profile.username_placeholder", "Enter username")}
                             data-testid="input-username"
                           />
                         </div>
@@ -143,7 +146,7 @@ export default function ProfilePage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("profile.email", "Email")}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
@@ -151,7 +154,7 @@ export default function ProfilePage() {
                             {...field}
                             type="email"
                             className="pl-10"
-                            placeholder="your.email@example.com"
+                            placeholder={t("profile.email_placeholder", "you@example.com")}
                             data-testid="input-email"
                           />
                         </div>
@@ -166,7 +169,7 @@ export default function ProfilePage() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone</FormLabel>
+                      <FormLabel>{t("profile.phone", "Phone Number")}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
@@ -174,7 +177,7 @@ export default function ProfilePage() {
                             {...field}
                             type="tel"
                             className="pl-10"
-                            placeholder="+852 9123 4567"
+                            placeholder={t("profile.phone_placeholder", "+852 1234 5678")}
                             data-testid="input-phone"
                           />
                         </div>
@@ -189,12 +192,12 @@ export default function ProfilePage() {
                   name="languagePreference"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Language Preference</FormLabel>
+                      <FormLabel>{t("profile.language", "Language Preference")}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-language">
                             <Globe className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
-                            <SelectValue placeholder="Select language" />
+                            <SelectValue placeholder={t("profile.language_placeholder", "Select language")} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -212,18 +215,18 @@ export default function ProfilePage() {
                   name="regionPreference"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Region Preference (Optional)</FormLabel>
+                      <FormLabel>{t("profile.region", "Region Preference")}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-region">
                             <MapPin className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
-                            <SelectValue placeholder="Select region" />
+                            <SelectValue placeholder={t("profile.region_placeholder", "Select region")} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {regions.map((region) => (
                             <SelectItem key={region.id} value={region.id} data-testid={`option-region-${region.code}`}>
-                              {region.nameEn}
+                              {language === "en" ? region.nameEn : region.nameZh}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -240,7 +243,7 @@ export default function ProfilePage() {
                   data-testid="button-save-profile"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+                  {updateProfileMutation.isPending ? t("profile.saving", "Saving...") : t("profile.save", "Save Changes")}
                 </Button>
               </form>
             </Form>
@@ -250,7 +253,7 @@ export default function ProfilePage() {
         <div className="mt-6">
           <Link href="/pets">
             <Button variant="outline" className="w-full" data-testid="button-manage-pets">
-              Manage My Pets
+              {t("profile.manage_pets", "Manage My Pets")}
             </Button>
           </Link>
         </div>

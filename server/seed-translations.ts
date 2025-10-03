@@ -81,7 +81,19 @@ const translations = [
   { key: "profile.language", en: "Language Preference", zh: "語言偏好" },
   { key: "profile.region", en: "Region Preference", zh: "地區偏好" },
   { key: "profile.save", en: "Save Changes", zh: "儲存變更" },
+  { key: "profile.saving", en: "Saving...", zh: "儲存中..." },
   { key: "profile.manage_pets", en: "Manage My Pets", zh: "管理寵物" },
+  { key: "profile.username_placeholder", en: "Enter username", zh: "輸入用戶名稱" },
+  { key: "profile.email_placeholder", en: "you@example.com", zh: "您的電郵@example.com" },
+  { key: "profile.phone_placeholder", en: "+852 1234 5678", zh: "+852 1234 5678" },
+  { key: "profile.language_placeholder", en: "Select language", zh: "選擇語言" },
+  { key: "profile.region_placeholder", en: "Select region", zh: "選擇地區" },
+  { key: "profile.validation.username", en: "Username must be at least 3 characters", zh: "用戶名稱須至少3個字元" },
+  { key: "profile.validation.email", en: "Please enter a valid email", zh: "請輸入有效的電郵地址" },
+  { key: "profile.validation.phone", en: "Please enter a valid phone number", zh: "請輸入有效的電話號碼" },
+  { key: "profile.success.title", en: "Profile updated successfully!", zh: "已成功更新個人資料！" },
+  { key: "profile.success.desc", en: "Your changes have been saved.", zh: "您的變更已儲存。" },
+  { key: "profile.error.title", en: "Update failed", zh: "更新失敗" },
   
   // Pets
   { key: "pets.title", en: "My Pets", zh: "我的寵物" },
@@ -146,6 +158,7 @@ const translations = [
   
   // Common
   { key: "button.back", en: "Back", zh: "返回" },
+  { key: "button.back_home", en: "Back to Home", zh: "返回主頁" },
   { key: "button.cancel", en: "Cancel", zh: "取消" },
   { key: "button.confirm", en: "Confirm", zh: "確認" },
   { key: "button.save", en: "Save", zh: "儲存" },
