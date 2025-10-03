@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,6 +9,26 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -28,9 +48,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
-import { PawPrint, Plus, Pencil, Trash2, ArrowLeft } from "lucide-react";
+import { PawPrint, Plus, Pencil, Trash2, ArrowLeft, Check, ChevronsUpDown } from "lucide-react";
 import { Link } from "wouter";
-import type { Pet } from "@shared/schema";
+import type { Pet, Clinic } from "@shared/schema";
+import { PET_SPECIES, getBreedOptions } from "@shared/pet-data";
+import { cn } from "@/lib/utils";
 
 // Schema factory to access translation function
 const createPetSchema = (t: (key: string, fallback: string) => string) => z.object({
@@ -40,6 +62,8 @@ const createPetSchema = (t: (key: string, fallback: string) => string) => z.obje
   age: z.coerce.number().positive().optional(),
   weight: z.coerce.number().positive().optional(),
   medicalNotes: z.string().optional(),
+  lastVisitClinicId: z.string().optional(),
+  lastVisitDate: z.string().optional(),
 });
 
 // Type helper
@@ -49,15 +73,22 @@ type PetFormData = z.infer<PetSchemaType>;
 export default function PetsPage() {
   const userId = "temp-user-id";
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   
   const petSchema = createPetSchema(t);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPet, setEditingPet] = useState<Pet | null>(null);
   const [deletingPetId, setDeletingPetId] = useState<string | null>(null);
+  const [selectedSpecies, setSelectedSpecies] = useState<string>("");
+  const [clinicSearchOpen, setClinicSearchOpen] = useState(false);
+  const [breedInputMode, setBreedInputMode] = useState<"select" | "custom">("select");
 
   const { data: pets = [], isLoading: petsLoading } = useQuery<Pet[]>({
     queryKey: ['/api/users', userId, 'pets'],
+  });
+
+  const { data: clinics = [] } = useQuery<Clinic[]>({
+    queryKey: ['/api/clinics'],
   });
 
   const form = useForm<PetFormData>({
@@ -69,8 +100,20 @@ export default function PetsPage() {
       age: undefined,
       weight: undefined,
       medicalNotes: "",
+      lastVisitClinicId: undefined,
+      lastVisitDate: undefined,
     },
   });
+
+  // Watch species to update breed options
+  const watchSpecies = form.watch("species");
+  useEffect(() => {
+    if (watchSpecies && watchSpecies !== selectedSpecies) {
+      setSelectedSpecies(watchSpecies);
+      form.setValue("breed", ""); // Reset breed when species changes
+      setBreedInputMode("select");
+    }
+  }, [watchSpecies, selectedSpecies, form]);
 
   const createPetMutation = useMutation({
     mutationFn: async (data: PetFormData) => {
@@ -172,6 +215,7 @@ export default function PetsPage() {
 
   const handleEdit = (pet: Pet) => {
     setEditingPet(pet);
+    setSelectedSpecies(pet.species);
     form.reset({
       name: pet.name,
       species: pet.species,
@@ -179,6 +223,8 @@ export default function PetsPage() {
       age: pet.age ? Number(pet.age) : undefined,
       weight: pet.weight ? Number(pet.weight) : undefined,
       medicalNotes: pet.medicalNotes || "",
+      lastVisitClinicId: pet.lastVisitClinicId || undefined,
+      lastVisitDate: pet.lastVisitDate ? new Date(pet.lastVisitDate).toISOString().split('T')[0] : undefined,
     });
     setIsDialogOpen(true);
   };
@@ -189,6 +235,8 @@ export default function PetsPage() {
 
   const handleAddNew = () => {
     setEditingPet(null);
+    setSelectedSpecies("");
+    setBreedInputMode("select");
     form.reset();
     setIsDialogOpen(true);
   };
@@ -255,13 +303,20 @@ export default function PetsPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t("pets.species", "Species")}</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder={t("pets.species_placeholder", "Dog, Cat, etc.")}
-                              data-testid="input-pet-species"
-                            />
-                          </FormControl>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-pet-species">
+                                <SelectValue placeholder={t("pets.select_species", "Select species")} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(PET_SPECIES).map(([key, value]) => (
+                                <SelectItem key={key} value={key} data-testid={`species-${key}`}>
+                                  {language === "en" ? value.en : value.zh}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -273,13 +328,58 @@ export default function PetsPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t("pets.breed", "Breed (Optional)")}</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder={t("pets.breed_placeholder", "Golden Retriever")}
-                              data-testid="input-pet-breed"
-                            />
-                          </FormControl>
+                          {breedInputMode === "custom" || !selectedSpecies ? (
+                            <div className="space-y-2">
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder={t("pets.custom_breed", "Custom breed...")}
+                                  data-testid="input-pet-breed"
+                                />
+                              </FormControl>
+                              {selectedSpecies && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setBreedInputMode("select");
+                                    field.onChange("");
+                                  }}
+                                  data-testid="button-breed-select-mode"
+                                >
+                                  {t("pets.select_breed", "Select breed or type custom")}
+                                </Button>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <Select onValueChange={(value) => {
+                                if (value === "custom") {
+                                  setBreedInputMode("custom");
+                                  field.onChange("");
+                                } else {
+                                  field.onChange(value);
+                                }
+                              }} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-pet-breed">
+                                    <SelectValue placeholder={t("pets.select_breed", "Select breed or type custom")} />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {getBreedOptions(selectedSpecies).map((breed, idx) => (
+                                    <SelectItem key={idx} value={breed.en} data-testid={`breed-${idx}`}>
+                                      {language === "en" ? breed.en : breed.zh}
+                                    </SelectItem>
+                                  ))}
+                                  <SelectItem value="custom" data-testid="breed-custom">
+                                    {t("pets.custom_breed", "Custom breed...")}
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )}
@@ -338,6 +438,93 @@ export default function PetsPage() {
                               placeholder={t("pets.medical_notes_placeholder", "Allergies, medications, conditions...")}
                               rows={3}
                               data-testid="textarea-pet-medical-notes"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="lastVisitClinicId"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>{t("pets.last_visit_clinic", "Last Visit Clinic (Optional)")}</FormLabel>
+                          <Popover open={clinicSearchOpen} onOpenChange={setClinicSearchOpen}>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  className={cn(
+                                    "w-full justify-between",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                  data-testid="button-select-clinic"
+                                >
+                                  {field.value
+                                    ? clinics.find((clinic) => clinic.id === field.value)?.[language === "en" ? "name" : "nameZh"] || clinics.find((clinic) => clinic.id === field.value)?.name
+                                    : t("pets.last_visit_clinic_placeholder", "Search clinic...")}
+                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[400px] p-0">
+                              <Command>
+                                <CommandInput placeholder={t("pets.last_visit_clinic_placeholder", "Search clinic...")} />
+                                <CommandList>
+                                  <CommandEmpty>{t("pets.no_clinic_selected", "No clinic selected")}</CommandEmpty>
+                                  <CommandGroup>
+                                    {clinics.map((clinic) => (
+                                      <CommandItem
+                                        key={clinic.id}
+                                        value={clinic.name}
+                                        onSelect={() => {
+                                          form.setValue("lastVisitClinicId", clinic.id);
+                                          setClinicSearchOpen(false);
+                                        }}
+                                        data-testid={`clinic-${clinic.id}`}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            clinic.id === field.value
+                                              ? "opacity-100"
+                                              : "opacity-0"
+                                          )}
+                                        />
+                                        <div>
+                                          <div className="font-medium">
+                                            {language === "en" ? clinic.name : (clinic.nameZh || clinic.name)}
+                                          </div>
+                                          <div className="text-sm text-gray-500">
+                                            {language === "en" ? clinic.address : (clinic.addressZh || clinic.address)}
+                                          </div>
+                                        </div>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="lastVisitDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("pets.last_visit_date", "Last Visit Date (Optional)")}</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="date"
+                              data-testid="input-last-visit-date"
                             />
                           </FormControl>
                           <FormMessage />

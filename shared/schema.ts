@@ -34,6 +34,8 @@ export const pets = pgTable("pets", {
   age: integer("age"),
   weight: decimal("weight"),
   medicalNotes: text("medical_notes"),
+  lastVisitClinicId: varchar("last_visit_clinic_id").references(() => clinics.id, { onDelete: 'set null' }),
+  lastVisitDate: timestamp("last_visit_date"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

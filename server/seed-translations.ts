@@ -133,7 +133,14 @@ const translations = [
   { key: "pets.error.update", en: "Failed to update pet", zh: "無法更新寵物" },
   { key: "pets.error.delete", en: "Failed to delete pet", zh: "無法刪除寵物" },
   { key: "pets.validation.name_required", en: "Pet name is required", zh: "請輸入寵物名稱" },
-  { key: "pets.validation.species_required", en: "Species is required", zh: "請輸入種類" },
+  { key: "pets.validation.species_required", en: "Species is required", zh: "請選擇種類" },
+  { key: "pets.last_visit_clinic", en: "Last Visit Clinic (Optional)", zh: "最近就診診所（選填）" },
+  { key: "pets.last_visit_clinic_placeholder", en: "Search clinic...", zh: "搜尋診所..." },
+  { key: "pets.last_visit_date", en: "Last Visit Date (Optional)", zh: "最近就診日期（選填）" },
+  { key: "pets.select_species", en: "Select species", zh: "選擇種類" },
+  { key: "pets.select_breed", en: "Select breed or type custom", zh: "選擇品種或輸入自訂" },
+  { key: "pets.custom_breed", en: "Custom breed...", zh: "自訂品種..." },
+  { key: "pets.no_clinic_selected", en: "No clinic selected", zh: "未選擇診所" },
   
   // Emergency Symptoms
   { key: "symptoms.select", en: "Select symptoms (tap all that apply)", zh: "請選擇症狀（可選擇多項）" },
