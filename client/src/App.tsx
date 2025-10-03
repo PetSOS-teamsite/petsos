@@ -8,6 +8,8 @@ import EmergencyPage from "@/pages/emergency";
 import ClinicResultsPage from "@/pages/clinic-results";
 import ProfilePage from "@/pages/profile";
 import PetsPage from "@/pages/pets";
+import ClinicsPage from "@/pages/clinics";
+import AdminClinicsPage from "@/pages/admin-clinics";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +20,8 @@ function Router() {
       <Route path="/emergency-results/:requestId" component={ClinicResultsPage} />
       <Route path="/profile" component={ProfilePage} />
       <Route path="/pets" component={PetsPage} />
+      <Route path="/clinics" component={ClinicsPage} />
+      <Route path="/admin/clinics" component={AdminClinicsPage} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
