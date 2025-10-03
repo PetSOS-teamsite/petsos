@@ -2,21 +2,28 @@ import { Link } from "wouter";
 import { AlertCircle, MapPin, Building2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function HomePage() {
+  const { t } = useTranslation();
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Pet Emergency HK
+            {t('app.title', 'Pet Emergency HK')}
           </h1>
-          <Link href="/profile">
-            <Button variant="ghost" size="icon" data-testid="button-profile">
-              <User className="h-5 w-5" />
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <Link href="/profile">
+              <Button variant="ghost" size="icon" data-testid="button-profile">
+                <User className="h-5 w-5" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -31,11 +38,11 @@ export default function HomePage() {
               data-testid="button-emergency"
             >
               <AlertCircle className="mr-4 h-12 w-12" />
-              Emergency Care Now
+              {t('home.emergency.button', 'Emergency Care Now')}
             </Button>
           </Link>
           <p className="mt-4 text-gray-600 dark:text-gray-400">
-            Get help from 24-hour veterinary clinics immediately
+            {t('home.emergency.subtitle', 'Get help from 24-hour veterinary clinics immediately')}
           </p>
         </div>
 
@@ -49,10 +56,10 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
-                    Find Clinics
+                    {t('home.find_clinics', 'Find Clinics')}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Browse all veterinary clinics
+                    {t('home.find_clinics.desc', 'Browse all veterinary clinics')}
                   </p>
                 </div>
               </CardContent>
@@ -67,10 +74,10 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
-                    My Pets
+                    {t('home.my_pets', 'My Pets')}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Manage pet profiles
+                    {t('home.my_pets.desc', 'Manage your pet profiles')}
                   </p>
                 </div>
               </CardContent>
@@ -81,7 +88,7 @@ export default function HomePage() {
         {/* Info Section */}
         <div className="mt-16 max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-            How It Works
+            {t('home.how_it_works', 'How It Works')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
@@ -89,10 +96,10 @@ export default function HomePage() {
                 <span className="text-2xl font-bold text-red-600 dark:text-red-400">1</span>
               </div>
               <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">
-                Describe Emergency
+                {t('home.step1.title', 'Describe Emergency')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Tell us what's happening with your pet
+                {t('home.step1.desc', "Tell us what's happening with your pet")}
               </p>
             </div>
 
@@ -101,10 +108,10 @@ export default function HomePage() {
                 <span className="text-2xl font-bold text-red-600 dark:text-red-400">2</span>
               </div>
               <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">
-                Find Nearby Clinics
+                {t('home.step2.title', 'Find Nearby Clinics')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                We'll locate 24-hour clinics near you
+                {t('home.step2.desc', "We'll show 24-hour clinics near you")}
               </p>
             </div>
 
@@ -113,10 +120,10 @@ export default function HomePage() {
                 <span className="text-2xl font-bold text-red-600 dark:text-red-400">3</span>
               </div>
               <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">
-                Contact & Go
+                {t('home.step3.title', 'Contact Instantly')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Call or message clinics instantly
+                {t('home.step3.desc', 'Call or message clinics instantly')}
               </p>
             </div>
           </div>
@@ -126,7 +133,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t border-gray-200 dark:border-gray-800 mt-20">
         <div className="container mx-auto px-4 py-8 text-center text-gray-600 dark:text-gray-400">
-          <p>For life-threatening emergencies, call 999 immediately</p>
+          <p>{t('home.footer', 'For life-threatening emergencies, call 999 immediately')}</p>
         </div>
       </footer>
     </div>
