@@ -206,6 +206,24 @@ Preferred communication style: Simple, everyday language.
 - **embla-carousel-react**: Carousel/slider functionality
 - **cmdk**: Command palette component
 
+## Recent Changes (October 3, 2025)
+
+### Translation Updates & Medical Disclaimer (October 3, 2025)
+- **Medical Disclaimer Replacement**: Replaced all "Call 999" messages with comprehensive medical disclaimer
+  - Chinese: "⚠️ PetSOS 只提供緊急處理建議，並不等同專業獸醫診斷或醫療建議。如有疑問，請盡快聯絡獸醫。"
+  - English: "⚠️ PetSOS provides emergency guidance only and is not medical advice. If in doubt, contact a vet immediately."
+  - Updated on: Home page footer, Emergency page, Clinic Results page
+  - Styling: Changed from red alert to amber warning box for appropriate visual hierarchy
+
+- **Official HK Tone Translation Refinement**: Upgraded all Chinese translations to official Hong Kong tone
+  - Formal pronouns: "您" instead of "你" for respectful user-facing contexts
+  - Standard possessive: "的" replaces colloquial "嘅"
+  - Professional verbs: "尋找" (find), "描述" (describe), "查看" (view), "新增" (add), "編輯" (edit), "致電" (call)
+  - System messages: "已成功提交" (successfully submitted), "正在搜尋" (searching), "請嘗試調整" (please try adjusting)
+  - Maintained HK terminology: "港島", "九龍", "新界", "全港"
+  - **Total translations updated**: 50+ entries across all app sections
+  - Architect-reviewed and approved for official tone with HK characteristics
+
 ## Recent Changes (October 2025)
 
 ### Clinic Data Import
