@@ -234,3 +234,16 @@ Preferred communication style: Simple, everyday language.
 - Real-time cache invalidation after mutations
 - Toast notifications for user feedback
 - Statistics display (total clinics count)
+
+### Bilingual Support & Localization (October 3, 2025)
+- **Natural Hong Kong Cantonese Translations**: All 208 Chinese translations refined for authentic Hong Kong style
+- **Translation Quality Improvements**:
+  - Replaced formal Mandarin expressions with colloquial Cantonese ("您" → "你", "尋找" → "搵")
+  - Added Cantonese particles for natural flow ("咗", "緊", "嘅", "俾")
+  - Used local terminology ("港島" vs "Hong Kong Island", "全港" vs "All Regions")
+  - Consistent informal-professional tone throughout the app
+- **Cantonese Verb Choices**: "搵" (find), "講" (say), "睇" (see), "打" (call), "加" (add), "改" (edit)
+- **Natural Phrases**: "點樣用" (how to use), "有咩事" (what's wrong), "而家喺邊" (where are you now)
+- **Removed Mainland Formality**: Eliminated "請", "立即", "正在", "無法" in favor of "即刻", "緊", "唔到"
+- **Language Infrastructure**: LanguageContext, useTranslation hook, database-backed translations, LanguageSwitcher component
+- **Coverage**: Home, Emergency, Clinics, Profile, Pets, Broadcast Status all fully bilingual
