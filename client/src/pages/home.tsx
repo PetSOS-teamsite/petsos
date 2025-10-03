@@ -59,7 +59,7 @@ export default function HomePage() {
             </Card>
           </Link>
 
-          <Link href="/my-pets">
+          <Link href="/pets">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid="card-pets">
               <CardContent className="p-6 flex items-center gap-4">
                 <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">

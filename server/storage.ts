@@ -101,6 +101,20 @@ export class MemStorage implements IStorage {
     this.privacyConsents = new Map();
     this.translations = new Map();
     
+    // Seed test user
+    const testUser: User = {
+      id: 'temp-user-id',
+      username: 'testuser',
+      password: 'hashedpassword',
+      email: 'user@example.com',
+      phone: '+852 9123 4567',
+      languagePreference: 'en',
+      regionPreference: null,
+      role: 'user',
+      createdAt: new Date()
+    };
+    this.users.set(testUser.id, testUser);
+    
     // Seed test data for regions
     const regions: Region[] = [
       { id: 'hki-region', code: 'HKI', nameEn: 'Hong Kong Island', nameZh: '香港島', country: 'HK', coordinates: { latitude: 22.2783, longitude: 114.1747 }, active: true },
