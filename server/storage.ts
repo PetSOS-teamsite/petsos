@@ -1,22 +1,108 @@
-import { type User, type InsertUser } from "@shared/schema";
+import { 
+  type User, type InsertUser,
+  type Pet, type InsertPet,
+  type Region, type InsertRegion,
+  type Clinic, type InsertClinic,
+  type EmergencyRequest, type InsertEmergencyRequest,
+  type Message, type InsertMessage,
+  type FeatureFlag, type InsertFeatureFlag,
+  type AuditLog, type InsertAuditLog,
+  type PrivacyConsent, type InsertPrivacyConsent,
+  type Translation, type InsertTranslation
+} from "@shared/schema";
 import { randomUUID } from "crypto";
 
-// modify the interface with any CRUD methods
-// you might need
-
 export interface IStorage {
+  // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
+
+  // Pets
+  getPet(id: string): Promise<Pet | undefined>;
+  getPetsByUserId(userId: string): Promise<Pet[]>;
+  createPet(pet: InsertPet): Promise<Pet>;
+  updatePet(id: string, pet: Partial<InsertPet>): Promise<Pet | undefined>;
+  deletePet(id: string): Promise<boolean>;
+
+  // Regions
+  getRegion(id: string): Promise<Region | undefined>;
+  getRegionByCode(code: string): Promise<Region | undefined>;
+  getAllRegions(): Promise<Region[]>;
+  createRegion(region: InsertRegion): Promise<Region>;
+  updateRegion(id: string, region: Partial<InsertRegion>): Promise<Region | undefined>;
+
+  // Clinics
+  getClinic(id: string): Promise<Clinic | undefined>;
+  getClinicsByRegion(regionId: string): Promise<Clinic[]>;
+  get24HourClinicsByRegion(regionId: string): Promise<Clinic[]>;
+  getAllClinics(): Promise<Clinic[]>;
+  createClinic(clinic: InsertClinic): Promise<Clinic>;
+  updateClinic(id: string, clinic: Partial<InsertClinic>): Promise<Clinic | undefined>;
+  deleteClinic(id: string): Promise<boolean>;
+
+  // Emergency Requests
+  getEmergencyRequest(id: string): Promise<EmergencyRequest | undefined>;
+  getEmergencyRequestsByUserId(userId: string): Promise<EmergencyRequest[]>;
+  createEmergencyRequest(request: InsertEmergencyRequest): Promise<EmergencyRequest>;
+  updateEmergencyRequest(id: string, request: Partial<InsertEmergencyRequest>): Promise<EmergencyRequest | undefined>;
+
+  // Messages
+  getMessage(id: string): Promise<Message | undefined>;
+  getMessagesByEmergencyRequest(emergencyRequestId: string): Promise<Message[]>;
+  createMessage(message: InsertMessage): Promise<Message>;
+  updateMessage(id: string, message: Partial<InsertMessage>): Promise<Message | undefined>;
+  getQueuedMessages(): Promise<Message[]>;
+
+  // Feature Flags
+  getFeatureFlag(key: string): Promise<FeatureFlag | undefined>;
+  getAllFeatureFlags(): Promise<FeatureFlag[]>;
+  createFeatureFlag(flag: InsertFeatureFlag): Promise<FeatureFlag>;
+  updateFeatureFlag(id: string, flag: Partial<InsertFeatureFlag>): Promise<FeatureFlag | undefined>;
+
+  // Audit Logs
+  createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
+  getAuditLogsByEntity(entityType: string, entityId: string): Promise<AuditLog[]>;
+
+  // Privacy Consents
+  getPrivacyConsents(userId: string): Promise<PrivacyConsent[]>;
+  createPrivacyConsent(consent: InsertPrivacyConsent): Promise<PrivacyConsent>;
+
+  // Translations
+  getTranslationsByLanguage(language: string): Promise<Translation[]>;
+  getTranslation(key: string, language: string): Promise<Translation | undefined>;
+  createTranslation(translation: InsertTranslation): Promise<Translation>;
+  updateTranslation(id: string, translation: Partial<InsertTranslation>): Promise<Translation | undefined>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
+  private pets: Map<string, Pet>;
+  private regions: Map<string, Region>;
+  private clinics: Map<string, Clinic>;
+  private emergencyRequests: Map<string, EmergencyRequest>;
+  private messages: Map<string, Message>;
+  private featureFlags: Map<string, FeatureFlag>;
+  private auditLogs: Map<string, AuditLog>;
+  private privacyConsents: Map<string, PrivacyConsent>;
+  private translations: Map<string, Translation>;
 
   constructor() {
     this.users = new Map();
+    this.pets = new Map();
+    this.regions = new Map();
+    this.clinics = new Map();
+    this.emergencyRequests = new Map();
+    this.messages = new Map();
+    this.featureFlags = new Map();
+    this.auditLogs = new Map();
+    this.privacyConsents = new Map();
+    this.translations = new Map();
   }
 
+  // Users
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }
@@ -29,9 +115,340 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      createdAt: new Date(),
+      languagePreference: insertUser.languagePreference ?? 'en',
+      regionPreference: insertUser.regionPreference ?? null,
+      role: insertUser.role ?? 'user'
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUser(id: string, updateData: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updated = { ...user, ...updateData };
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    return this.users.delete(id);
+  }
+
+  // Pets
+  async getPet(id: string): Promise<Pet | undefined> {
+    return this.pets.get(id);
+  }
+
+  async getPetsByUserId(userId: string): Promise<Pet[]> {
+    return Array.from(this.pets.values()).filter(pet => pet.userId === userId);
+  }
+
+  async createPet(insertPet: InsertPet): Promise<Pet> {
+    const id = randomUUID();
+    const pet: Pet = { 
+      ...insertPet, 
+      id, 
+      createdAt: new Date(),
+      breed: insertPet.breed ?? null,
+      age: insertPet.age ?? null,
+      weight: insertPet.weight ?? null,
+      medicalNotes: insertPet.medicalNotes ?? null
+    };
+    this.pets.set(id, pet);
+    return pet;
+  }
+
+  async updatePet(id: string, updateData: Partial<InsertPet>): Promise<Pet | undefined> {
+    const pet = this.pets.get(id);
+    if (!pet) return undefined;
+    const updated = { ...pet, ...updateData };
+    this.pets.set(id, updated);
+    return updated;
+  }
+
+  async deletePet(id: string): Promise<boolean> {
+    return this.pets.delete(id);
+  }
+
+  // Regions
+  async getRegion(id: string): Promise<Region | undefined> {
+    return this.regions.get(id);
+  }
+
+  async getRegionByCode(code: string): Promise<Region | undefined> {
+    return Array.from(this.regions.values()).find(region => region.code === code);
+  }
+
+  async getAllRegions(): Promise<Region[]> {
+    return Array.from(this.regions.values());
+  }
+
+  async createRegion(insertRegion: InsertRegion): Promise<Region> {
+    const id = randomUUID();
+    const region: Region = { 
+      ...insertRegion, 
+      id,
+      coordinates: insertRegion.coordinates ?? null,
+      country: insertRegion.country ?? 'HK',
+      active: insertRegion.active ?? true
+    };
+    this.regions.set(id, region);
+    return region;
+  }
+
+  async updateRegion(id: string, updateData: Partial<InsertRegion>): Promise<Region | undefined> {
+    const region = this.regions.get(id);
+    if (!region) return undefined;
+    const updated = { ...region, ...updateData };
+    this.regions.set(id, updated);
+    return updated;
+  }
+
+  // Clinics
+  async getClinic(id: string): Promise<Clinic | undefined> {
+    return this.clinics.get(id);
+  }
+
+  async getClinicsByRegion(regionId: string): Promise<Clinic[]> {
+    return Array.from(this.clinics.values()).filter(
+      clinic => clinic.regionId === regionId && clinic.status === 'active'
+    );
+  }
+
+  async get24HourClinicsByRegion(regionId: string): Promise<Clinic[]> {
+    return Array.from(this.clinics.values()).filter(
+      clinic => clinic.regionId === regionId && clinic.is24Hour && clinic.status === 'active'
+    );
+  }
+
+  async getAllClinics(): Promise<Clinic[]> {
+    return Array.from(this.clinics.values()).filter(clinic => clinic.status !== 'deleted');
+  }
+
+  async createClinic(insertClinic: InsertClinic): Promise<Clinic> {
+    const id = randomUUID();
+    const now = new Date();
+    const clinic: Clinic = { 
+      ...insertClinic, 
+      id, 
+      createdAt: now, 
+      updatedAt: now,
+      nameZh: insertClinic.nameZh ?? null,
+      addressZh: insertClinic.addressZh ?? null,
+      whatsapp: insertClinic.whatsapp ?? null,
+      email: insertClinic.email ?? null,
+      latitude: insertClinic.latitude ?? null,
+      longitude: insertClinic.longitude ?? null,
+      status: insertClinic.status ?? 'active',
+      is24Hour: insertClinic.is24Hour ?? false,
+      services: insertClinic.services ?? null
+    };
+    this.clinics.set(id, clinic);
+    return clinic;
+  }
+
+  async updateClinic(id: string, updateData: Partial<InsertClinic>): Promise<Clinic | undefined> {
+    const clinic = this.clinics.get(id);
+    if (!clinic) return undefined;
+    const updated = { ...clinic, ...updateData, updatedAt: new Date() };
+    this.clinics.set(id, updated);
+    return updated;
+  }
+
+  async deleteClinic(id: string): Promise<boolean> {
+    const clinic = this.clinics.get(id);
+    if (!clinic) return false;
+    clinic.status = 'deleted';
+    this.clinics.set(id, clinic);
+    return true;
+  }
+
+  // Emergency Requests
+  async getEmergencyRequest(id: string): Promise<EmergencyRequest | undefined> {
+    return this.emergencyRequests.get(id);
+  }
+
+  async getEmergencyRequestsByUserId(userId: string): Promise<EmergencyRequest[]> {
+    return Array.from(this.emergencyRequests.values()).filter(req => req.userId === userId);
+  }
+
+  async createEmergencyRequest(insertRequest: InsertEmergencyRequest): Promise<EmergencyRequest> {
+    const id = randomUUID();
+    const request: EmergencyRequest = { 
+      ...insertRequest, 
+      id, 
+      createdAt: new Date(),
+      petId: insertRequest.petId ?? null,
+      locationLatitude: insertRequest.locationLatitude ?? null,
+      locationLongitude: insertRequest.locationLongitude ?? null,
+      manualLocation: insertRequest.manualLocation ?? null,
+      status: insertRequest.status ?? 'pending',
+      regionId: insertRequest.regionId ?? null
+    };
+    this.emergencyRequests.set(id, request);
+    return request;
+  }
+
+  async updateEmergencyRequest(id: string, updateData: Partial<InsertEmergencyRequest>): Promise<EmergencyRequest | undefined> {
+    const request = this.emergencyRequests.get(id);
+    if (!request) return undefined;
+    const updated = { ...request, ...updateData };
+    this.emergencyRequests.set(id, updated);
+    return updated;
+  }
+
+  // Messages
+  async getMessage(id: string): Promise<Message | undefined> {
+    return this.messages.get(id);
+  }
+
+  async getMessagesByEmergencyRequest(emergencyRequestId: string): Promise<Message[]> {
+    return Array.from(this.messages.values()).filter(
+      msg => msg.emergencyRequestId === emergencyRequestId
+    );
+  }
+
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const id = randomUUID();
+    const message: Message = { 
+      ...insertMessage, 
+      id, 
+      createdAt: new Date(),
+      status: insertMessage.status ?? 'queued',
+      sentAt: insertMessage.sentAt ?? null,
+      deliveredAt: insertMessage.deliveredAt ?? null,
+      failedAt: insertMessage.failedAt ?? null,
+      errorMessage: insertMessage.errorMessage ?? null,
+      retryCount: insertMessage.retryCount ?? 0
+    };
+    this.messages.set(id, message);
+    return message;
+  }
+
+  async updateMessage(id: string, updateData: Partial<InsertMessage>): Promise<Message | undefined> {
+    const message = this.messages.get(id);
+    if (!message) return undefined;
+    const updated = { ...message, ...updateData };
+    this.messages.set(id, updated);
+    return updated;
+  }
+
+  async getQueuedMessages(): Promise<Message[]> {
+    return Array.from(this.messages.values()).filter(
+      msg => msg.status === 'queued'
+    );
+  }
+
+  // Feature Flags
+  async getFeatureFlag(key: string): Promise<FeatureFlag | undefined> {
+    return Array.from(this.featureFlags.values()).find(flag => flag.key === key);
+  }
+
+  async getAllFeatureFlags(): Promise<FeatureFlag[]> {
+    return Array.from(this.featureFlags.values());
+  }
+
+  async createFeatureFlag(insertFlag: InsertFeatureFlag): Promise<FeatureFlag> {
+    const id = randomUUID();
+    const flag: FeatureFlag = { 
+      ...insertFlag, 
+      id, 
+      updatedAt: new Date(),
+      enabled: insertFlag.enabled ?? false,
+      value: insertFlag.value ?? null,
+      description: insertFlag.description ?? null
+    };
+    this.featureFlags.set(id, flag);
+    return flag;
+  }
+
+  async updateFeatureFlag(id: string, updateData: Partial<InsertFeatureFlag>): Promise<FeatureFlag | undefined> {
+    const flag = this.featureFlags.get(id);
+    if (!flag) return undefined;
+    const updated = { ...flag, ...updateData, updatedAt: new Date() };
+    this.featureFlags.set(id, updated);
+    return updated;
+  }
+
+  // Audit Logs
+  async createAuditLog(insertLog: InsertAuditLog): Promise<AuditLog> {
+    const id = randomUUID();
+    const log: AuditLog = { 
+      ...insertLog, 
+      id, 
+      createdAt: new Date(),
+      userId: insertLog.userId ?? null,
+      changes: insertLog.changes ?? null,
+      ipAddress: insertLog.ipAddress ?? null,
+      userAgent: insertLog.userAgent ?? null
+    };
+    this.auditLogs.set(id, log);
+    return log;
+  }
+
+  async getAuditLogsByEntity(entityType: string, entityId: string): Promise<AuditLog[]> {
+    return Array.from(this.auditLogs.values()).filter(
+      log => log.entityType === entityType && log.entityId === entityId
+    );
+  }
+
+  // Privacy Consents
+  async getPrivacyConsents(userId: string): Promise<PrivacyConsent[]> {
+    return Array.from(this.privacyConsents.values()).filter(
+      consent => consent.userId === userId
+    );
+  }
+
+  async createPrivacyConsent(insertConsent: InsertPrivacyConsent): Promise<PrivacyConsent> {
+    const id = randomUUID();
+    const consent: PrivacyConsent = { 
+      ...insertConsent, 
+      id, 
+      createdAt: new Date(),
+      ipAddress: insertConsent.ipAddress ?? null,
+      userAgent: insertConsent.userAgent ?? null,
+      expiresAt: insertConsent.expiresAt ?? null
+    };
+    this.privacyConsents.set(id, consent);
+    return consent;
+  }
+
+  // Translations
+  async getTranslationsByLanguage(language: string): Promise<Translation[]> {
+    return Array.from(this.translations.values()).filter(
+      t => t.language === language
+    );
+  }
+
+  async getTranslation(key: string, language: string): Promise<Translation | undefined> {
+    return Array.from(this.translations.values()).find(
+      t => t.key === key && t.language === language
+    );
+  }
+
+  async createTranslation(insertTranslation: InsertTranslation): Promise<Translation> {
+    const id = randomUUID();
+    const translation: Translation = { 
+      ...insertTranslation, 
+      id, 
+      updatedAt: new Date(),
+      namespace: insertTranslation.namespace ?? 'common'
+    };
+    this.translations.set(id, translation);
+    return translation;
+  }
+
+  async updateTranslation(id: string, updateData: Partial<InsertTranslation>): Promise<Translation | undefined> {
+    const translation = this.translations.get(id);
+    if (!translation) return undefined;
+    const updated = { ...translation, ...updateData, updatedAt: new Date() };
+    this.translations.set(id, updated);
+    return updated;
   }
 }
 
