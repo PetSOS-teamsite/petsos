@@ -554,6 +554,7 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Database storage implementation using PostgreSQL
 class DatabaseStorage implements IStorage {
   async getAllClinics(): Promise<Clinic[]> {
     return await db.select().from(clinics).where(eq(clinics.status, 'active'));
@@ -672,7 +673,7 @@ class DatabaseStorage implements IStorage {
 
   async updatePet(id: string, updateData: Partial<InsertPet>): Promise<Pet | undefined> {
     const result = await db.update(pets)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(pets.id, id))
       .returning();
     return result[0];
@@ -699,7 +700,7 @@ class DatabaseStorage implements IStorage {
 
   async updateEmergencyRequest(id: string, updateData: Partial<InsertEmergencyRequest>): Promise<EmergencyRequest | undefined> {
     const result = await db.update(emergencyRequests)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(emergencyRequests.id, id))
       .returning();
     return result[0];
@@ -721,7 +722,7 @@ class DatabaseStorage implements IStorage {
 
   async updateMessage(id: string, updateData: Partial<InsertMessage>): Promise<Message | undefined> {
     const result = await db.update(messages)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(messages.id, id))
       .returning();
     return result[0];
@@ -747,7 +748,7 @@ class DatabaseStorage implements IStorage {
 
   async updateFeatureFlag(id: string, updateData: Partial<InsertFeatureFlag>): Promise<FeatureFlag | undefined> {
     const result = await db.update(featureFlags)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(featureFlags.id, id))
       .returning();
     return result[0];
@@ -791,7 +792,7 @@ class DatabaseStorage implements IStorage {
 
   async updateTranslation(id: string, updateData: Partial<InsertTranslation>): Promise<Translation | undefined> {
     const result = await db.update(translations)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(translations.id, id))
       .returning();
     return result[0];
