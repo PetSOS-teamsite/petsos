@@ -150,20 +150,31 @@ export default function ClinicResultsPage() {
         .filter(c => c.whatsapp || c.email)
         .map(c => c.id);
       
-      const response = await apiRequest(`/api/emergency-requests/${params?.requestId}/broadcast`, {
-        method: 'POST',
-        body: JSON.stringify({ clinicIds }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      let locationInfo = emergencyRequest?.locationText || 'Location not provided';
+      if (emergencyRequest?.locationLatitude && emergencyRequest?.locationLongitude) {
+        const mapsLink = `https://www.google.com/maps?q=${emergencyRequest.locationLatitude},${emergencyRequest.locationLongitude}`;
+        locationInfo = emergencyRequest.locationText 
+          ? `${emergencyRequest.locationText}\nMap: ${mapsLink}`
+          : `GPS: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\nMap: ${mapsLink}`;
+      }
       
-      if (!response.ok) throw new Error('Failed to broadcast emergency');
+      const message = emergencyRequest
+        ? `🚨 PET EMERGENCY ALERT 🚨\n\nSymptom: ${emergencyRequest.symptom}\nLocation: ${locationInfo}\nContact: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `Email: ${emergencyRequest.contactEmail}` : ''}\n\nPlease respond urgently if you can help.`
+        : 'Emergency pet care needed';
+      
+      const response = await apiRequest(
+        'POST',
+        `/api/emergency-requests/${params?.requestId}/broadcast`,
+        { clinicIds, message }
+      );
+      
       return await response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/emergency-requests', params?.requestId] });
       toast({
         title: "Broadcast sent successfully!",
-        description: `Emergency alert sent to ${data.successCount} clinics`,
+        description: `Emergency alert sent to ${data.count} ${data.count === 1 ? 'clinic' : 'clinics'}`,
       });
       setShowBroadcastDialog(false);
     },
@@ -315,18 +326,32 @@ export default function ClinicResultsPage() {
 
       {/* Broadcast Confirmation Dialog */}
       <AlertDialog open={showBroadcastDialog} onOpenChange={setShowBroadcastDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Broadcast Emergency Alert</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will send your emergency alert to {filteredClinics.filter(c => c.whatsapp || c.email).length} clinics via WhatsApp and email.
-              <br /><br />
-              <strong>Your message will include:</strong>
-              <ul className="list-disc list-inside mt-2">
-                <li>Pet emergency details: {emergencyRequest?.symptom}</li>
-                <li>Your contact: {emergencyRequest?.contactPhone}</li>
-                <li>Your location</li>
-              </ul>
+            <AlertDialogDescription asChild>
+              <div>
+                <p className="mb-4">
+                  This will send your emergency alert to {filteredClinics.filter(c => c.whatsapp || c.email).length} clinics via WhatsApp and email.
+                </p>
+                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+                  <strong className="text-sm font-semibold text-gray-700 dark:text-gray-300">Message Preview:</strong>
+                  <pre className="mt-2 text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-sans">
+                    {(() => {
+                      let locationInfo = emergencyRequest?.locationText || 'Location not provided';
+                      if (emergencyRequest?.locationLatitude && emergencyRequest?.locationLongitude) {
+                        const mapsLink = `https://www.google.com/maps?q=${emergencyRequest.locationLatitude},${emergencyRequest.locationLongitude}`;
+                        locationInfo = emergencyRequest.locationText 
+                          ? `${emergencyRequest.locationText}\nMap: ${mapsLink}`
+                          : `GPS: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\nMap: ${mapsLink}`;
+                      }
+                      return emergencyRequest
+                        ? `🚨 PET EMERGENCY ALERT 🚨\n\nSymptom: ${emergencyRequest.symptom}\nLocation: ${locationInfo}\nContact: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `Email: ${emergencyRequest.contactEmail}` : ''}\n\nPlease respond urgently if you can help.`
+                        : 'Emergency pet care needed';
+                    })()}
+                  </pre>
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
