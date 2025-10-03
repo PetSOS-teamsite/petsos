@@ -121,6 +121,7 @@ export default function PetsPage() {
         ...data,
         userId,
         weight: data.weight !== undefined ? String(data.weight) : undefined,
+        lastVisitDate: data.lastVisitDate ? new Date(data.lastVisitDate).toISOString() : undefined,
       };
       const response = await apiRequest(
         'POST',
@@ -152,6 +153,7 @@ export default function PetsPage() {
       const payload = {
         ...data,
         weight: data.weight !== undefined ? String(data.weight) : undefined,
+        lastVisitDate: data.lastVisitDate ? new Date(data.lastVisitDate).toISOString() : undefined,
       };
       const response = await apiRequest(
         'PATCH',
@@ -216,6 +218,20 @@ export default function PetsPage() {
   const handleEdit = (pet: Pet) => {
     setEditingPet(pet);
     setSelectedSpecies(pet.species);
+    
+    // Format date for HTML date input
+    let formattedDate = "";
+    if (pet.lastVisitDate) {
+      try {
+        const date = new Date(pet.lastVisitDate);
+        if (!isNaN(date.getTime())) {
+          formattedDate = date.toISOString().split('T')[0];
+        }
+      } catch (e) {
+        console.error("Error formatting date:", e);
+      }
+    }
+    
     form.reset({
       name: pet.name,
       species: pet.species,
@@ -223,8 +239,8 @@ export default function PetsPage() {
       age: pet.age ? Number(pet.age) : undefined,
       weight: pet.weight ? Number(pet.weight) : undefined,
       medicalNotes: pet.medicalNotes || "",
-      lastVisitClinicId: pet.lastVisitClinicId || undefined,
-      lastVisitDate: pet.lastVisitDate ? new Date(pet.lastVisitDate).toISOString().split('T')[0] : undefined,
+      lastVisitClinicId: pet.lastVisitClinicId || "",
+      lastVisitDate: formattedDate,
     });
     setIsDialogOpen(true);
   };
