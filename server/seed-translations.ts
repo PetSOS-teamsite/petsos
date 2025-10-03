@@ -33,6 +33,13 @@ const translations = [
   { key: "button.next", en: "Next", zh: "下一步" },
   { key: "button.previous", en: "Previous", zh: "上一步" },
   { key: "button.submit", en: "Submit Request", zh: "提交請求" },
+  { key: "emergency.step_indicator", en: "Step {step} of 3", zh: "步驟 {step} / 3" },
+  { key: "emergency.time_remaining", en: "~{time}s remaining", zh: "約 {time} 秒" },
+  { key: "emergency.submit.success", en: "Emergency request submitted!", zh: "緊急請求已提交！" },
+  { key: "emergency.submit.finding", en: "Finding nearby clinics...", zh: "正在尋找附近診所..." },
+  { key: "emergency.gps.unavailable", en: "GPS unavailable", zh: "GPS 不可用" },
+  { key: "emergency.gps.manual", en: "Please enter location manually below", zh: "請在下方手動輸入位置" },
+  { key: "emergency.loading_pets", en: "Loading your pets...", zh: "載入您的寵物..." },
   
   // Clinic Results
   { key: "results.title", en: "Nearby 24-Hour Clinics", zh: "附近24小時診所" },
@@ -56,6 +63,9 @@ const translations = [
   { key: "clinics.24h_only", en: "24-hour clinics only", zh: "只顯示24小時診所" },
   { key: "clinics.no_results", en: "No clinics found", zh: "找不到診所" },
   { key: "clinics.adjust_search", en: "Try adjusting your search or filters", zh: "嘗試調整搜尋或篩選條件" },
+  { key: "clinics.count", en: "clinic", zh: "間診所" },
+  { key: "clinics.count_plural", en: "clinics", zh: "間診所" },
+  { key: "clinics.found", en: "found", zh: "已找到" },
   
   // Profile
   { key: "profile.title", en: "My Profile", zh: "我的個人資料" },
@@ -91,6 +101,8 @@ const translations = [
   { key: "button.edit", en: "Edit", zh: "編輯" },
   { key: "button.close", en: "Close", zh: "關閉" },
   { key: "loading", en: "Loading...", zh: "載入中..." },
+  { key: "loading.profile", en: "Loading profile...", zh: "載入個人資料..." },
+  { key: "loading.pets", en: "Loading pets...", zh: "載入寵物..." },
   { key: "error", en: "Error", zh: "錯誤" },
   { key: "success", en: "Success", zh: "成功" },
   

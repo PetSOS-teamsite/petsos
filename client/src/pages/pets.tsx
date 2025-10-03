@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/useTranslation";
 import { PawPrint, Plus, Pencil, Trash2, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import type { Pet } from "@shared/schema";
@@ -45,6 +46,7 @@ type PetFormData = z.infer<typeof petSchema>;
 export default function PetsPage() {
   const userId = "temp-user-id";
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPet, setEditingPet] = useState<Pet | null>(null);
   const [deletingPetId, setDeletingPetId] = useState<string | null>(null);
@@ -371,7 +373,7 @@ export default function PetsPage() {
           <CardContent>
             {petsLoading ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                Loading pets...
+                {t("loading.pets", "Loading pets...")}
               </div>
             ) : pets.length === 0 ? (
               <div className="text-center py-12">

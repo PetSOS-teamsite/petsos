@@ -159,7 +159,7 @@ export default function ClinicsPage() {
         ) : (
           <div className="max-w-4xl mx-auto mb-4">
             <p className="text-gray-600 dark:text-gray-400" data-testid="text-results-count">
-              {filteredClinics?.length || 0} clinic{filteredClinics?.length !== 1 ? "s" : ""} found
+              {filteredClinics?.length || 0} {filteredClinics?.length !== 1 ? t("clinics.count_plural", "clinics") : t("clinics.count", "clinic")} {t("clinics.found", "found")}
             </p>
           </div>
         )}
