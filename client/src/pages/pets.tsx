@@ -32,21 +32,26 @@ import { PawPrint, Plus, Pencil, Trash2, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import type { Pet } from "@shared/schema";
 
-const petSchema = z.object({
-  name: z.string().min(1, "Pet name is required"),
-  species: z.string().min(1, "Species is required"),
+// Schema factory to access translation function
+const createPetSchema = (t: (key: string, fallback: string) => string) => z.object({
+  name: z.string().min(1, t("pets.validation.name_required", "Pet name is required")),
+  species: z.string().min(1, t("pets.validation.species_required", "Species is required")),
   breed: z.string().optional(),
   age: z.coerce.number().positive().optional(),
   weight: z.coerce.number().positive().optional(),
   medicalNotes: z.string().optional(),
 });
 
-type PetFormData = z.infer<typeof petSchema>;
+// Type helper
+type PetSchemaType = ReturnType<typeof createPetSchema>;
+type PetFormData = z.infer<PetSchemaType>;
 
 export default function PetsPage() {
   const userId = "temp-user-id";
   const { toast } = useToast();
   const { t } = useTranslation();
+  
+  const petSchema = createPetSchema(t);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPet, setEditingPet] = useState<Pet | null>(null);
   const [deletingPetId, setDeletingPetId] = useState<string | null>(null);
@@ -84,15 +89,15 @@ export default function PetsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'pets'] });
       toast({
-        title: "Pet added successfully!",
-        description: "Your pet has been added to your profile.",
+        title: t("pets.success.add", "Pet added successfully!"),
+        description: t("pets.success.add_desc", "Your pet has been added to your profile."),
       });
       setIsDialogOpen(false);
       form.reset();
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to add pet",
+        title: t("pets.error.add", "Failed to add pet"),
         description: error.message,
         variant: "destructive",
       });
@@ -115,8 +120,8 @@ export default function PetsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'pets'] });
       toast({
-        title: "Pet updated successfully!",
-        description: "Your pet's information has been updated.",
+        title: t("pets.success.update", "Pet updated successfully!"),
+        description: t("pets.success.update_desc", "Your pet's information has been updated."),
       });
       setIsDialogOpen(false);
       setEditingPet(null);
@@ -124,7 +129,7 @@ export default function PetsPage() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to update pet",
+        title: t("pets.error.update", "Failed to update pet"),
         description: error.message,
         variant: "destructive",
       });
@@ -143,14 +148,14 @@ export default function PetsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'pets'] });
       toast({
-        title: "Pet removed",
-        description: "Your pet has been removed from your profile.",
+        title: t("pets.success.delete", "Pet removed"),
+        description: t("pets.success.delete_desc", "Your pet has been removed from your profile."),
       });
       setDeletingPetId(null);
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to delete pet",
+        title: t("pets.error.delete", "Failed to delete pet"),
         description: error.message,
         variant: "destructive",
       });
@@ -195,7 +200,7 @@ export default function PetsPage() {
           <Link href="/profile">
             <Button variant="ghost" size="sm" data-testid="button-back">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Profile
+              {t("pets.back_to_profile", "Back to Profile")}
             </Button>
           </Link>
         </div>
@@ -205,23 +210,23 @@ export default function PetsPage() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <PawPrint className="w-6 h-6" />
-                My Pets
+                {t("pets.title", "My Pets")}
               </CardTitle>
               <CardDescription>
-                Manage your pets for faster emergency requests
+                {t("pets.desc", "Manage your pets for faster emergency requests")}
               </CardDescription>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={handleAddNew} data-testid="button-add-pet">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Pet
+                  {t("pets.add", "Add Pet")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>
-                    {editingPet ? "Edit Pet" : "Add New Pet"}
+                    {editingPet ? t("pets.edit", "Edit Pet") : t("pets.add_new", "Add New Pet")}
                   </DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
@@ -231,11 +236,11 @@ export default function PetsPage() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name</FormLabel>
+                          <FormLabel>{t("pets.name", "Name")}</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="Fluffy"
+                              placeholder={t("pets.name_placeholder", "Fluffy")}
                               data-testid="input-pet-name"
                             />
                           </FormControl>
@@ -249,11 +254,11 @@ export default function PetsPage() {
                       name="species"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Species</FormLabel>
+                          <FormLabel>{t("pets.species", "Species")}</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="Dog, Cat, etc."
+                              placeholder={t("pets.species_placeholder", "Dog, Cat, etc.")}
                               data-testid="input-pet-species"
                             />
                           </FormControl>
@@ -267,11 +272,11 @@ export default function PetsPage() {
                       name="breed"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Breed (Optional)</FormLabel>
+                          <FormLabel>{t("pets.breed", "Breed (Optional)")}</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="Golden Retriever"
+                              placeholder={t("pets.breed_placeholder", "Golden Retriever")}
                               data-testid="input-pet-breed"
                             />
                           </FormControl>
@@ -286,12 +291,12 @@ export default function PetsPage() {
                         name="age"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Age (Optional)</FormLabel>
+                            <FormLabel>{t("pets.age", "Age (Optional)")}</FormLabel>
                             <FormControl>
                               <Input
                                 {...field}
                                 type="number"
-                                placeholder="3"
+                                placeholder={t("pets.age_placeholder", "3")}
                                 data-testid="input-pet-age"
                               />
                             </FormControl>
@@ -305,13 +310,13 @@ export default function PetsPage() {
                         name="weight"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Weight (kg, Optional)</FormLabel>
+                            <FormLabel>{t("pets.weight", "Weight (kg, Optional)")}</FormLabel>
                             <FormControl>
                               <Input
                                 {...field}
                                 type="number"
                                 step="0.1"
-                                placeholder="10.5"
+                                placeholder={t("pets.weight_placeholder", "10.5")}
                                 data-testid="input-pet-weight"
                               />
                             </FormControl>
@@ -326,11 +331,11 @@ export default function PetsPage() {
                       name="medicalNotes"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Medical Notes (Optional)</FormLabel>
+                          <FormLabel>{t("pets.medical_notes", "Medical Notes (Optional)")}</FormLabel>
                           <FormControl>
                             <Textarea
                               {...field}
-                              placeholder="Allergies, medications, conditions..."
+                              placeholder={t("pets.medical_notes_placeholder", "Allergies, medications, conditions...")}
                               rows={3}
                               data-testid="textarea-pet-medical-notes"
                             />
@@ -351,7 +356,7 @@ export default function PetsPage() {
                         }}
                         data-testid="button-cancel-pet"
                       >
-                        Cancel
+                        {t("button.cancel", "Cancel")}
                       </Button>
                       <Button
                         type="submit"
@@ -359,10 +364,10 @@ export default function PetsPage() {
                         data-testid="button-save-pet"
                       >
                         {createPetMutation.isPending || updatePetMutation.isPending
-                          ? "Saving..."
+                          ? t("pets.saving", "Saving...")
                           : editingPet
-                          ? "Update Pet"
-                          : "Add Pet"}
+                          ? t("pets.update", "Update Pet")
+                          : t("pets.add", "Add Pet")}
                       </Button>
                     </div>
                   </form>
@@ -379,11 +384,11 @@ export default function PetsPage() {
               <div className="text-center py-12">
                 <PawPrint className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
                 <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  No pets added yet
+                  {t("pets.no_pets", "No pets added yet")}
                 </p>
                 <Button onClick={handleAddNew} data-testid="button-add-first-pet">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Your First Pet
+                  {t("pets.add_first", "Add Your First Pet")}
                 </Button>
               </div>
             ) : (
@@ -419,11 +424,11 @@ export default function PetsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                        {pet.age && <div>Age: {pet.age} years</div>}
-                        {pet.weight && <div>Weight: {pet.weight} kg</div>}
+                        {pet.age && <div>{t("pets.age_years", "Age: {age} years").replace("{age}", String(pet.age))}</div>}
+                        {pet.weight && <div>{t("pets.weight_kg", "Weight: {weight} kg").replace("{weight}", String(pet.weight))}</div>}
                         {pet.medicalNotes && (
                           <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-yellow-800 dark:text-yellow-200">
-                            <strong>Medical:</strong> {pet.medicalNotes}
+                            <strong>{t("pets.medical_label", "Medical:")}</strong> {pet.medicalNotes}
                           </div>
                         )}
                       </div>
@@ -439,19 +444,19 @@ export default function PetsPage() {
         <AlertDialog open={!!deletingPetId} onOpenChange={() => setDeletingPetId(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Pet</AlertDialogTitle>
+              <AlertDialogTitle>{t("pets.delete", "Delete Pet")}</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to remove this pet from your profile? This action cannot be undone.
+                {t("pets.delete_confirm", "Are you sure you want to remove this pet from your profile? This action cannot be undone.")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+              <AlertDialogCancel data-testid="button-cancel-delete">{t("button.cancel", "Cancel")}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => deletingPetId && deletePetMutation.mutate(deletingPetId)}
                 className="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
                 data-testid="button-confirm-delete"
               >
-                Delete
+                {t("button.delete", "Delete")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
