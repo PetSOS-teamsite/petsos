@@ -1,5 +1,6 @@
 import { storage } from "../storage";
 import type { InsertMessage, Message } from "@shared/schema";
+import { sendGmailEmail } from "../gmail-client";
 
 // WhatsApp Business API configuration
 const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || 'https://graph.facebook.com/v17.0';
@@ -66,7 +67,7 @@ export class MessagingService {
   }
 
   /**
-   * Send an email (fallback method)
+   * Send an email (fallback method) using Gmail
    */
   private async sendEmail(to: string, subject: string, content: string): Promise<boolean> {
     // Validate email format
@@ -76,25 +77,13 @@ export class MessagingService {
       return false;
     }
     
-    // In development mode (no email provider configured), simulate successful send
-    // In production, integrate with SendGrid, Resend, or SMTP provider
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    
-    if (isDevelopment) {
-      // Development mode: Log and simulate success
-      console.log('[EMAIL DEV MODE] Simulated email sent:', { 
-        to, 
-        subject, 
-        content: content.substring(0, 100) + '...', 
-        from: EMAIL_FROM 
-      });
-      return true;
+    try {
+      // Use Gmail integration to send email
+      return await sendGmailEmail(to, subject, content, EMAIL_FROM);
+    } catch (error) {
+      console.error('[EMAIL] Gmail send error:', error);
+      return false;
     }
-    
-    // Production mode: Integrate with actual email provider
-    // TODO: Add email provider integration (SendGrid, Resend, etc.)
-    console.error('[EMAIL] No production email provider configured');
-    return false;
   }
 
   /**
