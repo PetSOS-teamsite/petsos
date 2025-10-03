@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
 import { useLocation, useRoute, Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, MessageCircle, MapPin, Clock, Navigation } from "lucide-react";
+import { Phone, MessageCircle, MapPin, Clock, Navigation, Send, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Clinic {
   id: string;
@@ -36,6 +48,8 @@ export default function ClinicResultsPage() {
   const [, params] = useRoute("/emergency-results/:requestId");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [showBroadcastDialog, setShowBroadcastDialog] = useState(false);
+  const { toast } = useToast();
 
   // Fetch emergency request to get location
   const { data: emergencyRequest } = useQuery<any>({
@@ -129,6 +143,43 @@ export default function ClinicResultsPage() {
     window.open(`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}?text=${encodedMessage}`, '_blank');
   };
 
+  // Broadcast mutation
+  const broadcastMutation = useMutation({
+    mutationFn: async () => {
+      const clinicIds = filteredClinics
+        .filter(c => c.whatsapp || c.email)
+        .map(c => c.id);
+      
+      const response = await apiRequest(`/api/emergency-requests/${params?.requestId}/broadcast`, {
+        method: 'POST',
+        body: JSON.stringify({ clinicIds }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (!response.ok) throw new Error('Failed to broadcast emergency');
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/emergency-requests', params?.requestId] });
+      toast({
+        title: "Broadcast sent successfully!",
+        description: `Emergency alert sent to ${data.successCount} clinics`,
+      });
+      setShowBroadcastDialog(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Broadcast failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleBroadcast = () => {
+    broadcastMutation.mutate();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -149,8 +200,8 @@ export default function ClinicResultsPage() {
       </header>
 
       <div className="container mx-auto px-4 py-6">
-        {/* Region Filter */}
-        <div className="mb-6">
+        {/* Filter and Broadcast Controls */}
+        <div className="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <Select value={selectedRegion} onValueChange={setSelectedRegion}>
             <SelectTrigger className="w-full md:w-64" data-testid="select-region">
               <SelectValue placeholder="Filter by region" />
@@ -164,6 +215,16 @@ export default function ClinicResultsPage() {
               ))}
             </SelectContent>
           </Select>
+
+          <Button
+            onClick={() => setShowBroadcastDialog(true)}
+            className="bg-orange-600 hover:bg-orange-700 w-full md:w-auto"
+            disabled={filteredClinics.filter(c => c.whatsapp || c.email).length === 0}
+            data-testid="button-broadcast"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Broadcast to All Clinics
+          </Button>
         </div>
 
         {/* Clinics List */}
@@ -251,6 +312,37 @@ export default function ClinicResultsPage() {
           </p>
         </div>
       </div>
+
+      {/* Broadcast Confirmation Dialog */}
+      <AlertDialog open={showBroadcastDialog} onOpenChange={setShowBroadcastDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Broadcast Emergency Alert</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will send your emergency alert to {filteredClinics.filter(c => c.whatsapp || c.email).length} clinics via WhatsApp and email.
+              <br /><br />
+              <strong>Your message will include:</strong>
+              <ul className="list-disc list-inside mt-2">
+                <li>Pet emergency details: {emergencyRequest?.symptom}</li>
+                <li>Your contact: {emergencyRequest?.contactPhone}</li>
+                <li>Your location</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-broadcast">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBroadcast}
+              disabled={broadcastMutation.isPending}
+              className="bg-orange-600 hover:bg-orange-700"
+              data-testid="button-confirm-broadcast"
+            >
+              {broadcastMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Send Broadcast
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
