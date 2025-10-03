@@ -29,7 +29,10 @@ Preferred communication style: Simple, everyday language.
 - Home page with prominent emergency button (accessibility-focused, large touch target)
 - Multi-step emergency request flow (symptom → location → contact)
 - Clinic results page with filtering, distance calculation, and communication options
-- Profile management (future implementation)
+- Profile management with user details and preferences
+- Pet management with CRUD operations
+- Clinic directory with search, region filters, and bilingual display
+- Admin dashboard for clinic management (CRUD operations)
 
 ### Backend Architecture
 
@@ -202,3 +205,32 @@ Preferred communication style: Simple, everyday language.
 - **ws**: WebSocket client for Neon database connection
 - **embla-carousel-react**: Carousel/slider functionality
 - **cmdk**: Command palette component
+
+## Recent Changes (October 2025)
+
+### Clinic Data Import
+- Successfully imported 191 Hong Kong veterinary clinics from Excel spreadsheet
+- Transaction-safe import script with preflight validation and automatic rollback
+- Bilingual clinic data (English/Chinese names and addresses)
+- Phone and WhatsApp contact information
+- 24-hour service indicators
+- Regional classification (HKI/KLN/NTI)
+
+### Clinic Directory Page (`/clinics`)
+- Public-facing clinic browsing interface
+- Real-time search across clinic names and addresses (bilingual)
+- Region-based filtering (Hong Kong Island, Kowloon, New Territories)
+- Call and WhatsApp integration buttons
+- 24-hour service badges for emergency clinics
+- Responsive design with loading states and empty states
+- Comprehensive data-testid attributes for testing
+
+### Admin Dashboard (`/admin/clinics`)
+- Complete CRUD operations for clinic management
+- Add new clinics with full validation
+- Edit existing clinic details
+- Soft delete with confirmation dialogs
+- Form validation using React Hook Form + Zod
+- Real-time cache invalidation after mutations
+- Toast notifications for user feedback
+- Statistics display (total clinics count)
