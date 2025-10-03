@@ -208,6 +208,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 3, 2025)
 
+### Complete Bilingual Implementation (October 3, 2025)
+- **Pets & Profile Pages Fully Bilingual**: Extended translation coverage to all user-facing pages
+  - **Pets Page**: All labels, placeholders, buttons, validation messages, and toast notifications translated
+    - Dynamic Zod validation schema using factory pattern for bilingual error messages
+    - Validation: "Pet name is required" → "請輸入寵物名稱"
+    - Success/error toasts fully translated
+  - **Profile Page**: Complete bilingual support for user profile management
+    - All form fields translated: username, email, phone, language, region
+    - Dynamic region names display based on language (nameEn/nameZh)
+    - Validation messages: "Username must be at least 3 characters" → "用戶名稱須至少3個字元"
+  - **Translation Keys Added**: 30+ new keys for pets and profile pages
+  - **Schema Factory Pattern**: Implemented dynamic Zod schema creation to inject translated validation messages at component initialization
+
 ### Translation Updates & Medical Disclaimer (October 3, 2025)
 - **Medical Disclaimer Replacement**: Replaced all "Call 999" messages with comprehensive medical disclaimer
   - Chinese: "⚠️ PetSOS 只提供緊急處理建議，並不等同專業獸醫診斷或醫療建議。如有疑問，請盡快聯絡獸醫。"
@@ -218,10 +231,10 @@ Preferred communication style: Simple, everyday language.
 - **Official HK Tone Translation Refinement**: Upgraded all Chinese translations to official Hong Kong tone
   - Formal pronouns: "您" instead of "你" for respectful user-facing contexts
   - Standard possessive: "的" replaces colloquial "嘅"
-  - Professional verbs: "尋找" (find), "描述" (describe), "查看" (view), "新增" (add), "編輯" (edit), "致電" (call)
-  - System messages: "已成功提交" (successfully submitted), "正在搜尋" (searching), "請嘗試調整" (please try adjusting)
+  - Professional verbs: "尋找" (find), "描述" (describe), "查看" (view), "新增" (add), "編輯" (edit), "致電" (call), "輸入" (enter), "選擇" (select)
+  - System messages: "已成功提交" (successfully submitted), "正在搜尋" (searching), "請嘗試調整" (please try adjusting), "儲存中..." (saving...)
   - Maintained HK terminology: "港島", "九龍", "新界", "全港"
-  - **Total translations updated**: 50+ entries across all app sections
+  - **Total translations updated**: 80+ entries across all app sections
   - Architect-reviewed and approved for official tone with HK characteristics
 
 ## Recent Changes (October 2025)
