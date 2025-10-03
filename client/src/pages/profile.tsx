@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import type { User as UserType, Region } from "@shared/schema";
@@ -35,6 +36,7 @@ export default function ProfilePage() {
   const userId = "temp-user-id";
   const { toast } = useToast();
   const { t, language } = useTranslation();
+  const { setLanguage } = useLanguage();
   
   const profileSchema = createProfileSchema(t);
 
@@ -66,8 +68,12 @@ export default function ProfilePage() {
       );
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId] });
+      // Update LanguageContext when language preference changes
+      if (variables.languagePreference) {
+        setLanguage(variables.languagePreference);
+      }
       toast({
         title: t("profile.success.title", "Profile updated successfully!"),
         description: t("profile.success.desc", "Your changes have been saved."),
