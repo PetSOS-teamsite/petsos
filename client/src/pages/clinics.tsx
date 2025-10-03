@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 type Clinic = {
   id: string;
@@ -36,6 +38,7 @@ type Region = {
 export default function ClinicsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
+  const [show24HourOnly, setShow24HourOnly] = useState(false);
 
   const { data: regions, isLoading: regionsLoading } = useQuery<Region[]>({
     queryKey: ["/api/regions"],
@@ -54,8 +57,10 @@ export default function ClinicsPage() {
       clinic.addressZh?.includes(searchQuery);
 
     const matchesRegion = selectedRegion === "all" || clinic.regionId === selectedRegion;
+    
+    const matches24Hour = !show24HourOnly || clinic.is24Hour;
 
-    return matchesSearch && matchesRegion && clinic.status === "active";
+    return matchesSearch && matchesRegion && matches24Hour && clinic.status === "active";
   });
 
   const handleCall = (phone: string) => {
@@ -121,6 +126,23 @@ export default function ClinicsPage() {
               </TabsList>
             </Tabs>
           )}
+
+          {/* 24 Hour Filter */}
+          <div className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+            <Switch
+              id="24hour-filter"
+              checked={show24HourOnly}
+              onCheckedChange={setShow24HourOnly}
+              data-testid="switch-24hour-filter"
+            />
+            <Label
+              htmlFor="24hour-filter"
+              className="flex items-center gap-2 cursor-pointer text-base font-medium"
+            >
+              <Clock className="h-5 w-5 text-green-600" />
+              Show 24-Hour Emergency Clinics Only
+            </Label>
+          </div>
         </div>
 
         {/* Results Count */}
