@@ -154,15 +154,15 @@ export default function EmergencyPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'emergency-requests'] });
       toast({
-        title: "Emergency request submitted!",
-        description: "Finding nearby clinics...",
+        title: t("emergency.submit.success", "Emergency request submitted!"),
+        description: t("emergency.submit.finding", "Finding nearby clinics..."),
       });
       // Navigate to clinic results page
       setLocation(`/emergency-results/${data.id}`);
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t("error", "Error"),
         description: error.message,
         variant: "destructive",
       });
@@ -208,8 +208,8 @@ export default function EmergencyPage() {
         {/* Progress indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Step {step} of 3</span>
-            <span className="text-sm text-gray-500 dark:text-gray-400">~{30 - (step - 1) * 10}s remaining</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t("emergency.step_indicator", "Step {step} of 3").replace("{step}", String(step))}</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{t("emergency.time_remaining", "~{time}s remaining").replace("{time}", String(30 - (step - 1) * 10))}</span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div
@@ -242,7 +242,7 @@ export default function EmergencyPage() {
                   <div className="space-y-4">
                     {petsLoading ? (
                       <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                        Loading your pets...
+                        {t("emergency.loading_pets", "Loading your pets...")}
                       </div>
                     ) : pets.length > 0 ? (
                       <FormField
@@ -309,8 +309,8 @@ export default function EmergencyPage() {
                           </div>
                         ) : gpsError ? (
                           <div>
-                            <p className="font-medium text-red-900 dark:text-red-100">GPS unavailable</p>
-                            <p className="text-sm text-red-700 dark:text-red-300">Please enter location manually below</p>
+                            <p className="font-medium text-red-900 dark:text-red-100">{t("emergency.gps.unavailable", "GPS unavailable")}</p>
+                            <p className="text-sm text-red-700 dark:text-red-300">{t("emergency.gps.manual", "Please enter location manually below")}</p>
                             <Button
                               type="button"
                               variant="outline"

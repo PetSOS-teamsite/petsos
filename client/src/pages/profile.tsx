@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/useTranslation";
 import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import type { User as UserType, Region } from "@shared/schema";
@@ -32,6 +33,7 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 export default function ProfilePage() {
   const userId = "temp-user-id";
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const { data: user, isLoading: userLoading } = useQuery<UserType>({
     queryKey: ['/api/users', userId],
@@ -84,7 +86,7 @@ export default function ProfilePage() {
   if (userLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-gray-400">Loading profile...</div>
+        <div className="text-gray-600 dark:text-gray-400">{t("loading.profile", "Loading profile...")}</div>
       </div>
     );
   }
