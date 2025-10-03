@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
+import { messagingService } from "./services/messaging";
 import { 
   insertUserSchema, insertPetSchema, insertClinicSchema,
   insertEmergencyRequestSchema, insertMessageSchema,
@@ -396,6 +397,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json(request);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Broadcast emergency to clinics
+  app.post("/api/emergency-requests/:id/broadcast", async (req, res) => {
+    try {
+      const { clinicIds, message } = z.object({
+        clinicIds: z.array(z.string()),
+        message: z.string(),
+      }).parse(req.body);
+
+      const emergencyRequest = await storage.getEmergencyRequest(req.params.id);
+      if (!emergencyRequest) {
+        return res.status(404).json({ message: "Emergency request not found" });
+      }
+
+      const messages = await messagingService.broadcastEmergency(
+        req.params.id,
+        clinicIds,
+        message
+      );
+
+      res.status(201).json({ messages, count: messages.length });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
