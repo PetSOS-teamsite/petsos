@@ -1,5 +1,5 @@
 import { 
-  type User, type InsertUser,
+  type User, type InsertUser, type UpsertUser,
   type Pet, type InsertPet,
   type Region, type InsertRegion,
   type Clinic, type InsertClinic,
@@ -22,6 +22,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
+  upsertUser(user: UpsertUser): Promise<User>;
 
   // Pets
   getPet(id: string): Promise<Pet | undefined>;
@@ -239,6 +240,24 @@ export class MemStorage implements IStorage {
 
   async deleteUser(id: string): Promise<boolean> {
     return this.users.delete(id);
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const existing = this.users.get(userData.id);
+    const user: User = {
+      ...existing,
+      ...userData,
+      username: existing?.username ?? null,
+      password: existing?.password ?? null,
+      phone: existing?.phone ?? null,
+      languagePreference: existing?.languagePreference ?? 'en',
+      regionPreference: existing?.regionPreference ?? null,
+      role: existing?.role ?? 'user',
+      createdAt: existing?.createdAt ?? new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(userData.id, user);
+    return user;
   }
 
   // Pets
@@ -657,6 +676,21 @@ class DatabaseStorage implements IStorage {
   async deleteUser(id: string): Promise<boolean> {
     const result = await db.delete(users).where(eq(users.id, id)).returning();
     return result.length > 0;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
   }
 
   async getPet(id: string): Promise<Pet | undefined> {
