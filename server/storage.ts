@@ -8,9 +8,12 @@ import {
   type FeatureFlag, type InsertFeatureFlag,
   type AuditLog, type InsertAuditLog,
   type PrivacyConsent, type InsertPrivacyConsent,
-  type Translation, type InsertTranslation
+  type Translation, type InsertTranslation,
+  users, pets, regions, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -551,4 +554,248 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+class DatabaseStorage implements IStorage {
+  async getAllClinics(): Promise<Clinic[]> {
+    return await db.select().from(clinics).where(eq(clinics.status, 'active'));
+  }
+
+  async getClinic(id: string): Promise<Clinic | undefined> {
+    const result = await db.select().from(clinics).where(eq(clinics.id, id));
+    return result[0];
+  }
+
+  async getClinicsByRegion(regionId: string): Promise<Clinic[]> {
+    return await db.select().from(clinics).where(
+      and(eq(clinics.regionId, regionId), eq(clinics.status, 'active'))
+    );
+  }
+
+  async get24HourClinicsByRegion(regionId: string): Promise<Clinic[]> {
+    return await db.select().from(clinics).where(
+      and(
+        eq(clinics.regionId, regionId),
+        eq(clinics.is24Hour, true),
+        eq(clinics.status, 'active')
+      )
+    );
+  }
+
+  async createClinic(insertClinic: InsertClinic): Promise<Clinic> {
+    const result = await db.insert(clinics).values(insertClinic).returning();
+    return result[0];
+  }
+
+  async updateClinic(id: string, updateData: Partial<InsertClinic>): Promise<Clinic | undefined> {
+    const result = await db.update(clinics)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(clinics.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteClinic(id: string): Promise<boolean> {
+    const result = await db.update(clinics)
+      .set({ status: 'inactive', updatedAt: new Date() })
+      .where(eq(clinics.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getAllRegions(): Promise<Region[]> {
+    return await db.select().from(regions);
+  }
+
+  async getRegion(id: string): Promise<Region | undefined> {
+    const result = await db.select().from(regions).where(eq(regions.id, id));
+    return result[0];
+  }
+
+  async getRegionByCode(code: string): Promise<Region | undefined> {
+    const result = await db.select().from(regions).where(eq(regions.code, code));
+    return result[0];
+  }
+
+  async createRegion(insertRegion: InsertRegion): Promise<Region> {
+    const result = await db.insert(regions).values(insertRegion).returning();
+    return result[0];
+  }
+
+  async updateRegion(id: string, updateData: Partial<InsertRegion>): Promise<Region | undefined> {
+    const result = await db.update(regions)
+      .set(updateData)
+      .where(eq(regions.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.username, username));
+    return result[0];
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+
+  async updateUser(id: string, updateData: Partial<InsertUser>): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getPet(id: string): Promise<Pet | undefined> {
+    const result = await db.select().from(pets).where(eq(pets.id, id));
+    return result[0];
+  }
+
+  async getPetsByUserId(userId: string): Promise<Pet[]> {
+    return await db.select().from(pets).where(eq(pets.userId, userId));
+  }
+
+  async createPet(insertPet: InsertPet): Promise<Pet> {
+    const result = await db.insert(pets).values(insertPet).returning();
+    return result[0];
+  }
+
+  async updatePet(id: string, updateData: Partial<InsertPet>): Promise<Pet | undefined> {
+    const result = await db.update(pets)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(pets.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deletePet(id: string): Promise<boolean> {
+    const result = await db.delete(pets).where(eq(pets.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getEmergencyRequest(id: string): Promise<EmergencyRequest | undefined> {
+    const result = await db.select().from(emergencyRequests).where(eq(emergencyRequests.id, id));
+    return result[0];
+  }
+
+  async getEmergencyRequestsByUserId(userId: string): Promise<EmergencyRequest[]> {
+    return await db.select().from(emergencyRequests).where(eq(emergencyRequests.userId, userId));
+  }
+
+  async createEmergencyRequest(insertRequest: InsertEmergencyRequest): Promise<EmergencyRequest> {
+    const result = await db.insert(emergencyRequests).values(insertRequest).returning();
+    return result[0];
+  }
+
+  async updateEmergencyRequest(id: string, updateData: Partial<InsertEmergencyRequest>): Promise<EmergencyRequest | undefined> {
+    const result = await db.update(emergencyRequests)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(emergencyRequests.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getMessage(id: string): Promise<Message | undefined> {
+    const result = await db.select().from(messages).where(eq(messages.id, id));
+    return result[0];
+  }
+
+  async getMessagesByEmergencyRequest(emergencyRequestId: string): Promise<Message[]> {
+    return await db.select().from(messages).where(eq(messages.emergencyRequestId, emergencyRequestId));
+  }
+
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const result = await db.insert(messages).values(insertMessage).returning();
+    return result[0];
+  }
+
+  async updateMessage(id: string, updateData: Partial<InsertMessage>): Promise<Message | undefined> {
+    const result = await db.update(messages)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(messages.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getQueuedMessages(): Promise<Message[]> {
+    return await db.select().from(messages).where(eq(messages.status, 'pending'));
+  }
+
+  async getFeatureFlag(key: string): Promise<FeatureFlag | undefined> {
+    const result = await db.select().from(featureFlags).where(eq(featureFlags.key, key));
+    return result[0];
+  }
+
+  async getAllFeatureFlags(): Promise<FeatureFlag[]> {
+    return await db.select().from(featureFlags);
+  }
+
+  async createFeatureFlag(insertFlag: InsertFeatureFlag): Promise<FeatureFlag> {
+    const result = await db.insert(featureFlags).values(insertFlag).returning();
+    return result[0];
+  }
+
+  async updateFeatureFlag(id: string, updateData: Partial<InsertFeatureFlag>): Promise<FeatureFlag | undefined> {
+    const result = await db.update(featureFlags)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(featureFlags.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async createAuditLog(insertLog: InsertAuditLog): Promise<AuditLog> {
+    const result = await db.insert(auditLogs).values(insertLog).returning();
+    return result[0];
+  }
+
+  async getAuditLogsByEntity(entityType: string, entityId: string): Promise<AuditLog[]> {
+    return await db.select().from(auditLogs).where(
+      and(eq(auditLogs.entityType, entityType), eq(auditLogs.entityId, entityId))
+    );
+  }
+
+  async getPrivacyConsents(userId: string): Promise<PrivacyConsent[]> {
+    return await db.select().from(privacyConsents).where(eq(privacyConsents.userId, userId));
+  }
+
+  async createPrivacyConsent(insertConsent: InsertPrivacyConsent): Promise<PrivacyConsent> {
+    const result = await db.insert(privacyConsents).values(insertConsent).returning();
+    return result[0];
+  }
+
+  async getTranslationsByLanguage(language: string): Promise<Translation[]> {
+    return await db.select().from(translations).where(eq(translations.language, language));
+  }
+
+  async getTranslation(key: string, language: string): Promise<Translation | undefined> {
+    const result = await db.select().from(translations).where(
+      and(eq(translations.key, key), eq(translations.language, language))
+    );
+    return result[0];
+  }
+
+  async createTranslation(insertTranslation: InsertTranslation): Promise<Translation> {
+    const result = await db.insert(translations).values(insertTranslation).returning();
+    return result[0];
+  }
+
+  async updateTranslation(id: string, updateData: Partial<InsertTranslation>): Promise<Translation | undefined> {
+    const result = await db.update(translations)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(translations.id, id))
+      .returning();
+    return result[0];
+  }
+}
+
+export const storage = new DatabaseStorage();
