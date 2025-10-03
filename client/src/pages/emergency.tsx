@@ -59,11 +59,20 @@ export default function EmergencyPage() {
   const [gpsDetected, setGpsDetected] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [gpsRetryCount, setGpsRetryCount] = useState(0);
+  const [contactManuallyEdited, setContactManuallyEdited] = useState(false);
+  const [autoFilledUserData, setAutoFilledUserData] = useState<{ username: string; phone: string } | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
   // Mock user ID - in real app, this would come from auth context
   const userId = "temp-user-id";
+
+  // Fetch user profile for auto-fill - always refetch to get latest data
+  const { data: user, isSuccess: userLoaded, isFetching: userFetching } = useQuery<any>({
+    queryKey: ['/api/users', userId],
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
 
   // Fetch user's pets for quick selection
   const { data: pets = [], isLoading: petsLoading } = useQuery<any[]>({
@@ -102,7 +111,32 @@ export default function EmergencyPage() {
         setGpsError("Geolocation is not supported by this browser");
       }
     }
-  }, [step, gpsDetected, gpsRetryCount, form]);
+
+    // Auto-fill contact information from user profile when on step 3
+    // Only auto-fill if user hasn't manually edited the fields
+    if (step === 3 && userLoaded && !userFetching && user && !contactManuallyEdited) {
+      // Auto-fill if this is the first time or if user data has changed
+      const hasDataChanged = !autoFilledUserData || 
+        autoFilledUserData.username !== user.username || 
+        autoFilledUserData.phone !== user.phone;
+      
+      if (hasDataChanged) {
+        form.setValue("contactName", user.username || "");
+        form.setValue("contactPhone", user.phone || "");
+        setAutoFilledUserData({ username: user.username, phone: user.phone });
+      }
+    }
+
+    // Reset flags when navigating away from step 3
+    if (step !== 3) {
+      if (contactManuallyEdited) {
+        setContactManuallyEdited(false);
+      }
+      if (autoFilledUserData) {
+        setAutoFilledUserData(null);
+      }
+    }
+  }, [step, gpsDetected, gpsRetryCount, form, user, userLoaded, userFetching, contactManuallyEdited, autoFilledUserData]);
 
   const createEmergencyMutation = useMutation({
     mutationFn: async (data: EmergencyFormData) => {
@@ -330,6 +364,10 @@ export default function EmergencyPage() {
                           <FormControl>
                             <Input
                               {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setContactManuallyEdited(true);
+                              }}
                               placeholder="Full name"
                               className="text-lg"
                               data-testid="input-contact-name"
@@ -350,6 +388,10 @@ export default function EmergencyPage() {
                           <FormControl>
                             <Input
                               {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setContactManuallyEdited(true);
+                              }}
                               type="tel"
                               placeholder="+852 1234 5678"
                               className="text-lg"
