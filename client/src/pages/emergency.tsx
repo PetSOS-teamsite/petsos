@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -59,6 +60,7 @@ export default function EmergencyPage() {
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [gpsRetryCount, setGpsRetryCount] = useState(0);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   // Mock user ID - in real app, this would come from auth context
   const userId = "temp-user-id";
@@ -112,13 +114,14 @@ export default function EmergencyPage() {
       if (!response.ok) throw new Error('Failed to create emergency request');
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'emergency-requests'] });
       toast({
         title: "Emergency request submitted!",
         description: "Finding nearby clinics...",
       });
-      // Navigate to clinic selection (will implement in next task)
+      // Navigate to clinic results page
+      setLocation(`/emergency-results/${data.id}`);
     },
     onError: (error: Error) => {
       toast({
