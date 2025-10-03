@@ -571,13 +571,10 @@ export default function EmergencyPage() {
           </CardContent>
         </Card>
 
-        {/* Emergency hotline */}
+        {/* Medical disclaimer */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Critical emergency?{" "}
-            <a href="tel:999" className="text-red-600 font-semibold hover:underline">
-              Call 999
-            </a>
+            {t("app.disclaimer", "⚠️ PetSOS provides emergency guidance only and is not medical advice. If in doubt, contact a vet immediately.")}
           </p>
         </div>
       </div>
