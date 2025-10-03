@@ -67,10 +67,15 @@ export default function PetsPage() {
 
   const createPetMutation = useMutation({
     mutationFn: async (data: PetFormData) => {
+      const payload = {
+        ...data,
+        userId,
+        weight: data.weight !== undefined ? String(data.weight) : undefined,
+      };
       const response = await apiRequest(
         'POST',
         '/api/pets',
-        { ...data, userId }
+        payload
       );
       return await response.json();
     },
@@ -94,10 +99,14 @@ export default function PetsPage() {
 
   const updatePetMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: PetFormData }) => {
+      const payload = {
+        ...data,
+        weight: data.weight !== undefined ? String(data.weight) : undefined,
+      };
       const response = await apiRequest(
         'PATCH',
         `/api/pets/${id}`,
-        data
+        payload
       );
       return await response.json();
     },
