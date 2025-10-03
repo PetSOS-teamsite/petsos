@@ -13,6 +13,8 @@ import { AlertCircle, MapPin, Phone, ChevronRight, ChevronLeft } from "lucide-re
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/useTranslation";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 // Step-specific schemas
 const step1Schema = z.object({
@@ -55,6 +57,7 @@ const emergencySchema = z.object({
 type EmergencyFormData = z.infer<typeof emergencySchema>;
 
 export default function EmergencyPage() {
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [gpsDetected, setGpsDetected] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
@@ -218,14 +221,17 @@ export default function EmergencyPage() {
 
         <Card className="border-red-200 dark:border-red-900">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-6 w-6 text-red-600" />
-              <CardTitle className="text-2xl">Emergency Pet Care</CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+                <CardTitle className="text-2xl">{t("emergency.title", "Emergency Pet Care")}</CardTitle>
+              </div>
+              <LanguageSwitcher />
             </div>
             <CardDescription>
-              {step === 1 && "Describe your pet's symptoms"}
-              {step === 2 && "Confirm your location"}
-              {step === 3 && "Your contact information"}
+              {step === 1 && t("emergency.step1.title", "Describe your pet's symptoms")}
+              {step === 2 && t("emergency.step2.title", "Confirm your location")}
+              {step === 3 && t("emergency.step3.title", "Your contact information")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -271,11 +277,11 @@ export default function EmergencyPage() {
                       name="symptom"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-lg font-semibold">What's happening?</FormLabel>
+                          <FormLabel className="text-lg font-semibold">{t("emergency.step1.label", "What's happening?")}</FormLabel>
                           <FormControl>
                             <Textarea
                               {...field}
-                              placeholder="Describe the symptoms, behavior, or emergency situation..."
+                              placeholder={t("emergency.step1.placeholder", "Describe the symptoms, behavior, or emergency situation...")}
                               className="min-h-[120px] text-lg resize-none"
                               data-testid="input-symptom"
                               autoFocus
@@ -317,7 +323,7 @@ export default function EmergencyPage() {
                               className="mt-2"
                               data-testid="button-retry-gps"
                             >
-                              Retry GPS
+                              {t("emergency.step2.use_gps", "Retry GPS")}
                             </Button>
                           </div>
                         ) : (
@@ -336,11 +342,11 @@ export default function EmergencyPage() {
                       name="manualLocation"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-lg">Or enter location manually</FormLabel>
+                          <FormLabel className="text-lg">{t("emergency.step2.label", "Or enter location manually")}</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="e.g., Central, Hong Kong Island"
+                              placeholder={t("emergency.step2.placeholder", "e.g., Central, Hong Kong Island")}
                               className="text-lg"
                               data-testid="input-manual-location"
                             />
@@ -360,7 +366,7 @@ export default function EmergencyPage() {
                       name="contactName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-lg font-semibold">Your Name</FormLabel>
+                          <FormLabel className="text-lg font-semibold">{t("emergency.step3.name", "Your Name")}</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
@@ -384,7 +390,7 @@ export default function EmergencyPage() {
                       name="contactPhone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-lg font-semibold">Phone Number</FormLabel>
+                          <FormLabel className="text-lg font-semibold">{t("emergency.step3.phone", "Phone Number")}</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
@@ -424,7 +430,7 @@ export default function EmergencyPage() {
                       data-testid="button-back"
                     >
                       <ChevronLeft className="mr-2 h-5 w-5" />
-                      Back
+                      {t("button.previous", "Back")}
                     </Button>
                   )}
                   <Button
@@ -435,10 +441,10 @@ export default function EmergencyPage() {
                     data-testid="button-next"
                   >
                     {step === 3 ? (
-                      createEmergencyMutation.isPending ? "Submitting..." : "Find Clinics"
+                      createEmergencyMutation.isPending ? "Submitting..." : t("button.submit", "Find Clinics")
                     ) : (
                       <>
-                        Next
+                        {t("button.next", "Next")}
                         <ChevronRight className="ml-2 h-5 w-5" />
                       </>
                     )}

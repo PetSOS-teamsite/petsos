@@ -10,6 +10,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "@/hooks/useTranslation";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 type Clinic = {
   id: string;
@@ -36,6 +38,7 @@ type Region = {
 };
 
 export default function ClinicsPage() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [show24HourOnly, setShow24HourOnly] = useState(false);
@@ -76,15 +79,18 @@ export default function ClinicsPage() {
       {/* Header */}
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="icon" data-testid="button-back">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Veterinary Clinics
-            </h1>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Link href="/">
+                <Button variant="ghost" size="icon" data-testid="button-back">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {t("clinics.title", "Veterinary Clinics")}
+              </h1>
+            </div>
+            <LanguageSwitcher />
           </div>
         </div>
       </header>
@@ -97,7 +103,7 @@ export default function ClinicsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               type="text"
-              placeholder="Search clinics by name or address..."
+              placeholder={t("clinics.search", "Search clinics by name or address...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-12 text-base"
@@ -112,7 +118,7 @@ export default function ClinicsPage() {
             <Tabs value={selectedRegion} onValueChange={setSelectedRegion}>
               <TabsList className="grid w-full grid-cols-4" data-testid="tabs-region">
                 <TabsTrigger value="all" data-testid="tab-all">
-                  All Regions
+                  {t("clinics.all_regions", "All Regions")}
                 </TabsTrigger>
                 {regions?.map((region) => (
                   <TabsTrigger
@@ -120,7 +126,7 @@ export default function ClinicsPage() {
                     value={region.id}
                     data-testid={`tab-region-${region.code}`}
                   >
-                    {region.code}
+                    {t(`clinics.${region.code.toLowerCase()}`, region.code)}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -140,7 +146,7 @@ export default function ClinicsPage() {
               className="flex items-center gap-2 cursor-pointer text-base font-medium"
             >
               <Clock className="h-5 w-5 text-green-600" />
-              Show 24-Hour Emergency Clinics Only
+              {t("clinics.24h_only", "Show 24-Hour Emergency Clinics Only")}
             </Label>
           </div>
         </div>
@@ -209,7 +215,7 @@ export default function ClinicsPage() {
                     {clinic.is24Hour && (
                       <Badge className="bg-green-600 hover:bg-green-700" data-testid={`badge-24hour-${clinic.id}`}>
                         <Clock className="h-3 w-3 mr-1" />
-                        24 Hours
+                        {t("results.24_hours", "24 Hours")}
                       </Badge>
                     )}
                   </div>
@@ -222,7 +228,7 @@ export default function ClinicsPage() {
                       data-testid={`button-call-${clinic.id}`}
                     >
                       <Phone className="h-4 w-4 mr-2" />
-                      Call
+                      {t("results.call", "Call")}
                     </Button>
                     {clinic.whatsapp && (
                       <Button
@@ -232,7 +238,7 @@ export default function ClinicsPage() {
                         data-testid={`button-whatsapp-${clinic.id}`}
                       >
                         <MessageCircle className="h-4 w-4 mr-2" />
-                        WhatsApp
+                        {t("results.whatsapp", "WhatsApp")}
                       </Button>
                     )}
                   </div>
@@ -242,8 +248,11 @@ export default function ClinicsPage() {
           ) : (
             <Card>
               <CardContent className="py-12 text-center">
-                <p className="text-gray-600 dark:text-gray-400" data-testid="text-no-results">
-                  No clinics found matching your criteria
+                <p className="text-gray-600 dark:text-gray-400 mb-2" data-testid="text-no-results">
+                  {t("clinics.no_results", "No clinics found matching your criteria")}
+                </p>
+                <p className="text-gray-500 dark:text-gray-500 text-sm">
+                  {t("clinics.adjust_search", "Try adjusting your search or filters")}
                 </p>
               </CardContent>
             </Card>
