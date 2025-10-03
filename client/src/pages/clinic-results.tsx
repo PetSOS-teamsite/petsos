@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, MessageCircle, MapPin, Clock, Navigation, Send, Loader2 } from "lucide-react";
+import { Phone, MessageCircle, MapPin, Clock, Navigation, Send, Loader2, BarChart3 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -227,15 +227,27 @@ export default function ClinicResultsPage() {
             </SelectContent>
           </Select>
 
-          <Button
-            onClick={() => setShowBroadcastDialog(true)}
-            className="bg-orange-600 hover:bg-orange-700 w-full md:w-auto"
-            disabled={filteredClinics.filter(c => c.whatsapp || c.email).length === 0}
-            data-testid="button-broadcast"
-          >
-            <Send className="h-4 w-4 mr-2" />
-            Broadcast to All Clinics
-          </Button>
+          <div className="flex gap-3 w-full md:w-auto">
+            <Link href={`/emergency-results/${params?.requestId}/messages`}>
+              <Button
+                variant="outline"
+                className="flex-1 md:flex-none"
+                data-testid="button-view-status"
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                View Broadcast Status
+              </Button>
+            </Link>
+            <Button
+              onClick={() => setShowBroadcastDialog(true)}
+              className="bg-orange-600 hover:bg-orange-700 flex-1 md:flex-none"
+              disabled={filteredClinics.filter(c => c.whatsapp || c.email).length === 0}
+              data-testid="button-broadcast"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Broadcast to All Clinics
+            </Button>
+          </div>
         </div>
 
         {/* Clinics List */}

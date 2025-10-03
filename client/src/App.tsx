@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import HomePage from "@/pages/home";
 import EmergencyPage from "@/pages/emergency";
 import ClinicResultsPage from "@/pages/clinic-results";
+import MessageStatusPage from "@/pages/message-status";
 import ProfilePage from "@/pages/profile";
 import PetsPage from "@/pages/pets";
 import ClinicsPage from "@/pages/clinics";
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/" component={HomePage} />
       <Route path="/emergency" component={EmergencyPage} />
       <Route path="/emergency-results/:requestId" component={ClinicResultsPage} />
+      <Route path="/emergency-results/:requestId/messages" component={MessageStatusPage} />
       <Route path="/profile" component={ProfilePage} />
       <Route path="/pets" component={PetsPage} />
       <Route path="/clinics" component={ClinicsPage} />
