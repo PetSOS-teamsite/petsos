@@ -4,7 +4,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
 import HomePage from "@/pages/home";
+import LandingPage from "@/pages/landing";
 import EmergencyPage from "@/pages/emergency";
 import ClinicResultsPage from "@/pages/clinic-results";
 import MessageStatusPage from "@/pages/message-status";
@@ -15,6 +17,20 @@ import AdminClinicsPage from "@/pages/admin-clinics";
 import NotFound from "@/pages/not-found";
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Show landing page while loading or if not authenticated
+  if (isLoading || !isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/" component={LandingPage} />
+        <Route path="/clinics" component={ClinicsPage} />
+        <Route component={LandingPage} />
+      </Switch>
+    );
+  }
+
+  // Show protected routes when authenticated
   return (
     <Switch>
       <Route path="/" component={HomePage} />
@@ -25,7 +41,6 @@ function Router() {
       <Route path="/pets" component={PetsPage} />
       <Route path="/clinics" component={ClinicsPage} />
       <Route path="/admin/clinics" component={AdminClinicsPage} />
-      {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
   );
