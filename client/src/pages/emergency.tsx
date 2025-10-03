@@ -9,16 +9,36 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertCircle, MapPin, Phone, ChevronRight, ChevronLeft } from "lucide-react";
+import { AlertCircle, MapPin, Phone, ChevronRight, ChevronLeft, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
+// Symptom options for selection
+const SYMPTOM_OPTIONS = [
+  { key: "breathing", en: "Difficulty breathing / Respiratory distress", zh: "呼吸困難 / 呼吸窘迫" },
+  { key: "vomiting", en: "Vomiting / Nausea", zh: "嘔吐 / 作嘔" },
+  { key: "seizure", en: "Seizure / Convulsions", zh: "癲癇發作 / 抽搐" },
+  { key: "unable_stand", en: "Unable to stand or walk", zh: "無法站立或行走" },
+  { key: "bleeding", en: "Bleeding / Hemorrhage", zh: "出血 / 流血不止" },
+  { key: "trauma", en: "Trauma / Hit by vehicle", zh: "外傷 / 車禍撞擊" },
+  { key: "poisoning", en: "Suspected poisoning / Toxin ingestion", zh: "疑似中毒 / 誤食毒物" },
+  { key: "not_eating", en: "Refusing food/water", zh: "拒絕進食或飲水" },
+  { key: "choking", en: "Choking / Airway obstruction", zh: "哽塞 / 氣道阻塞" },
+  { key: "pain", en: "Severe pain / Distress", zh: "劇烈疼痛 / 痛苦不安" },
+  { key: "unconscious", en: "Unconscious / Unresponsive", zh: "昏迷 / 失去意識" },
+  { key: "swollen", en: "Abdominal swelling / Bloating", zh: "腹部腫脹 / 腹脹" },
+  { key: "diarrhea", en: "Severe diarrhea", zh: "嚴重腹瀉" },
+  { key: "eye_injury", en: "Eye injury / Vision problem", zh: "眼部受傷 / 視力問題" },
+  { key: "broken_bone", en: "Fracture / Severe limping", zh: "骨折 / 嚴重跛行" },
+  { key: "other", en: "Other symptoms", zh: "其他症狀" },
+];
+
 // Step-specific schemas
 const step1Schema = z.object({
-  symptom: z.string().min(10, "Please describe the symptom in detail (at least 10 characters)"),
+  symptom: z.string().min(1, "Please select at least one symptom"),
   petId: z.string().optional(),
   userId: z.string(),
 });
@@ -44,7 +64,7 @@ const step3Schema = z.object({
 
 // Complete schema for final submission
 const emergencySchema = z.object({
-  symptom: z.string().min(10, "Please describe the symptom in detail (at least 10 characters)"),
+  symptom: z.string().min(1, "Please select at least one symptom"),
   locationLatitude: z.number().optional(),
   locationLongitude: z.number().optional(),
   manualLocation: z.string().optional(),
@@ -57,8 +77,10 @@ const emergencySchema = z.object({
 type EmergencyFormData = z.infer<typeof emergencySchema>;
 
 export default function EmergencyPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [step, setStep] = useState(1);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
+  const [otherSymptomText, setOtherSymptomText] = useState("");
   const [gpsDetected, setGpsDetected] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [gpsRetryCount, setGpsRetryCount] = useState(0);
@@ -94,7 +116,7 @@ export default function EmergencyPage() {
     },
   });
 
-  // Auto-detect GPS location
+  // Auto-detect GPS location - include gpsRetryCount to trigger retry
   useEffect(() => {
     if (step === 2 && !gpsDetected) {
       if ("geolocation" in navigator) {
@@ -114,8 +136,10 @@ export default function EmergencyPage() {
         setGpsError("Geolocation is not supported by this browser");
       }
     }
+  }, [step, gpsDetected, gpsRetryCount, form]); // Added gpsRetryCount to dependencies
 
-    // Auto-fill contact information from user profile when on step 3
+  // Auto-fill contact information from user profile when on step 3
+  useEffect(() => {
     // Only auto-fill if user hasn't manually edited the fields
     if (step === 3 && userLoaded && !userFetching && user && !contactManuallyEdited) {
       // Auto-fill if this is the first time or if user data has changed
@@ -139,7 +163,7 @@ export default function EmergencyPage() {
         setAutoFilledUserData(null);
       }
     }
-  }, [step, gpsDetected, gpsRetryCount, form, user, userLoaded, userFetching, contactManuallyEdited, autoFilledUserData]);
+  }, [step, form, user, userLoaded, userFetching, contactManuallyEdited, autoFilledUserData]);
 
   const createEmergencyMutation = useMutation({
     mutationFn: async (data: EmergencyFormData) => {
@@ -168,6 +192,31 @@ export default function EmergencyPage() {
       });
     },
   });
+
+  // Handle symptom selection
+  const toggleSymptom = (symptomKey: string) => {
+    setSelectedSymptoms(prev => {
+      const newSymptoms = prev.includes(symptomKey)
+        ? prev.filter(s => s !== symptomKey)
+        : [...prev, symptomKey];
+      
+      // Build symptom string for form
+      let symptomText = newSymptoms
+        .filter(k => k !== 'other')
+        .map(k => {
+          const option = SYMPTOM_OPTIONS.find(opt => opt.key === k);
+          return language === 'zh-HK' ? option?.zh : option?.en;
+        })
+        .join(', ');
+      
+      if (newSymptoms.includes('other') && otherSymptomText) {
+        symptomText = symptomText ? `${symptomText}, ${otherSymptomText}` : otherSymptomText;
+      }
+      
+      form.setValue('symptom', symptomText || '');
+      return newSymptoms;
+    });
+  };
 
   const onSubmit = async (data: EmergencyFormData) => {
     // Validate current step before proceeding
@@ -277,16 +326,72 @@ export default function EmergencyPage() {
                       name="symptom"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-lg font-semibold">{t("emergency.step1.label", "What's happening?")}</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              {...field}
-                              placeholder={t("emergency.step1.placeholder", "Describe the symptoms, behavior, or emergency situation...")}
-                              className="min-h-[120px] text-lg resize-none"
-                              data-testid="input-symptom"
-                              autoFocus
-                            />
-                          </FormControl>
+                          <FormLabel className="text-lg font-semibold">
+                            {t("symptoms.select", "Select symptoms (tap all that apply)")}
+                          </FormLabel>
+                          <div className="space-y-3">
+                            {/* Symptom selection grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {SYMPTOM_OPTIONS.map((option) => {
+                                const isSelected = selectedSymptoms.includes(option.key);
+                                const label = language === 'zh-HK' ? option.zh : option.en;
+                                
+                                return (
+                                  <button
+                                    key={option.key}
+                                    type="button"
+                                    onClick={() => toggleSymptom(option.key)}
+                                    className={`
+                                      relative px-4 py-3 text-left rounded-lg border-2 transition-all
+                                      ${isSelected 
+                                        ? 'border-red-500 bg-red-50 dark:bg-red-950 text-red-900 dark:text-red-100' 
+                                        : 'border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700'
+                                      }
+                                    `}
+                                    data-testid={`symptom-${option.key}`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div className={`
+                                        w-5 h-5 rounded-full border-2 flex items-center justify-center
+                                        ${isSelected ? 'border-red-500 bg-red-500' : 'border-gray-300 dark:border-gray-600'}
+                                      `}>
+                                        {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
+                                      </div>
+                                      <span className="text-sm font-medium">{label}</span>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Additional text input if "Other" is selected */}
+                            {selectedSymptoms.includes('other') && (
+                              <div className="mt-3">
+                                <Textarea
+                                  value={otherSymptomText}
+                                  onChange={(e) => {
+                                    setOtherSymptomText(e.target.value);
+                                    // Update form value
+                                    const otherSymptoms = selectedSymptoms
+                                      .filter(k => k !== 'other')
+                                      .map(k => {
+                                        const opt = SYMPTOM_OPTIONS.find(o => o.key === k);
+                                        return language === 'zh-HK' ? opt?.zh : opt?.en;
+                                      })
+                                      .join(', ');
+                                    const fullText = otherSymptoms ? `${otherSymptoms}, ${e.target.value}` : e.target.value;
+                                    form.setValue('symptom', fullText);
+                                  }}
+                                  placeholder={t("symptoms.describe", "Describe other symptoms (optional)")}
+                                  className="min-h-[80px] text-base"
+                                  data-testid="input-other-symptom"
+                                />
+                              </div>
+                            )}
+                            
+                            {/* Hidden input for form validation */}
+                            <input type="hidden" {...field} />
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -302,15 +407,21 @@ export default function EmergencyPage() {
                       <div className="flex-1">
                         {gpsDetected ? (
                           <div>
-                            <p className="font-medium text-blue-900 dark:text-blue-100">Location detected</p>
+                            <p className="font-medium text-blue-900 dark:text-blue-100">
+                              {t("emergency.step2.detected", "Location detected")}
+                            </p>
                             <p className="text-sm text-blue-700 dark:text-blue-300" data-testid="text-gps-status">
                               {form.watch("locationLatitude")?.toFixed(4)}, {form.watch("locationLongitude")?.toFixed(4)}
                             </p>
                           </div>
                         ) : gpsError ? (
                           <div>
-                            <p className="font-medium text-red-900 dark:text-red-100">{t("emergency.gps.unavailable", "GPS unavailable")}</p>
-                            <p className="text-sm text-red-700 dark:text-red-300">{t("emergency.gps.manual", "Please enter location manually below")}</p>
+                            <p className="font-medium text-red-900 dark:text-red-100">
+                              {t("emergency.gps.unavailable", "GPS unavailable")}
+                            </p>
+                            <p className="text-sm text-red-700 dark:text-red-300">
+                              {t("emergency.gps.manual", "Please enter location manually below")}
+                            </p>
                             <Button
                               type="button"
                               variant="outline"
@@ -323,14 +434,16 @@ export default function EmergencyPage() {
                               className="mt-2"
                               data-testid="button-retry-gps"
                             >
-                              {t("emergency.step2.use_gps", "Retry GPS")}
+                              {t("emergency.step2.retry", "Retry GPS")}
                             </Button>
                           </div>
                         ) : (
                           <div>
-                            <p className="font-medium text-blue-900 dark:text-blue-100">Detecting location...</p>
+                            <p className="font-medium text-blue-900 dark:text-blue-100">
+                              {t("emergency.step2.detecting", "Detecting your location...")}
+                            </p>
                             <p className="text-sm text-blue-700 dark:text-blue-300">
-                              We'll find the nearest 24-hour clinics
+                              {t("emergency.step2.nearest", "We'll find the nearest 24-hour clinics")}
                             </p>
                           </div>
                         )}
@@ -342,10 +455,13 @@ export default function EmergencyPage() {
                       name="manualLocation"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-lg">{t("emergency.step2.label", "Or enter location manually")}</FormLabel>
+                          <FormLabel className="text-lg">
+                            {t("emergency.step2.manual_label", "Or enter your location manually")}
+                          </FormLabel>
                           <FormControl>
                             <Input
                               {...field}
+                              value={field.value || ""}
                               placeholder={t("emergency.step2.placeholder", "e.g., Central, Hong Kong Island")}
                               className="text-lg"
                               data-testid="input-manual-location"
