@@ -2,12 +2,6 @@
 export const PET_SPECIES = {
   dog: { en: "Dog", zh: "狗" },
   cat: { en: "Cat", zh: "貓" },
-  rabbit: { en: "Rabbit", zh: "兔" },
-  hamster: { en: "Hamster", zh: "倉鼠" },
-  bird: { en: "Bird", zh: "雀鳥" },
-  fish: { en: "Fish", zh: "魚" },
-  turtle: { en: "Turtle", zh: "龜" },
-  other: { en: "Other", zh: "其他" },
 } as const;
 
 // Top 20 dog breeds in Hong Kong
@@ -58,46 +52,6 @@ export const CAT_BREEDS = [
   { en: "Mixed Breed", zh: "唐貓" },
 ];
 
-// Other pet breeds/types
-export const OTHER_BREEDS: Record<string, { en: string; zh: string }[]> = {
-  rabbit: [
-    { en: "Holland Lop", zh: "荷蘭垂耳兔" },
-    { en: "Mini Lop", zh: "迷你垂耳兔" },
-    { en: "Netherland Dwarf", zh: "荷蘭侏儒兔" },
-    { en: "Lionhead", zh: "獅子兔" },
-    { en: "Mixed Breed", zh: "混種兔" },
-  ],
-  hamster: [
-    { en: "Syrian Hamster", zh: "敘利亞倉鼠" },
-    { en: "Dwarf Hamster", zh: "侏儒倉鼠" },
-    { en: "Roborovski", zh: "老公公倉鼠" },
-    { en: "Campbell's Dwarf", zh: "坎培爾倉鼠" },
-  ],
-  bird: [
-    { en: "Budgie", zh: "虎皮鸚鵡" },
-    { en: "Cockatiel", zh: "玄鳳鸚鵡" },
-    { en: "Lovebird", zh: "情侶鸚鵡" },
-    { en: "Canary", zh: "金絲雀" },
-    { en: "Finch", zh: "文鳥" },
-  ],
-  fish: [
-    { en: "Goldfish", zh: "金魚" },
-    { en: "Betta", zh: "鬥魚" },
-    { en: "Guppy", zh: "孔雀魚" },
-    { en: "Koi", zh: "錦鯉" },
-    { en: "Tropical Fish", zh: "熱帶魚" },
-  ],
-  turtle: [
-    { en: "Red-eared Slider", zh: "巴西龜" },
-    { en: "Box Turtle", zh: "箱龜" },
-    { en: "Map Turtle", zh: "地圖龜" },
-    { en: "Musk Turtle", zh: "麝香龜" },
-  ],
-  other: [
-    { en: "Custom", zh: "自訂" },
-  ],
-};
-
 export function getBreedOptions(species: string): { en: string; zh: string }[] {
   switch (species) {
     case "dog":
@@ -105,6 +59,6 @@ export function getBreedOptions(species: string): { en: string; zh: string }[] {
     case "cat":
       return CAT_BREEDS;
     default:
-      return OTHER_BREEDS[species] || [{ en: "Custom", zh: "自訂" }];
+      return [];
   }
 }
