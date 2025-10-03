@@ -4,10 +4,10 @@ const translations = [
   // Home Page
   { key: "app.title", en: "Pet Emergency HK", zh: "寵物急症香港" },
   { key: "home.emergency.button", en: "Emergency Care Now", zh: "緊急求助" },
-  { key: "home.emergency.subtitle", en: "Get help from 24-hour veterinary clinics immediately", zh: "立即聯絡24小時獸醫診所" },
+  { key: "home.emergency.subtitle", en: "Get help from 24-hour veterinary clinics immediately", zh: "即刻聯絡24小時獸醫診所" },
   { key: "home.find_clinics", en: "Find Clinics", zh: "搵診所" },
-  { key: "home.find_clinics.desc", en: "Browse all veterinary clinics", zh: "瀏覽所有獸醫診所" },
-  { key: "home.my_pets", en: "My Pets", zh: "我的寵物" },
+  { key: "home.find_clinics.desc", en: "Browse all veterinary clinics", zh: "睇晒所有獸醫診所" },
+  { key: "home.my_pets", en: "My Pets", zh: "我嘅寵物" },
   { key: "home.my_pets.desc", en: "Manage your pet profiles", zh: "管理寵物資料" },
   { key: "home.how_it_works", en: "How It Works", zh: "點樣用" },
   { key: "home.step1.title", en: "Describe Emergency", zh: "講下發生咩事" },
@@ -16,7 +16,7 @@ const translations = [
   { key: "home.step2.desc", en: "We'll show 24-hour clinics near you", zh: "即刻顯示附近24小時診所" },
   { key: "home.step3.title", en: "Contact Instantly", zh: "即時聯絡" },
   { key: "home.step3.desc", en: "Call or message clinics instantly", zh: "即刻打電話或發訊息" },
-  { key: "home.footer", en: "For life-threatening emergencies, call 999 immediately", zh: "如有生命危險，請即致電999" },
+  { key: "home.footer", en: "For life-threatening emergencies, call 999 immediately", zh: "如有生命危險，即刻打999" },
   
   // Emergency Flow
   { key: "emergency.title", en: "Emergency Request", zh: "緊急求助" },
@@ -32,13 +32,13 @@ const translations = [
   { key: "emergency.step3.phone", en: "Phone Number", zh: "電話號碼" },
   { key: "button.next", en: "Next", zh: "下一步" },
   { key: "button.previous", en: "Previous", zh: "上一步" },
-  { key: "button.submit", en: "Submit Request", zh: "提交" },
+  { key: "button.submit", en: "Submit Request", zh: "遞交" },
   { key: "emergency.step_indicator", en: "Step {step} of 3", zh: "第 {step} 步（共3步）" },
   { key: "emergency.time_remaining", en: "~{time}s remaining", zh: "大約 {time} 秒" },
-  { key: "emergency.submit.success", en: "Emergency request submitted!", zh: "已經提交咗！" },
-  { key: "emergency.submit.finding", en: "Finding nearby clinics...", zh: "正在搵附近診所..." },
-  { key: "emergency.gps.unavailable", en: "GPS unavailable", zh: "GPS 無法使用" },
-  { key: "emergency.gps.manual", en: "Please enter location manually below", zh: "請喺下面手動輸入地址" },
+  { key: "emergency.submit.success", en: "Emergency request submitted!", zh: "已經交咗申請！" },
+  { key: "emergency.submit.finding", en: "Finding nearby clinics...", zh: "緊搵附近診所..." },
+  { key: "emergency.gps.unavailable", en: "GPS unavailable", zh: "GPS 用唔到" },
+  { key: "emergency.gps.manual", en: "Please enter location manually below", zh: "喺下面自己打地址" },
   { key: "emergency.loading_pets", en: "Loading your pets...", zh: "載入緊寵物資料..." },
   
   // Clinic Results
@@ -50,7 +50,7 @@ const translations = [
   { key: "results.broadcast", en: "Broadcast to All Clinics", zh: "一鍵通知全部診所" },
   { key: "results.broadcast.confirm", en: "Confirm Broadcast", zh: "確認發送" },
   { key: "results.broadcast.message", en: "This will send your emergency request to all clinics with WhatsApp or email. They will be able to contact you directly.", zh: "會將你嘅緊急求助發送俾所有有WhatsApp或電郵嘅診所，佢哋會直接聯絡你。" },
-  { key: "results.view_status", en: "View Broadcast Status", zh: "查看發送狀態" },
+  { key: "results.view_status", en: "View Broadcast Status", zh: "睇發送狀態" },
   { key: "results.24_hours", en: "24 Hours", zh: "24小時" },
   
   // Clinics Page
