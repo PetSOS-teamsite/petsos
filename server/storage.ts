@@ -100,6 +100,91 @@ export class MemStorage implements IStorage {
     this.auditLogs = new Map();
     this.privacyConsents = new Map();
     this.translations = new Map();
+    
+    // Seed test data for regions
+    const regions: Region[] = [
+      { id: 'hki-region', code: 'HKI', nameEn: 'Hong Kong Island', nameZh: '香港島', country: 'HK', coordinates: { latitude: 22.2783, longitude: 114.1747 }, active: true },
+      { id: 'kln-region', code: 'KLN', nameEn: 'Kowloon', nameZh: '九龍', country: 'HK', coordinates: { latitude: 22.3193, longitude: 114.1694 }, active: true },
+      { id: 'nti-region', code: 'NTI', nameEn: 'New Territories', nameZh: '新界', country: 'HK', coordinates: { latitude: 22.4453, longitude: 114.1683 }, active: true },
+    ];
+    regions.forEach(region => this.regions.set(region.id, region));
+    
+    // Seed test data for clinics
+    const clinics: Clinic[] = [
+      {
+        id: 'clinic-1',
+        name: 'Central Veterinary Hospital',
+        nameZh: '中環獸醫醫院',
+        address: "123 Queen's Road Central, Hong Kong",
+        addressZh: '香港皇后大道中123號',
+        phone: '+852 2123 4567',
+        whatsapp: '+85291234567',
+        email: 'info@centralvet.hk',
+        regionId: 'hki-region',
+        is24Hour: true,
+        latitude: '22.2820',
+        longitude: '114.1585',
+        status: 'active',
+        services: ['emergency', 'surgery', 'dental'],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 'clinic-2',
+        name: 'Happy Pets Clinic TST',
+        nameZh: '尖沙咀快樂寵物診所',
+        address: '456 Nathan Road, Tsim Sha Tsui',
+        addressZh: '尖沙咀彌敦道456號',
+        phone: '+852 2234 5678',
+        whatsapp: '+85292345678',
+        email: 'contact@happypets.hk',
+        regionId: 'kln-region',
+        is24Hour: true,
+        latitude: '22.2980',
+        longitude: '114.1722',
+        status: 'active',
+        services: ['emergency', 'vaccination'],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 'clinic-3',
+        name: 'New Territories Animal Care',
+        nameZh: '新界動物護理中心',
+        address: '789 Castle Peak Road, Yuen Long',
+        addressZh: '元朗青山公路789號',
+        phone: '+852 2345 6789',
+        whatsapp: '+85293456789',
+        email: 'care@ntanimal.hk',
+        regionId: 'nti-region',
+        is24Hour: false,
+        latitude: '22.4450',
+        longitude: '114.0239',
+        status: 'active',
+        services: ['general', 'grooming'],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 'clinic-4',
+        name: 'Island Pet Emergency',
+        nameZh: '港島寵物急症',
+        address: '321 Hennessy Road, Causeway Bay',
+        addressZh: '銅鑼灣軒尼詩道321號',
+        phone: '+852 2456 7890',
+        whatsapp: '+85294567890',
+        email: 'emergency@islandpet.hk',
+        regionId: 'hki-region',
+        is24Hour: true,
+        latitude: '22.2793',
+        longitude: '114.1826',
+        status: 'active',
+        services: ['emergency', '24hour'],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+    clinics.forEach(clinic => this.clinics.set(clinic.id, clinic));
   }
 
   // Users
