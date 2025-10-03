@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Phone, MessageCircle, MapPin, Clock, Navigation, Send, Loader2, BarChart3 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/useTranslation";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   AlertDialog,
@@ -45,6 +46,7 @@ interface Region {
 }
 
 export default function ClinicResultsPage() {
+  const { t } = useTranslation();
   const [, params] = useRoute("/emergency-results/:requestId");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -328,10 +330,10 @@ export default function ClinicResultsPage() {
           )}
         </div>
 
-        {/* Emergency Note */}
-        <div className="mt-8 p-4 bg-red-50 dark:bg-red-950 rounded-lg text-center">
-          <p className="text-red-800 dark:text-red-200 font-medium">
-            For life-threatening emergencies, call 999 immediately
+        {/* Medical Disclaimer */}
+        <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-950 rounded-lg text-center">
+          <p className="text-amber-800 dark:text-amber-200 text-sm">
+            {t("app.disclaimer", "⚠️ PetSOS provides emergency guidance only and is not medical advice. If in doubt, contact a vet immediately.")}
           </p>
         </div>
       </div>

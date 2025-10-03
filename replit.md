@@ -236,14 +236,14 @@ Preferred communication style: Simple, everyday language.
 - Statistics display (total clinics count)
 
 ### Bilingual Support & Localization (October 3, 2025)
-- **Natural Hong Kong Cantonese Translations**: All 208 Chinese translations refined for authentic Hong Kong style
-- **Translation Quality Improvements**:
-  - Replaced formal Mandarin expressions with colloquial Cantonese ("您" → "你", "尋找" → "搵")
-  - Added Cantonese particles for natural flow ("咗", "緊", "嘅", "俾")
-  - Used local terminology ("港島" vs "Hong Kong Island", "全港" vs "All Regions")
-  - Consistent informal-professional tone throughout the app
-- **Cantonese Verb Choices**: "搵" (find), "講" (say), "睇" (see), "打" (call), "加" (add), "改" (edit)
-- **Natural Phrases**: "點樣用" (how to use), "有咩事" (what's wrong), "而家喺邊" (where are you now)
-- **Removed Mainland Formality**: Eliminated "請", "立即", "正在", "無法" in favor of "即刻", "緊", "唔到"
+- **Official Hong Kong Chinese Translations**: All Chinese translations use official tone with HK characteristics
+- **Translation Style Guidelines**:
+  - Official but accessible language using traditional Chinese characters
+  - Formal pronouns: "您" for user-facing contexts (respectful tone)
+  - Standard possessive: "的" instead of colloquial "嘅"
+  - Professional verbs: "尋找" (find), "描述" (describe), "查看" (view), "新增" (add), "編輯" (edit), "致電" (call)
+  - Hong Kong terminology preserved: "港島", "九龍", "新界", "全港"
+  - Clear system messages: "已成功提交", "正在搜尋", "請嘗試調整"
+- **Medical Disclaimer**: Replaced "Call 999" with comprehensive disclaimer: "⚠️ PetSOS 只提供緊急處理建議，並不等同專業獸醫診斷或醫療建議。如有疑問，請盡快聯絡獸醫。"
 - **Language Infrastructure**: LanguageContext, useTranslation hook, database-backed translations, LanguageSwitcher component
 - **Coverage**: Home, Emergency, Clinics, Profile, Pets, Broadcast Status all fully bilingual
