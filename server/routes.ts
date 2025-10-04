@@ -357,13 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create emergency request
   app.post("/api/emergency-requests", async (req, res) => {
     try {
-      console.log("=== BACKEND DEBUG ===");
-      console.log("Request body:", JSON.stringify(req.body, null, 2));
       const requestData = insertEmergencyRequestSchema.parse(req.body);
-      console.log("Parsed request data:", JSON.stringify(requestData, null, 2));
-      console.log("petSpecies:", requestData.petSpecies);
-      console.log("petBreed:", requestData.petBreed);
-      console.log("petAge:", requestData.petAge);
       
       // Convert undefined to null for database compatibility
       const cleanedData = {
@@ -378,11 +372,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         manualLocation: requestData.manualLocation ?? null,
         regionId: requestData.regionId ?? null,
       };
-      console.log("Cleaned data (undefined -> null):", JSON.stringify(cleanedData, null, 2));
       
       const emergencyRequest = await storage.createEmergencyRequest(cleanedData as any);
-      console.log("Created emergency request:", JSON.stringify(emergencyRequest, null, 2));
-      console.log("===================");
       
       await storage.createAuditLog({
         entityType: 'emergency_request',

@@ -739,14 +739,7 @@ class DatabaseStorage implements IStorage {
   }
 
   async createEmergencyRequest(insertRequest: InsertEmergencyRequest): Promise<EmergencyRequest> {
-    console.log("=== STORAGE LAYER ===");
-    console.log("Insert request:", JSON.stringify(insertRequest, null, 2));
-    console.log("petSpecies:", insertRequest.petSpecies);
-    console.log("petBreed:", insertRequest.petBreed);
-    console.log("petAge:", insertRequest.petAge);
     const result = await db.insert(emergencyRequests).values(insertRequest).returning();
-    console.log("Insert result:", JSON.stringify(result[0], null, 2));
-    console.log("===================");
     return result[0];
   }
 

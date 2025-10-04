@@ -53,6 +53,7 @@ import { Link } from "wouter";
 import type { Pet, Clinic } from "@shared/schema";
 import { PET_SPECIES, getBreedOptions } from "@shared/pet-data";
 import { cn } from "@/lib/utils";
+import { BreedCombobox } from "@/components/BreedCombobox";
 
 // Schema factory to access translation function
 const createPetSchema = (t: (key: string, fallback: string) => string) => z.object({
@@ -81,7 +82,6 @@ export default function PetsPage() {
   const [deletingPetId, setDeletingPetId] = useState<string | null>(null);
   const [selectedSpecies, setSelectedSpecies] = useState<string>("");
   const [clinicSearchOpen, setClinicSearchOpen] = useState(false);
-  const [breedInputMode, setBreedInputMode] = useState<"select" | "custom">("select");
 
   const { data: pets = [], isLoading: petsLoading } = useQuery<Pet[]>({
     queryKey: ['/api/users', userId, 'pets'],
@@ -111,7 +111,6 @@ export default function PetsPage() {
     if (watchSpecies && watchSpecies !== selectedSpecies) {
       setSelectedSpecies(watchSpecies);
       form.setValue("breed", ""); // Reset breed when species changes
-      setBreedInputMode("select");
     }
   }, [watchSpecies, selectedSpecies, form]);
 
@@ -344,58 +343,15 @@ export default function PetsPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t("pets.breed", "Breed (Optional)")}</FormLabel>
-                          {breedInputMode === "custom" || !selectedSpecies ? (
-                            <div className="space-y-2">
-                              <FormControl>
-                                <Input
-                                  {...field}
-                                  placeholder={t("pets.custom_breed", "Custom breed...")}
-                                  data-testid="input-pet-breed"
-                                />
-                              </FormControl>
-                              {selectedSpecies && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setBreedInputMode("select");
-                                    field.onChange("");
-                                  }}
-                                  data-testid="button-breed-select-mode"
-                                >
-                                  {t("pets.select_breed", "Select breed or type custom")}
-                                </Button>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              <Select onValueChange={(value) => {
-                                if (value === "custom") {
-                                  setBreedInputMode("custom");
-                                  field.onChange("");
-                                } else {
-                                  field.onChange(value);
-                                }
-                              }} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-pet-breed">
-                                    <SelectValue placeholder={t("pets.select_breed", "Select breed or type custom")} />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {getBreedOptions(selectedSpecies).map((breed, idx) => (
-                                    <SelectItem key={idx} value={breed.en} data-testid={`breed-${idx}`}>
-                                      {language === "en" ? breed.en : breed.zh}
-                                    </SelectItem>
-                                  ))}
-                                  <SelectItem value="custom" data-testid="breed-custom">
-                                    {t("pets.custom_breed", "Custom breed...")}
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
+                          <FormControl>
+                            <BreedCombobox
+                              species={selectedSpecies}
+                              value={field.value || ""}
+                              onChange={field.onChange}
+                              placeholder={t("pets.select_breed", "Select or type breed...")}
+                              testId="combobox-pet-breed"
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
