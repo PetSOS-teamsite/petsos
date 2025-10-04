@@ -17,33 +17,25 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useAuth } from "@/hooks/useAuth";
 
-// Symptom options organized by severity
-const CRITICAL_SYMPTOMS = [
-  { key: "unconscious", en: "Unconscious / Unresponsive", zh: "昏迷 / 失去意識", icon: "🔴" },
-  { key: "breathing", en: "Not breathing / Severe difficulty breathing", zh: "呼吸停止 / 嚴重呼吸困難", icon: "🔴" },
-  { key: "seizure", en: "Seizure / Convulsions", zh: "癲癇發作 / 抽搐", icon: "🔴" },
-  { key: "choking", en: "Choking / Airway blocked", zh: "哽塞 / 氣道阻塞", icon: "🔴" },
+// Symptom options - simplified without categorization
+const SYMPTOMS = [
+  { key: "unconscious", en: "Unconscious / Unresponsive", zh: "昏迷 / 失去意識" },
+  { key: "breathing", en: "Not breathing / Severe difficulty breathing", zh: "呼吸停止 / 嚴重呼吸困難" },
+  { key: "seizure", en: "Seizure / Convulsions", zh: "癲癇發作 / 抽搐" },
+  { key: "choking", en: "Choking / Airway blocked", zh: "哽塞 / 氣道阻塞" },
+  { key: "bleeding", en: "Severe bleeding / Hemorrhage", zh: "嚴重出血 / 流血不止" },
+  { key: "trauma", en: "Hit by vehicle / Major trauma", zh: "車禍撞擊 / 嚴重外傷" },
+  { key: "poisoning", en: "Poisoning / Toxic ingestion", zh: "中毒 / 誤食毒物" },
+  { key: "unable_stand", en: "Collapse / Cannot stand", zh: "倒下 / 無法站立" },
+  { key: "swollen", en: "Bloated abdomen / Distended", zh: "腹部腫脹 / 腹脹" },
+  { key: "pain", en: "Severe pain / Distress", zh: "劇烈疼痛 / 痛苦不安" },
+  { key: "vomiting", en: "Repeated vomiting", zh: "持續嘔吐" },
+  { key: "diarrhea", en: "Severe diarrhea / Blood in stool", zh: "嚴重腹瀉 / 便血" },
+  { key: "broken_bone", en: "Fracture / Cannot move limb", zh: "骨折 / 肢體無法移動" },
+  { key: "eye_injury", en: "Eye injury / Sudden blindness", zh: "眼部受傷 / 突然失明" },
+  { key: "not_eating", en: "Not eating/drinking for 24+ hours", zh: "24小時以上拒絕進食飲水" },
+  { key: "other", en: "Other concerning symptoms", zh: "其他令人擔憂症狀" },
 ];
-
-const URGENT_SYMPTOMS = [
-  { key: "bleeding", en: "Severe bleeding / Hemorrhage", zh: "嚴重出血 / 流血不止", icon: "🟠" },
-  { key: "trauma", en: "Hit by vehicle / Major trauma", zh: "車禍撞擊 / 嚴重外傷", icon: "🟠" },
-  { key: "poisoning", en: "Poisoning / Toxic ingestion", zh: "中毒 / 誤食毒物", icon: "🟠" },
-  { key: "unable_stand", en: "Collapse / Cannot stand", zh: "倒下 / 無法站立", icon: "🟠" },
-  { key: "swollen", en: "Bloated abdomen / Distended", zh: "腹部腫脹 / 腹脹", icon: "🟠" },
-];
-
-const CONCERNING_SYMPTOMS = [
-  { key: "pain", en: "Severe pain / Distress", zh: "劇烈疼痛 / 痛苦不安", icon: "🟡" },
-  { key: "vomiting", en: "Repeated vomiting", zh: "持續嘔吐", icon: "🟡" },
-  { key: "diarrhea", en: "Severe diarrhea / Blood in stool", zh: "嚴重腹瀉 / 便血", icon: "🟡" },
-  { key: "broken_bone", en: "Fracture / Cannot move limb", zh: "骨折 / 肢體無法移動", icon: "🟡" },
-  { key: "eye_injury", en: "Eye injury / Sudden blindness", zh: "眼部受傷 / 突然失明", icon: "🟡" },
-  { key: "not_eating", en: "Not eating/drinking for 24+ hours", zh: "24小時以上拒絕進食飲水", icon: "🟡" },
-  { key: "other", en: "Other concerning symptoms", zh: "其他令人擔憂症狀", icon: "🟡" },
-];
-
-const ALL_SYMPTOMS = [...CRITICAL_SYMPTOMS, ...URGENT_SYMPTOMS, ...CONCERNING_SYMPTOMS];
 
 // Step-specific schemas
 const step1Schema = z.object({
@@ -219,7 +211,7 @@ export default function EmergencyPage() {
       let symptomText = newSymptoms
         .filter(k => k !== 'other')
         .map(k => {
-          const option = ALL_SYMPTOMS.find(opt => opt.key === k);
+          const option = SYMPTOMS.find(opt => opt.key === k);
           return language === 'zh-HK' ? option?.zh : option?.en;
         })
         .join(', ');
@@ -308,7 +300,7 @@ export default function EmergencyPage() {
                 {/* Step 1: Symptoms FIRST (most urgent), then Pet Selection (optional) */}
                 {step === 1 && (
                   <div className="space-y-6">
-                    {/* SYMPTOMS - Priority #1 */}
+                    {/* SYMPTOMS - Simplified without categorization */}
                     <FormField
                       control={form.control}
                       name="symptom"
@@ -320,122 +312,39 @@ export default function EmergencyPage() {
                           <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                             {t("symptoms.select_all", "Tap all symptoms that apply")}
                           </p>
-                          <div className="space-y-4">
-                            {/* CRITICAL SYMPTOMS - Large, prominent */}
-                            <div>
-                              <h3 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2 uppercase">
-                                🔴 {t("symptoms.critical", "Life-Threatening")}
-                              </h3>
-                              <div className="grid grid-cols-1 gap-2">
-                                {CRITICAL_SYMPTOMS.map((option) => {
-                                  const isSelected = selectedSymptoms.includes(option.key);
-                                  const label = language === 'zh-HK' ? option.zh : option.en;
-                                  
-                                  return (
-                                    <button
-                                      key={option.key}
-                                      type="button"
-                                      onClick={() => toggleSymptom(option.key)}
-                                      className={`
-                                        px-5 py-4 text-left rounded-lg border-3 transition-all font-semibold text-base
-                                        ${isSelected 
-                                          ? 'border-red-600 bg-red-100 dark:bg-red-950 text-red-900 dark:text-red-100 shadow-lg' 
-                                          : 'border-red-300 dark:border-red-800 hover:border-red-500 dark:hover:border-red-600 hover:bg-red-50 dark:hover:bg-red-950/50'
-                                        }
-                                      `}
-                                      data-testid={`symptom-${option.key}`}
-                                    >
-                                      <div className="flex items-center gap-3">
-                                        <div className={`
-                                          w-6 h-6 rounded-full border-2 flex items-center justify-center
-                                          ${isSelected ? 'border-red-600 bg-red-600' : 'border-red-400 dark:border-red-700'}
-                                        `}>
-                                          {isSelected && <CheckCircle className="w-5 h-5 text-white" />}
-                                        </div>
-                                        <span>{label}</span>
+                          <div className="space-y-3">
+                            {/* All symptoms in a unified grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {SYMPTOMS.map((option) => {
+                                const isSelected = selectedSymptoms.includes(option.key);
+                                const label = language === 'zh-HK' ? option.zh : option.en;
+                                
+                                return (
+                                  <button
+                                    key={option.key}
+                                    type="button"
+                                    onClick={() => toggleSymptom(option.key)}
+                                    className={`
+                                      px-4 py-3 text-left rounded-lg border-2 transition-all
+                                      ${isSelected 
+                                        ? 'border-red-500 bg-red-50 dark:bg-red-950 text-red-900 dark:text-red-100' 
+                                        : 'border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700'
+                                      }
+                                    `}
+                                    data-testid={`symptom-${option.key}`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div className={`
+                                        w-5 h-5 rounded-full border-2 flex items-center justify-center
+                                        ${isSelected ? 'border-red-500 bg-red-500' : 'border-gray-300 dark:border-gray-600'}
+                                      `}>
+                                        {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
                                       </div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            {/* URGENT SYMPTOMS */}
-                            <div>
-                              <h3 className="text-sm font-semibold text-orange-700 dark:text-orange-400 mb-2 uppercase">
-                                🟠 {t("symptoms.urgent_level", "Urgent Care Needed")}
-                              </h3>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {URGENT_SYMPTOMS.map((option) => {
-                                  const isSelected = selectedSymptoms.includes(option.key);
-                                  const label = language === 'zh-HK' ? option.zh : option.en;
-                                  
-                                  return (
-                                    <button
-                                      key={option.key}
-                                      type="button"
-                                      onClick={() => toggleSymptom(option.key)}
-                                      className={`
-                                        px-4 py-3 text-left rounded-lg border-2 transition-all
-                                        ${isSelected 
-                                          ? 'border-orange-500 bg-orange-50 dark:bg-orange-950 text-orange-900 dark:text-orange-100' 
-                                          : 'border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-700'
-                                        }
-                                      `}
-                                      data-testid={`symptom-${option.key}`}
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <div className={`
-                                          w-5 h-5 rounded-full border-2 flex items-center justify-center
-                                          ${isSelected ? 'border-orange-500 bg-orange-500' : 'border-gray-300 dark:border-gray-600'}
-                                        `}>
-                                          {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
-                                        </div>
-                                        <span className="text-sm font-medium">{label}</span>
-                                      </div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            {/* CONCERNING SYMPTOMS */}
-                            <div>
-                              <h3 className="text-sm font-semibold text-yellow-700 dark:text-yellow-400 mb-2 uppercase">
-                                🟡 {t("symptoms.concerning", "Concerning Symptoms")}
-                              </h3>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {CONCERNING_SYMPTOMS.map((option) => {
-                                  const isSelected = selectedSymptoms.includes(option.key);
-                                  const label = language === 'zh-HK' ? option.zh : option.en;
-                                  
-                                  return (
-                                    <button
-                                      key={option.key}
-                                      type="button"
-                                      onClick={() => toggleSymptom(option.key)}
-                                      className={`
-                                        px-4 py-3 text-left rounded-lg border-2 transition-all
-                                        ${isSelected 
-                                          ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950 text-yellow-900 dark:text-yellow-100' 
-                                          : 'border-gray-200 dark:border-gray-700 hover:border-yellow-300 dark:hover:border-yellow-700'
-                                        }
-                                      `}
-                                      data-testid={`symptom-${option.key}`}
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <div className={`
-                                          w-5 h-5 rounded-full border-2 flex items-center justify-center
-                                          ${isSelected ? 'border-yellow-500 bg-yellow-500' : 'border-gray-300 dark:border-gray-600'}
-                                        `}>
-                                          {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
-                                        </div>
-                                        <span className="text-sm font-medium">{label}</span>
-                                      </div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
+                                      <span className="text-sm font-medium">{label}</span>
+                                    </div>
+                                  </button>
+                                );
+                              })}
                             </div>
 
                             {/* Additional text input if "Other" is selected */}
@@ -448,7 +357,7 @@ export default function EmergencyPage() {
                                     const otherSymptoms = selectedSymptoms
                                       .filter(k => k !== 'other')
                                       .map(k => {
-                                        const opt = ALL_SYMPTOMS.find(o => o.key === k);
+                                        const opt = SYMPTOMS.find(o => o.key === k);
                                         return language === 'zh-HK' ? opt?.zh : opt?.en;
                                       })
                                       .join(', ');
