@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useAuth } from "@/hooks/useAuth";
+import { BreedCombobox } from "@/components/BreedCombobox";
 
 // Symptom options - simplified without categorization
 const SYMPTOMS = [
@@ -485,11 +486,12 @@ export default function EmergencyPage() {
                             <FormItem>
                               <FormLabel>{t("pets.breed", "Breed")}</FormLabel>
                               <FormControl>
-                                <Input
-                                  {...field}
+                                <BreedCombobox
+                                  species={form.watch("petSpecies") || ""}
                                   value={field.value ?? ""}
-                                  placeholder={t("pets.breed_placeholder", "e.g., Golden Retriever, Persian")}
-                                  data-testid="input-pet-breed"
+                                  onChange={field.onChange}
+                                  placeholder={t("pets.breed_placeholder", "Select or type breed...")}
+                                  testId="combobox-pet-breed"
                                 />
                               </FormControl>
                               <FormMessage />
