@@ -113,7 +113,7 @@ export default function EmergencyPage() {
 
   // Fetch user profile for auto-fill - always refetch to get latest data
   const { data: userProfile, isSuccess: userLoaded, isFetching: userFetching } = useQuery<any>({
-    queryKey: ['/api/users', userId],
+    queryKey: [`/api/users/${userId}`],
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     enabled: !!userId,
@@ -121,7 +121,7 @@ export default function EmergencyPage() {
 
   // Fetch user's pets for quick selection - only for authenticated users
   const { data: pets = [], isLoading: petsLoading } = useQuery<any[]>({
-    queryKey: ['/api/users', userId, 'pets'],
+    queryKey: [`/api/users/${userId}/pets`],
     enabled: step === 1 && !!userId, // Only fetch when on first step and user is authenticated
   });
 
@@ -179,16 +179,11 @@ export default function EmergencyPage() {
 
   const createEmergencyMutation = useMutation({
     mutationFn: async (data: EmergencyFormData) => {
-      const response = await fetch('/api/emergency-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error('Failed to create emergency request');
+      const response = await apiRequest('POST', '/api/emergency-requests', data);
       return await response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'emergency-requests'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${userId}/emergency-requests`] });
       toast({
         title: t("emergency.submit.success", "Emergency request submitted!"),
         description: t("emergency.submit.finding", "Finding nearby clinics..."),
