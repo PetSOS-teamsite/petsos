@@ -41,8 +41,23 @@ const SYMPTOMS = [
 const step1Schema = z.object({
   symptom: z.string().min(1, "Please select at least one symptom"),
   petId: z.string().optional(),
+  petSpecies: z.string().optional(),
+  petBreed: z.string().optional(),
+  petAge: z.number().optional(),
   userId: z.string().optional(), // Optional for anonymous users
-});
+}).refine(
+  (data) => {
+    // If no petId selected, must provide pet details
+    if (!data.petId) {
+      return !!data.petSpecies;
+    }
+    return true;
+  },
+  {
+    message: "Please select a pet or provide pet details",
+    path: ["petSpecies"],
+  }
+);
 
 const step2Schema = z.object({
   locationLatitude: z.number().optional(),
@@ -72,6 +87,9 @@ const emergencySchema = z.object({
   contactName: z.string().min(2, "Contact name is required"),
   contactPhone: z.string().min(8, "Please enter a valid phone number"),
   petId: z.string().optional(),
+  petSpecies: z.string().optional(),
+  petBreed: z.string().optional(),
+  petAge: z.number().optional(),
   userId: z.string().optional(), // Optional for anonymous users
 });
 
@@ -419,6 +437,83 @@ export default function EmergencyPage() {
                           </FormItem>
                         )}
                       />
+                    )}
+
+                    {/* PET DETAILS - For users without pets or anonymous users */}
+                    {(!userId || pets.length === 0 || !form.watch("petId")) && (
+                      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                            {t("emergency.pet_details", "Pet Information")}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {t("emergency.pet_details_desc", "Tell us about your pet so clinics can prepare")}
+                          </p>
+                        </div>
+
+                        <FormField
+                          control={form.control}
+                          name="petSpecies"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t("pets.species", "Species")} <span className="text-red-500">*</span></FormLabel>
+                              <FormControl>
+                                <select
+                                  {...field}
+                                  value={field.value || ""}
+                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                  data-testid="select-pet-species"
+                                >
+                                  <option value="">{t("pets.select_species", "Select species")}</option>
+                                  <option value="dog">{t("pets.dog", "Dog")}</option>
+                                  <option value="cat">{t("pets.cat", "Cat")}</option>
+                                </select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="petBreed"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t("pets.breed", "Breed")}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  value={field.value || ""}
+                                  placeholder={t("pets.breed_placeholder", "e.g., Golden Retriever, Persian")}
+                                  data-testid="input-pet-breed"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="petAge"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t("pets.age", "Age (years)")}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  value={field.value || ""}
+                                  onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                                  placeholder={t("pets.age_placeholder", "e.g., 3")}
+                                  data-testid="input-pet-age"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     )}
                   </div>
                 )}
