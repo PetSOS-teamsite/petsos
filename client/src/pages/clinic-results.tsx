@@ -156,7 +156,11 @@ export default function ClinicResultsPage() {
     })
     .filter(clinic => {
       // Filter by distance if selected
-      if (distanceFilter !== "all" && clinic.distance !== undefined) {
+      if (distanceFilter !== "all") {
+        // When distance filter is active, exclude clinics without distance data
+        if (clinic.distance === undefined) {
+          return false;
+        }
         const maxDistance = parseFloat(distanceFilter);
         if (clinic.distance > maxDistance) {
           return false;
@@ -224,6 +228,18 @@ export default function ClinicResultsPage() {
   const clinicsWithin5km = filteredClinics.filter(c => c.distance !== undefined && c.distance <= 5).length;
   const clinicsWith24Hour = filteredClinics.filter(c => c.is24Hour).length;
   const clinicsWithWhatsApp = filteredClinics.filter(c => c.whatsapp).length;
+  
+  // Check if GPS-based filtering is possible
+  const hasUserGPS = !!(userLocation?.lat && userLocation?.lng);
+  const clinicsWithGPS = allClinics.filter(c => c.latitude && c.longitude).length;
+  const canUseDistanceFilter = hasUserGPS && clinicsWithGPS > 0;
+
+  // Reset distance filter if GPS becomes unavailable
+  useEffect(() => {
+    if (!canUseDistanceFilter && distanceFilter !== "all") {
+      setDistanceFilter("all");
+    }
+  }, [canUseDistanceFilter, distanceFilter]);
 
   // Broadcast mutation
   const broadcastMutation = useMutation({
@@ -416,17 +432,32 @@ export default function ClinicResultsPage() {
                 {/* Distance Filter */}
                 <div>
                   <Label className="text-sm mb-2 block">Distance</Label>
-                  <Select value={distanceFilter} onValueChange={setDistanceFilter}>
-                    <SelectTrigger data-testid="select-distance">
-                      <SelectValue placeholder="Any Distance" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Any Distance</SelectItem>
-                      <SelectItem value="5">Within 5 km</SelectItem>
-                      <SelectItem value="10">Within 10 km</SelectItem>
-                      <SelectItem value="15">Within 15 km</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {canUseDistanceFilter ? (
+                    <Select value={distanceFilter} onValueChange={setDistanceFilter}>
+                      <SelectTrigger data-testid="select-distance">
+                        <SelectValue placeholder="Any Distance" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Any Distance</SelectItem>
+                        <SelectItem value="5">Within 5 km</SelectItem>
+                        <SelectItem value="10">Within 10 km</SelectItem>
+                        <SelectItem value="15">Within 15 km</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div>
+                      <Select disabled value="all">
+                        <SelectTrigger data-testid="select-distance-disabled" className="opacity-50">
+                          <SelectValue placeholder="GPS Not Available" />
+                        </SelectTrigger>
+                      </Select>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {!hasUserGPS 
+                          ? "Enable GPS on Step 2 for distance filtering" 
+                          : "No clinic GPS data available"}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* 24-Hour Toggle */}
