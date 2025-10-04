@@ -1,10 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, Clock, Phone, MapPin } from "lucide-react";
+import { Heart, Clock, Phone, MapPin, AlertCircle } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function LandingPage() {
+  const [, setLocation] = useLocation();
+
   const handleLogin = () => {
     window.location.href = "/api/login";
+  };
+
+  const handleEmergency = () => {
+    setLocation("/emergency");
   };
 
   return (
@@ -21,14 +28,31 @@ export default function LandingPage() {
           <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
             Emergency veterinary care coordination platform for Hong Kong pet owners
           </p>
-          <Button
-            onClick={handleLogin}
-            size="lg"
-            className="bg-red-600 hover:bg-red-700 text-white px-8 py-6 text-lg"
-            data-testid="button-login"
-          >
-            Log In to Get Started
-          </Button>
+          
+          {/* Emergency CTA - Most Prominent */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+            <Button
+              onClick={handleEmergency}
+              size="lg"
+              className="bg-red-600 hover:bg-red-700 text-white px-10 py-7 text-xl font-bold shadow-lg"
+              data-testid="button-emergency-now"
+            >
+              <AlertCircle className="mr-2 h-6 w-6" />
+              Emergency Help Now
+            </Button>
+            <Button
+              onClick={handleLogin}
+              size="lg"
+              variant="outline"
+              className="px-8 py-7 text-lg border-2"
+              data-testid="button-login"
+            >
+              Log In / Sign Up
+            </Button>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Emergency access available without login • Get help in under 60 seconds
+          </p>
         </div>
 
         {/* Features Grid */}

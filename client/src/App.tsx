@@ -19,28 +19,30 @@ import NotFound from "@/pages/not-found";
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  // Show landing page while loading or if not authenticated
-  if (isLoading || !isAuthenticated) {
-    return (
-      <Switch>
-        <Route path="/" component={LandingPage} />
-        <Route path="/clinics" component={ClinicsPage} />
-        <Route component={LandingPage} />
-      </Switch>
-    );
-  }
-
-  // Show protected routes when authenticated
   return (
     <Switch>
-      <Route path="/" component={HomePage} />
+      {/* Public routes - accessible to everyone */}
+      <Route path="/clinics" component={ClinicsPage} />
       <Route path="/emergency" component={EmergencyPage} />
       <Route path="/emergency-results/:requestId" component={ClinicResultsPage} />
       <Route path="/emergency-results/:requestId/messages" component={MessageStatusPage} />
-      <Route path="/profile" component={ProfilePage} />
-      <Route path="/pets" component={PetsPage} />
-      <Route path="/clinics" component={ClinicsPage} />
-      <Route path="/admin/clinics" component={AdminClinicsPage} />
+      
+      {/* Home route - landing for logged out, home for logged in */}
+      <Route path="/">
+        {isLoading ? <LandingPage /> : isAuthenticated ? <HomePage /> : <LandingPage />}
+      </Route>
+      
+      {/* Protected routes - require authentication */}
+      <Route path="/profile">
+        {isAuthenticated ? <ProfilePage /> : <LandingPage />}
+      </Route>
+      <Route path="/pets">
+        {isAuthenticated ? <PetsPage /> : <LandingPage />}
+      </Route>
+      <Route path="/admin/clinics">
+        {isAuthenticated ? <AdminClinicsPage /> : <LandingPage />}
+      </Route>
+      
       <Route component={NotFound} />
     </Switch>
   );
