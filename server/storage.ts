@@ -111,11 +111,15 @@ export class MemStorage implements IStorage {
       username: 'testuser',
       password: 'hashedpassword',
       email: 'user@example.com',
+      firstName: null,
+      lastName: null,
+      profileImageUrl: null,
       phone: '+852 9123 4567',
       languagePreference: 'en',
       regionPreference: null,
       role: 'user',
-      createdAt: new Date()
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     this.users.set(testUser.id, testUser);
     
@@ -222,6 +226,7 @@ export class MemStorage implements IStorage {
       ...insertUser, 
       id, 
       createdAt: new Date(),
+      updatedAt: new Date(),
       languagePreference: insertUser.languagePreference ?? 'en',
       regionPreference: insertUser.regionPreference ?? null,
       role: insertUser.role ?? 'user'
@@ -406,7 +411,11 @@ export class MemStorage implements IStorage {
       ...insertRequest, 
       id, 
       createdAt: new Date(),
+      userId: insertRequest.userId ?? null,
       petId: insertRequest.petId ?? null,
+      petSpecies: insertRequest.petSpecies ?? null,
+      petBreed: insertRequest.petBreed ?? null,
+      petAge: insertRequest.petAge ?? null,
       locationLatitude: insertRequest.locationLatitude ?? null,
       locationLongitude: insertRequest.locationLongitude ?? null,
       manualLocation: insertRequest.manualLocation ?? null,
