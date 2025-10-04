@@ -339,6 +339,13 @@ export default function ClinicResultsPage() {
                   <p className="text-sm text-red-700 dark:text-red-300 mt-2">
                     <strong>Symptoms:</strong> {emergencyRequest.symptom}
                   </p>
+                  {emergencyRequest.petSpecies && (
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1" data-testid="text-pet-details">
+                      <strong>Pet:</strong> {emergencyRequest.petSpecies}
+                      {emergencyRequest.petBreed && `, ${emergencyRequest.petBreed}`}
+                      {emergencyRequest.petAge && ` (${emergencyRequest.petAge} years)`}
+                    </p>
+                  )}
                   {emergencyRequest.locationText && (
                     <p className="text-sm text-red-700 dark:text-red-300 mt-1">
                       <strong>Location:</strong> {emergencyRequest.locationText}
