@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useAuth } from "@/hooks/useAuth";
 
 // Symptom options for selection
 const SYMPTOM_OPTIONS = [
@@ -78,6 +79,7 @@ type EmergencyFormData = z.infer<typeof emergencySchema>;
 
 export default function EmergencyPage() {
   const { t, language } = useTranslation();
+  const { user, isLoading: authLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [otherSymptomText, setOtherSymptomText] = useState("");
@@ -89,21 +91,7 @@ export default function EmergencyPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  // Mock user ID - in real app, this would come from auth context
-  const userId = "temp-user-id";
-
-  // Fetch user profile for auto-fill - always refetch to get latest data
-  const { data: user, isSuccess: userLoaded, isFetching: userFetching } = useQuery<any>({
-    queryKey: ['/api/users', userId],
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-  });
-
-  // Fetch user's pets for quick selection
-  const { data: pets = [], isLoading: petsLoading } = useQuery<any[]>({
-    queryKey: ['/api/users', userId, 'pets'],
-    enabled: step === 1, // Only fetch when on first step
-  });
+  const userId = user?.id;
 
   const form = useForm<EmergencyFormData>({
     // Remove resolver to allow step-by-step validation
@@ -112,8 +100,29 @@ export default function EmergencyPage() {
       manualLocation: "",
       contactName: "",
       contactPhone: "",
-      userId,
+      userId: userId || "",
     },
+  });
+
+  // Update userId in form when authentication completes
+  useEffect(() => {
+    if (userId) {
+      form.setValue("userId", userId);
+    }
+  }, [userId, form]);
+
+  // Fetch user profile for auto-fill - always refetch to get latest data
+  const { data: userProfile, isSuccess: userLoaded, isFetching: userFetching } = useQuery<any>({
+    queryKey: ['/api/users', userId],
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    enabled: !!userId,
+  });
+
+  // Fetch user's pets for quick selection - only for authenticated users
+  const { data: pets = [], isLoading: petsLoading } = useQuery<any[]>({
+    queryKey: ['/api/users', userId, 'pets'],
+    enabled: step === 1 && !!userId, // Only fetch when on first step and user is authenticated
   });
 
   // Auto-detect GPS location - include gpsRetryCount to trigger retry
@@ -141,16 +150,19 @@ export default function EmergencyPage() {
   // Auto-fill contact information from user profile when on step 3
   useEffect(() => {
     // Only auto-fill if user hasn't manually edited the fields
-    if (step === 3 && userLoaded && !userFetching && user && !contactManuallyEdited) {
+    if (step === 3 && userLoaded && !userFetching && userProfile && !contactManuallyEdited) {
       // Auto-fill if this is the first time or if user data has changed
       const hasDataChanged = !autoFilledUserData || 
-        autoFilledUserData.username !== user.username || 
-        autoFilledUserData.phone !== user.phone;
+        autoFilledUserData.username !== userProfile.username || 
+        autoFilledUserData.phone !== userProfile.phone;
       
       if (hasDataChanged) {
-        form.setValue("contactName", user.username || "");
-        form.setValue("contactPhone", user.phone || "");
-        setAutoFilledUserData({ username: user.username, phone: user.phone });
+        const displayName = userProfile.firstName && userProfile.lastName 
+          ? `${userProfile.firstName} ${userProfile.lastName}` 
+          : userProfile.username || "";
+        form.setValue("contactName", displayName);
+        form.setValue("contactPhone", userProfile.phone || "");
+        setAutoFilledUserData({ username: userProfile.username, phone: userProfile.phone });
       }
     }
 
@@ -163,7 +175,7 @@ export default function EmergencyPage() {
         setAutoFilledUserData(null);
       }
     }
-  }, [step, form, user, userLoaded, userFetching, contactManuallyEdited, autoFilledUserData]);
+  }, [step, form, userProfile, userLoaded, userFetching, contactManuallyEdited, autoFilledUserData]);
 
   const createEmergencyMutation = useMutation({
     mutationFn: async (data: EmergencyFormData) => {
@@ -299,21 +311,75 @@ export default function EmergencyPage() {
                         name="petId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-lg">Select Pet (Optional)</FormLabel>
+                            <FormLabel className="text-lg font-semibold">
+                              {t("emergency.select_pet", "Which pet needs help?")} ({t("optional", "Optional")})
+                            </FormLabel>
                             <FormControl>
-                              <select
-                                value={field.value || ""}
-                                onChange={(e) => field.onChange(e.target.value || undefined)}
-                                className="w-full px-4 py-3 text-lg border rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-800 dark:border-gray-700"
-                                data-testid="select-pet"
-                              >
-                                <option value="">Select a pet...</option>
-                                {pets.map((pet: any) => (
-                                  <option key={pet.id} value={pet.id}>
-                                    {pet.name} ({pet.species})
-                                  </option>
-                                ))}
-                              </select>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {/* None selected option */}
+                                <button
+                                  type="button"
+                                  onClick={() => field.onChange(undefined)}
+                                  className={`
+                                    p-4 rounded-lg border-2 transition-all text-left
+                                    ${!field.value 
+                                      ? 'border-red-500 bg-red-50 dark:bg-red-950' 
+                                      : 'border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700'
+                                    }
+                                  `}
+                                  data-testid="pet-card-none"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className={`
+                                      w-5 h-5 rounded-full border-2 flex items-center justify-center
+                                      ${!field.value ? 'border-red-500 bg-red-500' : 'border-gray-300 dark:border-gray-600'}
+                                    `}>
+                                      {!field.value && <CheckCircle className="w-4 h-4 text-white" />}
+                                    </div>
+                                    <span className="font-medium">{t("emergency.no_pet_selected", "Skip / Not listed")}</span>
+                                  </div>
+                                </button>
+                                
+                                {/* Pet cards */}
+                                {pets.map((pet: any) => {
+                                  const isSelected = field.value === pet.id;
+                                  return (
+                                    <button
+                                      key={pet.id}
+                                      type="button"
+                                      onClick={() => field.onChange(pet.id)}
+                                      className={`
+                                        p-4 rounded-lg border-2 transition-all text-left
+                                        ${isSelected 
+                                          ? 'border-red-500 bg-red-50 dark:bg-red-950' 
+                                          : 'border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700'
+                                        }
+                                      `}
+                                      data-testid={`pet-card-${pet.id}`}
+                                    >
+                                      <div className="flex items-start gap-3">
+                                        <div className={`
+                                          w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5
+                                          ${isSelected ? 'border-red-500 bg-red-500' : 'border-gray-300 dark:border-gray-600'}
+                                        `}>
+                                          {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
+                                        </div>
+                                        <div className="flex-1">
+                                          <div className="font-semibold text-base">{pet.name}</div>
+                                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                                            {pet.breed || pet.species}
+                                          </div>
+                                          {pet.age && (
+                                            <div className="text-xs text-gray-500 dark:text-gray-500">
+                                              {pet.age} {t("years_old", "years old")}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
