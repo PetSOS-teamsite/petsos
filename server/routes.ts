@@ -6,11 +6,27 @@ import { messagingService } from "./services/messaging";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
   insertUserSchema, insertPetSchema, insertClinicSchema,
-  insertEmergencyRequestSchema, insertMessageSchema,
+  insertMessageSchema, emergencyRequests,
   insertRegionSchema, insertFeatureFlagSchema,
   insertAuditLogSchema, insertPrivacyConsentSchema,
   insertTranslationSchema
 } from "@shared/schema";
+// Create manual insert schema with explicit camelCase keys matching frontend
+const insertEmergencyRequestSchema = z.object({
+  userId: z.string().optional().nullable(),
+  petId: z.string().optional().nullable(),
+  symptom: z.string(),
+  petSpecies: z.string().optional().nullable(),
+  petBreed: z.string().optional().nullable(),
+  petAge: z.number().optional().nullable(),
+  locationLatitude: z.string().optional().nullable(),
+  locationLongitude: z.string().optional().nullable(),
+  manualLocation: z.string().optional().nullable(),
+  contactName: z.string(),
+  contactPhone: z.string(),
+  status: z.string().optional(),
+  regionId: z.string().optional().nullable(),
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Replit Auth
@@ -353,27 +369,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== EMERGENCY REQUEST ROUTES =====
-  
+
   // Create emergency request
   app.post("/api/emergency-requests", async (req, res) => {
     try {
-      const requestData = insertEmergencyRequestSchema.parse(req.body);
+      console.log("=== RAW BODY ===", JSON.stringify(req.body, null, 2));
       
-      // Convert undefined to null for database compatibility
-      const cleanedData = {
-        ...requestData,
-        userId: requestData.userId ?? null,
-        petId: requestData.petId ?? null,
-        petSpecies: requestData.petSpecies ?? null,
-        petBreed: requestData.petBreed ?? null,
-        petAge: requestData.petAge ?? null,
-        locationLatitude: requestData.locationLatitude ?? null,
-        locationLongitude: requestData.locationLongitude ?? null,
-        manualLocation: requestData.manualLocation ?? null,
-        regionId: requestData.regionId ?? null,
+      // Manual field extraction to ensure pet fields are included
+      // Convert numeric GPS coords to strings for database compatibility
+      const emergencyData = {
+        userId: req.body.userId ?? null,
+        petId: req.body.petId ?? null,
+        symptom: req.body.symptom,
+        petSpecies: req.body.petSpecies ?? null,
+        petBreed: req.body.petBreed ?? null,
+        petAge: typeof req.body.petAge === 'number' ? req.body.petAge : (req.body.petAge ? Number(req.body.petAge) : null),
+        locationLatitude: req.body.locationLatitude ? String(req.body.locationLatitude) : null,
+        locationLongitude: req.body.locationLongitude ? String(req.body.locationLongitude) : null,
+        manualLocation: req.body.manualLocation ?? null,
+        contactName: req.body.contactName,
+        contactPhone: req.body.contactPhone,
+        status: req.body.status ?? 'pending',
+        regionId: req.body.regionId ?? null,
       };
       
-      const emergencyRequest = await storage.createEmergencyRequest(cleanedData as any);
+      console.log("=== EXTRACTED DATA ===", JSON.stringify(emergencyData, null, 2));
+      
+      const emergencyRequest = await storage.createEmergencyRequest(emergencyData as any);
       
       await storage.createAuditLog({
         entityType: 'emergency_request',
