@@ -258,8 +258,20 @@ export default function ClinicResultsPage() {
           : `GPS: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\nMap: ${mapsLink}`;
       }
       
+      // Build pet info string
+      let petInfo = '';
+      if (emergencyRequest?.petSpecies) {
+        petInfo = `\nPet: ${emergencyRequest.petSpecies}`;
+        if (emergencyRequest.petBreed) {
+          petInfo += `, ${emergencyRequest.petBreed}`;
+        }
+        if (emergencyRequest.petAge) {
+          petInfo += ` (${emergencyRequest.petAge} years)`;
+        }
+      }
+      
       const message = emergencyRequest
-        ? `🚨 PET EMERGENCY ALERT 🚨\n\nSymptom: ${emergencyRequest.symptom}\nLocation: ${locationInfo}\nContact: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `Email: ${emergencyRequest.contactEmail}` : ''}\n\nPlease respond urgently if you can help.`
+        ? `🚨 PET EMERGENCY ALERT 🚨\n\nSymptom: ${emergencyRequest.symptom}${petInfo}\nLocation: ${locationInfo}\nContact: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `Email: ${emergencyRequest.contactEmail}` : ''}\n\nPlease respond urgently if you can help.`
         : 'Emergency pet care needed';
       
       const response = await apiRequest(

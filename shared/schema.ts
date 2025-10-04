@@ -126,6 +126,10 @@ export const emergencyRequests = pgTable("emergency_requests", {
   userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }), // Optional - supports anonymous requests
   petId: varchar("pet_id").references(() => pets.id, { onDelete: 'set null' }),
   symptom: text("symptom").notNull(),
+  // Pet details for users without pet profiles
+  petSpecies: text("pet_species"),
+  petBreed: text("pet_breed"),
+  petAge: integer("pet_age"),
   locationLatitude: decimal("location_latitude"),
   locationLongitude: decimal("location_longitude"),
   manualLocation: text("manual_location"),
