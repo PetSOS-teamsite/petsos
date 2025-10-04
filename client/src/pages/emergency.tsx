@@ -113,12 +113,16 @@ export default function EmergencyPage() {
 
   const form = useForm<EmergencyFormData>({
     // Remove resolver to allow step-by-step validation
+    shouldUnregister: false, // Keep field values even when fields are unmounted (multi-step form)
     defaultValues: {
       symptom: "",
       manualLocation: "",
       contactName: "",
       contactPhone: "",
       userId: userId, // Will be undefined for anonymous users
+      petSpecies: undefined,
+      petBreed: undefined,
+      petAge: undefined,
     },
   });
 
@@ -483,7 +487,7 @@ export default function EmergencyPage() {
                               <FormControl>
                                 <Input
                                   {...field}
-                                  value={field.value || ""}
+                                  value={field.value ?? ""}
                                   placeholder={t("pets.breed_placeholder", "e.g., Golden Retriever, Persian")}
                                   data-testid="input-pet-breed"
                                 />
@@ -503,7 +507,7 @@ export default function EmergencyPage() {
                                 <Input
                                   {...field}
                                   type="number"
-                                  value={field.value || ""}
+                                  value={field.value ?? ""}
                                   onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                                   placeholder={t("pets.age_placeholder", "e.g., 3")}
                                   data-testid="input-pet-age"

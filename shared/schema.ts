@@ -145,6 +145,9 @@ export const insertEmergencyRequestSchema = createInsertSchema(emergencyRequests
   createdAt: true,
 }).extend({
   userId: z.string().optional(), // Explicitly make userId optional for anonymous requests
+  petSpecies: z.string().optional(),
+  petBreed: z.string().optional(),
+  petAge: z.number().optional(),
 });
 
 export type InsertEmergencyRequest = z.infer<typeof insertEmergencyRequestSchema>;
