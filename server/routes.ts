@@ -373,8 +373,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create emergency request
   app.post("/api/emergency-requests", async (req, res) => {
     try {
-      console.log("=== RAW BODY ===", JSON.stringify(req.body, null, 2));
-      
       // Manual field extraction to ensure pet fields are included
       // Convert numeric GPS coords to strings for database compatibility
       const emergencyData = {
@@ -392,8 +390,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: req.body.status ?? 'pending',
         regionId: req.body.regionId ?? null,
       };
-      
-      console.log("=== EXTRACTED DATA ===", JSON.stringify(emergencyData, null, 2));
       
       const emergencyRequest = await storage.createEmergencyRequest(emergencyData as any);
       

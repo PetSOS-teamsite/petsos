@@ -202,7 +202,6 @@ export default function EmergencyPage() {
 
   const createEmergencyMutation = useMutation({
     mutationFn: async (data: EmergencyFormData) => {
-      console.log("=== FRONTEND MUTATION DATA ===", JSON.stringify(data, null, 2));
       const response = await apiRequest('POST', '/api/emergency-requests', data);
       return await response.json();
     },
