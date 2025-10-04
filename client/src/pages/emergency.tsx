@@ -49,7 +49,7 @@ const ALL_SYMPTOMS = [...CRITICAL_SYMPTOMS, ...URGENT_SYMPTOMS, ...CONCERNING_SY
 const step1Schema = z.object({
   symptom: z.string().min(1, "Please select at least one symptom"),
   petId: z.string().optional(),
-  userId: z.string(),
+  userId: z.string().optional(), // Optional for anonymous users
 });
 
 const step2Schema = z.object({
@@ -80,7 +80,7 @@ const emergencySchema = z.object({
   contactName: z.string().min(2, "Contact name is required"),
   contactPhone: z.string().min(8, "Please enter a valid phone number"),
   petId: z.string().optional(),
-  userId: z.string(),
+  userId: z.string().optional(), // Optional for anonymous users
 });
 
 type EmergencyFormData = z.infer<typeof emergencySchema>;
@@ -108,7 +108,7 @@ export default function EmergencyPage() {
       manualLocation: "",
       contactName: "",
       contactPhone: "",
-      userId: userId || "",
+      userId: userId, // Will be undefined for anonymous users
     },
   });
 

@@ -123,7 +123,7 @@ export type Clinic = typeof clinics.$inferSelect;
 // Emergency Requests table
 export const emergencyRequests = pgTable("emergency_requests", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }), // Optional - supports anonymous requests
   petId: varchar("pet_id").references(() => pets.id, { onDelete: 'set null' }),
   symptom: text("symptom").notNull(),
   locationLatitude: decimal("location_latitude"),
@@ -139,6 +139,8 @@ export const emergencyRequests = pgTable("emergency_requests", {
 export const insertEmergencyRequestSchema = createInsertSchema(emergencyRequests).omit({
   id: true,
   createdAt: true,
+}).extend({
+  userId: z.string().optional(), // Explicitly make userId optional for anonymous requests
 });
 
 export type InsertEmergencyRequest = z.infer<typeof insertEmergencyRequestSchema>;
