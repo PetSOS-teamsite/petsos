@@ -259,9 +259,11 @@ export default function EmergencyPage() {
         setStep(3);
       } else if (step === 3) {
         await step3Schema.parseAsync(data);
-        // Final validation
-        await emergencySchema.parseAsync(data);
-        createEmergencyMutation.mutate(data);
+        // Get ALL form values (data param only has step 3 fields)
+        const allFormValues = form.getValues();
+        // Final validation with all values
+        await emergencySchema.parseAsync(allFormValues);
+        createEmergencyMutation.mutate(allFormValues);
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
