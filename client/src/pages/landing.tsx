@@ -64,7 +64,7 @@ export default function LandingPage() {
         </div>
 
         {/* Features Grid */}
-        <div className="grid md:grid-3 lg:grid-cols-3 gap-8 mt-16 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-6xl mx-auto">
           <Card className="border-2 bg-white/95 backdrop-blur">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center">

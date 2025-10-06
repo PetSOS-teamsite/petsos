@@ -362,7 +362,7 @@ export default function ClinicResultsPage() {
         )}
 
         {/* Quick Statistics - Compact */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card data-testid="stat-total" className="shadow-sm">
             <CardContent className="pt-4 pb-3">
               <div className="text-center">
