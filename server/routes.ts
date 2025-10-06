@@ -325,7 +325,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update clinic (admin or clinic staff only)
   app.patch("/api/clinics/:id", isAuthenticated, async (req, res) => {
     try {
-      const user = req.user as any;
+      const sessionUser = req.user as any;
+      const userId = sessionUser.claims.sub;
+      const dbUser = await storage.getUser(userId);
+      
+      if (!dbUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
       const clinic = await storage.getClinic(req.params.id);
       
       if (!clinic) {
@@ -333,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if user is admin or clinic staff for this specific clinic
-      if (user.role !== 'admin' && user.clinicId !== req.params.id) {
+      if (dbUser.role !== 'admin' && dbUser.clinicId !== req.params.id) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
