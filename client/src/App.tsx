@@ -17,7 +17,8 @@ import AdminClinicsPage from "@/pages/admin-clinics";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   return (
     <Switch>
@@ -37,8 +38,10 @@ function Router() {
       <Route path="/pets">
         {isAuthenticated ? <PetsPage /> : <LandingPage />}
       </Route>
+      
+      {/* Admin-only routes - require admin role */}
       <Route path="/admin/clinics">
-        {isAuthenticated ? <AdminClinicsPage /> : <LandingPage />}
+        {isAuthenticated && isAdmin ? <AdminClinicsPage /> : <LandingPage />}
       </Route>
       
       <Route component={NotFound} />

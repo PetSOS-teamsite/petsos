@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { messagingService } from "./services/messaging";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { 
   insertUserSchema, insertPetSchema, insertClinicSchema,
   insertMessageSchema, emergencyRequests,
@@ -248,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create region (admin only)
-  app.post("/api/regions", async (req, res) => {
+  app.post("/api/regions", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const regionData = insertRegionSchema.parse(req.body);
       const region = await storage.createRegion(regionData);
@@ -299,8 +299,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(clinic);
   });
 
-  // Create clinic
-  app.post("/api/clinics", async (req, res) => {
+  // Create clinic (admin only)
+  app.post("/api/clinics", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const clinicData = insertClinicSchema.parse(req.body);
       const clinic = await storage.createClinic(clinicData);
@@ -322,8 +322,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update clinic
-  app.patch("/api/clinics/:id", async (req, res) => {
+  // Update clinic (admin only)
+  app.patch("/api/clinics/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const updateData = insertClinicSchema.partial().parse(req.body);
       const clinic = await storage.updateClinic(req.params.id, updateData);
@@ -350,8 +350,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete clinic (soft delete)
-  app.delete("/api/clinics/:id", async (req, res) => {
+  // Delete clinic (soft delete) (admin only)
+  app.delete("/api/clinics/:id", isAuthenticated, isAdmin, async (req, res) => {
     const success = await storage.deleteClinic(req.params.id);
     if (!success) {
       return res.status(404).json({ message: "Clinic not found" });
