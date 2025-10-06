@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Building2, Phone, Mail, MapPin, Globe, Clock, AlertCircle, Pencil, MessageSquare } from "lucide-react";
+import { ArrowLeft, Building2, Phone, Mail, MapPin, Globe, Clock, AlertCircle, Pencil, MessageSquare, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +79,8 @@ export default function ClinicDashboardPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [requestFilter, setRequestFilter] = useState<string>("all");
+  const [requestSortBy, setRequestSortBy] = useState<string>("newest");
 
   const { data: clinic, isLoading: clinicLoading } = useQuery<Clinic>({
     queryKey: [`/api/clinics/${user?.clinicId}`],
@@ -93,6 +95,49 @@ export default function ClinicDashboardPage() {
     queryKey: [`/api/clinics/${user?.clinicId}/emergency-requests`],
     enabled: !!user?.clinicId,
   });
+
+  // Filter and sort emergency requests
+  const filteredAndSortedRequests = (() => {
+    if (!emergencyRequests) return [];
+    
+    let filtered = [...emergencyRequests];
+    
+    // Apply filter
+    if (requestFilter === "pending") {
+      filtered = filtered.filter(r => r.status === "pending");
+    } else if (requestFilter === "critical") {
+      filtered = filtered.filter(r => r.severity === "critical");
+    }
+    
+    // Apply sort
+    if (requestSortBy === "newest") {
+      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (requestSortBy === "oldest") {
+      filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } else if (requestSortBy === "severity") {
+      filtered.sort((a, b) => {
+        const severityOrder = { critical: 0, urgent: 1, moderate: 2 };
+        return (severityOrder[a.severity as keyof typeof severityOrder] || 999) - 
+               (severityOrder[b.severity as keyof typeof severityOrder] || 999);
+      });
+    }
+    
+    return filtered;
+  })();
+
+  // Calculate statistics
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const requestStats = {
+    today: emergencyRequests?.filter(r => new Date(r.createdAt) >= todayStart).length ?? 0,
+    thisWeek: emergencyRequests?.filter(r => new Date(r.createdAt) >= weekStart).length ?? 0,
+    thisMonth: emergencyRequests?.filter(r => new Date(r.createdAt) >= monthStart).length ?? 0,
+    pending: emergencyRequests?.filter(r => r.status === "pending").length ?? 0,
+    critical: emergencyRequests?.filter(r => r.severity === "critical").length ?? 0,
+  };
 
   const availabilityMutation = useMutation({
     mutationFn: async (isAvailable: boolean) => {
@@ -110,6 +155,26 @@ export default function ClinicDashboardPage() {
       toast({
         title: t("error"),
         description: t("error_occurred"),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const markRespondedMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return apiRequest("PATCH", `/api/emergency-requests/${requestId}`, { status: "responded" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/clinics/${user?.clinicId}/emergency-requests`] });
+      toast({
+        title: "Success",
+        description: "Request marked as responded",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update request status",
         variant: "destructive",
       });
     },
@@ -394,20 +459,80 @@ export default function ClinicDashboardPage() {
           </Card>
         </div>
 
+        {/* Emergency Requests Statistics */}
+        <div className="grid gap-4 md:grid-cols-5">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold">{requestStats.today}</div>
+              <p className="text-xs text-muted-foreground">Today</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold">{requestStats.thisWeek}</div>
+              <p className="text-xs text-muted-foreground">This Week</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold">{requestStats.thisMonth}</div>
+              <p className="text-xs text-muted-foreground">This Month</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold text-orange-600">{requestStats.pending}</div>
+              <p className="text-xs text-muted-foreground">Pending</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold text-red-600">{requestStats.critical}</div>
+              <p className="text-xs text-muted-foreground">Critical</p>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Emergency Requests Section */}
         <Card>
           <CardHeader>
-            <CardTitle>{t("clinic.emergency_requests")}</CardTitle>
-            <CardDescription>{t("clinic.recent_broadcasts")}</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>{t("clinic.emergency_requests")}</CardTitle>
+                <CardDescription>{t("clinic.recent_broadcasts")}</CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Select value={requestFilter} onValueChange={setRequestFilter}>
+                  <SelectTrigger className="w-32" data-testid="select-filter">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={requestSortBy} onValueChange={setRequestSortBy}>
+                  <SelectTrigger className="w-32" data-testid="select-sort">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest</SelectItem>
+                    <SelectItem value="oldest">Oldest</SelectItem>
+                    <SelectItem value="severity">Severity</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {requestsLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-24" />)}
               </div>
-            ) : emergencyRequests && emergencyRequests.length > 0 ? (
+            ) : filteredAndSortedRequests && filteredAndSortedRequests.length > 0 ? (
               <div className="space-y-4">
-                {emergencyRequests.map((request) => (
+                {filteredAndSortedRequests.map((request) => (
                   <div key={request.id} className="border rounded-lg p-4 space-y-2" data-testid={`request-${request.id}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -431,15 +556,64 @@ export default function ClinicDashboardPage() {
                     </div>
 
                     {request.user && (
-                      <div className="text-sm">
-                        <p>
-                          {t("clinic.owner")}: {request.user.firstName} {request.user.lastName}
-                        </p>
-                        {request.user.phone && (
-                          <p className="text-muted-foreground">
-                            {t("clinic.contact")}: {request.user.phone}
+                      <div className="space-y-3">
+                        <div className="text-sm">
+                          <p>
+                            {t("clinic.owner")}: {request.user.firstName} {request.user.lastName}
                           </p>
-                        )}
+                          {request.user.phone && (
+                            <p className="text-muted-foreground">
+                              {t("clinic.contact")}: {request.user.phone}
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2 flex-wrap">
+                          {request.user.phone && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                asChild
+                                data-testid={`button-call-${request.id}`}
+                              >
+                                <a href={`tel:${request.user.phone}`}>
+                                  <Phone className="h-4 w-4 mr-2" />
+                                  Call Now
+                                </a>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="bg-green-50 hover:bg-green-100 dark:bg-green-950 dark:hover:bg-green-900 border-green-300 dark:border-green-800"
+                                asChild
+                                data-testid={`button-whatsapp-${request.id}`}
+                              >
+                                <a 
+                                  href={`https://wa.me/${request.user.phone.replace(/[^0-9]/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <MessageSquare className="h-4 w-4 mr-2" />
+                                  WhatsApp
+                                </a>
+                              </Button>
+                            </>
+                          )}
+                          {request.status === "pending" && (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="bg-red-600 hover:bg-red-700"
+                              onClick={() => markRespondedMutation.mutate(request.id)}
+                              disabled={markRespondedMutation.isPending}
+                              data-testid={`button-respond-${request.id}`}
+                            >
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              {markRespondedMutation.isPending ? "Marking..." : "Mark as Responded"}
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

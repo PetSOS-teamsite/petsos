@@ -383,6 +383,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   });
 
+  // Get clinic staff (admin only)
+  app.get("/api/clinics/:id/staff", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const clinic = await storage.getClinic(req.params.id);
+      if (!clinic) {
+        return res.status(404).json({ message: "Clinic not found" });
+      }
+
+      // Get all users with this clinicId
+      const allUsers = await storage.getAllUsers();
+      const staff = allUsers.filter(user => user.clinicId === req.params.id);
+      
+      res.json(staff);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Link user to clinic (admin only)
+  app.post("/api/clinics/:id/staff", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { email } = z.object({
+        email: z.string().email("Valid email is required"),
+      }).parse(req.body);
+
+      const clinic = await storage.getClinic(req.params.id);
+      if (!clinic) {
+        return res.status(404).json({ message: "Clinic not found" });
+      }
+
+      // Find user by email
+      const allUsers = await storage.getAllUsers();
+      const user = allUsers.find(u => u.email === email);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found with this email" });
+      }
+
+      // Link user to clinic
+      await storage.updateUser(user.id, { clinicId: req.params.id });
+
+      await storage.createAuditLog({
+        entityType: 'clinic',
+        entityId: req.params.id,
+        action: 'link_staff',
+        changes: { userId: user.id, email },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({ success: true, user });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Unlink user from clinic (admin only)
+  app.delete("/api/clinics/:id/staff/:userId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const clinic = await storage.getClinic(req.params.id);
+      if (!clinic) {
+        return res.status(404).json({ message: "Clinic not found" });
+      }
+
+      const user = await storage.getUser(req.params.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (user.clinicId !== req.params.id) {
+        return res.status(400).json({ message: "User is not linked to this clinic" });
+      }
+
+      // Unlink user from clinic
+      await storage.updateUser(user.id, { clinicId: null });
+
+      await storage.createAuditLog({
+        entityType: 'clinic',
+        entityId: req.params.id,
+        action: 'unlink_staff',
+        changes: { userId: user.id, email: user.email },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Geocode address to GPS coordinates
   app.post("/api/geocode", async (req, res) => {
     try {

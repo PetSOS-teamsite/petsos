@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, Filter, X, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -43,7 +43,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertClinicSchema, type Clinic, type Region, type EmergencyRequest } from "@shared/schema";
+import { insertClinicSchema, type Clinic, type Region, type EmergencyRequest, type User } from "@shared/schema";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -64,6 +64,16 @@ export default function AdminClinicsPage() {
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
   const [isGeocodingAdd, setIsGeocodingAdd] = useState(false);
   const [isGeocodingEdit, setIsGeocodingEdit] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterRegion, setFilterRegion] = useState<string>("all");
+  const [filter24Hour, setFilter24Hour] = useState<string>("all");
+  const [filterAvailable, setFilterAvailable] = useState<string>("all");
+  const [filterSupport, setFilterSupport] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [isStaffDialogOpen, setIsStaffDialogOpen] = useState(false);
+  const [staffEmail, setStaffEmail] = useState("");
+  const itemsPerPage = 20;
   const { toast } = useToast();
 
   const { data: regions, isLoading: regionsLoading } = useQuery<Region[]>({
@@ -78,11 +88,117 @@ export default function AdminClinicsPage() {
     queryKey: ["/api/emergency-requests"],
   });
 
+  // Fetch staff for selected clinic
+  const { data: clinicStaff, isLoading: staffLoading } = useQuery<User[]>({
+    queryKey: [`/api/clinics/${selectedClinic?.id}/staff`],
+    enabled: !!selectedClinic?.id && isStaffDialogOpen,
+  });
+
   const stats = {
     total: clinics?.length ?? 0,
     available: (clinics?.filter(c => c.isAvailable) ?? []).length,
     twentyFourHour: (clinics?.filter(c => c.is24Hour) ?? []).length,
     emergencyRequests: emergencyRequests?.length ?? 0,
+    supportHospitals: (clinics?.filter(c => c.isSupportHospital) ?? []).length,
+    missingGPS: (clinics?.filter(c => !c.latitude || !c.longitude) ?? []).length,
+  };
+
+  // Filter and search logic
+  const filteredClinics = clinics?.filter(clinic => {
+    // Search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      const nameMatch = clinic.name.toLowerCase().includes(search);
+      const addressMatch = clinic.address.toLowerCase().includes(search);
+      if (!nameMatch && !addressMatch) return false;
+    }
+
+    // Region filter
+    if (filterRegion !== "all" && clinic.regionId !== filterRegion) return false;
+
+    // 24-hour filter
+    if (filter24Hour === "yes" && !clinic.is24Hour) return false;
+    if (filter24Hour === "no" && clinic.is24Hour) return false;
+
+    // Availability filter
+    if (filterAvailable === "yes" && !clinic.isAvailable) return false;
+    if (filterAvailable === "no" && clinic.isAvailable) return false;
+
+    // Support hospital filter
+    if (filterSupport === "yes" && !clinic.isSupportHospital) return false;
+    if (filterSupport === "no" && clinic.isSupportHospital) return false;
+
+    // Active filter (from stats cards)
+    if (activeFilter === "available" && !clinic.isAvailable) return false;
+    if (activeFilter === "24hour" && !clinic.is24Hour) return false;
+    if (activeFilter === "support" && !clinic.isSupportHospital) return false;
+    if (activeFilter === "missingGPS" && (clinic.latitude && clinic.longitude)) return false;
+
+    return true;
+  }) ?? [];
+
+  // Pagination
+  const totalPages = Math.ceil(filteredClinics.length / itemsPerPage);
+  const paginatedClinics = filteredClinics.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Reset to page 1 when filters change
+  const resetPagination = () => setCurrentPage(1);
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterRegion("all");
+    setFilter24Hour("all");
+    setFilterAvailable("all");
+    setFilterSupport("all");
+    setActiveFilter(null);
+    setCurrentPage(1);
+  };
+
+  const openStaffDialog = (clinic: Clinic) => {
+    setSelectedClinic(clinic);
+    setIsStaffDialogOpen(true);
+  };
+
+  const handleLinkStaff = async () => {
+    if (!selectedClinic || !staffEmail) return;
+
+    try {
+      await apiRequest("POST", `/api/clinics/${selectedClinic.id}/staff`, { email: staffEmail });
+      await queryClient.invalidateQueries({ queryKey: [`/api/clinics/${selectedClinic.id}/staff`] });
+      setStaffEmail("");
+      toast({
+        title: "Success",
+        description: "Staff member linked to clinic successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to link staff member",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUnlinkStaff = async (userId: string) => {
+    if (!selectedClinic) return;
+
+    try {
+      await apiRequest("DELETE", `/api/clinics/${selectedClinic.id}/staff/${userId}`);
+      await queryClient.invalidateQueries({ queryKey: [`/api/clinics/${selectedClinic.id}/staff`] });
+      toast({
+        title: "Success",
+        description: "Staff member unlinked from clinic successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to unlink staff member",
+        variant: "destructive",
+      });
+    }
   };
 
   const addForm = useForm<ClinicFormData>({
@@ -374,15 +490,22 @@ export default function AdminClinicsPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow" 
+              onClick={() => {
+                setActiveFilter(activeFilter === "available" ? null : "available");
+                resetPagination();
+              }}
+              data-testid="card-available-filter"
+            >
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
                     <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Available Now
+                      Available Now {activeFilter === "available" && "✓"}
                     </p>
                     <p className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="text-available-clinics">
                       {clinicsLoading ? "..." : stats.available}
@@ -392,15 +515,22 @@ export default function AdminClinicsPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow" 
+              onClick={() => {
+                setActiveFilter(activeFilter === "24hour" ? null : "24hour");
+                resetPagination();
+              }}
+              data-testid="card-24hour-filter"
+            >
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
                     <Clock className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      24-Hour Clinics
+                      24-Hour Clinics {activeFilter === "24hour" && "✓"}
                     </p>
                     <p className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="text-24hour-clinics">
                       {clinicsLoading ? "..." : stats.twentyFourHour}
@@ -428,13 +558,218 @@ export default function AdminClinicsPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Additional Stats Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow" 
+              onClick={() => {
+                setActiveFilter(activeFilter === "support" ? null : "support");
+                resetPagination();
+              }}
+              data-testid="card-support-filter"
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+                    <Building2 className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Support Hospitals {activeFilter === "support" && "✓"}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {clinicsLoading ? "..." : stats.supportHospitals}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow" 
+              onClick={() => {
+                setActiveFilter(activeFilter === "missingGPS" ? null : "missingGPS");
+                resetPagination();
+              }}
+              data-testid="card-missing-gps-filter"
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                    <MapPin className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Missing GPS {activeFilter === "missingGPS" && "✓"}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {clinicsLoading ? "..." : stats.missingGPS}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                    <Filter className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Showing Results
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {filteredClinics.length} / {stats.total}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="max-w-6xl mx-auto mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {/* Search */}
+                <div className="lg:col-span-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search by name or address..."
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        resetPagination();
+                      }}
+                      className="pl-9"
+                      data-testid="input-search-clinics"
+                    />
+                  </div>
+                </div>
+
+                {/* Region Filter */}
+                <div>
+                  <Select value={filterRegion} onValueChange={(value) => {
+                    setFilterRegion(value);
+                    resetPagination();
+                  }}>
+                    <SelectTrigger data-testid="select-filter-region">
+                      <SelectValue placeholder="All Regions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Regions</SelectItem>
+                      {regions?.map((region) => (
+                        <SelectItem key={region.id} value={region.id}>
+                          {region.nameEn}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 24-Hour Filter */}
+                <div>
+                  <Select value={filter24Hour} onValueChange={(value) => {
+                    setFilter24Hour(value);
+                    resetPagination();
+                  }}>
+                    <SelectTrigger data-testid="select-filter-24hour">
+                      <SelectValue placeholder="24-Hour" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="yes">24-Hour Only</SelectItem>
+                      <SelectItem value="no">Not 24-Hour</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Availability Filter */}
+                <div>
+                  <Select value={filterAvailable} onValueChange={(value) => {
+                    setFilterAvailable(value);
+                    resetPagination();
+                  }}>
+                    <SelectTrigger data-testid="select-filter-available">
+                      <SelectValue placeholder="Availability" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="yes">Available Only</SelectItem>
+                      <SelectItem value="no">Unavailable Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Second Row: Support Hospital Filter and Clear Button */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                <div>
+                  <Select value={filterSupport} onValueChange={(value) => {
+                    setFilterSupport(value);
+                    resetPagination();
+                  }}>
+                    <SelectTrigger data-testid="select-filter-support">
+                      <SelectValue placeholder="Support Hospital" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="yes">Support Hospitals Only</SelectItem>
+                      <SelectItem value="no">Non-Support Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Active Filters Display */}
+                <div className="md:col-span-2 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  {(searchTerm || filterRegion !== "all" || filter24Hour !== "all" || filterAvailable !== "all" || filterSupport !== "all" || activeFilter) && (
+                    <>
+                      <span>Active filters:</span>
+                      {searchTerm && <Badge variant="secondary">{searchTerm}</Badge>}
+                      {activeFilter && <Badge variant="secondary">{activeFilter}</Badge>}
+                      {filterRegion !== "all" && <Badge variant="secondary">Region</Badge>}
+                      {filter24Hour !== "all" && <Badge variant="secondary">24-Hour</Badge>}
+                      {filterAvailable !== "all" && <Badge variant="secondary">Availability</Badge>}
+                      {filterSupport !== "all" && <Badge variant="secondary">Support</Badge>}
+                    </>
+                  )}
+                </div>
+
+                {/* Clear Filters Button */}
+                <div className="flex justify-end">
+                  {(searchTerm || filterRegion !== "all" || filter24Hour !== "all" || filterAvailable !== "all" || filterSupport !== "all" || activeFilter) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearFilters}
+                      data-testid="button-clear-filters"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Clear All
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Clinic List */}
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            All Clinics
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Clinics {filteredClinics.length !== stats.total && `(${filteredClinics.length} of ${stats.total})`}
+            </h2>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Page {currentPage} of {totalPages || 1}
+            </div>
+          </div>
           <div className="space-y-3">
             {clinicsLoading ? (
               <>
@@ -447,8 +782,8 @@ export default function AdminClinicsPage() {
                   </Card>
                 ))}
               </>
-            ) : clinics && clinics.length > 0 ? (
-              clinics.map((clinic) => (
+            ) : paginatedClinics && paginatedClinics.length > 0 ? (
+              paginatedClinics.map((clinic) => (
                 <Card key={clinic.id} data-testid={`card-clinic-${clinic.id}`}>
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between gap-4">
@@ -472,6 +807,16 @@ export default function AdminClinicsPage() {
                           >
                             {clinic.isAvailable ? "Available" : "Unavailable"}
                           </Badge>
+                          {(!clinic.latitude || !clinic.longitude) && (
+                            <Badge variant="destructive" data-testid={`badge-no-gps-${clinic.id}`}>
+                              ⚠️ No GPS
+                            </Badge>
+                          )}
+                          {!clinic.whatsapp && !clinic.email && (
+                            <Badge variant="destructive" data-testid={`badge-no-contact-${clinic.id}`}>
+                              ⚠️ No Contact
+                            </Badge>
+                          )}
                         </div>
                         {clinic.nameZh && (
                           <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -497,6 +842,15 @@ export default function AdminClinicsPage() {
                         </div>
                       </div>
                       <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openStaffDialog(clinic)}
+                          data-testid={`button-staff-${clinic.id}`}
+                          title="Manage Staff"
+                        >
+                          <Users className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -528,6 +882,58 @@ export default function AdminClinicsPage() {
               </Card>
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredClinics.length)} of {filteredClinics.length} clinics
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  data-testid="button-first-page"
+                >
+                  First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  data-testid="button-prev-page"
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-2 px-4">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  data-testid="button-next-page"
+                >
+                  Next
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  data-testid="button-last-page"
+                >
+                  Last
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
@@ -1048,6 +1454,109 @@ export default function AdminClinicsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Staff Management Dialog */}
+      <Dialog open={isStaffDialogOpen} onOpenChange={setIsStaffDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[600px] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Clinic Staff - {selectedClinic?.name}</DialogTitle>
+            <DialogDescription>
+              Add or remove staff members who can access this clinic's dashboard. Staff must first create an account by logging in to PetSOS.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Add Staff Section */}
+          <div className="space-y-4">
+            <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-950">
+              <h4 className="font-semibold mb-2 text-blue-900 dark:text-blue-100">Add Staff Member</h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                Enter the email address of the user who needs access to this clinic's dashboard
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="staff@example.com"
+                  value={staffEmail}
+                  onChange={(e) => setStaffEmail(e.target.value)}
+                  data-testid="input-staff-email"
+                />
+                <Button onClick={handleLinkStaff} disabled={!staffEmail} data-testid="button-add-staff">
+                  Add Staff
+                </Button>
+              </div>
+            </div>
+
+            {/* Current Staff List */}
+            <div>
+              <h4 className="font-semibold mb-2">Current Staff Members ({clinicStaff?.length || 0})</h4>
+              {staffLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              ) : clinicStaff && clinicStaff.length > 0 ? (
+                <div className="space-y-2">
+                  {clinicStaff.map((staff) => (
+                    <Card key={staff.id}>
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">
+                            {staff.firstName} {staff.lastName}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{staff.email}</p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUnlinkStaff(staff.id)}
+                          data-testid={`button-remove-staff-${staff.id}`}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-6 text-center text-gray-600 dark:text-gray-400">
+                    No staff members linked to this clinic yet
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Instructions */}
+            <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
+              <h4 className="font-semibold mb-2 flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                How to Grant Access
+              </h4>
+              <ol className="text-sm space-y-2 text-gray-700 dark:text-gray-300 list-decimal list-inside">
+                <li>Ask the staff member to visit PetSOS and click "Log In / Sign Up"</li>
+                <li>They should sign in with their Replit account (or create one)</li>
+                <li>Once logged in, add their email address above</li>
+                <li>They can now access the clinic dashboard at: <code className="bg-gray-200 dark:bg-gray-800 px-1 rounded">/clinic/dashboard</code></li>
+              </ol>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+                <strong>Dashboard Link:</strong> Share this URL with staff: <br />
+                <code className="bg-gray-200 dark:bg-gray-800 px-2 py-1 rounded text-xs break-all">
+                  {window.location.origin}/clinic/dashboard
+                </code>
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsStaffDialogOpen(false);
+              setStaffEmail("");
+            }}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
