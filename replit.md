@@ -39,6 +39,11 @@ Preferred communication style: Simple, everyday language.
   - Full CRUD operations for clinic management
   - Real-time availability toggle
   - Support Hospital toggle in add/edit forms
+  - **Auto-fill GPS Feature**: One-click geocoding button to automatically populate latitude/longitude from clinic address using Google Geocoding API
+    - Integrated into both Add and Edit clinic forms
+    - Shows loading state during API call
+    - Validates response before populating coordinates
+    - Clear error messages for failed geocoding attempts
   - Protected route (admin role required)
   
 - **Clinic Staff Dashboard** (`/clinic/dashboard`):

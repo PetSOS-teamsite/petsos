@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -62,6 +62,8 @@ export default function AdminClinicsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
+  const [isGeocodingAdd, setIsGeocodingAdd] = useState(false);
+  const [isGeocodingEdit, setIsGeocodingEdit] = useState(false);
   const { toast } = useToast();
 
   const { data: regions, isLoading: regionsLoading } = useQuery<Region[]>({
@@ -240,6 +242,82 @@ export default function AdminClinicsPage() {
   const getRegionName = (regionId: string) => {
     const region = regions?.find((r) => r.id === regionId);
     return region ? region.code : regionId;
+  };
+
+  const handleAutoFillGPSAdd = async () => {
+    const address = addForm.getValues("address");
+    if (!address) {
+      toast({
+        title: "Error",
+        description: "Please enter an address first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeocodingAdd(true);
+    try {
+      const res = await apiRequest("POST", "/api/geocode", { address });
+      const data = await res.json();
+      
+      if (data.latitude && data.longitude) {
+        addForm.setValue("latitude", data.latitude);
+        addForm.setValue("longitude", data.longitude);
+        toast({
+          title: "Success",
+          description: "GPS coordinates filled automatically",
+        });
+      } else {
+        throw new Error("Invalid response from geocoding service");
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || "Failed to geocode address";
+      toast({
+        title: "Geocoding Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeocodingAdd(false);
+    }
+  };
+
+  const handleAutoFillGPSEdit = async () => {
+    const address = editForm.getValues("address");
+    if (!address) {
+      toast({
+        title: "Error",
+        description: "Please enter an address first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeocodingEdit(true);
+    try {
+      const res = await apiRequest("POST", "/api/geocode", { address });
+      const data = await res.json();
+      
+      if (data.latitude && data.longitude) {
+        editForm.setValue("latitude", data.latitude);
+        editForm.setValue("longitude", data.longitude);
+        toast({
+          title: "Success",
+          description: "GPS coordinates filled automatically",
+        });
+      } else {
+        throw new Error("Invalid response from geocoding service");
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || "Failed to geocode address";
+      toast({
+        title: "Geocoding Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeocodingEdit(false);
+    }
   };
 
   return (
@@ -584,13 +662,32 @@ export default function AdminClinicsPage() {
               <div className="space-y-3">
                 <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                   <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">GPS Coordinates (Required for proximity filtering)</p>
-                    <p className="text-blue-700 dark:text-blue-300">
-                      1. Search clinic address on Google Maps<br />
-                      2. Right-click on the location → Click coordinates to copy<br />
-                      3. Paste latitude (first number) and longitude (second number)
+                  <div className="flex-1">
+                    <p className="font-medium text-blue-900 dark:text-blue-100 mb-1 text-sm">GPS Coordinates (Required for proximity filtering)</p>
+                    <p className="text-blue-700 dark:text-blue-300 text-sm mb-2">
+                      Automatically fill coordinates from address using Google Maps
                     </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAutoFillGPSAdd}
+                      disabled={isGeocodingAdd}
+                      data-testid="button-autofill-gps"
+                      className="bg-white dark:bg-gray-800"
+                    >
+                      {isGeocodingAdd ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Getting coordinates...
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="h-4 w-4 mr-2" />
+                          Auto-fill GPS
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -813,13 +910,32 @@ export default function AdminClinicsPage() {
               <div className="space-y-3">
                 <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                   <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">GPS Coordinates (Required for proximity filtering)</p>
-                    <p className="text-blue-700 dark:text-blue-300">
-                      1. Search clinic address on Google Maps<br />
-                      2. Right-click on the location → Click coordinates to copy<br />
-                      3. Paste latitude (first number) and longitude (second number)
+                  <div className="flex-1">
+                    <p className="font-medium text-blue-900 dark:text-blue-100 mb-1 text-sm">GPS Coordinates (Required for proximity filtering)</p>
+                    <p className="text-blue-700 dark:text-blue-300 text-sm mb-2">
+                      Automatically fill coordinates from address using Google Maps
                     </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAutoFillGPSEdit}
+                      disabled={isGeocodingEdit}
+                      data-testid="button-edit-autofill-gps"
+                      className="bg-white dark:bg-gray-800"
+                    >
+                      {isGeocodingEdit ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Getting coordinates...
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="h-4 w-4 mr-2" />
+                          Auto-fill GPS
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

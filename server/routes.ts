@@ -376,6 +376,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   });
 
+  // Geocode address to GPS coordinates
+  app.post("/api/geocode", async (req, res) => {
+    try {
+      const { address } = z.object({
+        address: z.string().min(1, "Address is required"),
+      }).parse(req.body);
+
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "Google Maps API key not configured" });
+      }
+
+      const encodedAddress = encodeURIComponent(address);
+      const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
+
+      const response = await fetch(geocodeUrl);
+      const data = await response.json();
+
+      if (data.status === "OK" && data.results && data.results.length > 0) {
+        const location = data.results[0].geometry.location;
+        res.json({
+          latitude: location.lat.toString(),
+          longitude: location.lng.toString(),
+          formattedAddress: data.results[0].formatted_address,
+        });
+      } else if (data.status === "ZERO_RESULTS") {
+        res.status(404).json({ message: "Address not found. Please check the address and try again." });
+      } else if (data.status === "OVER_QUERY_LIMIT") {
+        res.status(429).json({ message: "Geocoding API quota exceeded. Please try again later." });
+      } else {
+        res.status(400).json({ message: `Geocoding failed: ${data.status}` });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Geocoding error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // ===== EMERGENCY REQUEST ROUTES =====
 
   // Create emergency request
