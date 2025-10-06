@@ -96,6 +96,7 @@ export default function AdminClinicsPage() {
       regionId: "",
       is24Hour: false,
       isAvailable: true,
+      isSupportHospital: false,
       latitude: null,
       longitude: null,
       status: "active",
@@ -116,6 +117,7 @@ export default function AdminClinicsPage() {
       regionId: "",
       is24Hour: false,
       isAvailable: true,
+      isSupportHospital: false,
       latitude: null,
       longitude: null,
       status: "active",
@@ -201,6 +203,7 @@ export default function AdminClinicsPage() {
       regionId: clinic.regionId,
       is24Hour: clinic.is24Hour,
       isAvailable: clinic.isAvailable,
+      isSupportHospital: clinic.isSupportHospital,
       latitude: clinic.latitude,
       longitude: clinic.longitude,
       status: clinic.status,
@@ -379,6 +382,11 @@ export default function AdminClinicsPage() {
                           <Badge variant="outline">{getRegionName(clinic.regionId)}</Badge>
                           {clinic.is24Hour && (
                             <Badge className="bg-green-600">24h</Badge>
+                          )}
+                          {clinic.isSupportHospital && (
+                            <Badge className="bg-blue-600" data-testid={`badge-support-${clinic.id}`}>
+                              ⭐ Support
+                            </Badge>
                           )}
                           <Badge 
                             className={clinic.isAvailable ? "bg-green-500" : "bg-gray-400"}
@@ -594,6 +602,27 @@ export default function AdminClinicsPage() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={addForm.control}
+                name="isSupportHospital"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base font-semibold text-blue-900 dark:text-blue-100">⭐ PetSOS Support Hospital</FormLabel>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        Official partner hospital for priority emergency broadcasts
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="switch-support-hospital"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
               <DialogFooter>
                 <Button
                   type="button"
@@ -756,6 +785,27 @@ export default function AdminClinicsPage() {
                         checked={field.value}
                         onCheckedChange={field.onChange}
                         data-testid="switch-edit-24hour"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="isSupportHospital"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base font-semibold text-blue-900 dark:text-blue-100">⭐ PetSOS Support Hospital</FormLabel>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        Official partner hospital for priority emergency broadcasts
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="switch-edit-support-hospital"
                       />
                     </FormControl>
                   </FormItem>
