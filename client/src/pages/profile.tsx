@@ -23,7 +23,7 @@ import { Link, useLocation } from "wouter";
 import type { User as UserType, Region } from "@shared/schema";
 
 const createProfileSchema = (t: (key: string, fallback: string) => string) => z.object({
-  username: z.string().min(3, t("profile.validation.username", "Username must be at least 3 characters")),
+  username: z.string().min(3, t("profile.validation.username", "Username must be at least 3 characters")).optional().or(z.literal('')),
   email: z.string().email(t("profile.validation.email", "Please enter a valid email")),
   phone: z.string().min(8, t("profile.validation.phone", "Please enter a valid phone number")),
   languagePreference: z.enum(['en', 'zh-HK']),

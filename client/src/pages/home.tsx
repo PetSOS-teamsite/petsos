@@ -23,7 +23,9 @@ export default function HomePage() {
   // Check if profile is incomplete and redirect
   useEffect(() => {
     if (!authLoading && !profileLoading && authUser && userProfile) {
-      const isProfileIncomplete = !userProfile.username || !userProfile.email || !userProfile.phone;
+      // Profile is complete if user has email, phone, and either username OR firstName
+      const hasName = userProfile.username || userProfile.firstName;
+      const isProfileIncomplete = !hasName || !userProfile.email || !userProfile.phone;
       if (isProfileIncomplete) {
         setLocation('/profile');
       }
