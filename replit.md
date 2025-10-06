@@ -15,12 +15,35 @@ Preferred communication style: Simple, everyday language.
 - **Landing Page**: Full red background with white text for emergency-focused design
 - **Header**: Red background across all authenticated pages with white "PetSOS" text logo
 
+## Recent Changes (October 2025)
+
+### Clinic and Admin Dashboards
+- **Admin Dashboard** (`/admin/clinics`):
+  - Comprehensive statistics: total clinics, available clinics, 24-hour clinics, total emergency requests
+  - Full CRUD operations for clinic management
+  - Real-time availability toggle
+  - Protected route (admin role required)
+  
+- **Clinic Staff Dashboard** (`/clinic/dashboard`):
+  - View clinic information and contact details
+  - Toggle clinic availability in real-time
+  - View emergency broadcasts sent to the clinic
+  - Edit clinic profile (name, address, phone, WhatsApp, email, region, 24-hour status)
+  - Protected route (requires authentication + clinicId linkage)
+  - Authorization: Only admins or linked clinic staff can access/modify clinic data
+
+- **Database Changes**:
+  - Added `clinicId` field to users table for linking staff to clinics
+  - Added `getAllEmergencyRequests()` storage method and API endpoint for admin statistics
+
+- **Translation Keys**: Added 70+ clinic dashboard translation keys (EN/zh-HK) covering dashboard UI, availability, emergency requests, and edit forms
+
 ## System Architecture
 
 ### Frontend Architecture
 - **Technology Stack**: React with TypeScript (Vite), Wouter for routing, TanStack React Query for state management, shadcn/ui (Radix UI + Tailwind CSS) for UI components, React Hook Form with Zod for forms.
 - **Design Decisions**: Accessible, customizable components via shadcn/ui; minimal bundle size with Wouter; Tailwind CSS for theming (dark mode, custom design tokens); type-safe form validation with shared Zod schemas.
-- **Key Pages**: Home (emergency button), multi-step emergency request, clinic results (compact statistics, always-visible 24-hour filter toggle, filtering, communication), profile management, pet management (CRUD with bilingual breed selection), clinic directory (search, filters), admin dashboard (clinic CRUD).
+- **Key Pages**: Home (emergency button), multi-step emergency request, clinic results (compact statistics, always-visible 24-hour filter toggle, filtering, communication), profile management, pet management (CRUD with bilingual breed selection), clinic directory (search, filters), admin dashboard (clinic CRUD with statistics), clinic staff dashboard (availability toggle, emergency requests, profile editing).
 
 ### Backend Architecture
 - **Technology Stack**: Node.js with Express.js, TypeScript, Drizzle ORM with PostgreSQL (Neon serverless), modular storage abstraction.
@@ -28,12 +51,17 @@ Preferred communication style: Simple, everyday language.
 - **Core Services**: Messaging (WhatsApp Business API, email fallback), Storage (users, pets, clinics, requests, audit logs), Queue System (retry logic, DLQ).
 
 ### Data Architecture
-- **Database Schema**: Users, Pets, Regions, Clinics, Emergency Requests, Messages, Feature Flags, Audit Logs, Privacy Consents, Translations.
+- **Database Schema**: Users (with clinicId for staff linking), Pets, Regions, Clinics, Emergency Requests, Messages, Feature Flags, Audit Logs, Privacy Consents, Translations.
 - **Design Principles**: UUID primary keys, soft deletes, JSONB for flexible metadata, timestamp tracking, foreign key constraints.
+- **Key Relationships**: Users.clinicId → Clinics.id (for clinic staff access control)
 
 ### Authentication & Authorization
-- **Implementation**: User registration (username/password), role-based access control (user, admin), session-based authentication.
-- **Security**: IP/user agent logging, privacy consent tracking.
+- **Implementation**: Replit OIDC authentication, role-based access control (user, admin), clinic staff access control via clinicId linking, session-based authentication.
+- **Security**: IP/user agent logging, privacy consent tracking, authorization checks for clinic-specific data access.
+- **Roles**: 
+  - Admin: Full access to all clinics, statistics, and emergency requests
+  - Clinic Staff: Access to own clinic dashboard, can toggle availability, view clinic-specific emergency requests, edit clinic profile
+  - Regular User: Standard pet owner access
 
 ### Messaging & Communication
 - **WhatsApp Business API**: Primary notification channel with email fallback and optional SMS.
