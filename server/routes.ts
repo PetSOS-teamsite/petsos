@@ -419,6 +419,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all emergency requests (admin only)
+  app.get("/api/emergency-requests", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const requests = await storage.getAllEmergencyRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching emergency requests:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get emergency request by ID
   app.get("/api/emergency-requests/:id", async (req, res) => {
     const request = await storage.getEmergencyRequest(req.params.id);

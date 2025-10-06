@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2 } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -43,7 +43,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertClinicSchema, type Clinic, type Region } from "@shared/schema";
+import { insertClinicSchema, type Clinic, type Region, type EmergencyRequest } from "@shared/schema";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -71,6 +71,17 @@ export default function AdminClinicsPage() {
   const { data: clinics, isLoading: clinicsLoading } = useQuery<Clinic[]>({
     queryKey: ["/api/clinics"],
   });
+
+  const { data: emergencyRequests } = useQuery<EmergencyRequest[]>({
+    queryKey: ["/api/emergency-requests"],
+  });
+
+  const stats = {
+    total: clinics?.length ?? 0,
+    available: (clinics?.filter(c => c.isAvailable) ?? []).length,
+    twentyFourHour: (clinics?.filter(c => c.is24Hour) ?? []).length,
+    emergencyRequests: emergencyRequests?.length ?? 0,
+  };
 
   const addForm = useForm<ClinicFormData>({
     resolver: zodResolver(clinicFormSchema),
@@ -263,23 +274,79 @@ export default function AdminClinicsPage() {
       <main className="container mx-auto px-4 py-8">
         {/* Stats */}
         <div className="max-w-6xl mx-auto mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                  <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                    <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Total Clinics
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="text-total-clinics">
+                      {clinicsLoading ? "..." : stats.total}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Total Clinics
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="text-total-clinics">
-                    {clinicsLoading ? "..." : clinics?.length || 0}
-                  </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+                    <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Available Now
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="text-available-clinics">
+                      {clinicsLoading ? "..." : stats.available}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                    <Clock className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      24-Hour Clinics
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="text-24hour-clinics">
+                      {clinicsLoading ? "..." : stats.twentyFourHour}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-red-100 dark:bg-red-900 rounded-lg">
+                    <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Total Requests
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="text-emergency-requests">
+                      {stats.emergencyRequests}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Clinic List */}
