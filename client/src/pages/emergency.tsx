@@ -38,66 +38,64 @@ const SYMPTOMS = [
   { key: "other", en: "Other concerning symptoms", zh: "其他令人擔憂症狀" },
 ];
 
-// Step-specific schemas
-const step1Schema = z.object({
-  symptom: z.string().min(1, "Please select at least one symptom"),
-  petId: z.string().optional(),
-  petSpecies: z.string().optional(),
-  petBreed: z.string().optional(),
-  petAge: z.number().optional(),
-  userId: z.string().optional(), // Optional for anonymous users
-}).refine(
-  (data) => {
-    // If no petId selected, must provide pet details
-    if (!data.petId) {
-      return !!data.petSpecies;
-    }
-    return true;
-  },
-  {
-    message: "Please select a pet or provide pet details",
-    path: ["petSpecies"],
-  }
-);
-
-const step2Schema = z.object({
-  locationLatitude: z.number().optional(),
-  locationLongitude: z.number().optional(),
-  manualLocation: z.string().optional(),
-}).refine(
-  (data) => 
-    (data.locationLatitude !== undefined && data.locationLongitude !== undefined) || 
-    (data.manualLocation && data.manualLocation.length > 0),
-  {
-    message: "Please provide a location (GPS or manual entry)",
-    path: ["manualLocation"],
-  }
-);
-
-const step3Schema = z.object({
-  contactName: z.string().min(2, "Contact name is required"),
-  contactPhone: z.string().min(8, "Please enter a valid phone number"),
-});
-
-// Complete schema for final submission
-const emergencySchema = z.object({
-  symptom: z.string().min(1, "Please select at least one symptom"),
-  locationLatitude: z.number().optional(),
-  locationLongitude: z.number().optional(),
-  manualLocation: z.string().optional(),
-  contactName: z.string().min(2, "Contact name is required"),
-  contactPhone: z.string().min(8, "Please enter a valid phone number"),
-  petId: z.string().optional(),
-  petSpecies: z.string().optional(),
-  petBreed: z.string().optional(),
-  petAge: z.number().optional(),
-  userId: z.string().optional(), // Optional for anonymous users
-});
-
-type EmergencyFormData = z.infer<typeof emergencySchema>;
-
 export default function EmergencyPage() {
   const { t, language } = useTranslation();
+  
+  // Define schemas inside component to access t()
+  const step1Schema = z.object({
+    symptom: z.string().min(1, t("validation.symptom_required", "Please select at least one symptom")),
+    petId: z.string().optional(),
+    petSpecies: z.string().optional(),
+    petBreed: z.string().optional(),
+    petAge: z.number().optional(),
+    userId: z.string().optional(),
+  }).refine(
+    (data) => {
+      if (!data.petId) {
+        return !!data.petSpecies;
+      }
+      return true;
+    },
+    {
+      message: t("validation.pet_required", "Please select a pet or provide pet details"),
+      path: ["petSpecies"],
+    }
+  );
+
+  const step2Schema = z.object({
+    locationLatitude: z.number().optional(),
+    locationLongitude: z.number().optional(),
+    manualLocation: z.string().optional(),
+  }).refine(
+    (data) => 
+      (data.locationLatitude !== undefined && data.locationLongitude !== undefined) || 
+      (data.manualLocation && data.manualLocation.length > 0),
+    {
+      message: t("validation.location_required", "Please provide a location (GPS or manual entry)"),
+      path: ["manualLocation"],
+    }
+  );
+
+  const step3Schema = z.object({
+    contactName: z.string().min(2, t("validation.name_required", "Contact name is required")),
+    contactPhone: z.string().min(8, t("validation.phone_required", "Please enter a valid phone number")),
+  });
+
+  const emergencySchema = z.object({
+    symptom: z.string().min(1, t("validation.symptom_required", "Please select at least one symptom")),
+    locationLatitude: z.number().optional(),
+    locationLongitude: z.number().optional(),
+    manualLocation: z.string().optional(),
+    contactName: z.string().min(2, t("validation.name_required", "Contact name is required")),
+    contactPhone: z.string().min(8, t("validation.phone_required", "Please enter a valid phone number")),
+    petId: z.string().optional(),
+    petSpecies: z.string().optional(),
+    petBreed: z.string().optional(),
+    petAge: z.number().optional(),
+    userId: z.string().optional(),
+  });
+
+  type EmergencyFormData = z.infer<typeof emergencySchema>;
   const { user, isLoading: authLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
@@ -160,15 +158,15 @@ export default function EmergencyPage() {
             setGpsError(null);
           },
           (error) => {
-            setGpsError(error.message);
+            setGpsError(t("emergency.gps.error", "Unable to detect location"));
             setGpsDetected(false);
           }
         );
       } else {
-        setGpsError("Geolocation is not supported by this browser");
+        setGpsError(t("emergency.gps.not_supported", "Geolocation is not supported by this browser"));
       }
     }
-  }, [step, gpsDetected, gpsRetryCount, form]); // Added gpsRetryCount to dependencies
+  }, [step, gpsDetected, gpsRetryCount, form, t]); // Added gpsRetryCount and t to dependencies
 
   // Auto-fill contact information from user profile when on step 3
   useEffect(() => {
@@ -617,7 +615,7 @@ export default function EmergencyPage() {
                                 field.onChange(e);
                                 setContactManuallyEdited(true);
                               }}
-                              placeholder="Full name"
+                              placeholder={t("emergency.step3.name_placeholder", "Full name")}
                               className="text-lg"
                               data-testid="input-contact-name"
                               autoFocus
@@ -642,7 +640,7 @@ export default function EmergencyPage() {
                                 setContactManuallyEdited(true);
                               }}
                               type="tel"
-                              placeholder="+852 1234 5678"
+                              placeholder={t("emergency.step3.phone_placeholder", "+852 1234 5678")}
                               className="text-lg"
                               data-testid="input-contact-phone"
                             />
@@ -655,7 +653,7 @@ export default function EmergencyPage() {
                     <div className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-950 rounded-lg">
                       <Phone className="h-5 w-5 text-green-600 mt-0.5" />
                       <p className="text-sm text-green-700 dark:text-green-300">
-                        Clinics will contact you at this number to confirm availability
+                        {t("emergency.step3.clinic_contact", "Clinics will contact you at this number to confirm availability")}
                       </p>
                     </div>
                   </div>
@@ -684,7 +682,7 @@ export default function EmergencyPage() {
                     data-testid="button-next"
                   >
                     {step === 3 ? (
-                      createEmergencyMutation.isPending ? "Submitting..." : t("button.submit", "Find Clinics")
+                      createEmergencyMutation.isPending ? t("button.submitting", "Submitting...") : t("button.submit", "Find Clinics")
                     ) : (
                       <>
                         {t("button.next", "Next")}
