@@ -51,6 +51,7 @@ export interface IStorage {
   getEmergencyRequest(id: string): Promise<EmergencyRequest | undefined>;
   getEmergencyRequestsByUserId(userId: string): Promise<EmergencyRequest[]>;
   getEmergencyRequestsByClinicId(clinicId: string): Promise<any[]>;
+  getAllEmergencyRequests(): Promise<EmergencyRequest[]>;
   createEmergencyRequest(request: InsertEmergencyRequest): Promise<EmergencyRequest>;
   updateEmergencyRequest(id: string, request: Partial<InsertEmergencyRequest>): Promise<EmergencyRequest | undefined>;
 
@@ -441,6 +442,10 @@ export class MemStorage implements IStorage {
       });
   }
 
+  async getAllEmergencyRequests(): Promise<EmergencyRequest[]> {
+    return Array.from(this.emergencyRequests.values());
+  }
+
   async createEmergencyRequest(insertRequest: InsertEmergencyRequest): Promise<EmergencyRequest> {
     const id = randomUUID();
     const request: EmergencyRequest = { 
@@ -793,6 +798,10 @@ class DatabaseStorage implements IStorage {
       pet,
       user
     }));
+  }
+
+  async getAllEmergencyRequests(): Promise<EmergencyRequest[]> {
+    return await db.select().from(emergencyRequests);
   }
 
   async createEmergencyRequest(insertRequest: InsertEmergencyRequest): Promise<EmergencyRequest> {
