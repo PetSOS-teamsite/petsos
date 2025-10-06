@@ -40,7 +40,9 @@ Preferred communication style: Simple, everyday language.
 - **Logging**: Request/response logging, performance metrics, audit logs.
 
 ### Internationalization (i18n)
-- **Multi-language**: JSON-based translation files (EN, zh-HK), region-specific content, database-stored translations, client-side language detection.
+- **Multi-language**: Database-stored translations with 205 translation keys, supports English (EN) and Traditional Chinese (zh-HK), client-side language detection with localStorage sync.
+- **Translation Quality**: All Chinese translations reviewed and optimized for Hong Kong users with natural, official, and friendly tone. Verified across landing page, emergency flow, profile, pets, and broadcast status.
+- **Coverage**: Complete bilingual support for landing page (subtitle, features, disclaimer), emergency flow (symptoms, validation, steps), clinic results, profile management, pets, and broadcast status.
 
 ### Deployment Architecture
 - **Infrastructure**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment (e.g., Render, Fly.io, Vercel), Infrastructure as Code (Terraform).
