@@ -52,8 +52,7 @@ export default function LandingPage() {
             <Button
               onClick={handleLogin}
               size="lg"
-              variant="outline"
-              className="px-8 py-7 text-lg border-2 border-white text-white hover:bg-white/10"
+              className="px-8 py-7 text-lg border-2 border-white bg-transparent text-white hover:bg-white hover:text-red-600 font-semibold transition-all"
               data-testid="button-login"
             >
               {t('landing.login_button', 'Log In / Sign Up')}
