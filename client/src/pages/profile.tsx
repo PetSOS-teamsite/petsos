@@ -17,8 +17,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
 import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import type { User as UserType, Region } from "@shared/schema";
 
 const createProfileSchema = (t: (key: string, fallback: string) => string) => z.object({
@@ -33,7 +34,8 @@ type ProfileSchemaType = ReturnType<typeof createProfileSchema>;
 type ProfileFormData = z.infer<ProfileSchemaType>;
 
 export default function ProfilePage() {
-  const userId = "temp-user-id";
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { t, language } = useTranslation();
   const { setLanguage } = useLanguage();
@@ -41,7 +43,8 @@ export default function ProfilePage() {
   const profileSchema = createProfileSchema(t);
 
   const { data: user, isLoading: userLoading } = useQuery<UserType>({
-    queryKey: ['/api/users', userId],
+    queryKey: ['/api/users', authUser?.id],
+    enabled: !!authUser?.id,
   });
 
   const { data: regions = [] } = useQuery<Region[]>({
@@ -51,10 +54,10 @@ export default function ProfilePage() {
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     values: user ? {
-      username: user.username,
-      email: user.email,
-      phone: user.phone,
-      languagePreference: user.languagePreference as 'en' | 'zh-HK',
+      username: user.username || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      languagePreference: (user.languagePreference as 'en' | 'zh-HK') || 'en',
       regionPreference: user.regionPreference || undefined,
     } : undefined,
   });
@@ -63,13 +66,13 @@ export default function ProfilePage() {
     mutationFn: async (data: ProfileFormData) => {
       const response = await apiRequest(
         'PATCH',
-        `/api/users/${userId}`,
+        `/api/users/${authUser?.id}`,
         data
       );
       return await response.json();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users', authUser?.id] });
       // Update LanguageContext when language preference changes
       if (variables.languagePreference) {
         setLanguage(variables.languagePreference);
@@ -92,12 +95,17 @@ export default function ProfilePage() {
     updateProfileMutation.mutate(data);
   };
 
-  if (userLoading) {
+  if (authLoading || userLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-gray-600 dark:text-gray-400">{t("loading.profile", "Loading profile...")}</div>
       </div>
     );
+  }
+
+  if (!authUser) {
+    setLocation('/');
+    return null;
   }
 
   return (

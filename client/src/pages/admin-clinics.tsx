@@ -84,6 +84,7 @@ export default function AdminClinicsPage() {
       email: null,
       regionId: "",
       is24Hour: false,
+      isAvailable: true,
       latitude: null,
       longitude: null,
       status: "active",
@@ -103,6 +104,7 @@ export default function AdminClinicsPage() {
       email: null,
       regionId: "",
       is24Hour: false,
+      isAvailable: true,
       latitude: null,
       longitude: null,
       status: "active",
@@ -187,6 +189,7 @@ export default function AdminClinicsPage() {
       email: clinic.email,
       regionId: clinic.regionId,
       is24Hour: clinic.is24Hour,
+      isAvailable: clinic.isAvailable,
       latitude: clinic.latitude,
       longitude: clinic.longitude,
       status: clinic.status,
@@ -198,6 +201,26 @@ export default function AdminClinicsPage() {
   const openDeleteDialog = (clinic: Clinic) => {
     setSelectedClinic(clinic);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleToggleAvailability = async (clinic: Clinic) => {
+    try {
+      await apiRequest("PATCH", `/api/clinics/${clinic.id}`, {
+        isAvailable: !clinic.isAvailable,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/clinics"] });
+      toast({
+        title: "Success",
+        description: `Clinic ${clinic.isAvailable ? 'marked unavailable' : 'marked available'}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update clinic availability",
+        variant: "destructive",
+      });
+    }
   };
 
   const getRegionName = (regionId: string) => {
@@ -290,6 +313,12 @@ export default function AdminClinicsPage() {
                           {clinic.is24Hour && (
                             <Badge className="bg-green-600">24h</Badge>
                           )}
+                          <Badge 
+                            className={clinic.isAvailable ? "bg-green-500" : "bg-gray-400"}
+                            data-testid={`badge-availability-${clinic.id}`}
+                          >
+                            {clinic.isAvailable ? "Available" : "Unavailable"}
+                          </Badge>
                         </div>
                         {clinic.nameZh && (
                           <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -303,6 +332,16 @@ export default function AdminClinicsPage() {
                           {clinic.phone}
                           {clinic.whatsapp && ` • WhatsApp: ${clinic.whatsapp}`}
                         </p>
+                        <div className="flex items-center gap-2 mt-3">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            Real-time Availability:
+                          </span>
+                          <Switch
+                            checked={clinic.isAvailable}
+                            onCheckedChange={() => handleToggleAvailability(clinic)}
+                            data-testid={`switch-availability-${clinic.id}`}
+                          />
+                        </div>
                       </div>
                       <div className="flex gap-2">
                         <Button

@@ -1,12 +1,34 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { AlertCircle, MapPin, Building2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import type { User as UserType } from "@shared/schema";
 
 export default function HomePage() {
   const { t } = useTranslation();
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Fetch user profile to check if complete
+  const { data: userProfile, isLoading: profileLoading } = useQuery<UserType>({
+    queryKey: ['/api/users', authUser?.id],
+    enabled: !!authUser?.id,
+  });
+
+  // Check if profile is incomplete and redirect
+  useEffect(() => {
+    if (!authLoading && !profileLoading && authUser && userProfile) {
+      const isProfileIncomplete = !userProfile.username || !userProfile.email || !userProfile.phone;
+      if (isProfileIncomplete) {
+        setLocation('/profile');
+      }
+    }
+  }, [authLoading, profileLoading, authUser, userProfile, setLocation]);
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
@@ -14,7 +36,7 @@ export default function HomePage() {
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {t('app.title', 'Pet Emergency HK')}
+            {t('app.title', 'PetSOS')}
           </h1>
           <div className="flex items-center gap-2">
             <LanguageSwitcher />

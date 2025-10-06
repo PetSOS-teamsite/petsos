@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, Clock, Phone, MapPin, AlertCircle } from "lucide-react";
+import { Cross, Clock, Phone, MapPin, AlertCircle } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function LandingPage() {
@@ -20,10 +20,10 @@ export default function LandingPage() {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <div className="flex items-center justify-center mb-6">
-            <Heart className="h-16 w-16 text-red-600" fill="currentColor" />
+            <Cross className="h-16 w-16 text-red-600" strokeWidth={2.5} />
           </div>
           <h1 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900 dark:text-white">
-            Pet SOS
+            PetSOS
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
             Emergency veterinary care coordination platform for Hong Kong pet owners

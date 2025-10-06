@@ -48,9 +48,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useAuth } from "@/hooks/useAuth";
 import { PawPrint, Plus, Pencil, Trash2, ArrowLeft, Check, ChevronsUpDown } from "lucide-react";
-import { Link } from "wouter";
-import type { Pet, Clinic } from "@shared/schema";
+import { Link, useLocation } from "wouter";
+import type { Pet, Clinic, User } from "@shared/schema";
 import { PET_SPECIES, getBreedOptions } from "@shared/pet-data";
 import { cn } from "@/lib/utils";
 import { BreedCombobox } from "@/components/BreedCombobox";
@@ -72,7 +73,8 @@ type PetSchemaType = ReturnType<typeof createPetSchema>;
 type PetFormData = z.infer<PetSchemaType>;
 
 export default function PetsPage() {
-  const userId = "temp-user-id";
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { t, language } = useTranslation();
   
@@ -82,9 +84,17 @@ export default function PetsPage() {
   const [deletingPetId, setDeletingPetId] = useState<string | null>(null);
   const [selectedSpecies, setSelectedSpecies] = useState<string>("");
   const [clinicSearchOpen, setClinicSearchOpen] = useState(false);
+  const [breedInputMode, setBreedInputMode] = useState<"select" | "input">("select");
+
+  // Fetch user profile to check if complete
+  const { data: userProfile, isLoading: profileLoading } = useQuery<User>({
+    queryKey: ['/api/users', authUser?.id],
+    enabled: !!authUser?.id,
+  });
 
   const { data: pets = [], isLoading: petsLoading } = useQuery<Pet[]>({
-    queryKey: ['/api/users', userId, 'pets'],
+    queryKey: ['/api/users', authUser?.id, 'pets'],
+    enabled: !!authUser?.id,
   });
 
   const { data: clinics = [] } = useQuery<Clinic[]>({
@@ -118,7 +128,7 @@ export default function PetsPage() {
     mutationFn: async (data: PetFormData) => {
       const payload = {
         ...data,
-        userId,
+        userId: authUser?.id,
         weight: data.weight !== undefined ? String(data.weight) : undefined,
         lastVisitDate: data.lastVisitDate ? new Date(data.lastVisitDate).toISOString() : undefined,
       };
@@ -130,7 +140,7 @@ export default function PetsPage() {
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'pets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users', authUser?.id, 'pets'] });
       toast({
         title: t("pets.success.add", "Pet added successfully!"),
         description: t("pets.success.add_desc", "Your pet has been added to your profile."),
@@ -162,7 +172,7 @@ export default function PetsPage() {
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'pets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users', authUser?.id, 'pets'] });
       toast({
         title: t("pets.success.update", "Pet updated successfully!"),
         description: t("pets.success.update_desc", "Your pet's information has been updated."),
@@ -190,7 +200,7 @@ export default function PetsPage() {
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', userId, 'pets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users', authUser?.id, 'pets'] });
       toast({
         title: t("pets.success.delete", "Pet removed"),
         description: t("pets.success.delete_desc", "Your pet has been removed from your profile."),
@@ -255,6 +265,27 @@ export default function PetsPage() {
     form.reset();
     setIsDialogOpen(true);
   };
+
+  // Check if profile is incomplete and redirect
+  const isProfileIncomplete = userProfile && (!userProfile.username || !userProfile.email || !userProfile.phone);
+
+  if (authLoading || profileLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400">{t("loading.pets", "Loading...")}</div>
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    setLocation('/');
+    return null;
+  }
+
+  if (isProfileIncomplete) {
+    setLocation('/profile');
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
