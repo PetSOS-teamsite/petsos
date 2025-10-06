@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
-import petSOSLogo from "@assets/PetSOS Logo_1759741755560.png";
 
 export default function HomePage() {
   const { t } = useTranslation();
@@ -13,20 +12,17 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <header className="border-b border-gray-200 dark:border-gray-800 bg-[#EF4444] dark:bg-[#DC2626]">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <Link href="/">
-            <img 
-              src={petSOSLogo} 
-              alt="PetSOS" 
-              className="h-10 w-auto cursor-pointer"
-              data-testid="img-logo-header"
-            />
+            <h1 className="text-3xl font-bold text-white cursor-pointer" data-testid="text-logo-header">
+              PetSOS
+            </h1>
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <Link href="/profile">
-              <Button variant="ghost" size="icon" data-testid="button-profile">
+              <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" data-testid="button-profile">
                 <User className="h-5 w-5" />
               </Button>
             </Link>

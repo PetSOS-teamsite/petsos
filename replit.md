@@ -1,19 +1,26 @@
-# PetSOS Lite - Emergency Veterinary Service Platform
+# PetSOS - Emergency Veterinary Service Platform
 
 ## Overview
 
-PetSOS Lite is an emergency veterinary care coordination platform designed to quickly connect pet owners with 24-hour veterinary clinics during emergencies. It enables one-tap broadcasting of emergency cases to nearby clinics and provides direct communication channels (Call/WhatsApp). The platform supports user and pet profiles, multi-region operations with global scalability, and comprehensive privacy/compliance tracking, aiming to streamline emergency pet care coordination.
+PetSOS is an emergency veterinary care coordination platform designed to quickly connect pet owners with 24-hour veterinary clinics during emergencies. It enables one-tap broadcasting of emergency cases to nearby clinics and provides direct communication channels (Call/WhatsApp). The platform supports user and pet profiles, multi-region operations with global scalability, and comprehensive privacy/compliance tracking, aiming to streamline emergency pet care coordination.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+## Branding
+
+- **Logo**: Text-based "PetSOS" in white on vibrant red background (#EF4444)
+- **Primary Color**: Vibrant red (#EF4444 / #DC2626 for dark mode)
+- **Landing Page**: Full red background with white text for emergency-focused design
+- **Header**: Red background across all authenticated pages with white "PetSOS" text logo
 
 ## System Architecture
 
 ### Frontend Architecture
 - **Technology Stack**: React with TypeScript (Vite), Wouter for routing, TanStack React Query for state management, shadcn/ui (Radix UI + Tailwind CSS) for UI components, React Hook Form with Zod for forms.
 - **Design Decisions**: Accessible, customizable components via shadcn/ui; minimal bundle size with Wouter; Tailwind CSS for theming (dark mode, custom design tokens); type-safe form validation with shared Zod schemas.
-- **Key Pages**: Home (emergency button), multi-step emergency request, clinic results (filtering, communication), profile management, pet management (CRUD), clinic directory (search, filters), admin dashboard (clinic CRUD).
+- **Key Pages**: Home (emergency button), multi-step emergency request, clinic results (compact statistics, always-visible 24-hour filter toggle, filtering, communication), profile management, pet management (CRUD with bilingual breed selection), clinic directory (search, filters), admin dashboard (clinic CRUD).
 
 ### Backend Architecture
 - **Technology Stack**: Node.js with Express.js, TypeScript, Drizzle ORM with PostgreSQL (Neon serverless), modular storage abstraction.
@@ -43,6 +50,7 @@ Preferred communication style: Simple, everyday language.
 - **Multi-language**: Database-stored translations with 205 translation keys, supports English (EN) and Traditional Chinese (zh-HK), client-side language detection with localStorage sync.
 - **Translation Quality**: All Chinese translations reviewed and optimized for Hong Kong users with natural, official, and friendly tone. Verified across landing page, emergency flow, profile, pets, and broadcast status.
 - **Coverage**: Complete bilingual support for landing page (subtitle, features, disclaimer), emergency flow (symptoms, validation, steps), clinic results, profile management, pets, and broadcast status.
+- **Pet Breeds**: 29 dog breeds and 24 cat breeds with professional Traditional Chinese translations. Breed selector supports searching in both English and Chinese, stores English keys in database, displays localized names based on language preference.
 
 ### Deployment Architecture
 - **Infrastructure**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment (e.g., Render, Fly.io, Vercel), Infrastructure as Code (Terraform).
