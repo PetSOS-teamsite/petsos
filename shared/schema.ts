@@ -103,6 +103,7 @@ export const clinics = pgTable("clinics", {
   email: text("email"),
   regionId: varchar("region_id").notNull().references(() => regions.id),
   is24Hour: boolean("is_24_hour").notNull().default(false),
+  isAvailable: boolean("is_available").notNull().default(true), // Real-time availability toggle
   latitude: decimal("latitude"),
   longitude: decimal("longitude"),
   status: text("status").notNull().default('active'), // active, inactive, deleted

@@ -35,6 +35,7 @@ interface Clinic {
   email: string | null;
   regionId: string;
   is24Hour: boolean;
+  isAvailable: boolean;
   latitude: string | null;
   longitude: string | null;
   status: string;
@@ -603,8 +604,18 @@ export default function ClinicResultsPage() {
                         </CardTitle>
                         
                         <div className="flex flex-wrap gap-2 mb-3">
+                          {clinic.isAvailable ? (
+                            <Badge className="bg-green-600" data-testid={`badge-available-${clinic.id}`}>
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Available Now
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-gray-500" data-testid={`badge-unavailable-${clinic.id}`}>
+                              Unavailable
+                            </Badge>
+                          )}
                           {clinic.is24Hour && (
-                            <Badge className="bg-green-600" data-testid={`badge-24hour-${clinic.id}`}>
+                            <Badge className="bg-blue-600" data-testid={`badge-24hour-${clinic.id}`}>
                               <Clock className="h-3 w-3 mr-1" />
                               24 Hours
                             </Badge>
