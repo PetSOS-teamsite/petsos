@@ -7,6 +7,7 @@ export function useTranslation() {
 
   const { data: translations = [] } = useQuery<Translation[]>({
     queryKey: ['/api/translations', language],
+    staleTime: 0,
   });
 
   const t = (key: string, fallback?: string): string => {
