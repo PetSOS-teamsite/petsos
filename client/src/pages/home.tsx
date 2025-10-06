@@ -1,35 +1,13 @@
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { AlertCircle, MapPin, Building2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
-import type { User as UserType } from "@shared/schema";
 
 export default function HomePage() {
   const { t } = useTranslation();
-  const { user: authUser, isLoading: authLoading } = useAuth();
-  const [, setLocation] = useLocation();
 
-  // Fetch user profile to check if complete
-  const { data: userProfile, isLoading: profileLoading } = useQuery<UserType>({
-    queryKey: ['/api/users', authUser?.id],
-    enabled: !!authUser?.id,
-  });
-
-  // Check if profile is incomplete and redirect
-  useEffect(() => {
-    if (!authLoading && !profileLoading && authUser && userProfile) {
-      // Profile is complete if user has email and phone (essential for emergency contact)
-      const isProfileIncomplete = !userProfile.email || !userProfile.phone;
-      if (isProfileIncomplete) {
-        setLocation('/profile');
-      }
-    }
-  }, [authLoading, profileLoading, authUser, userProfile, setLocation]);
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
