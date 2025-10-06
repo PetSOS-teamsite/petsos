@@ -35,7 +35,7 @@ export default function LandingPage() {
             </h1>
           </div>
           <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto font-medium">
-            {t('landing.subtitle', 'Emergency veterinary care coordination platform for Hong Kong pet owners')}
+            {t('landing.subtitle', 'Alert 24-hour animal hospitals with one tap')}
           </p>
           
           {/* Emergency CTA - Most Prominent */}
