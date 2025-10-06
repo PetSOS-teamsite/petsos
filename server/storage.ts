@@ -50,6 +50,7 @@ export interface IStorage {
   // Emergency Requests
   getEmergencyRequest(id: string): Promise<EmergencyRequest | undefined>;
   getEmergencyRequestsByUserId(userId: string): Promise<EmergencyRequest[]>;
+  getEmergencyRequestsByClinicId(clinicId: string): Promise<any[]>;
   createEmergencyRequest(request: InsertEmergencyRequest): Promise<EmergencyRequest>;
   updateEmergencyRequest(id: string, request: Partial<InsertEmergencyRequest>): Promise<EmergencyRequest | undefined>;
 
@@ -118,6 +119,7 @@ export class MemStorage implements IStorage {
       languagePreference: 'en',
       regionPreference: null,
       role: 'user',
+      clinicId: null,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -144,6 +146,7 @@ export class MemStorage implements IStorage {
         email: 'info@centralvet.hk',
         regionId: 'hki-region',
         is24Hour: true,
+        isAvailable: true,
         latitude: '22.2820',
         longitude: '114.1585',
         status: 'active',
@@ -162,6 +165,7 @@ export class MemStorage implements IStorage {
         email: 'contact@happypets.hk',
         regionId: 'kln-region',
         is24Hour: true,
+        isAvailable: true,
         latitude: '22.2980',
         longitude: '114.1722',
         status: 'active',
@@ -180,6 +184,7 @@ export class MemStorage implements IStorage {
         email: 'care@ntanimal.hk',
         regionId: 'nti-region',
         is24Hour: false,
+        isAvailable: true,
         latitude: '22.4450',
         longitude: '114.0239',
         status: 'active',
@@ -198,6 +203,7 @@ export class MemStorage implements IStorage {
         email: 'emergency@islandpet.hk',
         regionId: 'hki-region',
         is24Hour: true,
+        isAvailable: true,
         latitude: '22.2793',
         longitude: '114.1826',
         status: 'active',
@@ -229,7 +235,15 @@ export class MemStorage implements IStorage {
       updatedAt: new Date(),
       languagePreference: insertUser.languagePreference ?? 'en',
       regionPreference: insertUser.regionPreference ?? null,
-      role: insertUser.role ?? 'user'
+      role: insertUser.role ?? 'user',
+      email: insertUser.email ?? null,
+      firstName: insertUser.firstName ?? null,
+      lastName: insertUser.lastName ?? null,
+      profileImageUrl: insertUser.profileImageUrl ?? null,
+      username: insertUser.username ?? null,
+      password: insertUser.password ?? null,
+      phone: insertUser.phone ?? null,
+      clinicId: insertUser.clinicId ?? null,
     };
     this.users.set(id, user);
     return user;
@@ -258,6 +272,7 @@ export class MemStorage implements IStorage {
       languagePreference: existing?.languagePreference ?? 'en',
       regionPreference: existing?.regionPreference ?? null,
       role: existing?.role ?? 'user',
+      clinicId: existing?.clinicId ?? null,
       createdAt: existing?.createdAt ?? new Date(),
       updatedAt: new Date(),
     };
@@ -374,6 +389,7 @@ export class MemStorage implements IStorage {
       longitude: insertClinic.longitude ?? null,
       status: insertClinic.status ?? 'active',
       is24Hour: insertClinic.is24Hour ?? false,
+      isAvailable: insertClinic.isAvailable ?? true,
       services: insertClinic.services ?? null
     };
     this.clinics.set(id, clinic);
@@ -403,6 +419,26 @@ export class MemStorage implements IStorage {
 
   async getEmergencyRequestsByUserId(userId: string): Promise<EmergencyRequest[]> {
     return Array.from(this.emergencyRequests.values()).filter(req => req.userId === userId);
+  }
+
+  async getEmergencyRequestsByClinicId(clinicId: string): Promise<any[]> {
+    const requestIds = new Set(
+      Array.from(this.messages.values())
+        .filter(msg => msg.clinicId === clinicId)
+        .map(msg => msg.emergencyRequestId)
+    );
+    
+    return Array.from(this.emergencyRequests.values())
+      .filter(req => requestIds.has(req.id))
+      .map(req => {
+        const pet = req.petId ? this.pets.get(req.petId) : undefined;
+        const user = req.userId ? this.users.get(req.userId) : undefined;
+        return {
+          ...req,
+          pet,
+          user
+        };
+      });
   }
 
   async createEmergencyRequest(insertRequest: InsertEmergencyRequest): Promise<EmergencyRequest> {
@@ -736,6 +772,27 @@ class DatabaseStorage implements IStorage {
 
   async getEmergencyRequestsByUserId(userId: string): Promise<EmergencyRequest[]> {
     return await db.select().from(emergencyRequests).where(eq(emergencyRequests.userId, userId));
+  }
+
+  async getEmergencyRequestsByClinicId(clinicId: string): Promise<any[]> {
+    const results = await db
+      .selectDistinct({
+        request: emergencyRequests,
+        pet: pets,
+        user: users,
+      })
+      .from(emergencyRequests)
+      .innerJoin(messages, eq(messages.emergencyRequestId, emergencyRequests.id))
+      .leftJoin(pets, eq(pets.id, emergencyRequests.petId))
+      .leftJoin(users, eq(users.id, emergencyRequests.userId))
+      .where(eq(messages.clinicId, clinicId))
+      .orderBy(emergencyRequests.createdAt);
+
+    return results.map(({ request, pet, user }) => ({
+      ...request,
+      pet,
+      user
+    }));
   }
 
   async createEmergencyRequest(insertRequest: InsertEmergencyRequest): Promise<EmergencyRequest> {
