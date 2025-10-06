@@ -361,40 +361,40 @@ export default function ClinicResultsPage() {
           </Card>
         )}
 
-        {/* Quick Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card data-testid="stat-total">
-            <CardContent className="pt-6 pb-4">
+        {/* Quick Statistics - Compact */}
+        <div className="grid grid-cols-4 gap-3">
+          <Card data-testid="stat-total" className="shadow-sm">
+            <CardContent className="pt-4 pb-3">
               <div className="text-center">
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">{filteredClinics.length}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Clinics</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{filteredClinics.length}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Total Clinics</p>
               </div>
             </CardContent>
           </Card>
           
-          <Card data-testid="stat-24hour">
-            <CardContent className="pt-6 pb-4">
+          <Card data-testid="stat-24hour" className="shadow-sm">
+            <CardContent className="pt-4 pb-3">
               <div className="text-center">
-                <p className="text-3xl font-bold text-green-600 dark:text-green-400">{clinicsWith24Hour}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">24-Hour</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{clinicsWith24Hour}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">24-Hour</p>
               </div>
             </CardContent>
           </Card>
           
-          <Card data-testid="stat-whatsapp">
-            <CardContent className="pt-6 pb-4">
+          <Card data-testid="stat-whatsapp" className="shadow-sm">
+            <CardContent className="pt-4 pb-3">
               <div className="text-center">
-                <p className="text-3xl font-bold text-green-600 dark:text-green-400">{clinicsWithWhatsApp}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">WhatsApp</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{clinicsWithWhatsApp}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">WhatsApp</p>
               </div>
             </CardContent>
           </Card>
           
-          <Card data-testid="stat-nearby">
-            <CardContent className="pt-6 pb-4">
+          <Card data-testid="stat-nearby" className="shadow-sm">
+            <CardContent className="pt-4 pb-3">
               <div className="text-center">
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{clinicsWithin5km}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Within 5km</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{clinicsWithin5km}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Within 5km</p>
               </div>
             </CardContent>
           </Card>
@@ -427,6 +427,20 @@ export default function ClinicResultsPage() {
                 className="pl-10"
                 data-testid="input-search"
               />
+            </div>
+
+            {/* Quick 24-Hour Toggle - Always Visible */}
+            <div className="flex items-center space-x-2 pt-1">
+              <Switch
+                id="24hour-quick-filter"
+                checked={only24Hour}
+                onCheckedChange={setOnly24Hour}
+                data-testid="switch-24hour-quick"
+              />
+              <Label htmlFor="24hour-quick-filter" className="cursor-pointer font-medium">
+                <Clock className="inline h-4 w-4 mr-1.5 text-green-600" />
+                24-Hour Clinics Only
+              </Label>
             </div>
 
             {showFilters && (
