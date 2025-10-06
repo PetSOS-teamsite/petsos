@@ -148,6 +148,7 @@ export class MemStorage implements IStorage {
         regionId: 'hki-region',
         is24Hour: true,
         isAvailable: true,
+        isSupportHospital: false,
         latitude: '22.2820',
         longitude: '114.1585',
         status: 'active',
@@ -167,6 +168,7 @@ export class MemStorage implements IStorage {
         regionId: 'kln-region',
         is24Hour: true,
         isAvailable: true,
+        isSupportHospital: false,
         latitude: '22.2980',
         longitude: '114.1722',
         status: 'active',
@@ -186,6 +188,7 @@ export class MemStorage implements IStorage {
         regionId: 'nti-region',
         is24Hour: false,
         isAvailable: true,
+        isSupportHospital: false,
         latitude: '22.4450',
         longitude: '114.0239',
         status: 'active',
@@ -205,6 +208,7 @@ export class MemStorage implements IStorage {
         regionId: 'hki-region',
         is24Hour: true,
         isAvailable: true,
+        isSupportHospital: false,
         latitude: '22.2793',
         longitude: '114.1826',
         status: 'active',
@@ -391,6 +395,7 @@ export class MemStorage implements IStorage {
       status: insertClinic.status ?? 'active',
       is24Hour: insertClinic.is24Hour ?? false,
       isAvailable: insertClinic.isAvailable ?? true,
+      isSupportHospital: insertClinic.isSupportHospital ?? false,
       services: insertClinic.services ?? null
     };
     this.clinics.set(id, clinic);

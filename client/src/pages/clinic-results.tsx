@@ -36,6 +36,7 @@ interface Clinic {
   regionId: string;
   is24Hour: boolean;
   isAvailable: boolean;
+  isSupportHospital: boolean;
   latitude: string | null;
   longitude: string | null;
   status: string;
@@ -309,6 +310,73 @@ export default function ClinicResultsPage() {
     ? selectedClinics.size 
     : filteredClinics.filter(c => c.whatsapp || c.email).length;
 
+  // Count support hospitals (only active ones)
+  const supportHospitals24h = allClinics.filter(c => 
+    c.status === 'active' &&
+    c.isSupportHospital && 
+    c.is24Hour && 
+    c.isAvailable && 
+    (c.whatsapp || c.email)
+  );
+
+  // Quick broadcast to all 24-hour support hospitals
+  const quickBroadcastMutation = useMutation({
+    mutationFn: async () => {
+      const clinicIds = supportHospitals24h.map(c => c.id);
+      
+      if (clinicIds.length === 0) {
+        throw new Error('No 24-hour support hospitals available');
+      }
+      
+      let locationInfo = emergencyRequest?.locationText || t('clinic_results.location_not_provided', 'Location not provided');
+      if (emergencyRequest?.locationLatitude && emergencyRequest?.locationLongitude) {
+        const mapsLink = `https://www.google.com/maps?q=${emergencyRequest.locationLatitude},${emergencyRequest.locationLongitude}`;
+        locationInfo = emergencyRequest.locationText 
+          ? `${emergencyRequest.locationText}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`
+          : `${t('clinic_results.gps_prefix', 'GPS')}: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`;
+      }
+      
+      let petInfo = '';
+      if (emergencyRequest?.petSpecies) {
+        petInfo = `\n${t('clinic_results.pet', 'Pet')}: ${emergencyRequest.petSpecies}`;
+        if (emergencyRequest.petBreed) {
+          petInfo += `, ${emergencyRequest.petBreed}`;
+        }
+        if (emergencyRequest.petAge) {
+          petInfo += ` (${emergencyRequest.petAge} ${t('common.years', 'years')})`;
+        }
+      }
+      
+      const message = emergencyRequest
+        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
+        : t('clinic_results.emergency_care_needed', 'Emergency pet care needed');
+      
+      const response = await apiRequest(
+        'POST',
+        `/api/emergency-requests/${params?.requestId}/broadcast`,
+        { clinicIds, message }
+      );
+      
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (params?.requestId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/emergency-requests', params.requestId] });
+      }
+      toast({
+        title: t('clinic_results.broadcast_success', 'Emergency Alert Sent!'),
+        description: `Broadcast sent to ${data.count} 24-hour support ${data.count === 1 ? 'hospital' : 'hospitals'}`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('clinic_results.broadcast_failed', 'Broadcast failed'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -358,6 +426,47 @@ export default function ClinicResultsPage() {
                 </div>
               </div>
             </CardHeader>
+          </Card>
+        )}
+
+        {/* Quick Broadcast Button - PROMINENT */}
+        {emergencyRequest && supportHospitals24h.length > 0 && params?.requestId && (
+          <Card className="bg-gradient-to-r from-red-600 to-red-700 dark:from-red-700 dark:to-red-800 border-0 shadow-lg" data-testid="card-quick-broadcast">
+            <CardContent className="p-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-start gap-4 text-white">
+                  <Send className="h-10 w-10 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-xl font-bold mb-1">🚨 INSTANT EMERGENCY BROADCAST</h3>
+                    <p className="text-sm text-red-50">
+                      Send alert to {supportHospitals24h.length} available 24-hour support {supportHospitals24h.length === 1 ? 'hospital' : 'hospitals'} NOW
+                    </p>
+                    <p className="text-xs text-red-100 mt-2">
+                      ⚡ Fastest way to get help - One click to reach all partner hospitals
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  size="lg" 
+                  onClick={() => quickBroadcastMutation.mutate()}
+                  disabled={quickBroadcastMutation.isPending}
+                  className="bg-white text-red-600 hover:bg-red-50 font-bold text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all"
+                  data-testid="button-quick-broadcast"
+                >
+                  {quickBroadcastMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-5 w-5 mr-2" />
+                      BROADCAST NOW
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
           </Card>
         )}
 
@@ -627,6 +736,11 @@ export default function ClinicResultsPage() {
                             <Badge className="bg-blue-600" data-testid={`badge-24hour-${clinic.id}`}>
                               <Clock className="h-3 w-3 mr-1" />
                               {t('clinic_results.24_hours', '24 Hours')}
+                            </Badge>
+                          )}
+                          {clinic.isSupportHospital && (
+                            <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 font-semibold" data-testid={`badge-support-hospital-${clinic.id}`}>
+                              ⭐ PetSOS Partner
                             </Badge>
                           )}
                           {clinic.distance !== undefined && (
