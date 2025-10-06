@@ -27,7 +27,8 @@ export const users = pgTable("users", {
   phone: text("phone"),
   languagePreference: text("language_preference").notNull().default('en'),
   regionPreference: text("region_preference"),
-  role: text("role").notNull().default('user'), // user, admin
+  role: text("role").notNull().default('user'), // user, admin, clinic_staff
+  clinicId: varchar("clinic_id").references(() => clinics.id, { onDelete: 'set null' }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
