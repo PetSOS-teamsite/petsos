@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -581,6 +581,47 @@ export default function AdminClinicsPage() {
                   </FormItem>
                 )}
               />
+              <div className="space-y-3">
+                <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">GPS Coordinates (Required for proximity filtering)</p>
+                    <p className="text-blue-700 dark:text-blue-300">
+                      1. Search clinic address on Google Maps<br />
+                      2. Right-click on the location → Click coordinates to copy<br />
+                      3. Paste latitude (first number) and longitude (second number)
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={addForm.control}
+                    name="latitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Latitude</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} placeholder="e.g., 22.2820" data-testid="input-latitude" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addForm.control}
+                    name="longitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Longitude</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} placeholder="e.g., 114.1585" data-testid="input-longitude" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
               <FormField
                 control={addForm.control}
                 name="is24Hour"
@@ -769,6 +810,47 @@ export default function AdminClinicsPage() {
                   </FormItem>
                 )}
               />
+              <div className="space-y-3">
+                <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">GPS Coordinates (Required for proximity filtering)</p>
+                    <p className="text-blue-700 dark:text-blue-300">
+                      1. Search clinic address on Google Maps<br />
+                      2. Right-click on the location → Click coordinates to copy<br />
+                      3. Paste latitude (first number) and longitude (second number)
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={editForm.control}
+                    name="latitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Latitude</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} placeholder="e.g., 22.2820" data-testid="input-edit-latitude" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={editForm.control}
+                    name="longitude"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Longitude</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} placeholder="e.g., 114.1585" data-testid="input-edit-longitude" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
               <FormField
                 control={editForm.control}
                 name="is24Hour"
