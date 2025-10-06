@@ -17,11 +17,28 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### Support Hospital Program & Quick Broadcast
+- **Support Hospital Feature**:
+  - New `isSupportHospital` boolean field in clinics schema for flagging partner hospitals
+  - Admin can toggle Support Hospital status in add/edit clinic forms (blue highlighted field)
+  - Visual "⭐ Support Hospital" badge displayed on clinic cards throughout UI
+  - Support hospitals are prioritized for emergency broadcasts
+  
+- **Quick Broadcast Button** (`/emergency-results/:requestId`):
+  - Prominent red "INSTANT EMERGENCY BROADCAST" button at top of clinic results page
+  - One-click broadcasting to all available 24-hour support hospitals
+  - Shows dynamic count: "Send alert to X available 24-hour support hospitals NOW"
+  - Only displays when support hospitals exist with contact methods (WhatsApp/email)
+  - Filtering criteria: active status, support hospital flag, 24-hour service, available, has contact method
+  - Success confirmation with toast message
+  - Designed to reduce cognitive load for panic pet parents during emergencies
+
 ### Clinic and Admin Dashboards
 - **Admin Dashboard** (`/admin/clinics`):
   - Comprehensive statistics: total clinics, available clinics, 24-hour clinics, total emergency requests
   - Full CRUD operations for clinic management
   - Real-time availability toggle
+  - Support Hospital toggle in add/edit forms
   - Protected route (admin role required)
   
 - **Clinic Staff Dashboard** (`/clinic/dashboard`):
@@ -34,6 +51,7 @@ Preferred communication style: Simple, everyday language.
 
 - **Database Changes**:
   - Added `clinicId` field to users table for linking staff to clinics
+  - Added `isSupportHospital` field to clinics table for partner hospital program
   - Added `getAllEmergencyRequests()` storage method and API endpoint for admin statistics
 
 - **Translation Keys**: Added 70+ clinic dashboard translation keys (EN/zh-HK) covering dashboard UI, availability, emergency requests, and edit forms
