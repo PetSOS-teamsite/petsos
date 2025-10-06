@@ -6,7 +6,7 @@ const translations = [
   { key: "app.disclaimer", en: "⚠️ PetSOS provides emergency guidance only and is not medical advice. If in doubt, contact a vet immediately.", zh: "⚠️ PetSOS 只提供緊急支援，並非專業獸醫診斷或醫療建議。如有疑問，請立即聯絡獸醫。" },
   
   // Landing Page
-  { key: "landing.subtitle", en: "Emergency veterinary care coordination platform for Hong Kong pet owners", zh: "香港寵物主人的緊急獸醫護理協調平台" },
+  { key: "landing.subtitle", en: "Alert 24-hour animal hospitals with one tap", zh: "一按即時通知24小時動物醫院" },
   { key: "landing.emergency_button", en: "Emergency Help Now", zh: "緊急求助" },
   { key: "landing.login_button", en: "Log In / Sign Up", zh: "登入 / 註冊" },
   { key: "landing.quick_access", en: "Emergency access available without login • Get help in under 60 seconds", zh: "無需登入即可緊急求助 • 60秒內獲得協助" },
