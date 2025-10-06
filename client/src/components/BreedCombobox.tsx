@@ -15,7 +15,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { DOG_BREEDS, CAT_BREEDS } from "@shared/breeds";
+import { DOG_BREEDS, CAT_BREEDS, type Breed } from "@shared/breeds";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface BreedComboboxProps {
   species: string;
@@ -36,26 +37,53 @@ export function BreedCombobox({
 }: BreedComboboxProps) {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const { language } = useLanguage();
 
   const breeds = species === "dog" ? DOG_BREEDS : species === "cat" ? CAT_BREEDS : [];
+  const isZh = language === 'zh-HK';
 
   // Filter breeds based on search
   const filteredBreeds = breeds.filter(breed =>
-    breed.toLowerCase().includes(searchValue.toLowerCase())
+    breed.en.toLowerCase().includes(searchValue.toLowerCase()) ||
+    breed.zh.toLowerCase().includes(searchValue.toLowerCase())
   );
 
-  const handleSelect = (currentValue: string) => {
-    onChange(currentValue);
+  const handleSelect = (breedEn: string) => {
+    onChange(breedEn);
     setOpen(false);
     setSearchValue("");
   };
 
   const handleInputChange = (search: string) => {
     setSearchValue(search);
+    
+    // Check if search matches a Chinese breed name
+    const matchingBreed = breeds.find(b => b.zh.toLowerCase() === search.toLowerCase());
+    if (matchingBreed) {
+      onChange(matchingBreed.en);
+      return;
+    }
+    
+    // Check if search matches an English breed name
+    const matchingEnBreed = breeds.find(b => b.en.toLowerCase() === search.toLowerCase());
+    if (matchingEnBreed) {
+      onChange(matchingEnBreed.en);
+      return;
+    }
+    
     // Allow custom input: if user types something not in the list, use it as the value
-    if (search && !breeds.some(b => b.toLowerCase() === search.toLowerCase())) {
+    if (search) {
       onChange(search);
     }
+  };
+
+  // Get display text for the selected value
+  const getDisplayText = (val: string) => {
+    const breed = breeds.find(b => b.en === val);
+    if (breed) {
+      return isZh ? breed.zh : breed.en;
+    }
+    return val;
   };
 
   return (
@@ -70,7 +98,7 @@ export function BreedCombobox({
           data-testid={testId}
         >
           <span className="truncate">
-            {value || placeholder}
+            {value ? getDisplayText(value) : placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -95,17 +123,17 @@ export function BreedCombobox({
             <CommandGroup>
               {filteredBreeds.map((breed) => (
                 <CommandItem
-                  key={breed}
-                  value={breed}
-                  onSelect={() => handleSelect(breed)}
+                  key={breed.en}
+                  value={breed.en}
+                  onSelect={() => handleSelect(breed.en)}
                 >
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === breed ? "opacity-100" : "opacity-0"
+                      value === breed.en ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {breed}
+                  {isZh ? breed.zh : breed.en}
                 </CommandItem>
               ))}
             </CommandGroup>
