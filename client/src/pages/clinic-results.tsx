@@ -51,7 +51,7 @@ interface Region {
 }
 
 export default function ClinicResultsPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [, params] = useRoute("/emergency-results/:requestId");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -191,8 +191,8 @@ export default function ClinicResultsPage() {
 
   const handleWhatsApp = (whatsapp: string, clinicName: string) => {
     const message = emergencyRequest
-      ? `Emergency: ${emergencyRequest.symptom}. Contact: ${emergencyRequest.contactPhone}`
-      : `I need emergency pet care`;
+      ? `${t('clinic_results.whatsapp_message_emergency', 'Emergency')}: ${emergencyRequest.symptom}. ${t('clinic_results.whatsapp_message_contact', 'Contact')}: ${emergencyRequest.contactPhone}`
+      : t('clinic_results.whatsapp_message_request', 'I need emergency pet care');
     const encodedMessage = encodeURIComponent(message);
     window.open(`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}?text=${encodedMessage}`, '_blank');
   };
@@ -251,29 +251,29 @@ export default function ClinicResultsPage() {
             .filter(c => c.whatsapp || c.email)
             .map(c => c.id);
       
-      let locationInfo = emergencyRequest?.locationText || 'Location not provided';
+      let locationInfo = emergencyRequest?.locationText || t('clinic_results.location_not_provided', 'Location not provided');
       if (emergencyRequest?.locationLatitude && emergencyRequest?.locationLongitude) {
         const mapsLink = `https://www.google.com/maps?q=${emergencyRequest.locationLatitude},${emergencyRequest.locationLongitude}`;
         locationInfo = emergencyRequest.locationText 
-          ? `${emergencyRequest.locationText}\nMap: ${mapsLink}`
-          : `GPS: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\nMap: ${mapsLink}`;
+          ? `${emergencyRequest.locationText}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`
+          : `${t('clinic_results.gps_prefix', 'GPS')}: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`;
       }
       
       // Build pet info string
       let petInfo = '';
       if (emergencyRequest?.petSpecies) {
-        petInfo = `\nPet: ${emergencyRequest.petSpecies}`;
+        petInfo = `\n${t('clinic_results.pet', 'Pet')}: ${emergencyRequest.petSpecies}`;
         if (emergencyRequest.petBreed) {
           petInfo += `, ${emergencyRequest.petBreed}`;
         }
         if (emergencyRequest.petAge) {
-          petInfo += ` (${emergencyRequest.petAge} years)`;
+          petInfo += ` (${emergencyRequest.petAge} ${t('common.years', 'years')})`;
         }
       }
       
       const message = emergencyRequest
-        ? `🚨 PET EMERGENCY ALERT 🚨\n\nSymptom: ${emergencyRequest.symptom}${petInfo}\nLocation: ${locationInfo}\nContact: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `Email: ${emergencyRequest.contactEmail}` : ''}\n\nPlease respond urgently if you can help.`
-        : 'Emergency pet care needed';
+        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
+        : t('clinic_results.emergency_care_needed', 'Emergency pet care needed');
       
       const response = await apiRequest(
         'POST',
@@ -286,15 +286,15 @@ export default function ClinicResultsPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/emergency-requests', params?.requestId] });
       toast({
-        title: "Broadcast sent successfully!",
-        description: `Emergency alert sent to ${data.count} ${data.count === 1 ? 'clinic' : 'clinics'}`,
+        title: t('clinic_results.broadcast_success', 'Broadcast sent successfully!'),
+        description: t('clinic_results.broadcast_success_desc', `Emergency alert sent to ${data.count} ${data.count === 1 ? 'clinic' : 'clinics'}`),
       });
       setShowBroadcastDialog(false);
       setSelectedClinics(new Set());
     },
     onError: (error: Error) => {
       toast({
-        title: "Broadcast failed",
+        title: t('clinic_results.broadcast_failed', 'Broadcast failed'),
         description: error.message,
         variant: "destructive",
       });
@@ -316,13 +316,13 @@ export default function ClinicResultsPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Emergency Clinic Results</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('clinic_results.title', 'Emergency Clinic Results')}</h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {filteredClinics.length} {filteredClinics.length === 1 ? 'clinic' : 'clinics'} found
+                {filteredClinics.length} {t('clinic_results.clinics_found', filteredClinics.length === 1 ? 'clinic found' : 'clinics found')}
               </p>
             </div>
             <Link href="/">
-              <Button variant="outline" data-testid="button-home">Home</Button>
+              <Button variant="outline" data-testid="button-home">{t('common.home', 'Home')}</Button>
             </Link>
           </div>
         </div>
@@ -336,24 +336,24 @@ export default function ClinicResultsPage() {
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400 mt-1" />
                 <div className="flex-1">
-                  <CardTitle className="text-lg text-red-900 dark:text-red-100">Emergency Request</CardTitle>
+                  <CardTitle className="text-lg text-red-900 dark:text-red-100">{t('clinic_results.emergency_request', 'Emergency Request')}</CardTitle>
                   <p className="text-sm text-red-700 dark:text-red-300 mt-2">
-                    <strong>Symptoms:</strong> {emergencyRequest.symptom}
+                    <strong>{t('clinic_results.symptoms', 'Symptoms')}:</strong> {emergencyRequest.symptom}
                   </p>
                   {emergencyRequest.petSpecies && (
                     <p className="text-sm text-red-700 dark:text-red-300 mt-1" data-testid="text-pet-details">
-                      <strong>Pet:</strong> {emergencyRequest.petSpecies}
+                      <strong>{t('clinic_results.pet', 'Pet')}:</strong> {emergencyRequest.petSpecies}
                       {emergencyRequest.petBreed && `, ${emergencyRequest.petBreed}`}
-                      {emergencyRequest.petAge && ` (${emergencyRequest.petAge} years)`}
+                      {emergencyRequest.petAge && ` (${emergencyRequest.petAge} ${t('common.years', 'years')})`}
                     </p>
                   )}
                   {emergencyRequest.locationText && (
                     <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                      <strong>Location:</strong> {emergencyRequest.locationText}
+                      <strong>{t('clinic_results.location', 'Location')}:</strong> {emergencyRequest.locationText}
                     </p>
                   )}
                   <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                    <strong>Contact:</strong> {emergencyRequest.contactPhone}
+                    <strong>{t('clinic_results.contact', 'Contact')}:</strong> {emergencyRequest.contactPhone}
                   </p>
                 </div>
               </div>
@@ -367,7 +367,7 @@ export default function ClinicResultsPage() {
             <CardContent className="pt-4 pb-3">
               <div className="text-center">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{filteredClinics.length}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Total Clinics</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{t('clinic_results.total_clinics', 'Total Clinics')}</p>
               </div>
             </CardContent>
           </Card>
@@ -376,7 +376,7 @@ export default function ClinicResultsPage() {
             <CardContent className="pt-4 pb-3">
               <div className="text-center">
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">{clinicsWith24Hour}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">24-Hour</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{t('clinic_results.24hour', '24-Hour')}</p>
               </div>
             </CardContent>
           </Card>
@@ -385,7 +385,7 @@ export default function ClinicResultsPage() {
             <CardContent className="pt-4 pb-3">
               <div className="text-center">
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">{clinicsWithWhatsApp}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">WhatsApp</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{t('clinic_results.whatsapp', 'WhatsApp')}</p>
               </div>
             </CardContent>
           </Card>
@@ -394,7 +394,7 @@ export default function ClinicResultsPage() {
             <CardContent className="pt-4 pb-3">
               <div className="text-center">
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{clinicsWithin5km}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Within 5km</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{t('clinic_results.within_5km', 'Within 5km')}</p>
               </div>
             </CardContent>
           </Card>
@@ -404,7 +404,7 @@ export default function ClinicResultsPage() {
         <Card data-testid="card-filters">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Filters & Search</CardTitle>
+              <CardTitle className="text-lg">{t('clinic_results.filters_search', 'Filters & Search')}</CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
@@ -412,7 +412,7 @@ export default function ClinicResultsPage() {
                 data-testid="button-toggle-filters"
               >
                 <Filter className="h-4 w-4 mr-2" />
-                {showFilters ? 'Hide' : 'Show'} Filters
+                {showFilters ? t('clinic_results.hide_filters', 'Hide Filters') : t('clinic_results.show_filters', 'Show Filters')}
               </Button>
             </div>
           </CardHeader>
@@ -421,7 +421,7 @@ export default function ClinicResultsPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search clinics by name or address..."
+                placeholder={t('clinic_results.search_placeholder', 'Search clinics by name or address...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -439,7 +439,7 @@ export default function ClinicResultsPage() {
               />
               <Label htmlFor="24hour-quick-filter" className="cursor-pointer font-medium">
                 <Clock className="inline h-4 w-4 mr-1.5 text-green-600" />
-                24-Hour Clinics Only
+                {t('clinic_results.24hour_only', '24-Hour Clinics Only')}
               </Label>
             </div>
 
@@ -447,16 +447,16 @@ export default function ClinicResultsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
                 {/* Region Filter */}
                 <div>
-                  <Label className="text-sm mb-2 block">Region</Label>
+                  <Label className="text-sm mb-2 block">{t('clinic_results.region', 'Region')}</Label>
                   <Select value={selectedRegion} onValueChange={setSelectedRegion}>
                     <SelectTrigger data-testid="select-region">
-                      <SelectValue placeholder="All Regions" />
+                      <SelectValue placeholder={t('clinic_results.all_regions', 'All Regions')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Regions</SelectItem>
+                      <SelectItem value="all">{t('clinic_results.all_regions', 'All Regions')}</SelectItem>
                       {regions.map((region) => (
                         <SelectItem key={region.id} value={region.code}>
-                          {region.nameEn}
+                          {language === 'zh-HK' ? region.nameZh : region.nameEn}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -465,30 +465,30 @@ export default function ClinicResultsPage() {
 
                 {/* Distance Filter */}
                 <div>
-                  <Label className="text-sm mb-2 block">Distance</Label>
+                  <Label className="text-sm mb-2 block">{t('clinic_results.distance', 'Distance')}</Label>
                   {canUseDistanceFilter ? (
                     <Select value={distanceFilter} onValueChange={setDistanceFilter}>
                       <SelectTrigger data-testid="select-distance">
-                        <SelectValue placeholder="Any Distance" />
+                        <SelectValue placeholder={t('clinic_results.any_distance', 'Any Distance')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Any Distance</SelectItem>
-                        <SelectItem value="5">Within 5 km</SelectItem>
-                        <SelectItem value="10">Within 10 km</SelectItem>
-                        <SelectItem value="15">Within 15 km</SelectItem>
+                        <SelectItem value="all">{t('clinic_results.any_distance', 'Any Distance')}</SelectItem>
+                        <SelectItem value="5">{t('clinic_results.within_5km', 'Within 5 km')}</SelectItem>
+                        <SelectItem value="10">{t('clinic_results.within_10km', 'Within 10 km')}</SelectItem>
+                        <SelectItem value="15">{t('clinic_results.within_15km', 'Within 15 km')}</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
                     <div>
                       <Select disabled value="all">
                         <SelectTrigger data-testid="select-distance-disabled" className="opacity-50">
-                          <SelectValue placeholder="GPS Not Available" />
+                          <SelectValue placeholder={t('clinic_results.gps_not_available', 'GPS Not Available')} />
                         </SelectTrigger>
                       </Select>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {!hasUserGPS 
-                          ? "Enable GPS on Step 2 for distance filtering" 
-                          : "No clinic GPS data available"}
+                          ? t('clinic_results.enable_gps', 'Enable GPS on Step 2 for distance filtering')
+                          : t('clinic_results.no_gps_data', 'No clinic GPS data available')}
                       </p>
                     </div>
                   )}
@@ -503,7 +503,7 @@ export default function ClinicResultsPage() {
                     data-testid="switch-24hour"
                   />
                   <Label htmlFor="24hour-filter" className="cursor-pointer">
-                    24-Hour Only
+                    {t('clinic_results.24hour_only_short', '24-Hour Only')}
                   </Label>
                 </div>
 
@@ -516,7 +516,7 @@ export default function ClinicResultsPage() {
                     data-testid="switch-whatsapp"
                   />
                   <Label htmlFor="whatsapp-filter" className="cursor-pointer">
-                    WhatsApp Only
+                    {t('clinic_results.whatsapp_only', 'WhatsApp Only')}
                   </Label>
                 </div>
               </div>
@@ -530,7 +530,7 @@ export default function ClinicResultsPage() {
             {selectedClinics.size > 0 && (
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="text-sm">
-                  {selectedClinics.size} clinic{selectedClinics.size !== 1 ? 's' : ''} selected
+                  {selectedClinics.size} {t('clinic_results.clinics_selected', selectedClinics.size !== 1 ? 'clinics selected' : 'clinic selected')}
                 </Badge>
                 <Button
                   variant="ghost"
@@ -538,7 +538,7 @@ export default function ClinicResultsPage() {
                   onClick={deselectAllClinics}
                   data-testid="button-deselect-all"
                 >
-                  Clear Selection
+                  {t('clinic_results.clear_selection', 'Clear Selection')}
                 </Button>
               </div>
             )}
@@ -550,7 +550,7 @@ export default function ClinicResultsPage() {
                 data-testid="button-view-status"
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
-                View Status
+                {t('clinic_results.view_status', 'View Status')}
               </Button>
             </Link>
             <Button
@@ -560,7 +560,7 @@ export default function ClinicResultsPage() {
               data-testid="button-broadcast"
             >
               <Send className="h-4 w-4 mr-2" />
-              Broadcast {selectedClinics.size > 0 ? `(${selectedClinics.size})` : 'to All'}
+              {t('clinic_results.broadcast', 'Broadcast')} {selectedClinics.size > 0 ? `(${selectedClinics.size})` : t('clinic_results.to_all', 'to All')}
             </Button>
           </div>
         </div>
@@ -570,9 +570,9 @@ export default function ClinicResultsPage() {
           {filteredClinics.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
-                <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">No clinics found</p>
+                <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">{t('clinic_results.no_clinics', 'No clinics found')}</p>
                 <p className="text-sm text-gray-400 dark:text-gray-500">
-                  Try adjusting your filters or search criteria
+                  {t('clinic_results.adjust_filters', 'Try adjusting your filters or search criteria')}
                 </p>
               </CardContent>
             </Card>
@@ -604,46 +604,41 @@ export default function ClinicResultsPage() {
                         {/* Urgency Indicator */}
                         {index < 3 && clinic.is24Hour && clinic.distance !== undefined && clinic.distance < 5 && (
                           <Badge className="bg-red-600 mb-2" data-testid="badge-urgent">
-                            ⚡ Priority Clinic
+                            ⚡ {t('clinic_results.priority_clinic', 'Priority Clinic')}
                           </Badge>
                         )}
                         
                         <CardTitle className="text-xl mb-2">
-                          {clinic.name}
-                          {clinic.nameZh && (
-                            <span className="ml-2 text-gray-600 dark:text-gray-400">
-                              {clinic.nameZh}
-                            </span>
-                          )}
+                          {language === 'zh-HK' && clinic.nameZh ? clinic.nameZh : clinic.name}
                         </CardTitle>
                         
                         <div className="flex flex-wrap gap-2 mb-3">
                           {clinic.isAvailable ? (
                             <Badge className="bg-green-600" data-testid={`badge-available-${clinic.id}`}>
                               <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Available Now
+                              {t('clinic_results.available_now', 'Available Now')}
                             </Badge>
                           ) : (
                             <Badge className="bg-gray-500" data-testid={`badge-unavailable-${clinic.id}`}>
-                              Unavailable
+                              {t('clinic_results.unavailable', 'Unavailable')}
                             </Badge>
                           )}
                           {clinic.is24Hour && (
                             <Badge className="bg-blue-600" data-testid={`badge-24hour-${clinic.id}`}>
                               <Clock className="h-3 w-3 mr-1" />
-                              24 Hours
+                              {t('clinic_results.24_hours', '24 Hours')}
                             </Badge>
                           )}
                           {clinic.distance !== undefined && (
                             <Badge variant="outline" data-testid={`badge-distance-${clinic.id}`}>
                               <Navigation className="h-3 w-3 mr-1" />
-                              {clinic.distance.toFixed(1)} km
+                              {clinic.distance.toFixed(1)} {t('clinic_results.km', 'km')}
                             </Badge>
                           )}
                           {clinic.whatsapp && (
                             <Badge variant="outline" className="bg-green-50 dark:bg-green-950">
                               <MessageCircle className="h-3 w-3 mr-1" />
-                              WhatsApp
+                              {t('clinic_results.whatsapp', 'WhatsApp')}
                             </Badge>
                           )}
                         </div>
@@ -656,10 +651,7 @@ export default function ClinicResultsPage() {
                       <div className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
                         <MapPin className="h-5 w-5 mt-0.5 text-gray-500" />
                         <div className="flex-1">
-                          <p>{clinic.address}</p>
-                          {clinic.addressZh && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{clinic.addressZh}</p>
-                          )}
+                          <p>{language === 'zh-HK' && clinic.addressZh ? clinic.addressZh : clinic.address}</p>
                         </div>
                       </div>
 
@@ -670,7 +662,7 @@ export default function ClinicResultsPage() {
                           data-testid={`button-call-${clinic.id}`}
                         >
                           <Phone className="h-4 w-4 mr-2" />
-                          Call
+                          {t('clinic_results.call', 'Call')}
                         </Button>
                         {clinic.whatsapp && (
                           <Button
@@ -679,7 +671,7 @@ export default function ClinicResultsPage() {
                             data-testid={`button-whatsapp-${clinic.id}`}
                           >
                             <MessageCircle className="h-4 w-4 mr-2" />
-                            WhatsApp
+                            {t('clinic_results.whatsapp', 'WhatsApp')}
                           </Button>
                         )}
                         {clinic.latitude && clinic.longitude && (
@@ -715,18 +707,18 @@ export default function ClinicResultsPage() {
         <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {selectedClinics.size > 0 ? 'Broadcast to Selected Clinics' : 'Broadcast Emergency Alert'}
+              {selectedClinics.size > 0 ? t('clinic_results.broadcast_to_selected', 'Broadcast to Selected Clinics') : t('clinic_results.broadcast_emergency', 'Broadcast Emergency Alert')}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div>
                 <p className="mb-4">
                   {selectedClinics.size > 0 ? (
                     <>
-                      This will send your emergency alert to <strong>{broadcastTargetCount}</strong> selected {broadcastTargetCount === 1 ? 'clinic' : 'clinics'} via WhatsApp and email.
+                      {t('clinic_results.broadcast_desc_selected', `This will send your emergency alert to ${broadcastTargetCount} selected ${broadcastTargetCount === 1 ? 'clinic' : 'clinics'} via WhatsApp and email.`)}
                     </>
                   ) : (
                     <>
-                      This will send your emergency alert to <strong>all {broadcastTargetCount}</strong> clinics via WhatsApp and email.
+                      {t('clinic_results.broadcast_desc_all', `This will send your emergency alert to all ${broadcastTargetCount} clinics via WhatsApp and email.`)}
                     </>
                   )}
                 </p>
@@ -734,25 +726,37 @@ export default function ClinicResultsPage() {
                 {selectedClinics.size === 0 && (
                   <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
                     <p className="text-sm text-blue-800 dark:text-blue-200">
-                      💡 Tip: Select specific clinics using the checkboxes to send a targeted broadcast
+                      {t('clinic_results.broadcast_tip', '💡 Tip: Select specific clinics using the checkboxes to send a targeted broadcast')}
                     </p>
                   </div>
                 )}
                 
                 <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-                  <strong className="text-sm font-semibold text-gray-700 dark:text-gray-300">Message Preview:</strong>
+                  <strong className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('clinic_results.message_preview', 'Message Preview')}:</strong>
                   <pre className="mt-2 text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-sans">
                     {(() => {
-                      let locationInfo = emergencyRequest?.locationText || 'Location not provided';
+                      let locationInfo = emergencyRequest?.locationText || t('clinic_results.location_not_provided', 'Location not provided');
                       if (emergencyRequest?.locationLatitude && emergencyRequest?.locationLongitude) {
                         const mapsLink = `https://www.google.com/maps?q=${emergencyRequest.locationLatitude},${emergencyRequest.locationLongitude}`;
                         locationInfo = emergencyRequest.locationText 
-                          ? `${emergencyRequest.locationText}\nMap: ${mapsLink}`
-                          : `GPS: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\nMap: ${mapsLink}`;
+                          ? `${emergencyRequest.locationText}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`
+                          : `${t('clinic_results.gps_prefix', 'GPS')}: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`;
                       }
+                      
+                      let petInfo = '';
+                      if (emergencyRequest?.petSpecies) {
+                        petInfo = `\n${t('clinic_results.pet', 'Pet')}: ${emergencyRequest.petSpecies}`;
+                        if (emergencyRequest.petBreed) {
+                          petInfo += `, ${emergencyRequest.petBreed}`;
+                        }
+                        if (emergencyRequest.petAge) {
+                          petInfo += ` (${emergencyRequest.petAge} ${t('common.years', 'years')})`;
+                        }
+                      }
+                      
                       return emergencyRequest
-                        ? `🚨 PET EMERGENCY ALERT 🚨\n\nSymptom: ${emergencyRequest.symptom}\nLocation: ${locationInfo}\nContact: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `Email: ${emergencyRequest.contactEmail}` : ''}\n\nPlease respond urgently if you can help.`
-                        : 'Emergency pet care needed';
+                        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
+                        : t('clinic_results.emergency_care_needed', 'Emergency pet care needed');
                     })()}
                   </pre>
                 </div>
@@ -760,7 +764,7 @@ export default function ClinicResultsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-broadcast">Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-broadcast">{t('common.cancel', 'Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBroadcast}
               disabled={broadcastMutation.isPending}
@@ -768,7 +772,7 @@ export default function ClinicResultsPage() {
               data-testid="button-confirm-broadcast"
             >
               {broadcastMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Send to {broadcastTargetCount} {broadcastTargetCount === 1 ? 'Clinic' : 'Clinics'}
+              {t('clinic_results.send_to_clinics', `Send to ${broadcastTargetCount} ${broadcastTargetCount === 1 ? 'Clinic' : 'Clinics'}`)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
