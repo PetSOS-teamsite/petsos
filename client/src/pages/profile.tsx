@@ -53,6 +53,13 @@ export default function ProfilePage() {
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
+    defaultValues: {
+      username: '',
+      email: '',
+      phone: '',
+      languagePreference: 'en',
+      regionPreference: undefined,
+    },
     values: user ? {
       username: user.username || '',
       email: user.email || '',
