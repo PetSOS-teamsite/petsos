@@ -2,9 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Cross, Clock, Phone, MapPin, AlertCircle } from "lucide-react";
 import { useLocation } from "wouter";
+import { useTranslation } from "@/hooks/useTranslation";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
 
   const handleLogin = () => {
     window.location.href = "/api/login";
@@ -16,17 +19,24 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-red-50 to-white dark:from-gray-900 dark:to-gray-800">
+      {/* Language Switcher - Top Right */}
+      <div className="container mx-auto px-4 pt-4">
+        <div className="flex justify-end">
+          <LanguageSwitcher />
+        </div>
+      </div>
+      
       {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-12">
         <div className="text-center mb-16">
           <div className="flex items-center justify-center mb-6">
             <Cross className="h-16 w-16 text-red-600" strokeWidth={2.5} />
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900 dark:text-white">
-            PetSOS
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900 dark:text-white" data-testid="text-hero-title">
+            {t('app.title', 'PetSOS')}
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-            Emergency veterinary care coordination platform for Hong Kong pet owners
+            {t('landing.subtitle', 'Emergency veterinary care coordination platform for Hong Kong pet owners')}
           </p>
           
           {/* Emergency CTA - Most Prominent */}
@@ -38,7 +48,7 @@ export default function LandingPage() {
               data-testid="button-emergency-now"
             >
               <AlertCircle className="mr-2 h-6 w-6" />
-              Emergency Help Now
+              {t('landing.emergency_button', 'Emergency Help Now')}
             </Button>
             <Button
               onClick={handleLogin}
@@ -47,11 +57,11 @@ export default function LandingPage() {
               className="px-8 py-7 text-lg border-2"
               data-testid="button-login"
             >
-              Log In / Sign Up
+              {t('landing.login_button', 'Log In / Sign Up')}
             </Button>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Emergency access available without login • Get help in under 60 seconds
+            {t('landing.quick_access', 'Emergency access available without login • Get help in under 60 seconds')}
           </p>
         </div>
 
@@ -61,9 +71,9 @@ export default function LandingPage() {
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center">
                 <Clock className="h-12 w-12 text-red-600 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Fast Emergency Flow</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('landing.feature1.title', 'Fast Emergency Flow')}</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  3-step emergency request in under 30 seconds. Every second counts when your pet needs help.
+                  {t('landing.feature1.desc', '3-step emergency request in under 30 seconds. Every second counts when your pet needs help.')}
                 </p>
               </div>
             </CardContent>
@@ -73,9 +83,9 @@ export default function LandingPage() {
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center">
                 <MapPin className="h-12 w-12 text-red-600 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">24-Hour Clinics</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('landing.feature2.title', '24-Hour Clinics')}</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Find nearest 24-hour veterinary clinics across Hong Kong Island, Kowloon, and New Territories.
+                  {t('landing.feature2.desc', 'Find nearest 24-hour veterinary clinics across Hong Kong Island, Kowloon, and New Territories.')}
                 </p>
               </div>
             </CardContent>
@@ -85,9 +95,9 @@ export default function LandingPage() {
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center">
                 <Phone className="h-12 w-12 text-red-600 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">One-Tap Broadcast</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('landing.feature3.title', 'One-Tap Broadcast')}</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Alert multiple clinics instantly via WhatsApp with one tap. Get help faster.
+                  {t('landing.feature3.desc', 'Alert multiple clinics instantly via WhatsApp with one tap. Get help faster.')}
                 </p>
               </div>
             </CardContent>
@@ -98,7 +108,7 @@ export default function LandingPage() {
         <div className="mt-16 max-w-3xl mx-auto">
           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6">
             <p className="text-sm text-amber-900 dark:text-amber-200 text-center">
-              ⚠️ PetSOS provides emergency guidance only and is not medical advice. If in doubt, contact a vet immediately.
+              ⚠️ {t('landing.disclaimer', 'PetSOS provides emergency guidance only and is not medical advice. If in doubt, contact a vet immediately.')}
             </p>
           </div>
         </div>
