@@ -27,10 +27,8 @@ function Router() {
       <Route path="/emergency-results/:requestId" component={ClinicResultsPage} />
       <Route path="/emergency-results/:requestId/messages" component={MessageStatusPage} />
       
-      {/* Home route - landing for logged out, home for logged in */}
-      <Route path="/">
-        {isLoading ? <LandingPage /> : isAuthenticated ? <HomePage /> : <LandingPage />}
-      </Route>
+      {/* Home route - show landing page for everyone */}
+      <Route path="/" component={LandingPage} />
       
       {/* Protected routes - require authentication */}
       <Route path="/profile">
