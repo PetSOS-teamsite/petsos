@@ -267,9 +267,8 @@ export default function PetsPage() {
   };
 
   // Check if profile is incomplete and redirect
-  // Profile is complete if user has email, phone, and either username OR firstName
-  const hasName = userProfile && (userProfile.username || userProfile.firstName);
-  const isProfileIncomplete = userProfile && (!hasName || !userProfile.email || !userProfile.phone);
+  // Profile is complete if user has email and phone (essential for emergency contact)
+  const isProfileIncomplete = userProfile && (!userProfile.email || !userProfile.phone);
 
   if (authLoading || profileLoading) {
     return (
