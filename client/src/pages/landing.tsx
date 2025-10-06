@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Cross, Clock, Phone, MapPin, AlertCircle } from "lucide-react";
+import { Clock, Phone, MapPin, AlertCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import petSOSLogo from "@assets/PetSOS Logo_1759741755560.png";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
@@ -30,9 +31,14 @@ export default function LandingPage() {
       <div className="container mx-auto px-4 py-12">
         <div className="text-center mb-16">
           <div className="flex items-center justify-center mb-6">
-            <Cross className="h-16 w-16 text-red-600" strokeWidth={2.5} />
+            <img 
+              src={petSOSLogo} 
+              alt="PetSOS" 
+              className="h-24 w-auto"
+              data-testid="img-logo"
+            />
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900 dark:text-white" data-testid="text-hero-title">
+          <h1 className="sr-only" data-testid="text-hero-title">
             {t('app.title', 'PetSOS')}
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
