@@ -15,11 +15,13 @@ import ProfilePage from "@/pages/profile";
 import PetsPage from "@/pages/pets";
 import ClinicsPage from "@/pages/clinics";
 import AdminClinicsPage from "@/pages/admin-clinics";
+import ClinicDashboardPage from "@/pages/clinic-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const hasClinicAccess = user?.clinicId;
 
   return (
     <Switch>
@@ -38,6 +40,11 @@ function Router() {
       </Route>
       <Route path="/pets">
         {isAuthenticated ? <PetsPage /> : <LandingPage />}
+      </Route>
+      
+      {/* Clinic dashboard - for clinic staff */}
+      <Route path="/clinic/dashboard">
+        {isAuthenticated && hasClinicAccess ? <ClinicDashboardPage /> : <LandingPage />}
       </Route>
       
       {/* Admin-only routes - require admin role */}

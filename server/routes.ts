@@ -322,15 +322,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update clinic (admin only)
-  app.patch("/api/clinics/:id", isAuthenticated, isAdmin, async (req, res) => {
+  // Update clinic (admin or clinic staff only)
+  app.patch("/api/clinics/:id", isAuthenticated, async (req, res) => {
     try {
-      const updateData = insertClinicSchema.partial().parse(req.body);
-      const clinic = await storage.updateClinic(req.params.id, updateData);
+      const user = req.user as any;
+      const clinic = await storage.getClinic(req.params.id);
       
       if (!clinic) {
         return res.status(404).json({ message: "Clinic not found" });
       }
+
+      // Check if user is admin or clinic staff for this specific clinic
+      if (user.role !== 'admin' && user.clinicId !== req.params.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const updateData = insertClinicSchema.partial().parse(req.body);
+      const updatedClinic = await storage.updateClinic(req.params.id, updateData);
 
       await storage.createAuditLog({
         entityType: 'clinic',
@@ -341,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('user-agent')
       });
       
-      res.json(clinic);
+      res.json(updatedClinic);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
@@ -424,6 +432,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:userId/emergency-requests", async (req, res) => {
     const requests = await storage.getEmergencyRequestsByUserId(req.params.userId);
     res.json(requests);
+  });
+
+  // Get emergency requests for clinic
+  app.get("/api/clinics/:clinicId/emergency-requests", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const clinicId = req.params.clinicId;
+
+      // Check if user is admin or clinic staff for this specific clinic
+      if (user.role !== 'admin' && user.clinicId !== clinicId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const requests = await storage.getEmergencyRequestsByClinicId(clinicId);
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   // Update emergency request status
