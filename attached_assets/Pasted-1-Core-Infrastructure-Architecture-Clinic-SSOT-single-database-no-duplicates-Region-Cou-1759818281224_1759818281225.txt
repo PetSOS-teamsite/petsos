@@ -1,0 +1,205 @@
+1️⃣ Core Infrastructure & Architecture
+
+ Clinic SSOT (single database, no duplicates)
+
+ Region + Country tables built; GPS auto-detect + manual override
+
+ PostGIS / geo-search works (nearest clinic queries <150ms)
+
+ Queue + retry + DLQ for WhatsApp/email broadcasts
+
+ Fallback channels (email when WhatsApp fails)
+
+ No Replit lock-in (Dockerized + CI/CD deployment)
+
+ Separate environments (Dev / Staging / Prod)
+
+ CI/CD pipeline active (auto build/test/deploy)
+
+ OTA updates (Expo EAS / CodePush) verified
+
+ Logs + metrics + alerting dashboards live
+
+2️⃣ App User Flow (Owner-Facing)
+
+ Splash screen with tagline + bilingual disclaimer (must accept)
+
+ Account creation optional; skip flow works
+
+ Pet profile creation optional but functional
+
+ Home screen shows clear “🚨 Emergency” button
+
+ Emergency flow (3 questions) completes in ≤30 seconds
+
+ GPS + manual location both functional
+
+ Consent checkbox visible and logged with timestamp
+
+ Emergency results show 3–5 nearest clinics with Call + WhatsApp
+
+ One-tap broadcast sends successfully (confirmation visible)
+
+ Offline fallback works (cached clinic list accessible)
+
+ Full bilingual UI (English + 繁體中文)
+
+ Accessibility verified (contrast, font, VoiceOver labels)
+
+ App crash rate ≤0.5%
+
+ Push notification system (if present) delivers correctly
+
+3️⃣ Clinic & Admin System
+
+ Admin dashboard live and secure
+
+ CRUD operations for clinics functional
+
+ CSV/XLSX import validates and reports errors
+
+ Clinic status toggle (Available / Busy / Full) updates app in ≤30s
+
+ Region filters (HKI / KLN / NTI) work correctly
+
+ Global region model tested (multi-region ready)
+
+ Role-based access (Admin / Support)
+
+ Audit trail logs who/what/when for edits
+
+ Message delivery log shows sent/delivered/failed
+
+ WhatsApp templates pre-approved and tested
+
+ Delivery metrics dashboard visible
+
+4️⃣ Messaging & Communication Reliability
+
+ Broadcast latency <5s from submission
+
+ Rate limiting active per device/IP
+
+ DLQ monitoring dashboard and alerts configured
+
+ Duplicate submissions merged automatically
+
+ WhatsApp outage triggers email fallback
+
+ Consent visible in outbound message
+
+ Bilingual message templates approved
+
+ Latency metrics logged (submit → send → deliver)
+
+5️⃣ Privacy, Security & Compliance
+
+ Privacy policy + Terms linked in app + store listings
+
+ Consent logging per case verified
+
+ Data retention + deletion policies enforced
+
+ Export/deletion flow for users tested
+
+ Encryption at rest (DB) + TLS in transit
+
+ Secrets managed securely (.env cleaned)
+
+ RBAC access control verified
+
+ PDPO / PDPA / GDPR compliance checklist done
+
+6️⃣ Localization & Content Management
+
+ i18n JSON bundles (en.json, zh-HK.json) complete
+
+ Admin can update text/copy without rebuild
+
+ Region-specific copy overrides functional
+
+ Tagline + disclaimers consistent everywhere
+
+ SEO/workshop articles render bilingually (if present)
+
+7️⃣ Observability & Debug
+
+ Structured logs include request IDs, timestamps, no PII
+
+ Monitoring dashboards for API, queue, WA status live
+
+ Alerts configured for queue backlog/errors
+
+ Analytics events track screen views, submits, errors
+
+ QA debug mode available (simulate emergency)
+
+8️⃣ QA & UAT
+
+ Tested on iOS + Android (low/mid/high devices)
+
+ Tested under 2G/3G/4G/5G + offline
+
+ Performance benchmarks pass (latency < targets)
+
+ Regression suite run after all fixes
+
+ UAT sign-off by PM + business owners
+
+9️⃣ Deployment & Post-Launch
+
+ App Store / Play Store listings complete (screenshots, privacy URL)
+
+ Versioning + changelog documented
+
+ Backups tested and restorable
+
+ Incident / on-call runbook finalized
+
+ Rollback plan tested (OTA + store)
+
+ Support SOP (FAQ + escalation) ready
+
+ Analytics dashboard baseline verified
+
+ Post-launch review schedule set (1 week + 1 month)
+
+🔧 Developer Self-Review (per feature)
+
+ Code linted, formatted, and documented
+
+ Unit tests written and pass locally
+
+ Manual QA video/screenshot recorded
+
+ Logs checked for silent errors
+
+ Error handling and fallbacks tested
+
+ Edge cases (no GPS, no network, empty fields) tested
+
+ All text covered in i18n bundles
+
+ Analytics events added
+
+ PR includes changelog + rollback note + self-review summary
+
+🏁 Final Go-Live Criteria
+
+ All above checklists fully marked ✅
+
+ QA sign-off report submitted
+
+ UAT sign-off completed
+
+ Privacy policy live
+
+ App store approvals received
+
+ On-call & monitoring active
+
+ DB backup snapshot before launch
+
+ Rollback tested
+
+ Launch announcement scheduled
