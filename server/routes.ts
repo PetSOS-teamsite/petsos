@@ -76,9 +76,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user by ID
-  app.get("/api/users/:id", async (req, res) => {
+  app.get("/api/users/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.params.id);
+      const requestingUserId = req.user.claims.sub;
+      const targetUserId = req.params.id;
+      
+      // Users can only view their own profile unless they're admin
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (requestingUserId !== targetUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only view your own profile" });
+      }
+      
+      const user = await storage.getUser(targetUserId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -89,10 +102,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user
-  app.patch("/api/users/:id", async (req, res) => {
+  app.patch("/api/users/:id", isAuthenticated, async (req: any, res) => {
     try {
+      const requestingUserId = req.user.claims.sub;
+      const targetUserId = req.params.id;
+      
+      // Users can only update their own profile unless they're admin
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (requestingUserId !== targetUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only update your own profile" });
+      }
+      
       const updateData = insertUserSchema.partial().parse(req.body);
-      const user = await storage.updateUser(req.params.id, updateData);
+      const user = await storage.updateUser(targetUserId, updateData);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -102,6 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityType: 'user',
         entityId: user.id,
         action: 'update',
+        userId: requestingUserId,
         changes: updateData,
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
@@ -117,21 +144,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete user
-  app.delete("/api/users/:id", strictLimiter, async (req, res) => {
-    const success = await storage.deleteUser(req.params.id);
-    if (!success) {
-      return res.status(404).json({ message: "User not found" });
-    }
+  app.delete("/api/users/:id", strictLimiter, isAuthenticated, async (req: any, res) => {
+    try {
+      const requestingUserId = req.user.claims.sub;
+      const targetUserId = req.params.id;
+      
+      // Users can only delete their own account unless they're admin
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (requestingUserId !== targetUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only delete your own account" });
+      }
+      
+      const success = await storage.deleteUser(targetUserId);
+      if (!success) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
-    await storage.createAuditLog({
-      entityType: 'user',
-      entityId: req.params.id,
-      action: 'delete',
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent')
-    });
-    
-    res.json({ success: true });
+      await storage.createAuditLog({
+        entityType: 'user',
+        entityId: targetUserId,
+        action: 'delete',
+        userId: requestingUserId,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   // GDPR/PDPO: Export user data
@@ -207,22 +252,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== PET ROUTES =====
   
   // Get pets for user
-  app.get("/api/users/:userId/pets", async (req, res) => {
-    const pets = await storage.getPetsByUserId(req.params.userId);
-    res.json(pets);
+  app.get("/api/users/:userId/pets", isAuthenticated, async (req: any, res) => {
+    try {
+      const requestingUserId = req.user.claims.sub;
+      const targetUserId = req.params.userId;
+      
+      // Users can only view their own pets unless they're admin
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (requestingUserId !== targetUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only view your own pets" });
+      }
+      
+      const pets = await storage.getPetsByUserId(targetUserId);
+      res.json(pets);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   // Create pet
-  app.post("/api/pets", async (req, res) => {
+  app.post("/api/pets", isAuthenticated, async (req: any, res) => {
     try {
+      const requestingUserId = req.user.claims.sub;
       const petData = insertPetSchema.parse(req.body);
+      
+      // Ensure the user is creating a pet for themselves
+      if (petData.userId !== requestingUserId) {
+        return res.status(403).json({ message: "Forbidden - You can only create pets for yourself" });
+      }
+      
       const pet = await storage.createPet(petData);
       
       await storage.createAuditLog({
         entityType: 'pet',
         entityId: pet.id,
         action: 'create',
-        userId: pet.userId,
+        userId: requestingUserId,
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
       });
@@ -237,35 +306,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get pet by ID
-  app.get("/api/pets/:id", async (req, res) => {
-    const pet = await storage.getPet(req.params.id);
-    if (!pet) {
-      return res.status(404).json({ message: "Pet not found" });
-    }
-    res.json(pet);
-  });
-
-  // Update pet
-  app.patch("/api/pets/:id", async (req, res) => {
+  app.get("/api/pets/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const updateData = insertPetSchema.partial().parse(req.body);
-      const pet = await storage.updatePet(req.params.id, updateData);
+      const requestingUserId = req.user.claims.sub;
+      const pet = await storage.getPet(req.params.id);
       
       if (!pet) {
         return res.status(404).json({ message: "Pet not found" });
       }
+      
+      // Users can only view their own pets unless they're admin
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (pet.userId !== requestingUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only view your own pets" });
+      }
+      
+      res.json(pet);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update pet
+  app.patch("/api/pets/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const requestingUserId = req.user.claims.sub;
+      const pet = await storage.getPet(req.params.id);
+      
+      if (!pet) {
+        return res.status(404).json({ message: "Pet not found" });
+      }
+      
+      // Users can only update their own pets unless they're admin
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (pet.userId !== requestingUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only update your own pets" });
+      }
+      
+      const updateData = insertPetSchema.partial().parse(req.body);
+      const updatedPet = await storage.updatePet(req.params.id, updateData);
 
       await storage.createAuditLog({
         entityType: 'pet',
         entityId: pet.id,
         action: 'update',
-        userId: pet.userId,
+        userId: requestingUserId,
         changes: updateData,
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
       });
       
-      res.json(pet);
+      res.json(updatedPet);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
@@ -275,24 +374,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete pet
-  app.delete("/api/pets/:id", strictLimiter, async (req, res) => {
-    const pet = await storage.getPet(req.params.id);
-    if (!pet) {
-      return res.status(404).json({ message: "Pet not found" });
-    }
+  app.delete("/api/pets/:id", strictLimiter, isAuthenticated, async (req: any, res) => {
+    try {
+      const requestingUserId = req.user.claims.sub;
+      const pet = await storage.getPet(req.params.id);
+      
+      if (!pet) {
+        return res.status(404).json({ message: "Pet not found" });
+      }
+      
+      // Users can only delete their own pets unless they're admin
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (pet.userId !== requestingUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only delete your own pets" });
+      }
 
-    const success = await storage.deletePet(req.params.id);
-    
-    await storage.createAuditLog({
-      entityType: 'pet',
-      entityId: req.params.id,
-      action: 'delete',
-      userId: pet.userId,
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent')
-    });
-    
-    res.json({ success });
+      const success = await storage.deletePet(req.params.id);
+      
+      await storage.createAuditLog({
+        entityType: 'pet',
+        entityId: req.params.id,
+        action: 'delete',
+        userId: requestingUserId,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   // ===== REGION ROUTES =====
@@ -660,9 +775,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get emergency requests for user
-  app.get("/api/users/:userId/emergency-requests", async (req, res) => {
-    const requests = await storage.getEmergencyRequestsByUserId(req.params.userId);
-    res.json(requests);
+  app.get("/api/users/:userId/emergency-requests", isAuthenticated, async (req: any, res) => {
+    try {
+      const requestingUserId = req.user.claims.sub;
+      const targetUserId = req.params.userId;
+      
+      // Users can only view their own emergency requests unless they're admin
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (requestingUserId !== targetUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only view your own emergency requests" });
+      }
+      
+      const requests = await storage.getEmergencyRequestsByUserId(targetUserId);
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   // Get emergency requests for clinic
@@ -684,26 +816,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update emergency request status
-  app.patch("/api/emergency-requests/:id", async (req, res) => {
+  app.patch("/api/emergency-requests/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const updateData = insertEmergencyRequestSchema.partial().parse(req.body);
-      const request = await storage.updateEmergencyRequest(req.params.id, updateData);
+      const requestingUserId = req.user.claims.sub;
+      const request = await storage.getEmergencyRequest(req.params.id);
       
       if (!request) {
         return res.status(404).json({ message: "Emergency request not found" });
       }
+      
+      // Only the owner or admin can update emergency requests
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (request.userId !== requestingUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only update your own emergency requests" });
+      }
+      
+      const updateData = insertEmergencyRequestSchema.partial().parse(req.body);
+      const updatedRequest = await storage.updateEmergencyRequest(req.params.id, updateData);
 
       await storage.createAuditLog({
         entityType: 'emergency_request',
         entityId: request.id,
         action: 'update',
-        userId: request.userId,
+        userId: requestingUserId,
         changes: updateData,
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
       });
       
-      res.json(request);
+      res.json(updatedRequest);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
@@ -713,8 +858,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Broadcast emergency to clinics
-  app.post("/api/emergency-requests/:id/broadcast", broadcastLimiter, async (req, res) => {
+  app.post("/api/emergency-requests/:id/broadcast", broadcastLimiter, isAuthenticated, async (req: any, res) => {
     try {
+      const requestingUserId = req.user.claims.sub;
       const { clinicIds, message } = z.object({
         clinicIds: z.array(z.string()),
         message: z.string(),
@@ -723,6 +869,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const emergencyRequest = await storage.getEmergencyRequest(req.params.id);
       if (!emergencyRequest) {
         return res.status(404).json({ message: "Emergency request not found" });
+      }
+      
+      // Only the owner of the emergency request can broadcast it
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (emergencyRequest.userId !== requestingUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only broadcast your own emergency requests" });
       }
 
       const messages = await messagingService.broadcastEmergency(
@@ -742,8 +898,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== MESSAGE ROUTES =====
   
-  // Create message
-  app.post("/api/messages", async (req, res) => {
+  // Create message (admin only - used by broadcast service)
+  app.post("/api/messages", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const messageData = insertMessageSchema.parse(req.body);
       const message = await storage.createMessage(messageData);
@@ -789,14 +945,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== FEATURE FLAG ROUTES =====
   
-  // Get all feature flags
-  app.get("/api/feature-flags", async (req, res) => {
+  // Get all feature flags (admin only)
+  app.get("/api/feature-flags", isAuthenticated, isAdmin, async (req, res) => {
     const flags = await storage.getAllFeatureFlags();
     res.json(flags);
   });
 
-  // Get feature flag by key
-  app.get("/api/feature-flags/:key", async (req, res) => {
+  // Get feature flag by key (admin only)
+  app.get("/api/feature-flags/:key", isAuthenticated, isAdmin, async (req, res) => {
     const flag = await storage.getFeatureFlag(req.params.key);
     if (!flag) {
       return res.status(404).json({ message: "Feature flag not found" });
@@ -804,8 +960,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(flag);
   });
 
-  // Create feature flag
-  app.post("/api/feature-flags", async (req, res) => {
+  // Create feature flag (admin only)
+  app.post("/api/feature-flags", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const flagData = insertFeatureFlagSchema.parse(req.body);
       const flag = await storage.createFeatureFlag(flagData);
@@ -814,6 +970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityType: 'feature_flag',
         entityId: flag.id,
         action: 'create',
+        userId: req.user.claims.sub,
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
       });
@@ -827,8 +984,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update feature flag
-  app.patch("/api/feature-flags/:id", async (req, res) => {
+  // Update feature flag (admin only)
+  app.patch("/api/feature-flags/:id", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const updateData = insertFeatureFlagSchema.partial().parse(req.body);
       const flag = await storage.updateFeatureFlag(req.params.id, updateData);
@@ -841,6 +998,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityType: 'feature_flag',
         entityId: flag.id,
         action: 'update',
+        userId: req.user.claims.sub,
         changes: updateData,
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
@@ -863,8 +1021,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(translations);
   });
 
-  // Create/update translation
-  app.post("/api/translations", async (req, res) => {
+  // Create/update translation (admin only)
+  app.post("/api/translations", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const translationData = insertTranslationSchema.parse(req.body);
       
@@ -890,15 +1048,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== PRIVACY CONSENT ROUTES =====
   
   // Get privacy consents for user
-  app.get("/api/users/:userId/consents", async (req, res) => {
-    const consents = await storage.getPrivacyConsents(req.params.userId);
-    res.json(consents);
+  app.get("/api/users/:userId/consents", isAuthenticated, async (req: any, res) => {
+    try {
+      const requestingUserId = req.user.claims.sub;
+      const targetUserId = req.params.userId;
+      
+      // Users can only view their own consents unless they're admin
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (requestingUserId !== targetUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only view your own consents" });
+      }
+      
+      const consents = await storage.getPrivacyConsents(targetUserId);
+      res.json(consents);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   // Create privacy consent
-  app.post("/api/privacy-consents", async (req, res) => {
+  app.post("/api/privacy-consents", isAuthenticated, async (req: any, res) => {
     try {
+      const requestingUserId = req.user.claims.sub;
       const consentData = insertPrivacyConsentSchema.parse(req.body);
+      
+      // Users can only create consents for themselves
+      if (consentData.userId !== requestingUserId) {
+        return res.status(403).json({ message: "Forbidden - You can only create consents for yourself" });
+      }
+      
       const consent = await storage.createPrivacyConsent({
         ...consentData,
         ipAddress: req.ip,
@@ -909,7 +1091,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityType: 'privacy_consent',
         entityId: consent.id,
         action: 'create',
-        userId: consent.userId,
+        userId: requestingUserId,
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
       });
@@ -925,8 +1107,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== AUDIT LOG ROUTES =====
   
-  // Get audit logs for entity
-  app.get("/api/audit-logs/:entityType/:entityId", async (req, res) => {
+  // Get audit logs for entity (admin only)
+  app.get("/api/audit-logs/:entityType/:entityId", isAuthenticated, isAdmin, async (req, res) => {
     const logs = await storage.getAuditLogsByEntity(req.params.entityType, req.params.entityId);
     res.json(logs);
   });
