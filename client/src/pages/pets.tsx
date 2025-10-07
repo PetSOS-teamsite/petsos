@@ -55,6 +55,7 @@ import type { Pet, Clinic, User } from "@shared/schema";
 import { PET_SPECIES, getBreedOptions } from "@shared/pet-data";
 import { cn } from "@/lib/utils";
 import { BreedCombobox } from "@/components/BreedCombobox";
+import { analytics } from "@/lib/analytics";
 
 // Schema factory to access translation function
 const createPetSchema = (t: (key: string, fallback: string) => string) => z.object({
@@ -139,8 +140,15 @@ export default function PetsPage() {
       );
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', authUser?.id, 'pets'] });
+      
+      // Track pet creation in analytics
+      analytics.trackPetCreation({
+        petType: variables.species,
+        breed: variables.breed,
+      });
+      
       toast({
         title: t("pets.success.add", "Pet added successfully!"),
         description: t("pets.success.add_desc", "Your pet has been added to your profile."),

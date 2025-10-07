@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { analytics } from "@/lib/analytics";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -236,11 +237,25 @@ export default function ClinicResultsPage() {
       return 0;
     });
 
-  const handleCall = (phone: string) => {
+  const handleCall = (phone: string, clinicId: string, clinicName: string) => {
+    // Track clinic contact in analytics
+    analytics.trackClinicContact({
+      clinicId,
+      contactMethod: 'call',
+      clinicName,
+    });
+    
     window.location.href = `tel:${phone}`;
   };
 
-  const handleWhatsApp = (whatsapp: string, clinicName: string) => {
+  const handleWhatsApp = (whatsapp: string, clinicId: string, clinicName: string) => {
+    // Track clinic contact in analytics
+    analytics.trackClinicContact({
+      clinicId,
+      contactMethod: 'whatsapp',
+      clinicName,
+    });
+    
     const message = emergencyRequest
       ? `${t('clinic_results.whatsapp_message_emergency', 'Emergency')}: ${emergencyRequest.symptom}. ${t('clinic_results.whatsapp_message_contact', 'Contact')}: ${emergencyRequest.contactPhone}`
       : t('clinic_results.whatsapp_message_request', 'I need emergency pet care');
@@ -327,6 +342,14 @@ export default function ClinicResultsPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/emergency-requests', params?.requestId] });
+      
+      // Track broadcast in analytics
+      analytics.trackBroadcast({
+        requestId: params?.requestId || '',
+        clinicsCount: data.count,
+        petType: emergencyRequest?.petSpecies || 'unknown',
+      });
+      
       toast({
         title: t('clinic_results.broadcast_success', 'Broadcast sent successfully!'),
         description: t('clinic_results.broadcast_success_desc', `Emergency alert sent to ${data.count} ${data.count === 1 ? 'clinic' : 'clinics'}`),
@@ -396,6 +419,14 @@ export default function ClinicResultsPage() {
       if (params?.requestId) {
         queryClient.invalidateQueries({ queryKey: ['/api/emergency-requests', params.requestId] });
       }
+      
+      // Track quick broadcast in analytics
+      analytics.trackBroadcast({
+        requestId: params?.requestId || '',
+        clinicsCount: data.count,
+        petType: emergencyRequest?.petSpecies || 'unknown',
+      });
+      
       toast({
         title: t('clinic_results.broadcast_success', 'Emergency Alert Sent!'),
         description: `Broadcast sent to ${data.count} 24-hour support ${data.count === 1 ? 'hospital' : 'hospitals'}`,
@@ -804,7 +835,7 @@ export default function ClinicResultsPage() {
 
                       <div className="flex flex-wrap gap-2 pt-3">
                         <Button
-                          onClick={() => handleCall(clinic.phone)}
+                          onClick={() => handleCall(clinic.phone, clinic.id, clinic.name)}
                           className="flex-1 min-w-[120px] bg-blue-600 hover:bg-blue-700"
                           data-testid={`button-call-${clinic.id}`}
                         >
@@ -813,7 +844,7 @@ export default function ClinicResultsPage() {
                         </Button>
                         {clinic.whatsapp && (
                           <Button
-                            onClick={() => handleWhatsApp(clinic.whatsapp!, clinic.name)}
+                            onClick={() => handleWhatsApp(clinic.whatsapp!, clinic.id, clinic.name)}
                             className="flex-1 min-w-[120px] bg-green-600 hover:bg-green-700"
                             data-testid={`button-whatsapp-${clinic.id}`}
                           >

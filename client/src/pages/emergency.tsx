@@ -17,6 +17,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useAuth } from "@/hooks/useAuth";
 import { BreedCombobox } from "@/components/BreedCombobox";
+import { analytics } from "@/lib/analytics";
 
 // Symptom options - simplified without categorization
 const SYMPTOMS = [
@@ -203,8 +204,17 @@ export default function EmergencyPage() {
       const response = await apiRequest('POST', '/api/emergency-requests', data);
       return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: [`/api/users/${userId}/emergency-requests`] });
+      
+      // Track emergency request in analytics
+      // Note: Clinic count and 24-hour status are not known at submission time
+      analytics.trackEmergencyRequest({
+        petType: variables.petSpecies || 'unknown',
+        region: data.regionId, // May be undefined if location couldn't be determined
+        // is24Hour and clinicsCount omitted - not available until search results
+      });
+      
       toast({
         title: t("emergency.submit.success", "Emergency request submitted!"),
         description: t("emergency.submit.finding", "Finding nearby clinics..."),
