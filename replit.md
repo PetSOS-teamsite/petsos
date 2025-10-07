@@ -17,6 +17,27 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### Enhanced Emergency Broadcasts with Full Pet Profiles (October 7, 2025)
+- **Enhanced Message Content**:
+  - Emergency broadcasts now include complete pet profile information when a saved pet is selected
+  - Format: Pet name, species, breed, age, weight (kg), and medical history/notes
+  - Example: "Buddy (Dog, Golden Retriever, 5 years, 30.5kg)" with "⚠️ Medical History: Allergic to chicken"
+  - Backwards compatible: Falls back to manual entry format (species, breed, age only) when no pet profile exists
+  
+- **Backend Enhancements**:
+  - `getEmergencyRequest()` now joins with pets table and returns full pet data
+  - Updated both DatabaseStorage and MemStorage implementations
+  - Returns: `{ ...emergencyRequest, pet: { name, species, breed, age, weight, medicalNotes, ... } }`
+  
+- **Frontend Improvements**:
+  - New `buildPetInfoString()` helper function for consistent message formatting
+  - All 3 broadcast paths updated: main broadcast, support hospital quick broadcast, dialog preview
+  - Enhanced medical triage: Weight crucial for medication dosing, medical notes for allergies/conditions
+  
+- **Translation Support**:
+  - Added 4 new bilingual translation keys (EN/zh-HK): pet_name, weight_kg, medical_history, no_medical_notes
+  - Total translation keys: 269
+
 ### Support Hospital Program & Quick Broadcast
 - **Support Hospital Feature**:
   - New `isSupportHospital` boolean field in clinics schema for flagging partner hospitals
