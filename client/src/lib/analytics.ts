@@ -59,17 +59,21 @@ export const analytics = {
   // Track emergency request
   trackEmergencyRequest(data: {
     petType: string;
-    region: string;
-    is24Hour: boolean;
-    clinicsCount: number;
+    region?: string;
+    is24Hour?: boolean;
+    clinicsCount?: number;
   }) {
-    this.event('emergency_request', {
+    const params: Record<string, any> = {
       event_category: 'Emergency',
       pet_type: data.petType,
-      region: data.region,
-      is_24_hour: data.is24Hour,
-      clinics_count: data.clinicsCount,
-    });
+    };
+    
+    // Only include optional fields if they have meaningful values
+    if (data.region) params.region = data.region;
+    if (data.is24Hour !== undefined) params.is_24_hour = data.is24Hour;
+    if (data.clinicsCount !== undefined) params.clinics_count = data.clinicsCount;
+    
+    this.event('emergency_request', params);
   },
 
   // Track clinic contact

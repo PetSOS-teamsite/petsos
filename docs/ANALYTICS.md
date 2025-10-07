@@ -4,14 +4,12 @@ PetSOS uses Google Analytics 4 (GA4) to track user interactions and improve the 
 
 ## Overview
 
-The analytics system currently tracks:
+The analytics system tracks all major user interactions:
 - **Page views and navigation** (✅ Active)
 - **Cookie consent events** (✅ Active)
-
-Additional event tracking helpers are available for future integration:
-- Emergency requests and broadcasts (🚧 Helper available, needs UI integration)
-- Clinic searches and contacts (🚧 Helper available, needs UI integration)
-- User registrations and pet management (🚧 Helper available, needs UI integration)
+- **Emergency requests and broadcasts** (✅ Active)
+- **Clinic searches and contacts** (✅ Active)
+- **Pet management** (✅ Active)
 
 ## Features
 
@@ -35,33 +33,27 @@ Additional event tracking helpers are available for future integration:
    - ✅ Tracked when user accepts cookies
    - ✅ No tracking on decline (respects user choice)
 
-#### 🚧 Event Tracking Helpers (Ready to Use)
+3. **Emergency Requests** (`emergency_request`)
+   - ✅ Tracked when emergency request is submitted
+   - ✅ Includes pet type and region (when available)
+   - Note: Clinic count and 24-hour status not tracked at submission (only known after search)
 
-The following event tracking methods are available in the analytics utility but not yet wired to UI components:
+4. **Emergency Broadcasts** (`broadcast_sent`)
+   - ✅ Tracked when broadcast is sent to clinics
+   - ✅ Includes request ID, clinic count, and pet type
+   - ✅ Covers both manual and quick broadcasts
 
-1. **Emergency Requests** (`emergency_request`)
-   - Method: `analytics.trackEmergencyRequest()`
-   - Status: Helper created, needs UI integration
+5. **Clinic Contacts** (`clinic_contact`)
+   - ✅ Tracked when user clicks Call or WhatsApp buttons
+   - ✅ Includes clinic ID, contact method, and clinic name
 
-2. **Emergency Broadcasts** (`broadcast_sent`)
-   - Method: `analytics.trackBroadcast()`
-   - Status: Helper created, needs UI integration
+6. **Clinic Searches** (`clinic_search`)
+   - ✅ Tracked when filters are applied in clinic directory
+   - ✅ Includes region, 24-hour filter, and results count
 
-3. **Clinic Searches** (`clinic_search`)
-   - Method: `analytics.trackClinicSearch()`
-   - Status: Helper created, needs UI integration
-
-4. **Clinic Contacts** (`clinic_contact`)
-   - Method: `analytics.trackClinicContact()`
-   - Status: Helper created, needs UI integration
-
-5. **User Registration** (`sign_up`)
-   - Method: `analytics.trackUserRegistration()`
-   - Status: Helper created, needs UI integration
-
-6. **Pet Creation** (`pet_created`)
-   - Method: `analytics.trackPetCreation()`
-   - Status: Helper created, needs UI integration
+7. **Pet Creation** (`pet_created`)
+   - ✅ Tracked when new pet profile is created
+   - ✅ Includes pet type and breed
 
 ## Setup
 

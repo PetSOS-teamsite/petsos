@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Clock } from "lucide-react";
@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { analytics } from "@/lib/analytics";
 
 type Clinic = {
   id: string;
@@ -65,6 +66,17 @@ export default function ClinicsPage() {
 
     return matchesSearch && matchesRegion && matches24Hour && clinic.status === "active";
   });
+
+  // Track clinic search when filters change
+  useEffect(() => {
+    if (filteredClinics && (searchQuery || selectedRegion !== "all" || show24HourOnly)) {
+      analytics.trackClinicSearch({
+        region: selectedRegion !== "all" ? selectedRegion : undefined,
+        is24Hour: show24HourOnly || undefined,
+        resultsCount: filteredClinics.length,
+      });
+    }
+  }, [searchQuery, selectedRegion, show24HourOnly, filteredClinics?.length]);
 
   const handleCall = (phone: string) => {
     window.location.href = `tel:${phone}`;
