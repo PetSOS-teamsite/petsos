@@ -169,6 +169,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GDPR/PDPO: Delete user data (Right to be Forgotten)
+  app.delete("/api/users/gdpr-delete", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+
+      // Log deletion request BEFORE deleting
+      await storage.createAuditLog({
+        entityType: 'user',
+        entityId: userId,
+        action: 'gdpr_delete_request',
+        userId: userId,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      // Perform GDPR-compliant deletion
+      const result = await storage.deleteUserDataGDPR(userId);
+
+      if (!result.success) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Destroy session after successful deletion
+      req.session.destroy((err: Error) => {
+        if (err) {
+          console.error("Error destroying session after GDPR delete:", err);
+        }
+      });
+
+      res.json({
+        success: true,
+        message: "Your account and all associated data have been permanently deleted",
+        deletedRecords: result.deletedRecords
+      });
+    } catch (error) {
+      console.error("Error deleting user data:", error);
+      res.status(500).json({ message: "Failed to delete user data" });
+    }
+  });
+
   // ===== PET ROUTES =====
   
   // Get pets for user
