@@ -591,8 +591,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Extend schema to coerce petAge from string to number for form compatibility
       const emergencyRequestSchemaWithCoercion = insertEmergencyRequestSchema.extend({
         petAge: z.preprocess(
-          (val) => val === null || val === undefined || val === '' ? null : Number(val),
-          z.number().int().nonnegative().nullable().optional()
+          (val) => {
+            if (val === null || val === undefined || val === '') return null;
+            const num = Number(val);
+            if (isNaN(num)) return val; // Return original to trigger validation error
+            return num;
+          },
+          z.union([z.number().int().nonnegative(), z.null()]).optional()
         ),
       });
       
