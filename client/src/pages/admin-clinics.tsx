@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, Filter, X, Users } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, Filter, X, Users, Link2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -1464,6 +1464,50 @@ export default function AdminClinicsPage() {
               Add or remove staff members who can access this clinic's dashboard. Staff must first create an account by logging in to PetSOS.
             </DialogDescription>
           </DialogHeader>
+
+          {/* Dashboard Access Information */}
+          <div className="border rounded-lg p-4 bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+            <h4 className="font-semibold mb-2 text-green-900 dark:text-green-100 flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              Clinic Dashboard Access
+            </h4>
+            <p className="text-sm text-green-700 dark:text-green-300 mb-3">
+              Share this information with clinic staff to access their dashboard:
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-green-800 dark:text-green-200">Dashboard URL:</label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={`${window.location.origin}/clinic/dashboard`}
+                    readOnly
+                    className="bg-white dark:bg-gray-800 text-sm"
+                    data-testid="input-dashboard-url"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/clinic/dashboard`);
+                      toast({ title: "Link copied!", description: "Dashboard URL copied to clipboard" });
+                    }}
+                    data-testid="button-copy-dashboard-url"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="text-sm text-green-700 dark:text-green-300">
+                <p className="font-medium mb-1">Login Instructions:</p>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>Staff member must log in to PetSOS using their email</li>
+                  <li>Admin links their account to this clinic (using form below)</li>
+                  <li>Staff can then access the clinic dashboard at the URL above</li>
+                </ol>
+              </div>
+            </div>
+          </div>
 
           {/* Add Staff Section */}
           <div className="space-y-4">
