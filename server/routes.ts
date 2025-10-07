@@ -44,7 +44,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register user
   app.post("/api/users/register", authLimiter, async (req, res) => {
     try {
-      const userData = insertUserSchema.parse(req.body);
+      // Strip sensitive fields and use safe schema for registration
+      const safeUserSchema = insertUserSchema.omit({ role: true, clinicId: true });
+      const userData = safeUserSchema.parse(req.body);
       
       // Check if username exists (only if username is provided)
       if (userData.username) {
@@ -54,7 +56,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const user = await storage.createUser(userData);
+      // Always set role to 'user' for new registrations (admins must be created by other admins)
+      const user = await storage.createUser({
+        ...userData,
+        role: 'user'
+      });
       
       // Create audit log
       await storage.createAuditLog({
@@ -117,7 +123,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden - You can only update your own profile" });
       }
       
-      const updateData = insertUserSchema.partial().parse(req.body);
+      // Parse update data with appropriate schema based on role
+      let updateData;
+      if (requestingUser.role === 'admin') {
+        // Admins can update all fields including role and clinicId
+        updateData = insertUserSchema.partial().parse(req.body);
+      } else {
+        // Regular users cannot update role or clinicId
+        const safeUpdateSchema = insertUserSchema.omit({ role: true, clinicId: true }).partial();
+        updateData = safeUpdateSchema.parse(req.body);
+      }
+      
       const user = await storage.updateUser(targetUserId, updateData);
       
       if (!user) {
