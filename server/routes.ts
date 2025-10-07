@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { messagingService } from "./services/messaging";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
+import { setupTestUtils } from "./testUtils";
 import { 
   generalLimiter, 
   authLimiter, 
@@ -23,6 +24,9 @@ import {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Replit Auth
   await setupAuth(app);
+  
+  // Set up test utilities (only in non-production)
+  setupTestUtils(app);
   
   // Apply general rate limiter to all API routes (100 req/15min)
   app.use('/api/', generalLimiter);
