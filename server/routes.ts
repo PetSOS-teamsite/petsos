@@ -486,6 +486,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(clinics);
   });
 
+  // Get nearby clinics using PostGIS (efficient server-side geo-query)
+  app.get("/api/clinics/nearby", async (req, res) => {
+    try {
+      const { latitude, longitude, radius } = z.object({
+        latitude: z.string().transform(Number),
+        longitude: z.string().transform(Number),
+        radius: z.string().transform(Number).default("10000"), // default 10km in meters
+      }).parse(req.query);
+
+      const clinics = await storage.getNearbyClinics(latitude, longitude, radius);
+      res.json(clinics);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get clinic by ID
   app.get("/api/clinics/:id", async (req, res) => {
     const clinic = await storage.getClinic(req.params.id);

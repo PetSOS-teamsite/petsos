@@ -13,7 +13,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -44,6 +44,7 @@ export interface IStorage {
   getClinicsByRegion(regionId: string): Promise<Clinic[]>;
   get24HourClinicsByRegion(regionId: string): Promise<Clinic[]>;
   getAllClinics(): Promise<Clinic[]>;
+  getNearbyClinics(latitude: number, longitude: number, radiusMeters: number): Promise<(Clinic & { distance: number })[]>;
   createClinic(clinic: InsertClinic): Promise<Clinic>;
   updateClinic(id: string, clinic: Partial<InsertClinic>): Promise<Clinic | undefined>;
   deleteClinic(id: string): Promise<boolean>;
@@ -171,6 +172,7 @@ export class MemStorage implements IStorage {
         isSupportHospital: false,
         latitude: '22.2820',
         longitude: '114.1585',
+        location: null,
         status: 'active',
         services: ['emergency', 'surgery', 'dental'],
         createdAt: new Date(),
@@ -191,6 +193,7 @@ export class MemStorage implements IStorage {
         isSupportHospital: false,
         latitude: '22.2980',
         longitude: '114.1722',
+        location: null,
         status: 'active',
         services: ['emergency', 'vaccination'],
         createdAt: new Date(),
@@ -211,6 +214,7 @@ export class MemStorage implements IStorage {
         isSupportHospital: false,
         latitude: '22.4450',
         longitude: '114.0239',
+        location: null,
         status: 'active',
         services: ['general', 'grooming'],
         createdAt: new Date(),
@@ -231,6 +235,7 @@ export class MemStorage implements IStorage {
         isSupportHospital: false,
         latitude: '22.2793',
         longitude: '114.1826',
+        location: null,
         status: 'active',
         services: ['emergency', '24hour'],
         createdAt: new Date(),
@@ -402,6 +407,37 @@ export class MemStorage implements IStorage {
     return Array.from(this.clinics.values()).filter(clinic => clinic.status !== 'deleted');
   }
 
+  async getNearbyClinics(latitude: number, longitude: number, radiusMeters: number): Promise<(Clinic & { distance: number })[]> {
+    // Haversine formula for distance calculation (for in-memory storage)
+    const toRad = (deg: number) => deg * Math.PI / 180;
+    const R = 6371000; // Earth's radius in meters
+    
+    const results = Array.from(this.clinics.values())
+      .filter(clinic => 
+        clinic.status === 'active' && 
+        clinic.latitude !== null && 
+        clinic.longitude !== null
+      )
+      .map(clinic => {
+        const lat1 = toRad(latitude);
+        const lat2 = toRad(Number(clinic.latitude));
+        const dLat = toRad(Number(clinic.latitude) - latitude);
+        const dLon = toRad(Number(clinic.longitude) - longitude);
+        
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1) * Math.cos(lat2) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c;
+        
+        return { ...clinic, distance };
+      })
+      .filter(result => result.distance <= radiusMeters)
+      .sort((a, b) => a.distance - b.distance);
+    
+    return results;
+  }
+
   async createClinic(insertClinic: InsertClinic): Promise<Clinic> {
     const id = randomUUID();
     const now = new Date();
@@ -416,6 +452,7 @@ export class MemStorage implements IStorage {
       email: insertClinic.email ?? null,
       latitude: insertClinic.latitude ?? null,
       longitude: insertClinic.longitude ?? null,
+      location: null, // PostGIS geography field (not used in MemStorage)
       status: insertClinic.status ?? 'active',
       is24Hour: insertClinic.is24Hour ?? false,
       isAvailable: insertClinic.isAvailable ?? true,
@@ -761,6 +798,26 @@ class DatabaseStorage implements IStorage {
         eq(clinics.status, 'active')
       )
     );
+  }
+
+  async getNearbyClinics(latitude: number, longitude: number, radiusMeters: number): Promise<(Clinic & { distance: number })[]> {
+    // Use PostGIS ST_DWithin for efficient spatial query with index
+    const result = await db.execute<Clinic & { distance: number }>(
+      sql`
+        SELECT *, 
+               ST_Distance(location, ST_MakePoint(${longitude}, ${latitude})::geography) as distance
+        FROM clinics
+        WHERE status = 'active'
+          AND location IS NOT NULL
+          AND ST_DWithin(
+            location,
+            ST_MakePoint(${longitude}, ${latitude})::geography,
+            ${radiusMeters}
+          )
+        ORDER BY distance ASC
+      `
+    );
+    return result.rows;
   }
 
   async createClinic(insertClinic: InsertClinic): Promise<Clinic> {
