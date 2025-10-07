@@ -1,7 +1,14 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, integer, jsonb, decimal, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, jsonb, decimal, index, customType } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Custom geography type for PostGIS
+const geography = customType<{ data: string }>({
+  dataType() {
+    return "geography(Point, 4326)";
+  },
+});
 
 // Session storage table (required for Replit Auth)
 export const sessions = pgTable(
@@ -108,14 +115,18 @@ export const clinics = pgTable("clinics", {
   isSupportHospital: boolean("is_support_hospital").notNull().default(false), // Official PetSOS support partner
   latitude: decimal("latitude"),
   longitude: decimal("longitude"),
+  location: geography("location"), // PostGIS geography point for efficient spatial queries
   status: text("status").notNull().default('active'), // active, inactive, deleted
   services: text("services").array(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("idx_clinic_location").using("gist", table.location), // Spatial index for fast geo-queries
+]);
 
 export const insertClinicSchema = createInsertSchema(clinics).omit({
   id: true,
+  location: true, // Auto-populated by trigger from lat/lng
   createdAt: true,
   updatedAt: true,
 });
