@@ -37,6 +37,10 @@ Preferred communication style: Simple, everyday language.
 - **Admin Dashboard** (`/admin/clinics`):
   - Comprehensive statistics: total clinics, available clinics, 24-hour clinics, total emergency requests
   - Full CRUD operations for clinic management
+  - Search and filter functionality (by name, address, region, 24-hour, availability, support hospital)
+  - Pagination (20 clinics per page)
+  - Clickable statistics cards as quick filters
+  - Visual warning badges for missing GPS/contact data
   - Real-time availability toggle
   - Support Hospital toggle in add/edit forms
   - **Auto-fill GPS Feature**: One-click geocoding button to automatically populate latitude/longitude from clinic address using Google Geocoding API
@@ -44,12 +48,30 @@ Preferred communication style: Simple, everyday language.
     - Shows loading state during API call
     - Validates response before populating coordinates
     - Clear error messages for failed geocoding attempts
+  - **Clinic Staff Management**:
+    - Link/unlink users to clinics via email
+    - Dashboard URL generator with copy-to-clipboard
+    - Step-by-step login instructions for clinic staff
+    - Current staff members list with unlink capability
   - Protected route (admin role required)
   
+- **Admin Login Page** (`/admin/login`):
+  - Dedicated login page for administrators
+  - Shows admin-only feature list and access requirements
+  - Secure returnTo parameter handling with validation (prevents open redirect attacks)
+  - Auto-redirects to admin dashboard if already authenticated as admin
+  - Warning message for non-admin users
+  - Redirects to admin dashboard after successful authentication
+
 - **Clinic Staff Dashboard** (`/clinic/dashboard`):
   - View clinic information and contact details
   - Toggle clinic availability in real-time
-  - View emergency broadcasts sent to the clinic
+  - **Emergency Request Management**:
+    - Statistics cards (broadcasts today/week/month, pending, critical)
+    - Filter by status (all/pending/responded) and priority (critical only)
+    - Sort by newest/oldest/severity
+    - Quick response actions (Call Now, WhatsApp buttons)
+    - Mark as Responded functionality with backend integration
   - Edit clinic profile (name, address, phone, WhatsApp, email, region, 24-hour status)
   - Protected route (requires authentication + clinicId linkage)
   - Authorization: Only admins or linked clinic staff can access/modify clinic data
@@ -57,7 +79,8 @@ Preferred communication style: Simple, everyday language.
 - **Database Changes**:
   - Added `clinicId` field to users table for linking staff to clinics
   - Added `isSupportHospital` field to clinics table for partner hospital program
-  - Added `getAllEmergencyRequests()` storage method and API endpoint for admin statistics
+  - Added `getAllEmergencyRequests()` and `getAllUsers()` storage methods and API endpoints
+  - Staff management endpoints: POST/DELETE `/api/clinics/:id/staff`
 
 - **Translation Keys**: Added 70+ clinic dashboard translation keys (EN/zh-HK) covering dashboard UI, availability, emergency requests, and edit forms
 
