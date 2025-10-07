@@ -5,6 +5,17 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,7 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
-import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft, Download, Shield } from "lucide-react";
+import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft, Download, Shield, Trash2, AlertTriangle } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import type { User as UserType, Region } from "@shared/schema";
 
@@ -155,6 +166,33 @@ export default function ProfilePage() {
       toast({
         title: t("profile.export.error_title", "Export failed"),
         description: t("profile.export.error_desc", "Failed to download your data. Please try again."),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const response = await apiRequest('DELETE', '/api/users/gdpr-delete');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to delete account');
+      }
+
+      toast({
+        title: t("profile.delete.success_title", "Account deleted"),
+        description: t("profile.delete.success_desc", "Your account and all data have been permanently deleted."),
+      });
+
+      // Redirect to home after deletion
+      setTimeout(() => {
+        setLocation('/');
+      }, 2000);
+    } catch (error: any) {
+      toast({
+        title: t("profile.delete.error_title", "Deletion failed"),
+        description: error.message || t("profile.delete.error_desc", "Failed to delete your account. Please try again."),
         variant: "destructive",
       });
     }
@@ -339,7 +377,7 @@ export default function ProfilePage() {
               {t("profile.privacy.desc", "Manage your personal data and privacy settings")}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div>
               <h4 className="font-medium mb-2 text-sm text-gray-700 dark:text-gray-300">
                 {t("profile.privacy.export_title", "Export Your Data")}
@@ -356,6 +394,56 @@ export default function ProfilePage() {
                 <Download className="w-4 h-4 mr-2" />
                 {t("profile.privacy.export_button", "Download My Data")}
               </Button>
+            </div>
+
+            <div className="border-t pt-6">
+              <h4 className="font-medium mb-2 text-sm text-gray-700 dark:text-gray-300">
+                {t("profile.privacy.delete_title", "Delete Your Account")}
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                {t("profile.privacy.delete_desc", "Permanently delete your account and all associated data. This action cannot be undone.")}
+              </p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    data-testid="button-delete-account"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {t("profile.privacy.delete_button", "Delete My Account")}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
+                      {t("profile.delete.dialog_title", "Are you absolutely sure?")}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t("profile.delete.dialog_desc", "This action cannot be undone. This will permanently delete your account and remove all your data from our servers, including:")}
+                      <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                        <li>{t("profile.delete.dialog_item1", "Your profile and contact information")}</li>
+                        <li>{t("profile.delete.dialog_item2", "All saved pets and their medical history")}</li>
+                        <li>{t("profile.delete.dialog_item3", "All emergency request records")}</li>
+                        <li>{t("profile.delete.dialog_item4", "All privacy consents and preferences")}</li>
+                      </ul>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel data-testid="button-cancel-delete">
+                      {t("profile.delete.dialog_cancel", "Cancel")}
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteAccount}
+                      className="bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                      data-testid="button-confirm-delete"
+                    >
+                      {t("profile.delete.dialog_confirm", "Yes, delete my account")}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </CardContent>
         </Card>

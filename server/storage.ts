@@ -13,7 +13,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -90,6 +90,16 @@ export interface IStorage {
     emergencyRequests: EmergencyRequest[];
     privacyConsents: PrivacyConsent[];
     auditLogs: AuditLog[];
+  }>;
+  deleteUserDataGDPR(userId: string): Promise<{
+    success: boolean;
+    deletedRecords: {
+      pets: number;
+      emergencyRequests: number;
+      privacyConsents: number;
+      messages: number;
+      user: boolean;
+    };
   }>;
 }
 
@@ -672,6 +682,58 @@ export class MemStorage implements IStorage {
       auditLogs
     };
   }
+
+  async deleteUserDataGDPR(userId: string): Promise<{
+    success: boolean;
+    deletedRecords: {
+      pets: number;
+      emergencyRequests: number;
+      privacyConsents: number;
+      messages: number;
+      user: boolean;
+    };
+  }> {
+    // Delete all user's pets
+    const userPets = Array.from(this.pets.values()).filter(p => p.userId === userId);
+    userPets.forEach(pet => this.pets.delete(pet.id));
+
+    // Delete all user's emergency requests and associated messages
+    const userRequests = Array.from(this.emergencyRequests.values()).filter(r => r.userId === userId);
+    const requestIds = userRequests.map(r => r.id);
+    userRequests.forEach(req => this.emergencyRequests.delete(req.id));
+
+    // Delete messages associated with user's emergency requests
+    const requestMessages = Array.from(this.messages.values()).filter(m => requestIds.includes(m.emergencyRequestId));
+    requestMessages.forEach(msg => this.messages.delete(msg.id));
+
+    // Delete all user's privacy consents
+    const userConsents = Array.from(this.privacyConsents.values()).filter(c => c.userId === userId);
+    userConsents.forEach(consent => this.privacyConsents.delete(consent.id));
+
+    // Delete ALL audit logs related to this user
+    // This includes:
+    // - Logs where user is the entity (entityType='user', entityId=userId)
+    // - Logs where user performed actions (userId=userId)
+    // - This prevents user ID from persisting in changes JSONB or other fields
+    const userRelatedLogs = Array.from(this.auditLogs.values()).filter(
+      l => l.userId === userId || (l.entityType === 'user' && l.entityId === userId)
+    );
+    userRelatedLogs.forEach(log => this.auditLogs.delete(log.id));
+
+    // Delete user account
+    const userDeleted = this.users.delete(userId);
+
+    return {
+      success: userDeleted,
+      deletedRecords: {
+        pets: userPets.length,
+        emergencyRequests: userRequests.length,
+        privacyConsents: userConsents.length,
+        messages: requestMessages.length,
+        user: userDeleted
+      }
+    };
+  }
 }
 
 // Database storage implementation using PostgreSQL
@@ -1001,6 +1063,71 @@ class DatabaseStorage implements IStorage {
       emergencyRequests: requests,
       privacyConsents: consents,
       auditLogs: logs
+    };
+  }
+
+  async deleteUserDataGDPR(userId: string): Promise<{
+    success: boolean;
+    deletedRecords: {
+      pets: number;
+      emergencyRequests: number;
+      privacyConsents: number;
+      messages: number;
+      user: boolean;
+    };
+  }> {
+    // Get emergency request IDs for this user
+    const userRequests = await db.select().from(emergencyRequests).where(eq(emergencyRequests.userId, userId));
+    const requestIds = userRequests.map(r => r.id);
+
+    // Delete messages associated with user's emergency requests
+    let deletedMessages = 0;
+    if (requestIds.length > 0) {
+      const msgResults = await db.delete(messages).where(
+        inArray(messages.emergencyRequestId, requestIds)
+      ).returning();
+      deletedMessages = msgResults.length;
+    }
+
+    // Delete all user's pets
+    const deletedPets = await db.delete(pets).where(eq(pets.userId, userId)).returning();
+
+    // Delete all user's emergency requests
+    const deletedRequests = await db.delete(emergencyRequests).where(eq(emergencyRequests.userId, userId)).returning();
+
+    // Delete all user's privacy consents
+    const deletedConsents = await db.delete(privacyConsents).where(eq(privacyConsents.userId, userId)).returning();
+
+    // Delete ALL audit logs related to this user
+    // This includes:
+    // - Logs where user is the entity (entityType='user', entityId=userId)
+    // - Logs where user performed actions (userId=userId)
+    // This prevents user ID from persisting in changes JSONB or other fields
+    // Includes the gdpr_delete_request log we just created
+    await db.delete(auditLogs).where(
+      eq(auditLogs.userId, userId)
+    );
+
+    // Also delete logs where user is the entity
+    await db.delete(auditLogs).where(
+      and(
+        eq(auditLogs.entityType, 'user'),
+        eq(auditLogs.entityId, userId)
+      )
+    );
+
+    // Delete user account
+    const deletedUser = await db.delete(users).where(eq(users.id, userId)).returning();
+
+    return {
+      success: deletedUser.length > 0,
+      deletedRecords: {
+        pets: deletedPets.length,
+        emergencyRequests: deletedRequests.length,
+        privacyConsents: deletedConsents.length,
+        messages: deletedMessages,
+        user: deletedUser.length > 0
+      }
     };
   }
 }
