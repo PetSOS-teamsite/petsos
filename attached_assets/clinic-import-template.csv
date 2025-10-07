@@ -1,0 +1,4 @@
+Name,Name (Chinese),Address,Address (Chinese),Phone,WhatsApp,Email,Location,24_hours,Latitude,Longitude
+"Example Veterinary Clinic","示例獸醫診所","123 Example Street, Hong Kong","香港示例街123號","+852 1234 5678","+85298765432","info@example.com","Hong Kong Island","No","22.2820","114.1585"
+"24-Hour Emergency Vet","24小時緊急獸醫","456 Emergency Road, Kowloon","九龍緊急道456號","+852 9876 5432","+85291234567","emergency@example.com","Kowloon","Yes","22.3193","114.1694"
+"New Territories Animal Hospital","新界動物醫院","789 NT Avenue, Sha Tin","沙田新界大道789號","+852 5555 1234","+85295551234","contact@ntah.com","New Territories","No","22.3792","114.1880"
