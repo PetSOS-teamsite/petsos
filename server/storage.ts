@@ -82,6 +82,15 @@ export interface IStorage {
   getTranslation(key: string, language: string): Promise<Translation | undefined>;
   createTranslation(translation: InsertTranslation): Promise<Translation>;
   updateTranslation(id: string, translation: Partial<InsertTranslation>): Promise<Translation | undefined>;
+
+  // GDPR/PDPO Compliance
+  exportUserData(userId: string): Promise<{
+    user: User | undefined;
+    pets: Pet[];
+    emergencyRequests: EmergencyRequest[];
+    privacyConsents: PrivacyConsent[];
+    auditLogs: AuditLog[];
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -641,6 +650,28 @@ export class MemStorage implements IStorage {
     this.translations.set(id, updated);
     return updated;
   }
+
+  async exportUserData(userId: string): Promise<{
+    user: User | undefined;
+    pets: Pet[];
+    emergencyRequests: EmergencyRequest[];
+    privacyConsents: PrivacyConsent[];
+    auditLogs: AuditLog[];
+  }> {
+    const user = this.users.get(userId);
+    const pets = Array.from(this.pets.values()).filter(p => p.userId === userId);
+    const emergencyRequests = Array.from(this.emergencyRequests.values()).filter(r => r.userId === userId);
+    const privacyConsents = Array.from(this.privacyConsents.values()).filter(c => c.userId === userId);
+    const auditLogs = Array.from(this.auditLogs.values()).filter(l => l.entityType === 'user' && l.entityId === userId);
+
+    return {
+      user,
+      pets,
+      emergencyRequests,
+      privacyConsents,
+      auditLogs
+    };
+  }
 }
 
 // Database storage implementation using PostgreSQL
@@ -944,6 +975,33 @@ class DatabaseStorage implements IStorage {
       .where(eq(translations.id, id))
       .returning();
     return result[0];
+  }
+
+  async exportUserData(userId: string): Promise<{
+    user: User | undefined;
+    pets: Pet[];
+    emergencyRequests: EmergencyRequest[];
+    privacyConsents: PrivacyConsent[];
+    auditLogs: AuditLog[];
+  }> {
+    const user = await this.getUser(userId);
+    const userPets = await db.select().from(pets).where(eq(pets.userId, userId));
+    const requests = await db.select().from(emergencyRequests).where(eq(emergencyRequests.userId, userId));
+    const consents = await db.select().from(privacyConsents).where(eq(privacyConsents.userId, userId));
+    const logs = await db.select().from(auditLogs).where(
+      and(
+        eq(auditLogs.entityType, 'user'),
+        eq(auditLogs.entityId, userId)
+      )
+    );
+
+    return {
+      user,
+      pets: userPets,
+      emergencyRequests: requests,
+      privacyConsents: consents,
+      auditLogs: logs
+    };
   }
 }
 

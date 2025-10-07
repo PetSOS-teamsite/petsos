@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
-import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft } from "lucide-react";
+import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft, Download, Shield } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import type { User as UserType, Region } from "@shared/schema";
 
@@ -100,6 +100,64 @@ export default function ProfilePage() {
 
   const onSubmit = (data: ProfileFormData) => {
     updateProfileMutation.mutate(data);
+  };
+
+  const handleExportData = async () => {
+    try {
+      const response = await fetch('/api/users/export', {
+        credentials: 'include',
+      });
+
+      // Handle error responses first (before calling blob)
+      if (!response.ok) {
+        const contentType = response.headers.get('Content-Type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to export data');
+        }
+        throw new Error('Failed to export data');
+      }
+
+      // Validate response is JSON
+      const contentType = response.headers.get('Content-Type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Invalid response format');
+      }
+
+      // Verify this is a download (has Content-Disposition header)
+      const disposition = response.headers.get('Content-Disposition');
+      if (!disposition) {
+        throw new Error('Invalid download response');
+      }
+
+      // Extract filename from Content-Disposition header
+      let filename = `petsos-data-export-${new Date().toISOString()}.json`;
+      const filenameMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: t("profile.export.success_title", "Data exported successfully"),
+        description: t("profile.export.success_desc", "Your personal data has been downloaded."),
+      });
+    } catch (error) {
+      toast({
+        title: t("profile.export.error_title", "Export failed"),
+        description: t("profile.export.error_desc", "Failed to download your data. Please try again."),
+        variant: "destructive",
+      });
+    }
   };
 
   if (authLoading || userLoading) {
@@ -268,6 +326,37 @@ export default function ProfilePage() {
                 </Button>
               </form>
             </Form>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-red-600 dark:text-red-500" />
+              {t("profile.privacy.title", "Privacy & Data Rights")}
+            </CardTitle>
+            <CardDescription>
+              {t("profile.privacy.desc", "Manage your personal data and privacy settings")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <h4 className="font-medium mb-2 text-sm text-gray-700 dark:text-gray-300">
+                {t("profile.privacy.export_title", "Export Your Data")}
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                {t("profile.privacy.export_desc", "Download a copy of all your personal data in JSON format (GDPR/PDPO compliant)")}
+              </p>
+              <Button
+                onClick={handleExportData}
+                variant="outline"
+                className="w-full"
+                data-testid="button-export-data"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {t("profile.privacy.export_button", "Download My Data")}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
