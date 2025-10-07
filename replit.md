@@ -48,6 +48,18 @@ Preferred communication style: Simple, everyday language.
 - **Status**: Core infrastructure complete (consent, page tracking), event helpers created but not yet wired to UI
 - **Documentation**: See `docs/ANALYTICS.md` for implementation status and usage guide
 
+### Error Tracking & Monitoring
+- **Implementation**: Sentry for both backend (Node.js) and frontend (React)
+- **Features**: 
+  - Automatic error capture with Express middleware and React ErrorBoundary
+  - Performance monitoring with configurable trace sampling
+  - Session replay for frontend debugging
+  - Sensitive data filtering (auth headers, cookies, passwords)
+  - User-friendly error UI with recovery options
+- **Privacy**: GDPR compliant, no PII collection, automatic sensitive data removal
+- **Configuration**: Optional via `SENTRY_DSN` (backend) and `VITE_SENTRY_DSN` (frontend) environment variables
+- **Documentation**: See `docs/SENTRY.md` for setup and usage guide
+
 ### Deployment Architecture
 - **Infrastructure**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment, Infrastructure as Code.
 
@@ -95,3 +107,7 @@ Preferred communication style: Simple, everyday language.
 - **date-fns**: Date manipulation.
 - **nanoid**: Unique ID generation.
 - **express-rate-limit**: Rate limiting middleware.
+
+### Error Tracking & Monitoring
+- **@sentry/node**: Backend error tracking and performance monitoring.
+- **@sentry/react**: Frontend error tracking with React integration and session replay.
