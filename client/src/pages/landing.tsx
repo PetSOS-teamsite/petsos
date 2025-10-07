@@ -4,6 +4,7 @@ import { Clock, Phone, MapPin, AlertCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { Footer } from "@/components/footer";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
@@ -111,6 +112,9 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
