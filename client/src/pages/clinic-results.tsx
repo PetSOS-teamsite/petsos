@@ -51,6 +51,56 @@ interface Region {
   nameZh: string;
 }
 
+// Helper function to build enhanced pet info string
+function buildPetInfoString(emergencyRequest: any, t: any): string {
+  if (!emergencyRequest?.petSpecies) return '';
+  
+  let petInfo = `\n${t('clinic_results.pet', 'Pet')}: `;
+  
+  // If we have full pet profile data
+  if (emergencyRequest.pet) {
+    const pet = emergencyRequest.pet;
+    // Add pet name if available
+    if (pet.name) {
+      petInfo += `${pet.name} (`;
+    }
+    
+    // Add species, breed, age
+    petInfo += emergencyRequest.petSpecies;
+    if (emergencyRequest.petBreed) {
+      petInfo += `, ${emergencyRequest.petBreed}`;
+    }
+    if (emergencyRequest.petAge) {
+      petInfo += `, ${emergencyRequest.petAge} ${t('common.years', 'years')}`;
+    }
+    
+    // Add weight if available
+    if (pet.weight) {
+      petInfo += `, ${pet.weight}${t('clinic_results.weight_kg', 'kg')}`;
+    }
+    
+    if (pet.name) {
+      petInfo += ')';
+    }
+    
+    // Add medical notes if available
+    if (pet.medicalNotes && pet.medicalNotes.trim()) {
+      petInfo += `\n${t('clinic_results.medical_history', '⚠️ Medical History')}: ${pet.medicalNotes}`;
+    }
+  } else {
+    // Fallback to emergency request data only (manual entry)
+    petInfo += emergencyRequest.petSpecies;
+    if (emergencyRequest.petBreed) {
+      petInfo += `, ${emergencyRequest.petBreed}`;
+    }
+    if (emergencyRequest.petAge) {
+      petInfo += ` (${emergencyRequest.petAge} ${t('common.years', 'years')})`;
+    }
+  }
+  
+  return petInfo;
+}
+
 export default function ClinicResultsPage() {
   const { t, language } = useTranslation();
   const [, params] = useRoute("/emergency-results/:requestId");
@@ -260,17 +310,8 @@ export default function ClinicResultsPage() {
           : `${t('clinic_results.gps_prefix', 'GPS')}: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`;
       }
       
-      // Build pet info string
-      let petInfo = '';
-      if (emergencyRequest?.petSpecies) {
-        petInfo = `\n${t('clinic_results.pet', 'Pet')}: ${emergencyRequest.petSpecies}`;
-        if (emergencyRequest.petBreed) {
-          petInfo += `, ${emergencyRequest.petBreed}`;
-        }
-        if (emergencyRequest.petAge) {
-          petInfo += ` (${emergencyRequest.petAge} ${t('common.years', 'years')})`;
-        }
-      }
+      // Build pet info string with enhanced profile data
+      const petInfo = buildPetInfoString(emergencyRequest, t);
       
       const message = emergencyRequest
         ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
@@ -336,16 +377,8 @@ export default function ClinicResultsPage() {
           : `${t('clinic_results.gps_prefix', 'GPS')}: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`;
       }
       
-      let petInfo = '';
-      if (emergencyRequest?.petSpecies) {
-        petInfo = `\n${t('clinic_results.pet', 'Pet')}: ${emergencyRequest.petSpecies}`;
-        if (emergencyRequest.petBreed) {
-          petInfo += `, ${emergencyRequest.petBreed}`;
-        }
-        if (emergencyRequest.petAge) {
-          petInfo += ` (${emergencyRequest.petAge} ${t('common.years', 'years')})`;
-        }
-      }
+      // Build pet info string with enhanced profile data
+      const petInfo = buildPetInfoString(emergencyRequest, t);
       
       const message = emergencyRequest
         ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
@@ -857,16 +890,8 @@ export default function ClinicResultsPage() {
                           : `${t('clinic_results.gps_prefix', 'GPS')}: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`;
                       }
                       
-                      let petInfo = '';
-                      if (emergencyRequest?.petSpecies) {
-                        petInfo = `\n${t('clinic_results.pet', 'Pet')}: ${emergencyRequest.petSpecies}`;
-                        if (emergencyRequest.petBreed) {
-                          petInfo += `, ${emergencyRequest.petBreed}`;
-                        }
-                        if (emergencyRequest.petAge) {
-                          petInfo += ` (${emergencyRequest.petAge} ${t('common.years', 'years')})`;
-                        }
-                      }
+                      // Build pet info string with enhanced profile data
+                      const petInfo = buildPetInfoString(emergencyRequest, t);
                       
                       return emergencyRequest
                         ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`

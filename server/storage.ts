@@ -49,7 +49,7 @@ export interface IStorage {
   deleteClinic(id: string): Promise<boolean>;
 
   // Emergency Requests
-  getEmergencyRequest(id: string): Promise<EmergencyRequest | undefined>;
+  getEmergencyRequest(id: string): Promise<any>; // Returns emergency request with pet data joined
   getEmergencyRequestsByUserId(userId: string): Promise<EmergencyRequest[]>;
   getEmergencyRequestsByClinicId(clinicId: string): Promise<any[]>;
   getAllEmergencyRequests(): Promise<EmergencyRequest[]>;
@@ -424,8 +424,16 @@ export class MemStorage implements IStorage {
   }
 
   // Emergency Requests
-  async getEmergencyRequest(id: string): Promise<EmergencyRequest | undefined> {
-    return this.emergencyRequests.get(id);
+  async getEmergencyRequest(id: string): Promise<any> {
+    const request = this.emergencyRequests.get(id);
+    if (!request) return undefined;
+    
+    // Include pet data if petId exists
+    const pet = request.petId ? this.pets.get(request.petId) : null;
+    return {
+      ...request,
+      pet
+    };
   }
 
   async getEmergencyRequestsByUserId(userId: string): Promise<EmergencyRequest[]> {
@@ -785,9 +793,23 @@ class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
-  async getEmergencyRequest(id: string): Promise<EmergencyRequest | undefined> {
-    const result = await db.select().from(emergencyRequests).where(eq(emergencyRequests.id, id));
-    return result[0];
+  async getEmergencyRequest(id: string): Promise<any> {
+    const results = await db
+      .select({
+        request: emergencyRequests,
+        pet: pets,
+      })
+      .from(emergencyRequests)
+      .leftJoin(pets, eq(pets.id, emergencyRequests.petId))
+      .where(eq(emergencyRequests.id, id));
+    
+    if (results.length === 0) return undefined;
+    
+    const { request, pet } = results[0];
+    return {
+      ...request,
+      pet
+    };
   }
 
   async getEmergencyRequestsByUserId(userId: string): Promise<EmergencyRequest[]> {
