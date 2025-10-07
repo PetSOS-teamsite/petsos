@@ -1,8 +1,15 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initSentry, setupSentryMiddleware, setupSentryErrorHandler, captureException } from "./sentry";
 
 const app = express();
+
+// Initialize Sentry first, before any other middleware
+initSentry();
+
+// Setup Sentry request and tracing handlers
+setupSentryMiddleware(app);
 
 // Enable trust proxy for accurate client IP tracking behind reverse proxies/CDNs
 // Required for rate limiting to work correctly in production
@@ -53,12 +60,14 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // Setup Sentry error handler AFTER routes but BEFORE other error handlers
+  setupSentryErrorHandler(app);
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
   });
 
   // importantly only setup vite in development and after

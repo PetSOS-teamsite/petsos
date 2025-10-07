@@ -8,6 +8,8 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { CookieConsent } from "@/components/CookieConsent";
 import { usePageTracking } from "@/hooks/useAnalytics";
+import { initSentry } from "@/lib/sentry";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import HomePage from "@/pages/home";
 import LandingPage from "@/pages/landing";
 import EmergencyPage from "@/pages/emergency";
@@ -22,6 +24,9 @@ import ClinicDashboardPage from "@/pages/clinic-dashboard";
 import PrivacyPolicyPage from "@/pages/privacy-policy";
 import TermsOfServicePage from "@/pages/terms-of-service";
 import NotFound from "@/pages/not-found";
+
+// Initialize Sentry as early as possible
+initSentry();
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -73,15 +78,17 @@ function App() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-          <CookieConsent />
-        </TooltipProvider>
-      </LanguageProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+            <CookieConsent />
+          </TooltipProvider>
+        </LanguageProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
