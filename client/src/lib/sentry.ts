@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react';
+import { config } from './config';
 
 const SENSITIVE_KEYS = ['password', 'token', 'api_key', 'apikey', 'secret', 'authorization', 'cookie', 'sessionid', 'auth'];
 
@@ -30,23 +31,23 @@ function scrubSensitiveData(data: any, depth = 0): any {
 }
 
 export function initSentry() {
-  const dsn = import.meta.env.VITE_SENTRY_DSN;
+  const { sentryDsn, sentryTracesSampleRate, sentryReplaysSampleRate, sentryEnv } = config.monitoring;
   
   // Only initialize Sentry if DSN is provided
-  if (!dsn) {
+  if (!sentryDsn) {
     console.log('Sentry DSN not provided - error tracking disabled');
     return;
   }
 
   Sentry.init({
-    dsn,
-    environment: import.meta.env.MODE || 'development',
+    dsn: sentryDsn,
+    environment: sentryEnv,
     
     // Performance monitoring
-    tracesSampleRate: import.meta.env.MODE === 'production' ? 0.1 : 1.0,
+    tracesSampleRate: sentryTracesSampleRate,
     
     // Replay sessions for debugging
-    replaysSessionSampleRate: 0.1,
+    replaysSessionSampleRate: sentryReplaysSampleRate,
     replaysOnErrorSampleRate: 1.0,
     
     integrations: [
@@ -97,7 +98,7 @@ export function initSentry() {
     },
   });
 
-  console.log(`Frontend Sentry initialized for ${import.meta.env.MODE} environment`);
+  console.log(`Frontend Sentry initialized for ${sentryEnv} environment`);
 }
 
 export { Sentry };

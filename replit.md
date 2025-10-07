@@ -64,8 +64,19 @@ Preferred communication style: Simple, everyday language.
 - **Configuration**: Optional via `SENTRY_DSN` (backend) and `VITE_SENTRY_DSN` (frontend) environment variables
 - **Documentation**: See `docs/SENTRY.md` for setup and usage guide
 
+### Multi-Environment Configuration
+- **Environment Management**: Centralized configuration system supporting development, staging, and production environments
+- **Backend Config**: Type-safe configuration loader (`server/config.ts`) with environment-specific validation
+- **Frontend Config**: Separate frontend configuration (`client/src/lib/config.ts`) for client-side settings
+- **Environment-Specific Behavior**:
+  - **Development**: Optional DATABASE_URL/REPLIT_DOMAINS, in-memory sessions, disabled rate limiting, verbose logging
+  - **Staging**: Required DATABASE_URL/REPLIT_DOMAINS, secure sessions, enabled rate limiting, info logging
+  - **Production**: Required DATABASE_URL/REPLIT_DOMAINS, strict rate limiting (100 req/15min), secure sessions (7-day max-age), minimal logging
+- **Configuration Files**: `.env.example` (development), `.env.staging.example`, `.env.production.example` with documented requirements
+
 ### Deployment Architecture
-- **Infrastructure**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment, Infrastructure as Code.
+- **Infrastructure**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment, Infrastructure as Code
+- **Environment Detection**: Automatic via NODE_ENV environment variable
 
 ## External Dependencies
 

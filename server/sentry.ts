@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/node';
 import { Express, Request, Response, NextFunction } from 'express';
+import { config } from './config';
 
 const SENSITIVE_KEYS = ['password', 'token', 'api_key', 'apikey', 'secret', 'authorization', 'cookie', 'auth'];
 
@@ -31,20 +32,20 @@ function scrubSensitiveData(data: any, depth = 0): any {
 }
 
 export function initSentry() {
-  const dsn = process.env.SENTRY_DSN;
+  const { sentryDsn, sentryTracesSampleRate, sentryEnv } = config.monitoring;
   
   // Only initialize Sentry if DSN is provided
-  if (!dsn) {
+  if (!sentryDsn) {
     console.log('Sentry DSN not provided - error tracking disabled');
     return false;
   }
 
   Sentry.init({
-    dsn,
-    environment: process.env.NODE_ENV || 'development',
+    dsn: sentryDsn,
+    environment: sentryEnv,
     
     // Performance monitoring
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    tracesSampleRate: sentryTracesSampleRate,
     
     // Filter out sensitive data
     beforeSend(event) {
@@ -80,35 +81,27 @@ export function initSentry() {
     },
   });
 
-  console.log(`Sentry initialized for ${process.env.NODE_ENV} environment`);
+  console.log(`Sentry initialized for ${sentryEnv} environment`);
   return true;
 }
 
 export function setupSentryMiddleware(app: Express) {
-  const dsn = process.env.SENTRY_DSN;
-  
-  if (!dsn) {
+  if (!config.monitoring.sentryDsn) {
     return;
   }
 
-  // Request handler creates a separate execution context using domains
-  app.use(Sentry.Handlers.requestHandler({
-    ip: true, // Include user IP
-  }) as any);
-  
-  // TracingHandler creates a trace for every incoming request
-  app.use(Sentry.Handlers.tracingHandler() as any);
+  // In Sentry v8+, tracing and request handling is auto-instrumented via OpenTelemetry
+  // No explicit middleware needed
 }
 
 export function setupSentryErrorHandler(app: Express) {
-  const dsn = process.env.SENTRY_DSN;
-  
-  if (!dsn) {
+  if (!config.monitoring.sentryDsn) {
     return;
   }
 
   // Error handler must be registered after all routes but before other error handlers
-  app.use(Sentry.Handlers.errorHandler() as any);
+  // Using the new v8+ API
+  Sentry.setupExpressErrorHandler(app);
 }
 
 export function captureException(error: Error, context?: Record<string, any>) {
