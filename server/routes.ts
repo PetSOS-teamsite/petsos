@@ -17,24 +17,8 @@ import {
   insertMessageSchema, emergencyRequests,
   insertRegionSchema, insertFeatureFlagSchema,
   insertAuditLogSchema, insertPrivacyConsentSchema,
-  insertTranslationSchema
+  insertTranslationSchema, insertEmergencyRequestSchema
 } from "@shared/schema";
-// Create manual insert schema with explicit camelCase keys matching frontend
-const insertEmergencyRequestSchema = z.object({
-  userId: z.string().optional().nullable(),
-  petId: z.string().optional().nullable(),
-  symptom: z.string(),
-  petSpecies: z.string().optional().nullable(),
-  petBreed: z.string().optional().nullable(),
-  petAge: z.number().optional().nullable(),
-  locationLatitude: z.string().optional().nullable(),
-  locationLongitude: z.string().optional().nullable(),
-  manualLocation: z.string().optional().nullable(),
-  contactName: z.string(),
-  contactPhone: z.string(),
-  status: z.string().optional(),
-  regionId: z.string().optional().nullable(),
-});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Replit Auth
@@ -604,15 +588,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create emergency request
   app.post("/api/emergency-requests", async (req, res) => {
     try {
-      // Manual field extraction to ensure pet fields are included
-      // Convert numeric GPS coords to strings for database compatibility
-      const emergencyData = {
+      // Extend schema to coerce petAge from string to number for form compatibility
+      const emergencyRequestSchemaWithCoercion = insertEmergencyRequestSchema.extend({
+        petAge: z.preprocess(
+          (val) => val === null || val === undefined || val === '' ? null : Number(val),
+          z.number().int().nonnegative().nullable().optional()
+        ),
+      });
+      
+      // Validate and parse request body with proper schema
+      const validatedData = emergencyRequestSchemaWithCoercion.parse({
         userId: req.body.userId ?? null,
         petId: req.body.petId ?? null,
         symptom: req.body.symptom,
         petSpecies: req.body.petSpecies ?? null,
         petBreed: req.body.petBreed ?? null,
-        petAge: typeof req.body.petAge === 'number' ? req.body.petAge : (req.body.petAge ? Number(req.body.petAge) : null),
+        petAge: req.body.petAge ?? null,
         locationLatitude: req.body.locationLatitude ? String(req.body.locationLatitude) : null,
         locationLongitude: req.body.locationLongitude ? String(req.body.locationLongitude) : null,
         manualLocation: req.body.manualLocation ?? null,
@@ -620,9 +611,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         contactPhone: req.body.contactPhone,
         status: req.body.status ?? 'pending',
         regionId: req.body.regionId ?? null,
-      };
+      });
       
-      const emergencyRequest = await storage.createEmergencyRequest(emergencyData as any);
+      const emergencyRequest = await storage.createEmergencyRequest(validatedData);
       
       await storage.createAuditLog({
         entityType: 'emergency_request',
@@ -638,6 +629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
+      console.error("Error creating emergency request:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
