@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
+import { CookieConsent } from "@/components/CookieConsent";
+import { usePageTracking } from "@/hooks/useAnalytics";
 import HomePage from "@/pages/home";
 import LandingPage from "@/pages/landing";
 import EmergencyPage from "@/pages/emergency";
@@ -64,6 +66,8 @@ function Router() {
 }
 
 function App() {
+  usePageTracking();
+
   useEffect(() => {
     document.title = "PetSOS";
   }, []);
@@ -74,6 +78,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <CookieConsent />
         </TooltipProvider>
       </LanguageProvider>
     </QueryClientProvider>

@@ -41,6 +41,13 @@ Preferred communication style: Simple, everyday language.
 - **Multi-language**: Database-stored translations (EN, zh-HK), client-side language detection.
 - **Coverage**: Comprehensive bilingual support including legal content, pet breeds, and all critical user flows.
 
+### Analytics & Tracking
+- **Implementation**: Google Analytics 4 (GA4) with GDPR-compliant cookie consent
+- **Features**: Automatic page view tracking, event tracking helpers for future use
+- **Privacy**: Explicit user consent required, no PII or health data collected
+- **Status**: Core infrastructure complete (consent, page tracking), event helpers created but not yet wired to UI
+- **Documentation**: See `docs/ANALYTICS.md` for implementation status and usage guide
+
 ### Deployment Architecture
 - **Infrastructure**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment, Infrastructure as Code.
 
