@@ -303,6 +303,83 @@ const translations = [
   { key: "broadcast.failed_at", en: "Failed", zh: "失敗" },
   { key: "broadcast.error", en: "Error", zh: "錯誤" },
   { key: "broadcast.view_content", en: "View Message Content", zh: "查看訊息內容" },
+
+  // Privacy & Legal Pages
+  { key: "privacy.title", en: "Privacy Policy", zh: "私隱政策" },
+  { key: "privacy.last_updated", en: "Last Updated", zh: "最後更新" },
+  { key: "privacy.intro", en: "PetSOS Limited ('we', 'us', or 'PetSOS') is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your personal information in compliance with Hong Kong Personal Data (Privacy) Ordinance (PDPO) and GDPR.", zh: "PetSOS Limited（「我們」）致力保護您的私隱。本政策說明我們如何收集、使用及保護您的個人資料，並符合香港個人資料（私隱）條例及GDPR。" },
+  
+  { key: "privacy.controller_title", en: "Data Controller", zh: "資料控制者" },
+  { key: "privacy.controller_desc", en: "PetSOS Limited acts as the data controller for all personal information collected through this platform. For data protection queries, contact: privacy@petsos.hk", zh: "PetSOS Limited為本平台所收集個人資料的資料控制者。如有資料保護查詢，請聯絡：privacy@petsos.hk" },
+  
+  { key: "privacy.data_collection_title", en: "Information We Collect", zh: "我們收集的資料" },
+  { key: "privacy.data_collection_desc", en: "We collect: (1) Contact information (name, phone, email); (2) Pet information (name, species, breed, age, weight, medical notes); (3) Location data (GPS coordinates, address); (4) Emergency request details (symptoms, urgency); (5) Technical data (IP address, device information).", zh: "我們收集：(1) 聯絡資料（姓名、電話、電郵）；(2) 寵物資料（名稱、品種、年齡、體重、病歷）；(3) 位置資料（GPS座標、地址）；(4) 緊急求助詳情（症狀、緊急程度）；(5) 技術資料（IP地址、裝置資料）。" },
+  
+  { key: "privacy.lawful_basis_title", en: "Lawful Basis for Processing", zh: "處理資料的法律依據" },
+  { key: "privacy.lawful_basis_desc", en: "We process your data based on: (1) Your consent for emergency broadcasts; (2) Legitimate interests in providing emergency coordination services; (3) Legal obligations for audit and compliance.", zh: "我們基於以下理由處理您的資料：(1) 您同意進行緊急廣播；(2) 提供緊急協調服務的合法權益；(3) 審計及合規的法律責任。" },
+  
+  { key: "privacy.data_usage_title", en: "How We Use Your Information", zh: "我們如何使用您的資料" },
+  { key: "privacy.data_usage_desc", en: "Your information is used to: (1) Connect you with veterinary clinics during emergencies; (2) Send emergency alerts via WhatsApp and email; (3) Improve service quality; (4) Comply with legal obligations. We do not sell your data.", zh: "您的資料用於：(1) 在緊急情況下為您聯絡獸醫診所；(2) 透過WhatsApp及電郵發送緊急警報；(3) 改善服務質素；(4) 履行法律責任。我們不會出售您的資料。" },
+  
+  { key: "privacy.data_sharing_title", en: "Data Recipients", zh: "資料接收者" },
+  { key: "privacy.data_sharing_desc", en: "We share your data with: (1) Veterinary clinics you contact; (2) WhatsApp Business API (Meta) for emergency messaging; (3) Email service providers; (4) Database hosting (Neon). All recipients are bound by data protection agreements.", zh: "我們會與以下各方分享您的資料：(1) 您聯絡的獸醫診所；(2) WhatsApp Business API（Meta）用於緊急訊息；(3) 電郵服務供應商；(4) 資料庫託管（Neon）。所有接收者均受資料保護協議約束。" },
+  
+  { key: "privacy.data_retention_title", en: "Data Retention", zh: "資料保留" },
+  { key: "privacy.data_retention_desc", en: "We retain: (1) Emergency requests for 12 months; (2) Pet profiles until deletion requested; (3) Audit logs for 7 years (legal compliance); (4) User accounts until deletion requested. You may request data deletion at any time.", zh: "我們保留：(1) 緊急求助紀錄12個月；(2) 寵物檔案直至您要求刪除；(3) 審計日誌7年（法律合規）；(4) 用戶帳戶直至您要求刪除。您可隨時要求刪除資料。" },
+  
+  { key: "privacy.international_title", en: "International Data Transfers", zh: "跨境資料轉移" },
+  { key: "privacy.international_desc", en: "Your data may be transferred to service providers outside Hong Kong (e.g., Neon - USA, Meta - USA). We ensure adequate safeguards through Standard Contractual Clauses and certified providers.", zh: "您的資料可能轉移至香港以外的服務供應商（如Neon - 美國、Meta - 美國）。我們透過標準合約條款及認證供應商確保足夠保障。" },
+  
+  { key: "privacy.security_title", en: "Security Measures", zh: "保安措施" },
+  { key: "privacy.security_desc", en: "We implement: (1) Encryption at rest and in transit (TLS/SSL); (2) Access controls and authentication; (3) Regular security audits; (4) Secure credential management.", zh: "我們實施：(1) 靜態及傳輸加密（TLS/SSL）；(2) 存取控制及認證；(3) 定期保安審計；(4) 安全憑證管理。" },
+  
+  { key: "privacy.your_rights_title", en: "Your Rights", zh: "您的權利" },
+  { key: "privacy.your_rights_desc", en: "Under PDPO and GDPR, you have the right to: (1) Access your personal data; (2) Export your data (data portability); (3) Correct inaccurate data; (4) Delete your data (right to erasure); (5) Withdraw consent; (6) Lodge a complaint with the Privacy Commissioner.", zh: "根據PDPO及GDPR，您有權：(1) 查閱您的個人資料；(2) 匯出您的資料（資料可攜性）；(3) 更正不準確資料；(4) 刪除您的資料（刪除權）；(5) 撤回同意；(6) 向私隱專員公署投訴。" },
+  
+  { key: "privacy.complaints_title", en: "Complaints", zh: "投訴" },
+  { key: "privacy.complaints_desc", en: "To lodge a complaint: (1) Contact us at privacy@petsos.hk; (2) Contact Hong Kong Privacy Commissioner: enquiry@pcpd.org.hk; (3) For EU residents: Contact your local supervisory authority.", zh: "如需投訴：(1) 聯絡我們：privacy@petsos.hk；(2) 聯絡香港私隱專員公署：enquiry@pcpd.org.hk；(3) 歐盟居民：聯絡當地監管機構。" },
+  
+  { key: "privacy.contact_title", en: "Contact Us", zh: "聯絡我們" },
+  { key: "privacy.contact_desc", en: "For privacy concerns or to exercise your rights: Email: privacy@petsos.hk | Data Protection Officer: dpo@petsos.hk", zh: "如有私隱疑慮或行使您的權利：電郵：privacy@petsos.hk | 資料保護主任：dpo@petsos.hk" },
+  
+  { key: "terms.title", en: "Terms of Service", zh: "服務條款" },
+  { key: "terms.last_updated", en: "Last Updated", zh: "最後更新" },
+  { key: "terms.intro", en: "These Terms of Service ('Terms') govern your use of PetSOS. By accessing or using our platform, you agree to be bound by these Terms. If you do not agree, please do not use our services.", zh: "本服務條款（「條款」）規管您使用PetSOS。存取或使用我們的平台即表示您同意受本條款約束。如您不同意，請勿使用我們的服務。" },
+  
+  { key: "terms.acceptance_title", en: "Acceptance of Terms", zh: "接受條款" },
+  { key: "terms.acceptance_desc", en: "By creating an account or using PetSOS services, you acknowledge that you have read, understood, and agree to these Terms and our Privacy Policy. Your continued use constitutes ongoing acceptance.", zh: "建立帳戶或使用PetSOS服務即表示您確認已閱讀、理解並同意本條款及我們的私隱政策。繼續使用即表示持續接受。" },
+  
+  { key: "terms.service_description_title", en: "Service Description", zh: "服務描述" },
+  { key: "terms.service_description_desc", en: "PetSOS is an emergency coordination platform that connects pet owners with veterinary clinics. We facilitate communication but do not provide medical services, veterinary advice, or emergency medical care.", zh: "PetSOS是一個連接寵物主人與獸醫診所的緊急協調平台。我們促進溝通，但不提供醫療服務、獸醫意見或緊急醫療護理。" },
+  
+  { key: "terms.user_responsibilities_title", en: "User Responsibilities", zh: "用戶責任" },
+  { key: "terms.user_responsibilities_desc", en: "You agree to: (1) Provide accurate emergency information; (2) Use the service only for genuine pet emergencies; (3) Respect clinic operating hours; (4) Not misuse the broadcast system. Violations may result in account suspension or termination.", zh: "您同意：(1) 提供準確的緊急資料；(2) 僅在真正的寵物緊急情況下使用服務；(3) 尊重診所營業時間；(4) 不濫用廣播系統。違規可能導致帳戶暫停或終止。" },
+  
+  { key: "terms.disclaimer_title", en: "Medical Disclaimer", zh: "醫療免責聲明" },
+  { key: "terms.disclaimer_desc", en: "PetSOS does not provide medical advice. We do not guarantee clinic availability, response times, or treatment outcomes. In life-threatening situations, contact emergency veterinary services immediately.", zh: "PetSOS不提供醫療意見。我們不保證診所的接診情況、回應時間或治療結果。在危及生命的情況下，請立即聯絡緊急獸醫服務。" },
+  
+  { key: "terms.limitation_title", en: "Limitation of Liability", zh: "責任限制" },
+  { key: "terms.limitation_desc", en: "To the maximum extent permitted by law, PetSOS is not liable for: (1) Direct, indirect, or consequential damages; (2) Loss of data or business; (3) Clinic actions or inactions; (4) Service interruptions. Maximum liability is limited to HKD 100.", zh: "在法律允許的最大範圍內，PetSOS不對以下情況負責：(1) 直接、間接或相應損失；(2) 資料或業務損失；(3) 診所的行為或不行為；(4) 服務中斷。最高責任限於港幣100元。" },
+  
+  { key: "terms.governing_law_title", en: "Governing Law & Jurisdiction", zh: "適用法律及司法管轄權" },
+  { key: "terms.governing_law_desc", en: "These Terms are governed by Hong Kong law. Any disputes shall be resolved exclusively in Hong Kong courts.", zh: "本條款受香港法律管轄。任何爭議應在香港法院專屬解決。" },
+  
+  { key: "terms.eu_rights_title", en: "EU Consumer Rights", zh: "歐盟消費者權利" },
+  { key: "terms.eu_rights_desc", en: "For residents of the European Union, nothing in these Terms affects your statutory consumer rights under EU law, including the right to withdraw from contracts and remedies for defective services.", zh: "對於歐盟居民，本條款內容不影響您在歐盟法律下的法定消費者權利，包括撤回合約的權利及對有缺陷服務的補救措施。" },
+  
+  { key: "terms.privacy_policy_title", en: "Privacy Policy", zh: "私隱政策" },
+  { key: "terms.privacy_policy_desc", en: "Your use of PetSOS is also governed by our Privacy Policy. Please review our Privacy Policy to understand how we collect, use, and protect your personal information.", zh: "您使用PetSOS亦受我們的私隱政策管轄。請查閱我們的私隱政策，了解我們如何收集、使用及保護您的個人資料。" },
+  
+  { key: "terms.termination_title", en: "Service Modification & Termination", zh: "服務修改及終止" },
+  { key: "terms.termination_desc", en: "We reserve the right to: (1) Modify or discontinue services at any time; (2) Terminate accounts for violations; (3) Update these Terms with notice. We will provide 30 days notice for material changes.", zh: "我們保留以下權利：(1) 隨時修改或終止服務；(2) 因違規終止帳戶；(3) 在通知後更新本條款。重大變更將提前30天通知。" },
+  
+  { key: "terms.changes_title", en: "Changes to Terms", zh: "條款變更" },
+  { key: "terms.changes_desc", en: "We may update these Terms periodically. We will notify you of material changes via email or platform notice. Continued use after changes constitutes acceptance. Last updated: October 2025.", zh: "我們可能定期更新本條款。我們會透過電郵或平台通知重大變更。變更後繼續使用即表示接受。最後更新：2025年10月。" },
+  
+  { key: "footer.privacy", en: "Privacy Policy", zh: "私隱政策" },
+  { key: "footer.terms", en: "Terms of Service", zh: "服務條款" },
+  { key: "footer.contact", en: "Contact", zh: "聯絡我們" },
+  { key: "footer.rights", en: "© 2025 PetSOS. All rights reserved.", zh: "© 2025 PetSOS. 版權所有。" },
 ];
 
 async function seedTranslations() {

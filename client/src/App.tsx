@@ -17,6 +17,8 @@ import ClinicsPage from "@/pages/clinics";
 import AdminClinicsPage from "@/pages/admin-clinics";
 import AdminLoginPage from "@/pages/admin-login";
 import ClinicDashboardPage from "@/pages/clinic-dashboard";
+import PrivacyPolicyPage from "@/pages/privacy-policy";
+import TermsOfServicePage from "@/pages/terms-of-service";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -31,6 +33,8 @@ function Router() {
       <Route path="/emergency" component={EmergencyPage} />
       <Route path="/emergency-results/:requestId" component={ClinicResultsPage} />
       <Route path="/emergency-results/:requestId/messages" component={MessageStatusPage} />
+      <Route path="/privacy" component={PrivacyPolicyPage} />
+      <Route path="/terms" component={TermsOfServicePage} />
       
       {/* Home route - show landing page for everyone */}
       <Route path="/" component={LandingPage} />
