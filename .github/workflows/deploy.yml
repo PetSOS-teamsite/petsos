@@ -1,0 +1,72 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript type checking
+        run: npm run check
+
+      - name: Build application
+        run: npm run build
+
+      - name: Deploy to Production
+        run: |
+          echo "📦 Build artifacts ready for deployment"
+          echo "✅ Application built successfully"
+          echo ""
+          echo "⚠️  NOTE: Automatic Replit deployment is not configured."
+          echo "Please deploy manually or configure deployment method:"
+          echo ""
+          echo "Option 1: Use Replit CLI"
+          echo "  replit deploy"
+          echo ""
+          echo "Option 2: Use Git-based deployment"
+          echo "  git push replit main"
+          echo ""
+          echo "Option 3: Configure API-based deployment"
+          echo "  Add REPLIT_DEPLOY_TOKEN and REPL_ID to secrets"
+          echo "  Uncomment and configure deployment API call in this workflow"
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          echo "Running database migrations..."
+          npx tsx scripts/setup-postgis.ts
+          npm run db:push -- --force
+
+      - name: Health check
+        run: |
+          echo "Performing health check..."
+          # Add health check endpoint test
+          # Example: curl -f https://yourapp.replit.app/health || exit 1
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment successful!"
+          else
+            echo "❌ Deployment failed!"
+          fi

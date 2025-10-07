@@ -33,7 +33,9 @@ Preferred communication style: Simple, everyday language.
 - **Architecture**: WhatsApp Business API as primary, email fallback, queue-based processing, template-based messaging.
 
 ### Geolocation & Region Support
-- **Implementation**: PostGIS for geospatial queries, centroid-based region definitions, Haversine formula for client-side distance, auto-user location detection, manual override.
+- **Implementation**: PostGIS for server-side geospatial queries with ST_DWithin and ST_Distance, geography column with GIST spatial index, automatic trigger to sync location from lat/lng, centroid-based region definitions, auto-user location detection, manual override.
+- **Setup**: Run `tsx scripts/setup-postgis.ts` to enable PostGIS extension, create geography column, spatial index, and auto-update trigger (idempotent script).
+- **Performance**: Server-side geo-queries significantly faster than client-side Haversine calculations, with efficient spatial indexing for large datasets.
 
 ### Internationalization (i18n)
 - **Multi-language**: Database-stored translations (EN, zh-HK), client-side language detection.

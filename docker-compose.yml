@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database with PostGIS
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: petsos-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: petsos
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PetSOS application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: petsos-app
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/petsos
+      PORT: 5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/app/scripts
+    command: >
+      sh -c "
+        echo 'Setting up database...' &&
+        npx tsx scripts/setup-postgis.ts &&
+        npm run db:push -- --force &&
+        echo 'Starting application...' &&
+        node dist/index.js
+      "
+
+  # Redis (optional - for caching and queue management)
+  redis:
+    image: redis:7-alpine
+    container_name: petsos-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:

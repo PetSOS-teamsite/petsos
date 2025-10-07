@@ -1,0 +1,74 @@
+name: Database Operations
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Database operation to perform'
+        required: true
+        type: choice
+        options:
+          - setup-postgis
+          - push-schema
+          - migrate
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+jobs:
+  database-operation:
+    name: Run Database Operation
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup environment
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "Running operation: ${{ github.event.inputs.operation }}"
+          echo "Target environment: ${{ github.event.inputs.environment }}"
+
+      - name: Setup PostGIS
+        if: github.event.inputs.operation == 'setup-postgis'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx tsx scripts/setup-postgis.ts
+
+      - name: Push Schema
+        if: github.event.inputs.operation == 'push-schema'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run db:push -- --force
+
+      - name: Run Migration
+        if: github.event.inputs.operation == 'migrate'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          npx tsx scripts/setup-postgis.ts
+          npm run db:push -- --force
+
+      - name: Verify database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "Verifying database connection..."
+          npx tsx -e "import { db } from './server/db.ts'; import { sql } from 'drizzle-orm'; db.execute(sql\`SELECT 1\`).then(() => { console.log('✅ Database connection verified'); process.exit(0); }).catch(e => { console.error('❌ Database error:', e); process.exit(1); })"
