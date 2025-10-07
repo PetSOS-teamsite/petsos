@@ -139,6 +139,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true });
   });
 
+  // GDPR/PDPO: Export user data
+  app.get("/api/users/export", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const exportData = await storage.exportUserData(userId);
+
+      // Log export for audit
+      await storage.createAuditLog({
+        entityType: 'user',
+        entityId: userId,
+        action: 'export_data',
+        userId: userId,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      // Set headers for JSON download (use res.send instead of res.json to preserve headers)
+      const filename = `petsos-data-export-${userId}-${new Date().toISOString()}.json`;
+      res.status(200)
+        .set({
+          'Content-Type': 'application/json; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`
+        })
+        .send(JSON.stringify(exportData, null, 2));
+    } catch (error) {
+      console.error("Error exporting user data:", error);
+      res.status(500).json({ message: "Failed to export user data" });
+    }
+  });
+
   // ===== PET ROUTES =====
   
   // Get pets for user
