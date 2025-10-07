@@ -102,6 +102,31 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
+    const returnTo = req.query.returnTo as string;
+    if (returnTo) {
+      // Security: Validate returnTo to prevent open redirect attacks
+      try {
+        // Only allow relative paths (no protocol, no host)
+        if (!returnTo.startsWith('/') || returnTo.startsWith('//')) {
+          throw new Error('Invalid returnTo: must be relative path');
+        }
+        
+        // Use URL parsing to normalize and validate the path
+        const url = new URL(returnTo, `http://localhost`);
+        const normalizedPath = url.pathname;
+        
+        // Reject if path contains traversal attempts or resolves outside root
+        if (normalizedPath.includes('..') || !normalizedPath.startsWith('/')) {
+          throw new Error('Invalid returnTo: path traversal detected');
+        }
+        
+        // Store the normalized path in session
+        (req.session as any).returnTo = normalizedPath;
+      } catch (error) {
+        // Invalid returnTo - don't set it, will use default redirect
+        console.warn('Invalid returnTo parameter:', returnTo, error);
+      }
+    }
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
