@@ -4,6 +4,10 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
+// Enable trust proxy for accurate client IP tracking behind reverse proxies/CDNs
+// Required for rate limiting to work correctly in production
+app.set('trust proxy', true);
+
 declare module 'http' {
   interface IncomingMessage {
     rawBody: unknown

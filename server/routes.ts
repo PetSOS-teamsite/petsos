@@ -5,6 +5,14 @@ import { z } from "zod";
 import { messagingService } from "./services/messaging";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { 
+  generalLimiter, 
+  authLimiter, 
+  broadcastLimiter, 
+  exportLimiter, 
+  deletionLimiter,
+  strictLimiter 
+} from "./middleware/rateLimiter";
+import { 
   insertUserSchema, insertPetSchema, insertClinicSchema,
   insertMessageSchema, emergencyRequests,
   insertRegionSchema, insertFeatureFlagSchema,
@@ -32,6 +40,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Replit Auth
   await setupAuth(app);
   
+  // Apply general rate limiter to all API routes (100 req/15min)
+  app.use('/api/', generalLimiter);
+  
   // ===== AUTH ROUTES =====
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
@@ -47,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== USER ROUTES =====
   
   // Register user
-  app.post("/api/users/register", async (req, res) => {
+  app.post("/api/users/register", authLimiter, async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
       
@@ -122,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete user
-  app.delete("/api/users/:id", async (req, res) => {
+  app.delete("/api/users/:id", strictLimiter, async (req, res) => {
     const success = await storage.deleteUser(req.params.id);
     if (!success) {
       return res.status(404).json({ message: "User not found" });
@@ -140,7 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // GDPR/PDPO: Export user data
-  app.get("/api/users/export", isAuthenticated, async (req: any, res) => {
+  app.get("/api/users/export", exportLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const exportData = await storage.exportUserData(userId);
@@ -170,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // GDPR/PDPO: Delete user data (Right to be Forgotten)
-  app.delete("/api/users/gdpr-delete", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/users/gdpr-delete", deletionLimiter, isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
 
@@ -280,7 +291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete pet
-  app.delete("/api/pets/:id", async (req, res) => {
+  app.delete("/api/pets/:id", strictLimiter, async (req, res) => {
     const pet = await storage.getPet(req.params.id);
     if (!pet) {
       return res.status(404).json({ message: "Pet not found" });
@@ -705,7 +716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Broadcast emergency to clinics
-  app.post("/api/emergency-requests/:id/broadcast", async (req, res) => {
+  app.post("/api/emergency-requests/:id/broadcast", broadcastLimiter, async (req, res) => {
     try {
       const { clinicIds, message } = z.object({
         clinicIds: z.array(z.string()),
