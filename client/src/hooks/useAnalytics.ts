@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { analytics } from '@/lib/analytics';
+import { config } from '@/lib/config';
 
 export function useAnalytics() {
   const [location] = useLocation();
 
   useEffect(() => {
-    const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+    const { measurementId, enabled } = config.analytics;
     
-    if (measurementId && typeof window !== 'undefined') {
+    if (enabled && measurementId && typeof window !== 'undefined') {
       // Check if user has consented to analytics
       const hasConsent = localStorage.getItem('analytics_consent') === 'true';
       
@@ -37,10 +38,10 @@ export function usePageTracking() {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+    const { measurementId, enabled } = config.analytics;
     const hasConsent = localStorage.getItem('analytics_consent') === 'true';
     
-    if (hasConsent && measurementId && typeof window !== 'undefined') {
+    if (hasConsent && enabled && measurementId && typeof window !== 'undefined') {
       // Initialize analytics for returning users on first mount
       if (!initialized) {
         analytics.initialize(measurementId);

@@ -1,20 +1,21 @@
 import rateLimit from 'express-rate-limit';
+import { config } from '../config';
 
-// General API rate limiter - 100 requests per 15 minutes per IP
+// General API rate limiter - Environment-aware
 export const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.maxRequests,
   message: {
     error: 'Too many requests from this IP, please try again later.',
-    retryAfter: 900 // seconds
+    retryAfter: Math.floor(config.rateLimit.windowMs / 1000)
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  // Store in memory (consider Redis for production with multiple servers)
+  skip: () => !config.rateLimit.enabled, // Skip rate limiting if disabled
   skipSuccessfulRequests: false, // Count all requests
 });
 
-// Strict limiter for sensitive operations - 5 requests per 15 minutes per IP
+// Strict limiter for sensitive operations - Environment-aware
 export const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // Limit each IP to 5 requests per windowMs
@@ -24,10 +25,11 @@ export const strictLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => !config.rateLimit.enabled, // Skip rate limiting if disabled
   skipSuccessfulRequests: false,
 });
 
-// Emergency broadcast limiter - 10 broadcasts per hour per IP
+// Emergency broadcast limiter - Environment-aware
 export const broadcastLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10, // Limit each IP to 10 broadcasts per hour
@@ -37,10 +39,11 @@ export const broadcastLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => !config.rateLimit.enabled, // Skip rate limiting if disabled
   skipSuccessfulRequests: false,
 });
 
-// Auth limiter - 10 login attempts per 15 minutes per IP
+// Auth limiter - Environment-aware
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // Limit each IP to 10 login attempts per windowMs
@@ -50,10 +53,11 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => !config.rateLimit.enabled, // Skip rate limiting if disabled
   skipSuccessfulRequests: false,
 });
 
-// Data export limiter - 3 exports per hour per IP (prevent data harvesting)
+// Data export limiter - Environment-aware
 export const exportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // Limit each IP to 3 exports per hour
@@ -63,10 +67,11 @@ export const exportLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => !config.rateLimit.enabled, // Skip rate limiting if disabled
   skipSuccessfulRequests: false,
 });
 
-// Account deletion limiter - 1 deletion per day per IP (prevent abuse)
+// Account deletion limiter - Environment-aware
 export const deletionLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
   max: 1, // Limit each IP to 1 deletion per day
@@ -76,5 +81,6 @@ export const deletionLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => !config.rateLimit.enabled, // Skip rate limiting if disabled
   skipSuccessfulRequests: false,
 });

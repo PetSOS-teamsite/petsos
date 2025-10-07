@@ -2,22 +2,27 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { analytics } from '@/lib/analytics';
+import { config } from '@/lib/config';
 import { X } from 'lucide-react';
 
 export function CookieConsent() {
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
+    const { measurementId, enabled } = config.analytics;
+    
+    // Only show banner if analytics is enabled and configured
+    if (!enabled || !measurementId) {
+      return;
+    }
+    
     // Check if user has already made a choice
     const consent = localStorage.getItem('analytics_consent');
     if (consent === null) {
       setShowBanner(true);
     } else if (consent === 'true') {
       // User has consented, initialize analytics
-      const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
-      if (measurementId) {
-        analytics.initialize(measurementId);
-      }
+      analytics.initialize(measurementId);
     }
   }, []);
 
@@ -26,7 +31,7 @@ export function CookieConsent() {
     setShowBanner(false);
     
     // Initialize analytics
-    const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+    const { measurementId } = config.analytics;
     if (measurementId) {
       analytics.initialize(measurementId);
       analytics.event('cookie_consent', { consent_given: true });

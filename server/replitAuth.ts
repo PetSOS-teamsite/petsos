@@ -7,8 +7,9 @@ import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
+import { config as appConfig } from "./config";
 
-if (!process.env.REPLIT_DOMAINS) {
+if (!appConfig.auth.replitDomains && !appConfig.isDevelopment) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
 
@@ -23,23 +24,31 @@ const getOidcConfig = memoize(
 );
 
 export function getSession() {
-  const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
+  // Use in-memory session store if database URL is not configured (development)
+  let sessionStore;
+  
+  if (appConfig.database.url) {
+    const pgStore = connectPg(session);
+    sessionStore = new pgStore({
+      conString: appConfig.database.url,
+      createTableIfMissing: false,
+      ttl: appConfig.session.maxAge,
+      tableName: "sessions",
+    });
+  } else if (appConfig.isDevelopment) {
+    console.warn('[Session] Using in-memory session store - sessions will not persist across restarts');
+    // sessionStore will be undefined, which means express-session uses MemoryStore
+  }
+  
   return session({
-    secret: process.env.SESSION_SECRET!,
-    store: sessionStore,
+    secret: appConfig.session.secret,
+    store: sessionStore, // undefined = in-memory MemoryStore
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
-      maxAge: sessionTtl,
+      secure: appConfig.session.secure,
+      maxAge: appConfig.session.maxAge,
     },
   });
 }
@@ -72,6 +81,14 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Skip OIDC setup if REPLIT_DOMAINS is not configured (development mode)
+  if (!appConfig.auth.replitDomains) {
+    console.warn('[Auth] REPLIT_DOMAINS not configured - authentication will not work');
+    passport.serializeUser((user: Express.User, cb) => cb(null, user));
+    passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+    return;
+  }
+
   const config = await getOidcConfig();
 
   const verify: VerifyFunction = async (
@@ -84,8 +101,7 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
+  for (const domain of appConfig.auth.replitDomains.split(",")) {
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
