@@ -17,7 +17,7 @@ const RETRY_DELAY_MS = 5000;
 // ⚠️ TESTING MODE - REMOVE AFTER TESTING
 // When enabled, all WhatsApp messages will be sent to these test numbers instead of actual clinic numbers
 const TESTING_MODE = true;
-const TEST_PHONE_NUMBERS = ['+85265727136', '+85255375152'];
+const TEST_PHONE_NUMBERS = ['85265727136', '85255375152']; // Format: country code + number (no + or -)
 let testNumberIndex = 0;
 
 interface SendMessageOptions {
@@ -34,8 +34,13 @@ export class MessagingService {
    * Send a message via WhatsApp Business API
    */
   private async sendWhatsAppMessage(phoneNumber: string, content: string): Promise<boolean> {
+    console.log('[WhatsApp] Attempting to send message...');
+    console.log('[WhatsApp] Has Access Token:', !!WHATSAPP_ACCESS_TOKEN);
+    console.log('[WhatsApp] Has Phone Number ID:', !!WHATSAPP_PHONE_NUMBER_ID);
+    console.log('[WhatsApp] API URL:', WHATSAPP_API_URL);
+    
     if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
-      console.error('WhatsApp credentials not configured');
+      console.error('[WhatsApp] Credentials not configured - missing token or phone number ID');
       return false;
     }
 
@@ -51,34 +56,37 @@ export class MessagingService {
     }
 
     try {
-      const response = await fetch(
-        `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            messaging_product: 'whatsapp',
-            to: actualRecipient,
-            type: 'text',
-            text: { body: content },
-          }),
-        }
-      );
+      const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+      console.log('[WhatsApp] Sending to URL:', url);
+      console.log('[WhatsApp] Recipient:', actualRecipient);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: actualRecipient,
+          type: 'text',
+          text: { body: content },
+        }),
+      });
 
+      console.log('[WhatsApp] Response status:', response.status);
+      
       if (!response.ok) {
         const error = await response.text();
-        console.error('WhatsApp API error:', error);
+        console.error('[WhatsApp] API error response:', error);
         return false;
       }
 
       const result = await response.json();
-      console.log('WhatsApp message sent:', result);
+      console.log('[WhatsApp] Message sent successfully:', result);
       return true;
     } catch (error) {
-      console.error('Error sending WhatsApp message:', error);
+      console.error('[WhatsApp] Error sending message:', error);
       return false;
     }
   }
