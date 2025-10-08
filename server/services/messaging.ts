@@ -14,6 +14,12 @@ const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@petemergency.com';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 5000;
 
+// ⚠️ TESTING MODE - REMOVE AFTER TESTING
+// When enabled, all WhatsApp messages will be sent to these test numbers instead of actual clinic numbers
+const TESTING_MODE = true;
+const TEST_PHONE_NUMBERS = ['+85265727136', '+85255375152'];
+let testNumberIndex = 0;
+
 interface SendMessageOptions {
   emergencyRequestId: string;
   clinicId: string;
@@ -33,6 +39,17 @@ export class MessagingService {
       return false;
     }
 
+    // ⚠️ TESTING MODE: Override recipient with test numbers
+    let actualRecipient = phoneNumber;
+    if (TESTING_MODE) {
+      actualRecipient = TEST_PHONE_NUMBERS[testNumberIndex % TEST_PHONE_NUMBERS.length];
+      testNumberIndex++;
+      console.log(`[TESTING MODE] Redirecting WhatsApp from ${phoneNumber} to test number: ${actualRecipient}`);
+      
+      // Add note to message content that this is a test
+      content = `[TEST MESSAGE]\nOriginal recipient: ${phoneNumber}\n\n${content}`;
+    }
+
     try {
       const response = await fetch(
         `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
@@ -44,7 +61,7 @@ export class MessagingService {
           },
           body: JSON.stringify({
             messaging_product: 'whatsapp',
-            to: phoneNumber,
+            to: actualRecipient,
             type: 'text',
             text: { body: content },
           }),
