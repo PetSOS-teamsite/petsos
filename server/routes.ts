@@ -896,10 +896,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Broadcast emergency to clinics
-  app.post("/api/emergency-requests/:id/broadcast", broadcastLimiter, isAuthenticated, async (req: any, res) => {
+  // Broadcast emergency to clinics (allows anonymous users for emergency use)
+  app.post("/api/emergency-requests/:id/broadcast", broadcastLimiter, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
       const { clinicIds, message } = z.object({
         clinicIds: z.array(z.string()),
         message: z.string(),
@@ -910,14 +909,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Emergency request not found" });
       }
       
-      // Only the owner of the emergency request can broadcast it
-      const requestingUser = await storage.getUser(requestingUserId);
-      if (!requestingUser) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      
-      if (emergencyRequest.userId !== requestingUserId && requestingUser.role !== 'admin') {
-        return res.status(403).json({ message: "Forbidden - You can only broadcast your own emergency requests" });
+      // Check authorization: allow if authenticated user owns the request, is admin, or if anonymous emergency
+      if (req.user) {
+        // User is authenticated - verify ownership or admin role
+        const requestingUserId = req.user.claims.sub;
+        const requestingUser = await storage.getUser(requestingUserId);
+        
+        if (!requestingUser) {
+          return res.status(401).json({ message: "Unauthorized" });
+        }
+        
+        if (emergencyRequest.userId !== requestingUserId && requestingUser.role !== 'admin') {
+          return res.status(403).json({ message: "Forbidden - You can only broadcast your own emergency requests" });
+        }
+      } else {
+        // Anonymous user - only allow if emergency request was created anonymously
+        if (emergencyRequest.userId) {
+          return res.status(403).json({ message: "Forbidden - This emergency belongs to a registered user" });
+        }
       }
 
       const messages = await messagingService.broadcastEmergency(
