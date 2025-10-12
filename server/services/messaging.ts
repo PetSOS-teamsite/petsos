@@ -16,7 +16,7 @@ const RETRY_DELAY_MS = 5000;
 
 // ⚠️ TESTING MODE - REMOVE AFTER TESTING
 // When enabled, all WhatsApp messages will be sent to these test numbers instead of actual clinic numbers
-const TESTING_MODE = true;
+const TESTING_MODE = false; // Disabled for App Review video recording
 const TEST_PHONE_NUMBERS = ['85265727136', '85255375152']; // Format: country code + number (no + or -)
 let testNumberIndex = 0;
 
