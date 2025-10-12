@@ -110,7 +110,7 @@ export default function ClinicResultsPage() {
   const [showBroadcastDialog, setShowBroadcastDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [distanceFilter, setDistanceFilter] = useState<string>("all");
-  const [only24Hour, setOnly24Hour] = useState(false);
+  const [only24Hour, setOnly24Hour] = useState(true);
   const [onlyWhatsApp, setOnlyWhatsApp] = useState(false);
   const [selectedClinics, setSelectedClinics] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
