@@ -28,8 +28,8 @@ export function Footer() {
             </Link>
           </div>
         </div>
-        <div className="text-center mt-2">
-          <p className="text-[10px] text-gray-400 dark:text-gray-600">Anny Fantasy Limited</p>
+        <div className="text-center mt-3">
+          <p className="text-xs text-gray-500 dark:text-gray-500">Anny Fantasy Limited</p>
         </div>
       </div>
     </footer>
