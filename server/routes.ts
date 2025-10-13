@@ -770,6 +770,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         contactPhone: req.body.contactPhone,
         status: req.body.status ?? 'pending',
         regionId: req.body.regionId ?? null,
+        voiceTranscript: req.body.voiceTranscript ?? null,
+        aiAnalyzedSymptoms: req.body.aiAnalyzedSymptoms ?? null,
       });
       
       const emergencyRequest = await storage.createEmergencyRequest(validatedData);
