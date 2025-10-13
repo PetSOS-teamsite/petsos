@@ -144,6 +144,10 @@ export const emergencyRequests = pgTable("emergency_requests", {
   petSpecies: text("pet_species"),
   petBreed: text("pet_breed"),
   petAge: integer("pet_age"),
+  // Voice recording fields
+  voiceTranscript: text("voice_transcript"), // Transcribed text from voice recording
+  aiAnalyzedSymptoms: text("ai_analyzed_symptoms"), // AI-analyzed symptom summary
+  isVoiceRecording: boolean("is_voice_recording").notNull().default(false), // Flag indicating voice input
   locationLatitude: decimal("location_latitude"),
   locationLongitude: decimal("location_longitude"),
   manualLocation: text("manual_location"),
