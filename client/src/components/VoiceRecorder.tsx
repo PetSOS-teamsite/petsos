@@ -9,31 +9,31 @@ interface VoiceRecorderProps {
   language?: string;
 }
 
-// Symptom keywords for analysis (English and Chinese)
+// Symptom keywords for analysis (English, Cantonese, and Mandarin)
 const SYMPTOM_KEYWORDS = {
   critical: {
     en: ['unconscious', 'not breathing', 'choking', 'bleeding heavily', 'seizure', 'convulsion', 'poisoned', 'hit by car', 'attacked'],
-    zh: ['昏迷', '不呼吸', '窒息', '大出血', '抽搐', '痙攣', '中毒', '車撞', '被襲擊', '失去意識']
+    zh: ['昏迷', '不呼吸', '窒息', '大出血', '抽搐', '痙攣', '中毒', '車撞', '被襲擊', '失去意識', '昏倒', '没呼吸', '抽筋', '中毒了', '被车撞', '被攻击']
   },
   breathing: {
     en: ['difficulty breathing', 'gasping', 'panting heavily', 'blue gums', 'wheezing', 'coughing'],
-    zh: ['呼吸困難', '喘氣', '喘得很厲害', '牙齦發藍', '氣喘', '咳嗽']
+    zh: ['呼吸困難', '喘氣', '喘得很厲害', '牙齦發藍', '氣喘', '咳嗽', '呼吸困难', '喘气', '喘得很厉害', '牙龈发蓝', '气喘', '咳嗽']
   },
   injury: {
     en: ['bleeding', 'wound', 'broken leg', 'broken bone', 'limping', 'cut', 'injured'],
-    zh: ['流血', '傷口', '斷腿', '骨折', '跛行', '割傷', '受傷']
+    zh: ['流血', '傷口', '斷腿', '骨折', '跛行', '割傷', '受傷', '伤口', '断腿', '骨折', '瘸腿', '割伤', '受伤']
   },
   digestive: {
     en: ['vomiting', 'diarrhea', 'not eating', 'bloated', 'stomach pain'],
-    zh: ['嘔吐', '腹瀉', '不吃', '腹脹', '肚子痛', '胃痛']
+    zh: ['嘔吐', '腹瀉', '不吃', '腹脹', '肚子痛', '胃痛', '呕吐', '腹泻', '不吃东西', '腹胀', '肚子疼', '胃疼']
   },
   neurological: {
     en: ['seizure', 'shaking', 'trembling', 'paralyzed', 'cant walk', 'disoriented', 'confused'],
-    zh: ['抽搐', '發抖', '顫抖', '癱瘓', '不能走', '迷失方向', '混亂']
+    zh: ['抽搐', '發抖', '顫抖', '癱瘓', '不能走', '迷失方向', '混亂', '发抖', '颤抖', '瘫痪', '不能走路', '迷失方向', '混乱']
   },
   pain: {
     en: ['crying', 'whimpering', 'pain', 'hurt', 'screaming', 'yelping'],
-    zh: ['哭泣', '嗚咽', '痛', '疼', '尖叫', '哀號']
+    zh: ['哭泣', '嗚咽', '痛', '疼', '尖叫', '哀號', '哭', '呜咽', '疼痛', '尖叫', '哀嚎', '痛苦']
   }
 };
 
@@ -85,11 +85,20 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
       return;
     }
 
-    // Initialize speech recognition
+    // Initialize speech recognition with multi-language support
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = language === 'zh' ? 'zh-HK' : 'en-US';
+    
+    // Set language based on user preference
+    // Supports: English (en-US), Cantonese (zh-HK), Mandarin (zh-CN)
+    if (language === 'zh-HK' || language === 'zh') {
+      recognition.lang = 'zh-HK'; // Cantonese for Hong Kong users
+    } else if (language === 'zh-CN') {
+      recognition.lang = 'zh-CN'; // Mandarin Chinese
+    } else {
+      recognition.lang = 'en-US'; // English (default)
+    }
 
     recognition.onstart = () => {
       setIsRecording(true);
