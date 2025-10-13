@@ -18,6 +18,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useAuth } from "@/hooks/useAuth";
 import { BreedCombobox } from "@/components/BreedCombobox";
 import { analytics } from "@/lib/analytics";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 
 // Symptom options - simplified without categorization
 const SYMPTOMS = [
@@ -106,6 +107,9 @@ export default function EmergencyPage() {
   const [gpsRetryCount, setGpsRetryCount] = useState(0);
   const [contactManuallyEdited, setContactManuallyEdited] = useState(false);
   const [autoFilledUserData, setAutoFilledUserData] = useState<{ username: string; phone: string } | null>(null);
+  const [voiceTranscript, setVoiceTranscript] = useState<string>('');
+  const [aiAnalyzedSymptoms, setAiAnalyzedSymptoms] = useState<string>('');
+  const [useVoiceInput, setUseVoiceInput] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -269,9 +273,16 @@ export default function EmergencyPage() {
         await step3Schema.parseAsync(data);
         // Get ALL form values (data param only has step 3 fields)
         const allFormValues = form.getValues();
+        // Add voice recording data if available
+        const submitData = {
+          ...allFormValues,
+          voiceTranscript: voiceTranscript || undefined,
+          aiAnalyzedSymptoms: aiAnalyzedSymptoms || undefined,
+          isVoiceRecording: useVoiceInput,
+        };
         // Final validation with all values
-        await emergencySchema.parseAsync(allFormValues);
-        createEmergencyMutation.mutate(allFormValues);
+        await emergencySchema.parseAsync(submitData);
+        createEmergencyMutation.mutate(submitData);
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -333,6 +344,40 @@ export default function EmergencyPage() {
                 {/* Step 1: Symptoms FIRST (most urgent), then Pet Selection (optional) */}
                 {step === 1 && (
                   <div className="space-y-6">
+                    {/* VOICE RECORDER - For panicked users who can't type */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          🎤 {t('emergency.voice_option', 'Too panicked to type? Use voice instead')}
+                        </h3>
+                      </div>
+                      <VoiceRecorder
+                        language={language}
+                        onTranscriptComplete={(transcript, analyzedSymptoms) => {
+                          setVoiceTranscript(transcript);
+                          setAiAnalyzedSymptoms(analyzedSymptoms);
+                          setUseVoiceInput(true);
+                          // Auto-fill the symptom field with analyzed symptoms
+                          form.setValue('symptom', analyzedSymptoms);
+                          toast({
+                            title: t('emergency.voice_recorded', 'Voice recorded successfully'),
+                            description: t('emergency.voice_analyzed', 'Your symptoms have been analyzed and will be sent to clinics'),
+                          });
+                        }}
+                      />
+                    </div>
+
+                    {/* Divider */}
+                    {voiceTranscript && (
+                      <div className="flex items-center gap-4 my-6">
+                        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          {t('emergency.or_select_manually', 'Or select symptoms manually')}
+                        </span>
+                        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                      </div>
+                    )}
+
                     {/* SYMPTOMS - Simplified without categorization */}
                     <FormField
                       control={form.control}
