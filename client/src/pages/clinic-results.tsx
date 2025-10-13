@@ -328,8 +328,13 @@ export default function ClinicResultsPage() {
       // Build pet info string with enhanced profile data
       const petInfo = buildPetInfoString(emergencyRequest, t);
       
+      // Build voice recording section if available
+      const voiceSection = emergencyRequest?.voiceTranscript 
+        ? `\n\n🎤 ${t('clinic_results.voice_description', 'Voice Description')}:\n"${emergencyRequest.voiceTranscript}"\n\n${t('clinic_results.ai_analysis', 'AI Analysis')}: ${emergencyRequest.aiAnalyzedSymptoms || emergencyRequest.symptom}`
+        : '';
+      
       const message = emergencyRequest
-        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
+        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${voiceSection}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
         : t('clinic_results.emergency_care_needed', 'Emergency pet care needed');
       
       const response = await apiRequest(
@@ -403,8 +408,13 @@ export default function ClinicResultsPage() {
       // Build pet info string with enhanced profile data
       const petInfo = buildPetInfoString(emergencyRequest, t);
       
+      // Build voice recording section if available
+      const voiceSection = emergencyRequest?.voiceTranscript 
+        ? `\n\n🎤 ${t('clinic_results.voice_description', 'Voice Description')}:\n"${emergencyRequest.voiceTranscript}"\n\n${t('clinic_results.ai_analysis', 'AI Analysis')}: ${emergencyRequest.aiAnalyzedSymptoms || emergencyRequest.symptom}`
+        : '';
+      
       const message = emergencyRequest
-        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
+        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${voiceSection}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
         : t('clinic_results.emergency_care_needed', 'Emergency pet care needed');
       
       const response = await apiRequest(
