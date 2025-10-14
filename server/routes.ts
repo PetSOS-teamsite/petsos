@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { messagingService } from "./services/messaging";
-import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin, sanitizeUser } from "./auth";
 import { setupTestUtils } from "./testUtils";
 import { 
   generalLimiter, 
@@ -31,64 +31,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply general rate limiter to all API routes (100 req/15min)
   app.use('/api/', generalLimiter);
   
-  // ===== AUTH ROUTES =====
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-  
   // ===== USER ROUTES =====
-  
-  // Register user
-  app.post("/api/users/register", authLimiter, async (req, res) => {
-    try {
-      // Strip sensitive fields and use safe schema for registration
-      const safeUserSchema = insertUserSchema.omit({ role: true, clinicId: true });
-      const userData = safeUserSchema.parse(req.body);
-      
-      // Check if username exists (only if username is provided)
-      if (userData.username) {
-        const existing = await storage.getUserByUsername(userData.username);
-        if (existing) {
-          return res.status(400).json({ message: "Username already exists" });
-        }
-      }
-      
-      // Always set role to 'user' for new registrations (admins must be created by other admins)
-      const user = await storage.createUser({
-        ...userData,
-        role: 'user'
-      });
-      
-      // Create audit log
-      await storage.createAuditLog({
-        entityType: 'user',
-        entityId: user.id,
-        action: 'create',
-        userId: user.id,
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent')
-      });
-      
-      res.status(201).json(user);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  // Note: User registration is handled by /api/auth/signup in auth.ts
 
   // Get user by ID
   app.get("/api/users/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
+      const requestingUserId = (req.user as any).id;
       const targetUserId = req.params.id;
       
       // Users can only view their own profile unless they're admin
@@ -105,7 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -114,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user
   app.patch("/api/users/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
+      const requestingUserId = (req.user as any).id;
       const targetUserId = req.params.id;
       
       // Users can only update their own profile unless they're admin
@@ -154,7 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('user-agent')
       });
       
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
@@ -166,7 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete user
   app.delete("/api/users/:id", strictLimiter, isAuthenticated, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
+      const requestingUserId = (req.user as any).id;
       const targetUserId = req.params.id;
       
       // Users can only delete their own account unless they're admin
@@ -202,8 +151,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GDPR/PDPO: Export user data
   app.get("/api/users/export", exportLimiter, isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
       const exportData = await storage.exportUserData(userId);
+
+      // Sanitize user data before export to remove password hashes
+      const sanitizedExportData = {
+        ...exportData,
+        user: sanitizeUser(exportData.user)
+      };
 
       // Log export for audit
       await storage.createAuditLog({
@@ -222,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Content-Type': 'application/json; charset=utf-8',
           'Content-Disposition': `attachment; filename="${filename}"`
         })
-        .send(JSON.stringify(exportData, null, 2));
+        .send(JSON.stringify(sanitizedExportData, null, 2));
     } catch (error) {
       console.error("Error exporting user data:", error);
       res.status(500).json({ message: "Failed to export user data" });
@@ -232,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GDPR/PDPO: Delete user data (Right to be Forgotten)
   app.delete("/api/users/gdpr-delete", deletionLimiter, isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any).id;
 
       // Log deletion request BEFORE deleting
       await storage.createAuditLog({
@@ -274,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get pets for user
   app.get("/api/users/:userId/pets", isAuthenticated, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
+      const requestingUserId = (req.user as any).id;
       const targetUserId = req.params.userId;
       
       // Users can only view their own pets unless they're admin
@@ -297,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create pet
   app.post("/api/pets", isAuthenticated, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
+      const requestingUserId = (req.user as any).id;
       const petData = insertPetSchema.parse(req.body);
       
       // Ensure the user is creating a pet for themselves
@@ -328,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get pet by ID
   app.get("/api/pets/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
+      const requestingUserId = (req.user as any).id;
       const pet = await storage.getPet(req.params.id);
       
       if (!pet) {
@@ -354,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update pet
   app.patch("/api/pets/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
+      const requestingUserId = (req.user as any).id;
       const pet = await storage.getPet(req.params.id);
       
       if (!pet) {
@@ -396,7 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete pet
   app.delete("/api/pets/:id", strictLimiter, isAuthenticated, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
+      const requestingUserId = (req.user as any).id;
       const pet = await storage.getPet(req.params.id);
       
       if (!pet) {
@@ -545,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/clinics/:id", isAuthenticated, async (req, res) => {
     try {
       const sessionUser = req.user as any;
-      const userId = sessionUser.claims.sub;
+      const userId = sessionUser.id;
       const dbUser = await storage.getUser(userId);
       
       if (!dbUser) {
@@ -614,7 +569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allUsers = await storage.getAllUsers();
       const staff = allUsers.filter(user => user.clinicId === req.params.id);
       
-      res.json(staff);
+      res.json(staff.map(sanitizeUser));
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -652,7 +607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('user-agent')
       });
 
-      res.json({ success: true, user });
+      res.json({ success: true, user: sanitizeUser(user) });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
@@ -818,7 +773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get emergency requests for user
   app.get("/api/users/:userId/emergency-requests", isAuthenticated, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
+      const requestingUserId = (req.user as any).id;
       const targetUserId = req.params.userId;
       
       // Users can only view their own emergency requests unless they're admin
@@ -859,7 +814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update emergency request status
   app.patch("/api/emergency-requests/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
+      const requestingUserId = (req.user as any).id;
       const request = await storage.getEmergencyRequest(req.params.id);
       
       if (!request) {
@@ -914,7 +869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check authorization: allow if authenticated user owns the request, is admin, or if anonymous emergency
       if (req.user) {
         // User is authenticated - verify ownership or admin role
-        const requestingUserId = req.user.claims.sub;
+        const requestingUserId = (req.user as any).id;
         const requestingUser = await storage.getUser(requestingUserId);
         
         if (!requestingUser) {
@@ -1020,7 +975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityType: 'feature_flag',
         entityId: flag.id,
         action: 'create',
-        userId: req.user.claims.sub,
+        userId: (req.user as any).id,
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
       });
@@ -1048,7 +1003,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityType: 'feature_flag',
         entityId: flag.id,
         action: 'update',
-        userId: req.user.claims.sub,
+        userId: (req.user as any).id,
         changes: updateData,
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
@@ -1100,7 +1055,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get privacy consents for user
   app.get("/api/users/:userId/consents", isAuthenticated, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
+      const requestingUserId = (req.user as any).id;
       const targetUserId = req.params.userId;
       
       // Users can only view their own consents unless they're admin
@@ -1123,7 +1078,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create privacy consent
   app.post("/api/privacy-consents", isAuthenticated, async (req: any, res) => {
     try {
-      const requestingUserId = req.user.claims.sub;
+      const requestingUserId = (req.user as any).id;
       const consentData = insertPrivacyConsentSchema.parse(req.body);
       
       // Users can only create consents for themselves
