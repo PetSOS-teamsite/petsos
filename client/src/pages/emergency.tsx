@@ -183,9 +183,7 @@ export default function EmergencyPage() {
         autoFilledUserData.phone !== userProfile.phone;
       
       if (hasDataChanged) {
-        const displayName = userProfile.firstName && userProfile.lastName 
-          ? `${userProfile.firstName} ${userProfile.lastName}` 
-          : userProfile.username || "";
+        const displayName = userProfile.name || userProfile.username || "";
         form.setValue("contactName", displayName);
         form.setValue("contactPhone", userProfile.phone || "");
         setAutoFilledUserData({ username: userProfile.username, phone: userProfile.phone });

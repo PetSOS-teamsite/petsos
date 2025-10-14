@@ -1544,7 +1544,7 @@ export default function AdminClinicsPage() {
                       <CardContent className="p-4 flex items-center justify-between">
                         <div>
                           <p className="font-medium">
-                            {staff.firstName} {staff.lastName}
+                            {staff.name || staff.email}
                           </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">{staff.email}</p>
                         </div>

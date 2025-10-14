@@ -93,8 +93,7 @@ export async function setupAuth(app: Express) {
               // Create new user from Google profile
               user = await storage.createUser({
                 email: email,
-                firstName: profile.name?.givenName || "",
-                lastName: profile.name?.familyName || "",
+                name: profile.displayName || profile.name?.givenName || "",
                 profileImageUrl: profile.photos?.[0]?.value,
                 role: "user",
               });
@@ -195,10 +194,14 @@ export async function setupAuth(app: Express) {
 
   app.post("/api/auth/signup", async (req, res) => {
     try {
-      const { email, phone, countryCode, password, firstName, lastName } = req.body;
+      const { email, phone, countryCode, password, name } = req.body;
 
       if ((!email && !phone) || !password) {
         return res.status(400).json({ message: "Email or phone number, and password are required" });
+      }
+
+      if (!name) {
+        return res.status(400).json({ message: "Name is required" });
       }
 
       // Format phone number with country code if provided
@@ -227,8 +230,7 @@ export async function setupAuth(app: Express) {
         email: email || null,
         phone: fullPhone || null,
         passwordHash,
-        firstName: firstName || "",
-        lastName: lastName || "",
+        name: name || "",
         role: "user",
       });
 

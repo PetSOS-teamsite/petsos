@@ -12,14 +12,13 @@ export function setupTestUtils(app: Express) {
   // Create authenticated session for testing
   app.post('/api/test/auth/session', async (req: Request, res: Response) => {
     try {
-      const { sub, email, firstName, lastName, role } = req.body;
+      const { sub, email, name, role } = req.body;
 
       // Create or update user
       await storage.upsertUser({
         id: sub,
         email: email || `test-${sub}@test.com`,
-        firstName: firstName || 'Test',
-        lastName: lastName || 'User',
+        name: name || 'Test User',
         profileImageUrl: null,
       });
 
@@ -31,7 +30,7 @@ export function setupTestUtils(app: Express) {
       // Create session
       (req.session as any).passport = {
         user: {
-          claims: { sub, email, first_name: firstName, last_name: lastName },
+          claims: { sub, email, name },
           expires_at: Math.floor(Date.now() / 1000) + 3600
         }
       };
