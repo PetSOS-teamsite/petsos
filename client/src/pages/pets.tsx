@@ -132,6 +132,7 @@ export default function PetsPage() {
         userId: authUser?.id,
         weight: data.weight !== undefined ? String(data.weight) : undefined,
         lastVisitDate: data.lastVisitDate ? new Date(data.lastVisitDate).toISOString() : undefined,
+        lastVisitClinicId: data.lastVisitClinicId && data.lastVisitClinicId.trim() !== '' ? data.lastVisitClinicId : undefined,
       };
       const response = await apiRequest(
         'POST',
@@ -171,6 +172,7 @@ export default function PetsPage() {
         ...data,
         weight: data.weight !== undefined ? String(data.weight) : undefined,
         lastVisitDate: data.lastVisitDate ? new Date(data.lastVisitDate).toISOString() : undefined,
+        lastVisitClinicId: data.lastVisitClinicId && data.lastVisitClinicId.trim() !== '' ? data.lastVisitClinicId : undefined,
       };
       const response = await apiRequest(
         'PATCH',
@@ -278,6 +280,17 @@ export default function PetsPage() {
   // Profile is complete if user has email and phone (essential for emergency contact)
   const isProfileIncomplete = userProfile && (!userProfile.email || !userProfile.phone);
 
+  // Handle redirects in useEffect to avoid setState-in-render
+  useEffect(() => {
+    if (!authLoading && !profileLoading) {
+      if (!authUser) {
+        setLocation('/');
+      } else if (isProfileIncomplete) {
+        setLocation('/profile');
+      }
+    }
+  }, [authUser, authLoading, profileLoading, isProfileIncomplete, setLocation]);
+
   if (authLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -286,13 +299,7 @@ export default function PetsPage() {
     );
   }
 
-  if (!authUser) {
-    setLocation('/');
-    return null;
-  }
-
-  if (isProfileIncomplete) {
-    setLocation('/profile');
+  if (!authUser || isProfileIncomplete) {
     return null;
   }
 
