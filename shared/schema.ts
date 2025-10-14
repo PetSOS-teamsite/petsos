@@ -80,6 +80,26 @@ export const insertPetSchema = createInsertSchema(pets).omit({
 export type InsertPet = z.infer<typeof insertPetSchema>;
 export type Pet = typeof pets.$inferSelect;
 
+// Countries table
+export const countries = pgTable("countries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(), // ISO country code (HK, CN, US, etc.)
+  nameEn: text("name_en").notNull(),
+  nameZh: text("name_zh"),
+  phonePrefix: text("phone_prefix").notNull(), // +852, +86, +1, etc.
+  flag: text("flag"), // Emoji flag or icon
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCountrySchema = createInsertSchema(countries).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCountry = z.infer<typeof insertCountrySchema>;
+export type Country = typeof countries.$inferSelect;
+
 // Regions table
 export const regions = pgTable("regions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -87,7 +107,7 @@ export const regions = pgTable("regions", {
   nameEn: text("name_en").notNull(),
   nameZh: text("name_zh").notNull(),
   coordinates: jsonb("coordinates"), // GeoJSON polygon for auto-detect
-  country: text("country").notNull().default('HK'),
+  countryCode: text("country_code").notNull().references(() => countries.code).default('HK'),
   active: boolean("active").notNull().default(true),
 });
 
@@ -97,6 +117,26 @@ export const insertRegionSchema = createInsertSchema(regions).omit({
 
 export type InsertRegion = z.infer<typeof insertRegionSchema>;
 export type Region = typeof regions.$inferSelect;
+
+// Pet Breeds table
+export const petBreeds = pgTable("pet_breeds", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  species: text("species").notNull(), // dog, cat, bird, etc.
+  breedEn: text("breed_en").notNull(),
+  breedZh: text("breed_zh"),
+  countryCode: text("country_code").references(() => countries.code), // Optional: breed specific to country
+  isCommon: boolean("is_common").notNull().default(true), // Flag common breeds for easier selection
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertPetBreedSchema = createInsertSchema(petBreeds).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPetBreed = z.infer<typeof insertPetBreedSchema>;
+export type PetBreed = typeof petBreeds.$inferSelect;
 
 // Clinics table
 export const clinics = pgTable("clinics", {

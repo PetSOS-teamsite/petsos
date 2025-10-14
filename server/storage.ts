@@ -1,7 +1,9 @@
 import { 
   type User, type InsertUser, type UpsertUser,
   type Pet, type InsertPet,
+  type Country, type InsertCountry,
   type Region, type InsertRegion,
+  type PetBreed, type InsertPetBreed,
   type Clinic, type InsertClinic,
   type EmergencyRequest, type InsertEmergencyRequest,
   type Message, type InsertMessage,
@@ -9,7 +11,7 @@ import {
   type AuditLog, type InsertAuditLog,
   type PrivacyConsent, type InsertPrivacyConsent,
   type Translation, type InsertTranslation,
-  users, pets, regions, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations
+  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -34,12 +36,32 @@ export interface IStorage {
   updatePet(id: string, pet: Partial<InsertPet>): Promise<Pet | undefined>;
   deletePet(id: string): Promise<boolean>;
 
+  // Countries
+  getCountry(id: string): Promise<Country | undefined>;
+  getCountryByCode(code: string): Promise<Country | undefined>;
+  getAllCountries(): Promise<Country[]>;
+  getActiveCountries(): Promise<Country[]>;
+  createCountry(country: InsertCountry): Promise<Country>;
+  updateCountry(id: string, country: Partial<InsertCountry>): Promise<Country | undefined>;
+  deleteCountry(id: string): Promise<boolean>;
+
   // Regions
   getRegion(id: string): Promise<Region | undefined>;
   getRegionByCode(code: string): Promise<Region | undefined>;
   getAllRegions(): Promise<Region[]>;
+  getRegionsByCountry(countryCode: string): Promise<Region[]>;
   createRegion(region: InsertRegion): Promise<Region>;
   updateRegion(id: string, region: Partial<InsertRegion>): Promise<Region | undefined>;
+
+  // Pet Breeds
+  getPetBreed(id: string): Promise<PetBreed | undefined>;
+  getPetBreedsBySpecies(species: string): Promise<PetBreed[]>;
+  getPetBreedsByCountry(countryCode: string): Promise<PetBreed[]>;
+  getCommonPetBreeds(species?: string): Promise<PetBreed[]>;
+  getAllPetBreeds(): Promise<PetBreed[]>;
+  createPetBreed(breed: InsertPetBreed): Promise<PetBreed>;
+  updatePetBreed(id: string, breed: Partial<InsertPetBreed>): Promise<PetBreed | undefined>;
+  deletePetBreed(id: string): Promise<boolean>;
 
   // Clinics
   getClinic(id: string): Promise<Clinic | undefined>;
@@ -878,6 +900,99 @@ class DatabaseStorage implements IStorage {
       .where(eq(regions.id, id))
       .returning();
     return result[0];
+  }
+
+  async getRegionsByCountry(countryCode: string): Promise<Region[]> {
+    return await db.select().from(regions).where(eq(regions.countryCode, countryCode));
+  }
+
+  async getCountry(id: string): Promise<Country | undefined> {
+    const result = await db.select().from(countries).where(eq(countries.id, id));
+    return result[0];
+  }
+
+  async getCountryByCode(code: string): Promise<Country | undefined> {
+    const result = await db.select().from(countries).where(eq(countries.code, code));
+    return result[0];
+  }
+
+  async getAllCountries(): Promise<Country[]> {
+    return await db.select().from(countries);
+  }
+
+  async getActiveCountries(): Promise<Country[]> {
+    return await db.select().from(countries).where(eq(countries.active, true));
+  }
+
+  async createCountry(insertCountry: InsertCountry): Promise<Country> {
+    const result = await db.insert(countries).values(insertCountry).returning();
+    return result[0];
+  }
+
+  async updateCountry(id: string, updateData: Partial<InsertCountry>): Promise<Country | undefined> {
+    const result = await db.update(countries)
+      .set(updateData)
+      .where(eq(countries.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteCountry(id: string): Promise<boolean> {
+    const result = await db.update(countries)
+      .set({ active: false })
+      .where(eq(countries.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getPetBreed(id: string): Promise<PetBreed | undefined> {
+    const result = await db.select().from(petBreeds).where(eq(petBreeds.id, id));
+    return result[0];
+  }
+
+  async getPetBreedsBySpecies(species: string): Promise<PetBreed[]> {
+    return await db.select().from(petBreeds).where(
+      and(eq(petBreeds.species, species), eq(petBreeds.active, true))
+    );
+  }
+
+  async getPetBreedsByCountry(countryCode: string): Promise<PetBreed[]> {
+    return await db.select().from(petBreeds).where(
+      and(eq(petBreeds.countryCode, countryCode), eq(petBreeds.active, true))
+    );
+  }
+
+  async getCommonPetBreeds(species?: string): Promise<PetBreed[]> {
+    const conditions = [eq(petBreeds.isCommon, true), eq(petBreeds.active, true)];
+    if (species) {
+      conditions.push(eq(petBreeds.species, species));
+    }
+    return await db.select().from(petBreeds).where(and(...conditions));
+  }
+
+  async getAllPetBreeds(): Promise<PetBreed[]> {
+    return await db.select().from(petBreeds).where(eq(petBreeds.active, true));
+  }
+
+  async createPetBreed(insertBreed: InsertPetBreed): Promise<PetBreed> {
+    const result = await db.insert(petBreeds).values(insertBreed).returning();
+    return result[0];
+  }
+
+  async updatePetBreed(id: string, updateData: Partial<InsertPetBreed>): Promise<PetBreed | undefined> {
+    const result = await db.update(petBreeds)
+      .set(updateData)
+      .where(eq(petBreeds.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deletePetBreed(id: string): Promise<boolean> {
+    const result = await db.update(petBreeds)
+      .set({ active: false })
+      .where(eq(petBreeds.id, id))
+      .returning();
+    return result.length > 0;
   }
 
   async getUser(id: string): Promise<User | undefined> {
