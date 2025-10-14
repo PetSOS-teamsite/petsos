@@ -15,8 +15,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { DOG_BREEDS, CAT_BREEDS, type Breed } from "@shared/breeds";
+import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
+import type { PetBreed } from "@shared/schema";
 
 interface BreedComboboxProps {
   species: string;
@@ -39,7 +40,18 @@ export function BreedCombobox({
   const [searchValue, setSearchValue] = useState("");
   const { language } = useLanguage();
 
-  const breeds = species === "dog" ? DOG_BREEDS : species === "cat" ? CAT_BREEDS : [];
+  const { data: allBreeds = [], isLoading } = useQuery<PetBreed[]>({
+    queryKey: ["/api/pet-breeds"],
+  });
+
+  // Filter breeds by species and active status
+  const breeds = allBreeds
+    .filter((breed) => breed.species === species && breed.active)
+    .map((breed) => ({
+      en: breed.breedEn,
+      zh: breed.breedZh || breed.breedEn,
+    }));
+
   const isZh = language === 'zh-HK';
 
   // Filter breeds based on search
@@ -94,11 +106,11 @@ export function BreedCombobox({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
-          disabled={disabled}
+          disabled={disabled || isLoading}
           data-testid={testId}
         >
           <span className="truncate">
-            {value ? getDisplayText(value) : placeholder}
+            {value ? getDisplayText(value) : (isLoading ? "Loading breeds..." : placeholder)}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
