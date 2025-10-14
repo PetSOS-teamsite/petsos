@@ -16,7 +16,8 @@ import {
 import { 
   insertUserSchema, insertPetSchema, insertClinicSchema,
   insertMessageSchema, emergencyRequests,
-  insertRegionSchema, insertFeatureFlagSchema,
+  insertRegionSchema, insertCountrySchema, insertPetBreedSchema,
+  insertFeatureFlagSchema,
   insertAuditLogSchema, insertPrivacyConsentSchema,
   insertTranslationSchema, insertEmergencyRequestSchema
 } from "@shared/schema";
@@ -428,6 +429,238 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update region (admin only)
+  app.patch("/api/regions/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const regionData = insertRegionSchema.partial().parse(req.body);
+      const region = await storage.updateRegion(req.params.id, regionData);
+      
+      if (!region) {
+        return res.status(404).json({ message: "Region not found" });
+      }
+
+      await storage.createAuditLog({
+        entityType: 'region',
+        entityId: region.id,
+        action: 'update',
+        changes: regionData,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json(region);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // ===== COUNTRY ROUTES =====
+  
+  // Get all countries
+  app.get("/api/countries", async (req, res) => {
+    const countries = await storage.getAllCountries();
+    res.json(countries);
+  });
+
+  // Get active countries only
+  app.get("/api/countries/active", async (req, res) => {
+    const countries = await storage.getActiveCountries();
+    res.json(countries);
+  });
+
+  // Get country by code
+  app.get("/api/countries/code/:code", async (req, res) => {
+    const country = await storage.getCountryByCode(req.params.code);
+    if (!country) {
+      return res.status(404).json({ message: "Country not found" });
+    }
+    res.json(country);
+  });
+
+  // Get regions by country
+  app.get("/api/countries/:code/regions", async (req, res) => {
+    const regions = await storage.getRegionsByCountry(req.params.code);
+    res.json(regions);
+  });
+
+  // Create country (admin only)
+  app.post("/api/countries", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const countryData = insertCountrySchema.parse(req.body);
+      const country = await storage.createCountry(countryData);
+      
+      await storage.createAuditLog({
+        entityType: 'country',
+        entityId: country.id,
+        action: 'create',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json(country);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update country (admin only)
+  app.patch("/api/countries/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const countryData = insertCountrySchema.partial().parse(req.body);
+      const country = await storage.updateCountry(req.params.id, countryData);
+      
+      if (!country) {
+        return res.status(404).json({ message: "Country not found" });
+      }
+
+      await storage.createAuditLog({
+        entityType: 'country',
+        entityId: country.id,
+        action: 'update',
+        changes: countryData,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json(country);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete country (admin only) - soft delete
+  app.delete("/api/countries/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const success = await storage.deleteCountry(req.params.id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Country not found" });
+      }
+
+      await storage.createAuditLog({
+        entityType: 'country',
+        entityId: req.params.id,
+        action: 'delete',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // ===== PET BREED ROUTES =====
+  
+  // Get all pet breeds
+  app.get("/api/pet-breeds", async (req, res) => {
+    const breeds = await storage.getAllPetBreeds();
+    res.json(breeds);
+  });
+
+  // Get breeds by species
+  app.get("/api/pet-breeds/species/:species", async (req, res) => {
+    const breeds = await storage.getPetBreedsBySpecies(req.params.species);
+    res.json(breeds);
+  });
+
+  // Get common breeds (optionally filtered by species)
+  app.get("/api/pet-breeds/common", async (req, res) => {
+    const species = req.query.species as string | undefined;
+    const breeds = await storage.getCommonPetBreeds(species);
+    res.json(breeds);
+  });
+
+  // Get breeds by country
+  app.get("/api/pet-breeds/country/:countryCode", async (req, res) => {
+    const breeds = await storage.getPetBreedsByCountry(req.params.countryCode);
+    res.json(breeds);
+  });
+
+  // Create pet breed (admin only)
+  app.post("/api/pet-breeds", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const breedData = insertPetBreedSchema.parse(req.body);
+      const breed = await storage.createPetBreed(breedData);
+      
+      await storage.createAuditLog({
+        entityType: 'pet_breed',
+        entityId: breed.id,
+        action: 'create',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json(breed);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update pet breed (admin only)
+  app.patch("/api/pet-breeds/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const breedData = insertPetBreedSchema.partial().parse(req.body);
+      const breed = await storage.updatePetBreed(req.params.id, breedData);
+      
+      if (!breed) {
+        return res.status(404).json({ message: "Pet breed not found" });
+      }
+
+      await storage.createAuditLog({
+        entityType: 'pet_breed',
+        entityId: breed.id,
+        action: 'update',
+        changes: breedData,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json(breed);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete pet breed (admin only) - soft delete
+  app.delete("/api/pet-breeds/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const success = await storage.deletePetBreed(req.params.id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Pet breed not found" });
+      }
+
+      await storage.createAuditLog({
+        entityType: 'pet_breed',
+        entityId: req.params.id,
+        action: 'delete',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({ success });
+    } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
   });
