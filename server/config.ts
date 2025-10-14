@@ -49,6 +49,13 @@ export interface AppConfig {
   logging: {
     level: 'debug' | 'info' | 'warn' | 'error';
   };
+  
+  // Regional Configuration
+  regional: {
+    defaultCountry: string;
+    defaultCountryCode: string;
+    defaultLanguage: string;
+  };
 }
 
 /**
@@ -130,6 +137,12 @@ export function loadConfig(): AppConfig {
     logging: {
       level: isDevelopment ? 'debug' : isProduction ? 'warn' : 'info',
     },
+    
+    regional: {
+      defaultCountry: process.env.DEFAULT_COUNTRY || 'HK',
+      defaultCountryCode: process.env.DEFAULT_COUNTRY_CODE || '+852',
+      defaultLanguage: process.env.DEFAULT_LANGUAGE || 'zh-HK',
+    },
   };
   
   // Log configuration on startup (excluding sensitive data)
@@ -138,6 +151,7 @@ export function loadConfig(): AppConfig {
   console.log(`[Config] Rate limiting: ${config.rateLimit.enabled ? 'enabled' : 'disabled'}`);
   console.log(`[Config] Session secure cookies: ${config.session.secure}`);
   console.log(`[Config] Sentry monitoring: ${config.monitoring.sentryDsn ? 'enabled' : 'disabled'}`);
+  console.log(`[Config] Regional defaults: ${config.regional.defaultCountry} (${config.regional.defaultCountryCode}), Language: ${config.regional.defaultLanguage}`);
   
   return config;
 }
