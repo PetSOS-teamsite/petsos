@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, Filter, X, Users, Link2, Copy } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, Filter, X, Users, Link2, Copy, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -457,13 +457,21 @@ export default function AdminClinicsPage() {
                 </p>
               </div>
             </div>
-            <Button
-              onClick={() => setIsAddDialogOpen(true)}
-              data-testid="button-add-clinic"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Clinic
-            </Button>
+            <div className="flex gap-2">
+              <Link href="/admin/config">
+                <Button variant="outline" data-testid="button-admin-config">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configuration
+                </Button>
+              </Link>
+              <Button
+                onClick={() => setIsAddDialogOpen(true)}
+                data-testid="button-add-clinic"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Clinic
+              </Button>
+            </div>
           </div>
         </div>
       </header>
