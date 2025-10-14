@@ -6,17 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const countryCodes = [
-  { code: "+852", country: "Hong Kong", flag: "🇭🇰" },
-  { code: "+86", country: "China", flag: "🇨🇳" },
-  { code: "+1", country: "USA/Canada", flag: "🇺🇸" },
-  { code: "+44", country: "UK", flag: "🇬🇧" },
-  { code: "+81", country: "Japan", flag: "🇯🇵" },
-  { code: "+82", country: "South Korea", flag: "🇰🇷" },
-  { code: "+65", country: "Singapore", flag: "🇸🇬" },
-  { code: "+886", country: "Taiwan", flag: "🇹🇼" },
-];
+import { useQuery } from "@tanstack/react-query";
+import type { Country } from "@shared/schema";
 
 interface PhoneInputProps {
   value: string;
@@ -35,6 +26,15 @@ export function PhoneInput({
   placeholder = "Phone number",
   testId,
 }: PhoneInputProps) {
+  const { data: countries = [], isLoading } = useQuery<Country[]>({
+    queryKey: ["/api/countries"],
+  });
+
+  // Filter to only active countries and sort by name
+  const activeCountries = countries
+    .filter((c) => c.active)
+    .sort((a, b) => a.nameEn.localeCompare(b.nameEn));
+
   // Handle input change with proper event handling for React Hook Form
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -43,14 +43,14 @@ export function PhoneInput({
 
   return (
     <div className="flex gap-2">
-      <Select value={countryCode} onValueChange={onCountryCodeChange}>
+      <Select value={countryCode} onValueChange={onCountryCodeChange} disabled={isLoading}>
         <SelectTrigger className="w-[140px]" data-testid={`${testId}-country`}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {countryCodes.map((item) => (
-            <SelectItem key={item.code} value={item.code}>
-              {item.flag} {item.code}
+          {activeCountries.map((country) => (
+            <SelectItem key={country.code} value={country.phonePrefix}>
+              {country.flag} {country.phonePrefix}
             </SelectItem>
           ))}
         </SelectContent>
