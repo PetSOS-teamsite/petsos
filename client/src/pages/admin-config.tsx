@@ -115,7 +115,7 @@ function CountriesTab() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: InsertCountry) => apiRequest("/api/countries", "POST", data),
+    mutationFn: (data: InsertCountry) => apiRequest("POST", "/api/countries", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/countries"] });
       setIsDialogOpen(false);
@@ -133,7 +133,7 @@ function CountriesTab() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<InsertCountry> }) =>
-      apiRequest(`/api/countries/${id}`, "PATCH", data),
+      apiRequest("PATCH", `/api/countries/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/countries"] });
       setIsDialogOpen(false);
@@ -151,7 +151,7 @@ function CountriesTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/countries/${id}`, "DELETE"),
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/countries/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/countries"] });
       toast({ title: "Country deleted successfully" });
@@ -397,7 +397,7 @@ function RegionsTab() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: InsertRegion) => apiRequest("/api/regions", "POST", data),
+    mutationFn: (data: InsertRegion) => apiRequest("POST", "/api/regions", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/regions"] });
       setIsDialogOpen(false);
@@ -415,7 +415,7 @@ function RegionsTab() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<InsertRegion> }) =>
-      apiRequest(`/api/regions/${id}`, "PATCH", data),
+      apiRequest("PATCH", `/api/regions/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/regions"] });
       setIsDialogOpen(false);
@@ -663,7 +663,7 @@ function PetBreedsTab() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: InsertPetBreed) => apiRequest("/api/pet-breeds", "POST", data),
+    mutationFn: (data: InsertPetBreed) => apiRequest("POST", "/api/pet-breeds", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pet-breeds"] });
       setIsDialogOpen(false);
@@ -681,7 +681,7 @@ function PetBreedsTab() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<InsertPetBreed> }) =>
-      apiRequest(`/api/pet-breeds/${id}`, "PATCH", data),
+      apiRequest("PATCH", `/api/pet-breeds/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pet-breeds"] });
       setIsDialogOpen(false);
@@ -699,7 +699,7 @@ function PetBreedsTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/pet-breeds/${id}`, "DELETE"),
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/pet-breeds/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pet-breeds"] });
       toast({ title: "Pet breed deleted successfully" });
@@ -830,14 +830,17 @@ function PetBreedsTab() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country (Optional)</FormLabel>
-                      <Select onValueChange={(value) => field.onChange(value || null)} value={field.value || ""}>
+                      <Select 
+                        onValueChange={(value) => field.onChange(value === "GLOBAL" ? null : value)} 
+                        value={field.value || "GLOBAL"}
+                      >
                         <FormControl>
                           <SelectTrigger data-testid="select-breed-country">
                             <SelectValue placeholder="Global (all countries)" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Global (all countries)</SelectItem>
+                          <SelectItem value="GLOBAL">Global (all countries)</SelectItem>
                           {countries.map((country) => (
                             <SelectItem key={country.code} value={country.code}>
                               {country.flag} {country.nameEn}
