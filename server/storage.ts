@@ -131,7 +131,9 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private pets: Map<string, Pet>;
+  private countries: Map<string, Country>;
   private regions: Map<string, Region>;
+  private petBreeds: Map<string, PetBreed>;
   private clinics: Map<string, Clinic>;
   private emergencyRequests: Map<string, EmergencyRequest>;
   private messages: Map<string, Message>;
@@ -143,7 +145,9 @@ export class MemStorage implements IStorage {
   constructor() {
     this.users = new Map();
     this.pets = new Map();
+    this.countries = new Map();
     this.regions = new Map();
+    this.petBreeds = new Map();
     this.clinics = new Map();
     this.emergencyRequests = new Map();
     this.messages = new Map();
@@ -157,6 +161,7 @@ export class MemStorage implements IStorage {
       id: 'temp-user-id',
       username: 'testuser',
       password: 'hashedpassword',
+      passwordHash: null,
       email: 'user@example.com',
       name: null,
       profileImageUrl: null,
@@ -172,9 +177,9 @@ export class MemStorage implements IStorage {
     
     // Seed test data for regions
     const regions: Region[] = [
-      { id: 'hki-region', code: 'HKI', nameEn: 'Hong Kong Island', nameZh: '香港島', country: 'HK', coordinates: { latitude: 22.2783, longitude: 114.1747 }, active: true },
-      { id: 'kln-region', code: 'KLN', nameEn: 'Kowloon', nameZh: '九龍', country: 'HK', coordinates: { latitude: 22.3193, longitude: 114.1694 }, active: true },
-      { id: 'nti-region', code: 'NTI', nameEn: 'New Territories', nameZh: '新界', country: 'HK', coordinates: { latitude: 22.4453, longitude: 114.1683 }, active: true },
+      { id: 'hki-region', code: 'HKI', nameEn: 'Hong Kong Island', nameZh: '香港島', countryCode: 'HK', coordinates: { latitude: 22.2783, longitude: 114.1747 }, active: true },
+      { id: 'kln-region', code: 'KLN', nameEn: 'Kowloon', nameZh: '九龍', countryCode: 'HK', coordinates: { latitude: 22.3193, longitude: 114.1694 }, active: true },
+      { id: 'nti-region', code: 'NTI', nameEn: 'New Territories', nameZh: '新界', countryCode: 'HK', coordinates: { latitude: 22.4453, longitude: 114.1683 }, active: true },
     ];
     regions.forEach(region => this.regions.set(region.id, region));
     
@@ -310,6 +315,7 @@ export class MemStorage implements IStorage {
       profileImageUrl: insertUser.profileImageUrl ?? null,
       username: insertUser.username ?? null,
       password: insertUser.password ?? null,
+      passwordHash: insertUser.passwordHash ?? null,
       phone: insertUser.phone ?? null,
       clinicId: insertUser.clinicId ?? null,
     };
@@ -336,6 +342,7 @@ export class MemStorage implements IStorage {
       ...userData,
       username: existing?.username ?? null,
       password: existing?.password ?? null,
+      passwordHash: existing?.passwordHash ?? null,
       phone: existing?.phone ?? null,
       languagePreference: existing?.languagePreference ?? 'en',
       regionPreference: existing?.regionPreference ?? null,
@@ -405,7 +412,7 @@ export class MemStorage implements IStorage {
       ...insertRegion, 
       id,
       coordinates: insertRegion.coordinates ?? null,
-      country: insertRegion.country ?? 'HK',
+      countryCode: insertRegion.countryCode ?? 'HK',
       active: insertRegion.active ?? true
     };
     this.regions.set(id, region);
@@ -418,6 +425,107 @@ export class MemStorage implements IStorage {
     const updated = { ...region, ...updateData };
     this.regions.set(id, updated);
     return updated;
+  }
+
+  async getRegionsByCountry(countryCode: string): Promise<Region[]> {
+    return Array.from(this.regions.values()).filter(region => region.countryCode === countryCode);
+  }
+
+  // Countries (stub implementations - app uses DatabaseStorage in production)
+  async getCountry(id: string): Promise<Country | undefined> {
+    return this.countries.get(id);
+  }
+
+  async getCountryByCode(code: string): Promise<Country | undefined> {
+    return Array.from(this.countries.values()).find(country => country.code === code);
+  }
+
+  async getAllCountries(): Promise<Country[]> {
+    return Array.from(this.countries.values());
+  }
+
+  async getActiveCountries(): Promise<Country[]> {
+    return Array.from(this.countries.values()).filter(country => country.active);
+  }
+
+  async createCountry(insertCountry: InsertCountry): Promise<Country> {
+    const id = randomUUID();
+    const country: Country = { 
+      ...insertCountry, 
+      id,
+      active: insertCountry.active ?? true,
+      nameZh: insertCountry.nameZh ?? null,
+      flag: insertCountry.flag ?? null,
+      createdAt: new Date()
+    };
+    this.countries.set(id, country);
+    return country;
+  }
+
+  async updateCountry(id: string, updateData: Partial<InsertCountry>): Promise<Country | undefined> {
+    const country = this.countries.get(id);
+    if (!country) return undefined;
+    const updated = { ...country, ...updateData };
+    this.countries.set(id, updated);
+    return updated;
+  }
+
+  async deleteCountry(id: string): Promise<boolean> {
+    return this.countries.delete(id);
+  }
+
+  // Pet Breeds (stub implementations - app uses DatabaseStorage in production)
+  async getPetBreed(id: string): Promise<PetBreed | undefined> {
+    return this.petBreeds.get(id);
+  }
+
+  async getPetBreedsBySpecies(species: string): Promise<PetBreed[]> {
+    return Array.from(this.petBreeds.values()).filter(breed => breed.species === species);
+  }
+
+  async getPetBreedsByCountry(countryCode: string): Promise<PetBreed[]> {
+    return Array.from(this.petBreeds.values()).filter(breed => 
+      breed.countryCode === countryCode || breed.countryCode === null
+    );
+  }
+
+  async getCommonPetBreeds(species?: string): Promise<PetBreed[]> {
+    const breeds = Array.from(this.petBreeds.values()).filter(breed => breed.isCommon);
+    if (species) {
+      return breeds.filter(breed => breed.species === species);
+    }
+    return breeds;
+  }
+
+  async getAllPetBreeds(): Promise<PetBreed[]> {
+    return Array.from(this.petBreeds.values());
+  }
+
+  async createPetBreed(insertBreed: InsertPetBreed): Promise<PetBreed> {
+    const id = randomUUID();
+    const breed: PetBreed = { 
+      ...insertBreed, 
+      id,
+      breedZh: insertBreed.breedZh ?? null,
+      countryCode: insertBreed.countryCode ?? null,
+      isCommon: insertBreed.isCommon ?? false,
+      active: insertBreed.active ?? true,
+      createdAt: new Date()
+    };
+    this.petBreeds.set(id, breed);
+    return breed;
+  }
+
+  async updatePetBreed(id: string, updateData: Partial<InsertPetBreed>): Promise<PetBreed | undefined> {
+    const breed = this.petBreeds.get(id);
+    if (!breed) return undefined;
+    const updated = { ...breed, ...updateData };
+    this.petBreeds.set(id, updated);
+    return updated;
+  }
+
+  async deletePetBreed(id: string): Promise<boolean> {
+    return this.petBreeds.delete(id);
   }
 
   // Clinics
@@ -569,7 +677,10 @@ export class MemStorage implements IStorage {
       locationLongitude: insertRequest.locationLongitude ?? null,
       manualLocation: insertRequest.manualLocation ?? null,
       status: insertRequest.status ?? 'pending',
-      regionId: insertRequest.regionId ?? null
+      regionId: insertRequest.regionId ?? null,
+      voiceTranscript: insertRequest.voiceTranscript ?? null,
+      isVoiceRecording: insertRequest.isVoiceRecording ?? false,
+      aiAnalyzedSymptoms: insertRequest.aiAnalyzedSymptoms ?? null
     };
     this.emergencyRequests.set(id, request);
     return request;
