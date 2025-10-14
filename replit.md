@@ -22,8 +22,9 @@ Preferred communication style: Simple, everyday language.
 - **Emergency Broadcasts**: Enhanced content includes full pet profile information (name, species, breed, age, weight, medical notes). Support Hospital program allows prioritizing partner clinics and quick one-click broadcasting.
 
 ### Data Architecture
-- **Database Schema**: Users (with `clinicId` for staff linking), Pets, Regions, Clinics (`isSupportHospital` field), Emergency Requests, Messages, Feature Flags, Audit Logs, Privacy Consents, Translations.
+- **Database Schema**: Users (single `name` field, with `clinicId` for staff linking), Pets, Regions, Clinics (`isSupportHospital` field), Emergency Requests, Messages, Feature Flags, Audit Logs, Privacy Consents, Translations.
 - **Design Principles**: UUID primary keys, soft deletes, JSONB for flexible metadata, timestamp tracking, foreign key constraints.
+- **Schema Evolution**: User model simplified from separate `firstName`/`lastName` fields to single `name` field for better UX and data consistency (October 2025).
 
 ### Authentication & Authorization
 - **Implementation**: Multi-option professional authentication system via Passport.js, role-based access control (user, admin), clinic staff access control via `clinicId` linking, session-based authentication with PostgreSQL session store.
