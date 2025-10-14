@@ -16,7 +16,8 @@ export default function AdminLoginPage() {
   }, [user, setLocation]);
 
   const handleLogin = () => {
-    window.location.href = `/api/auth/google?returnTo=/admin/clinics`;
+    // Redirect to regular login page with admin return URL
+    setLocation('/login?returnTo=/admin/clinics');
   };
 
   if (isLoading) {
