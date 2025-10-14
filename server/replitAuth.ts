@@ -66,11 +66,14 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
+  const firstName = claims["first_name"];
+  const lastName = claims["last_name"];
+  const name = claims["name"] || (firstName && lastName ? `${firstName} ${lastName}`.trim() : firstName || lastName || null);
+  
   await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
-    firstName: claims["first_name"],
-    lastName: claims["last_name"],
+    name: name,
     profileImageUrl: claims["profile_image_url"],
   });
 }

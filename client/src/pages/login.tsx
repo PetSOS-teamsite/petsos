@@ -28,7 +28,9 @@ import { PhoneInput } from "@/components/PhoneInput";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address").optional(),
+  email: z.string().optional().refine((val) => !val || z.string().email().safeParse(val).success, {
+    message: "Invalid email address"
+  }),
   phone: z.string().optional(),
   countryCode: z.string().default("+852"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -38,12 +40,13 @@ const loginSchema = z.object({
 });
 
 const signupSchema = z.object({
-  email: z.string().email("Invalid email address").optional(),
+  email: z.string().optional().refine((val) => !val || z.string().email().safeParse(val).success, {
+    message: "Invalid email address"
+  }),
   phone: z.string().optional(),
   countryCode: z.string().default("+852"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  name: z.string().min(1, "Name is required"),
 }).refine((data) => data.email || data.phone, {
   message: "Either email or phone is required",
   path: ["email"],
@@ -72,8 +75,7 @@ export default function LoginPage() {
       phone: "",
       countryCode: "+852",
       password: "",
-      firstName: "",
-      lastName: "",
+      name: "",
     },
     mode: "onSubmit",
   });
@@ -202,25 +204,12 @@ export default function LoginPage() {
                   <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-4">
                     <FormField
                       control={signupForm.control}
-                      name="firstName"
+                      name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>First Name</FormLabel>
+                          <FormLabel>Name</FormLabel>
                           <FormControl>
-                            <Input {...field} data-testid="input-firstname" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={signupForm.control}
-                      name="lastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Last Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-lastname" />
+                            <Input {...field} data-testid="input-name" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -300,25 +289,12 @@ export default function LoginPage() {
                   <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-4">
                     <FormField
                       control={signupForm.control}
-                      name="firstName"
+                      name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>First Name</FormLabel>
+                          <FormLabel>Name</FormLabel>
                           <FormControl>
-                            <Input {...field} data-testid="input-firstname-phone" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={signupForm.control}
-                      name="lastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Last Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-lastname-phone" />
+                            <Input {...field} data-testid="input-name-phone" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

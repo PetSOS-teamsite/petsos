@@ -34,9 +34,11 @@ import { Link, useLocation } from "wouter";
 import type { User as UserType, Region } from "@shared/schema";
 
 const createProfileSchema = (t: (key: string, fallback: string) => string) => z.object({
-  username: z.string().min(3, t("profile.validation.username", "Username must be at least 3 characters")).optional().or(z.literal('')),
+  name: z.string().min(1, t("profile.validation.name", "Name is required")).optional().or(z.literal('')),
   email: z.string().email(t("profile.validation.email", "Please enter a valid email")),
-  phone: z.string().min(8, t("profile.validation.phone", "Please enter a valid phone number")),
+  phone: z.string().optional().refine((val) => !val || val.length >= 8, {
+    message: t("profile.validation.phone", "Please enter a valid phone number")
+  }),
   languagePreference: z.enum(['en', 'zh-HK']),
   regionPreference: z.string().optional(),
 });
@@ -65,14 +67,14 @@ export default function ProfilePage() {
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      username: '',
+      name: '',
       email: '',
       phone: '',
       languagePreference: 'en',
       regionPreference: undefined,
     },
     values: user ? {
-      username: user.username || '',
+      name: user.name || '',
       email: user.email || '',
       phone: user.phone || '',
       languagePreference: (user.languagePreference as 'en' | 'zh-HK') || 'en',
@@ -238,18 +240,18 @@ export default function ProfilePage() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="username"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("profile.username", "Username")}</FormLabel>
+                      <FormLabel>{t("profile.name", "Name")}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
                           <Input
                             {...field}
                             className="pl-10"
-                            placeholder={t("profile.username_placeholder", "Enter username")}
-                            data-testid="input-username"
+                            placeholder={t("profile.name_placeholder", "Enter your name")}
+                            data-testid="input-name"
                           />
                         </div>
                       </FormControl>

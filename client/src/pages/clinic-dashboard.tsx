@@ -67,8 +67,7 @@ interface EmergencyRequest {
     breed: string | null;
   };
   user?: {
-    firstName: string | null;
-    lastName: string | null;
+    name: string | null;
     phone: string | null;
     email: string | null;
   };
@@ -559,7 +558,7 @@ export default function ClinicDashboardPage() {
                       <div className="space-y-3">
                         <div className="text-sm">
                           <p>
-                            {t("clinic.owner")}: {request.user.firstName} {request.user.lastName}
+                            {t("clinic.owner")}: {request.user.name}
                           </p>
                           {request.user.phone && (
                             <p className="text-muted-foreground">

@@ -25,8 +25,7 @@ export const sessions = pgTable(
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
+  name: varchar("name"), // Simplified: single name field instead of firstName/lastName
   profileImageUrl: varchar("profile_image_url"),
   // Legacy fields (optional for backward compatibility)
   username: text("username"),
@@ -50,8 +49,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const upsertUserSchema = z.object({
   id: z.string(),
   email: z.string().nullable(),
-  firstName: z.string().nullable(),
-  lastName: z.string().nullable(),
+  name: z.string().nullable(),
   profileImageUrl: z.string().nullable(),
 });
 
