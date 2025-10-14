@@ -117,6 +117,17 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
+  // Helper function to get the correct domain for authentication
+  // Maps localhost to the first Replit domain for development
+  const getAuthDomain = (hostname: string): string => {
+    const domains = appConfig.auth.replitDomains.split(",");
+    // If hostname is localhost or not in the list, use the first domain
+    if (hostname === 'localhost' || !domains.includes(hostname)) {
+      return domains[0];
+    }
+    return hostname;
+  };
+
   app.get("/api/login", (req, res, next) => {
     const returnTo = req.query.returnTo as string;
     if (returnTo) {
@@ -143,14 +154,16 @@ export async function setupAuth(app: Express) {
         console.warn('Invalid returnTo parameter:', returnTo, error);
       }
     }
-    passport.authenticate(`replitauth:${req.hostname}`, {
+    const authDomain = getAuthDomain(req.hostname);
+    passport.authenticate(`replitauth:${authDomain}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
     })(req, res, next);
   });
 
   app.get("/api/callback", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
+    const authDomain = getAuthDomain(req.hostname);
+    passport.authenticate(`replitauth:${authDomain}`, {
       successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
     })(req, res, next);
