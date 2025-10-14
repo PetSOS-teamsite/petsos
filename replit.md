@@ -26,7 +26,11 @@ Preferred communication style: Simple, everyday language.
 - **Design Principles**: UUID primary keys, soft deletes, JSONB for flexible metadata, timestamp tracking, foreign key constraints.
 
 ### Authentication & Authorization
-- **Implementation**: Replit OIDC, role-based access control (user, admin), clinic staff access control via `clinicId` linking, session-based authentication.
+- **Implementation**: Google OAuth 2.0 + Email/Password authentication via Passport.js, role-based access control (user, admin), clinic staff access control via `clinicId` linking, session-based authentication with PostgreSQL session store.
+- **Authentication Methods**: 
+  - Google OAuth (passport-google-oauth20): One-click sign-in with Google accounts
+  - Email/Password (passport-local): Traditional authentication with bcrypt password hashing
+- **Security**: All user responses sanitized to exclude password hashes, GDPR-compliant data exports
 - **Roles**: Admin (full platform access), Clinic Staff (clinic-specific management), Regular User (pet owner features).
 
 ### Messaging & Communication
