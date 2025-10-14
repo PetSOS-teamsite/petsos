@@ -134,22 +134,30 @@ export async function setupAuth(app: Express) {
     console.warn('[Auth] Google OAuth not configured - set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET');
   }
 
-  // Local Strategy (Email/Password)
+  // Local Strategy (Email/Phone + Password)
   passport.use(
     new LocalStrategy(
-      { usernameField: "email" },
-      async (email, password, done) => {
+      { usernameField: "identifier", passwordField: "password", passReqToCallback: true },
+      async (req, identifier, password, done) => {
         try {
-          const user = await storage.getUserByEmail(email);
+          // Check if identifier is a phone number (starts with +) or email
+          let user;
+          const isPhone = identifier?.startsWith('+');
+          
+          if (isPhone) {
+            user = await storage.getUserByPhone(identifier);
+          } else {
+            user = await storage.getUserByEmail(identifier);
+          }
           
           if (!user || !user.passwordHash) {
-            return done(null, false, { message: "Invalid email or password" });
+            return done(null, false, { message: "Invalid credentials" });
           }
 
           const isValidPassword = await bcrypt.compare(password, user.passwordHash);
           
           if (!isValidPassword) {
-            return done(null, false, { message: "Invalid email or password" });
+            return done(null, false, { message: "Invalid credentials" });
           }
 
           done(null, user);
@@ -162,6 +170,13 @@ export async function setupAuth(app: Express) {
 
   // Local auth routes
   app.post("/api/auth/login", (req, res, next) => {
+    // Prepare identifier: combine phone + countryCode or use email
+    const { email, phone, countryCode } = req.body;
+    const identifier = phone && countryCode ? `${countryCode}${phone}` : email;
+    
+    // Replace req.body with normalized identifier for passport
+    req.body.identifier = identifier;
+    
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {
         return res.status(500).json({ message: "Internal server error" });
@@ -180,16 +195,28 @@ export async function setupAuth(app: Express) {
 
   app.post("/api/auth/signup", async (req, res) => {
     try {
-      const { email, password, firstName, lastName } = req.body;
+      const { email, phone, countryCode, password, firstName, lastName } = req.body;
 
-      if (!email || !password) {
-        return res.status(400).json({ message: "Email and password are required" });
+      if ((!email && !phone) || !password) {
+        return res.status(400).json({ message: "Email or phone number, and password are required" });
       }
 
+      // Format phone number with country code if provided
+      const fullPhone = phone && countryCode ? `${countryCode}${phone}` : phone;
+
       // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ message: "Email already registered" });
+      if (email) {
+        const existingUser = await storage.getUserByEmail(email);
+        if (existingUser) {
+          return res.status(400).json({ message: "Email already registered" });
+        }
+      }
+      
+      if (fullPhone) {
+        const existingUser = await storage.getUserByPhone(fullPhone);
+        if (existingUser) {
+          return res.status(400).json({ message: "Phone number already registered" });
+        }
       }
 
       // Hash password
@@ -197,7 +224,8 @@ export async function setupAuth(app: Express) {
 
       // Create user
       const user = await storage.createUser({
-        email,
+        email: email || null,
+        phone: fullPhone || null,
         passwordHash,
         firstName: firstName || "",
         lastName: lastName || "",

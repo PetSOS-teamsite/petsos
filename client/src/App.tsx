@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -33,6 +33,12 @@ function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const hasClinicAccess = user?.clinicId;
+  const [location] = useLocation();
+  
+  // Don't handle API routes - let them go to the server
+  if (location.startsWith('/api/')) {
+    return null;
+  }
 
   return (
     <Switch>
