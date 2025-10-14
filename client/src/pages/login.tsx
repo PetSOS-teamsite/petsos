@@ -54,7 +54,7 @@ const signupSchema = z.object({
 
 export default function LoginPage() {
   const [isSignup, setIsSignup] = useState(false);
-  const [usePhone, setUsePhone] = useState(false);
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -88,6 +88,19 @@ export default function LoginPage() {
       loginForm.reset();
     }
   }, [isSignup, signupForm, loginForm]);
+
+  // Clear unused fields when switching auth methods
+  useEffect(() => {
+    if (authMethod === 'email') {
+      signupForm.setValue('phone', '');
+      signupForm.setValue('countryCode', '+852');
+      loginForm.setValue('phone', '');
+      loginForm.setValue('countryCode', '+852');
+    } else {
+      signupForm.setValue('email', '');
+      loginForm.setValue('email', '');
+    }
+  }, [authMethod, signupForm, loginForm]);
 
   const handleGoogleLogin = () => {
     window.location.href = "/api/auth/google?returnTo=/profile";
@@ -127,10 +140,15 @@ export default function LoginPage() {
 
   const onSignup = async (data: z.infer<typeof signupSchema>) => {
     try {
+      // Clear unused fields based on auth method
+      const cleanedData = authMethod === 'email' 
+        ? { ...data, phone: undefined, countryCode: undefined }
+        : { ...data, email: undefined };
+      
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(cleanedData),
       });
       
       if (!response.ok) {
@@ -192,7 +210,7 @@ export default function LoginPage() {
           </div>
 
           {/* Email/Phone Tabs */}
-          <Tabs defaultValue="email" className="w-full">
+          <Tabs defaultValue="email" className="w-full" onValueChange={(value) => setAuthMethod(value as 'email' | 'phone')}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="email" data-testid="tab-email">Email</TabsTrigger>
               <TabsTrigger value="phone" data-testid="tab-phone">Phone</TabsTrigger>
