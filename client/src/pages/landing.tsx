@@ -11,7 +11,7 @@ export default function LandingPage() {
   const { t } = useTranslation();
 
   const handleLogin = () => {
-    window.location.href = "/api/login?returnTo=/profile";
+    setLocation("/login");
   };
 
   const handleEmergency = () => {

@@ -31,6 +31,7 @@ export const users = pgTable("users", {
   // Legacy fields (optional for backward compatibility)
   username: text("username"),
   password: text("password"),
+  passwordHash: text("password_hash"), // For email/password auth
   phone: text("phone"),
   languagePreference: text("language_preference").notNull().default('en'),
   regionPreference: text("region_preference"),

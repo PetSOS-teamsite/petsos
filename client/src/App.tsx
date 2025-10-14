@@ -12,6 +12,7 @@ import { initSentry } from "@/lib/sentry";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import HomePage from "@/pages/home";
 import LandingPage from "@/pages/landing";
+import LoginPage from "@/pages/login";
 import EmergencyPage from "@/pages/emergency";
 import ClinicResultsPage from "@/pages/clinic-results";
 import MessageStatusPage from "@/pages/message-status";
@@ -45,10 +46,11 @@ function Router() {
       
       {/* Home route - show landing page for everyone */}
       <Route path="/" component={LandingPage} />
+      <Route path="/login" component={LoginPage} />
       
       {/* Protected routes - require authentication */}
       <Route path="/profile">
-        {isAuthenticated ? <ProfilePage /> : <LandingPage />}
+        {isAuthenticated ? <ProfilePage /> : <LoginPage />}
       </Route>
       <Route path="/pets">
         {isAuthenticated ? <PetsPage /> : <LandingPage />}
