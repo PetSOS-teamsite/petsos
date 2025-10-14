@@ -19,7 +19,7 @@ Preferred communication style: Simple, everyday language.
 - **Design Decisions**: Interface-based storage layer for flexibility; PostgreSQL for data integrity, JSONB, and PostGIS; Drizzle ORM for type-safe queries; RESTful API with consistent error handling.
 - **Core Services**: Messaging (WhatsApp Business API, email fallback), Storage (users, pets, clinics, requests, audit logs), Queue System (retry logic, DLQ), Rate Limiting.
 - **Security**: Production-grade rate limiting (general API, auth, export, deletion, broadcast, strict operations), `trust proxy` for accurate IP tracking, GDPR/PDPO compliance features (data export/deletion).
-- **Emergency Broadcasts**: Enhanced content includes full pet profile information (name, species, breed, age, weight, medical notes). Support Hospital program allows prioritizing partner clinics and quick one-click broadcasting.
+- **Emergency Broadcasts**: Enhanced content includes full pet profile information (name, species, breed, age, weight, medical notes). Support Hospital program allows prioritizing partner clinics and quick one-click broadcasting. **Existing Patient Recognition**: Clinics where the pet has previously visited are automatically highlighted and prioritized, with broadcast messages noting which clinic has medical records for faster history access.
 
 ### Data Architecture
 - **Database Schema**: Users (single `name` field, with `clinicId` for staff linking), Pets, Regions, Clinics (`isSupportHospital` field), Emergency Requests, Messages, Feature Flags, Audit Logs, Privacy Consents, Translations.

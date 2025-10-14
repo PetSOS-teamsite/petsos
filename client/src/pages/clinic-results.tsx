@@ -53,7 +53,7 @@ interface Region {
 }
 
 // Helper function to build enhanced pet info string
-function buildPetInfoString(emergencyRequest: any, t: any): string {
+function buildPetInfoString(emergencyRequest: any, t: any, targetClinicId?: string): string {
   if (!emergencyRequest?.petSpecies) return '';
   
   let petInfo = `\n${t('clinic_results.pet', 'Pet')}: `;
@@ -87,6 +87,15 @@ function buildPetInfoString(emergencyRequest: any, t: any): string {
     // Add medical notes if available
     if (pet.medicalNotes && pet.medicalNotes.trim()) {
       petInfo += `\n${t('clinic_results.medical_history', '⚠️ Medical History')}: ${pet.medicalNotes}`;
+    }
+    
+    // Highlight if this pet is an existing patient of the target clinic
+    if (targetClinicId && pet.lastVisitClinicId === targetClinicId) {
+      petInfo += `\n⭐ ${t('clinic_results.existing_patient', 'EXISTING PATIENT - Medical records available')}`;
+      if (pet.lastVisitDate) {
+        const visitDate = new Date(pet.lastVisitDate).toLocaleDateString();
+        petInfo += ` (${t('clinic_results.last_visit', 'Last visit')}: ${visitDate})`;
+      }
     }
   } else {
     // Fallback to emergency request data only (manual entry)
@@ -222,7 +231,15 @@ export default function ClinicResultsPage() {
       return true;
     })
     .sort((a, b) => {
-      // Prioritize clinics with known distance
+      // HIGHEST PRIORITY: Existing patient clinic (where pet has visited before)
+      const petLastVisitClinicId = emergencyRequest?.pet?.lastVisitClinicId;
+      const aIsExisting = petLastVisitClinicId === a.id;
+      const bIsExisting = petLastVisitClinicId === b.id;
+      
+      if (aIsExisting && !bIsExisting) return -1;
+      if (!aIsExisting && bIsExisting) return 1;
+      
+      // SECOND PRIORITY: Clinics with known distance
       const distA = a.distance !== undefined ? a.distance : Infinity;
       const distB = b.distance !== undefined ? b.distance : Infinity;
       
@@ -230,7 +247,7 @@ export default function ClinicResultsPage() {
         return distA - distB;
       }
       
-      // If distances are equal (or both undefined), sort 24-hour clinics first
+      // THIRD PRIORITY: 24-hour clinics
       if (a.is24Hour && !b.is24Hour) return -1;
       if (!a.is24Hour && b.is24Hour) return 1;
       
@@ -325,7 +342,7 @@ export default function ClinicResultsPage() {
           : `${t('clinic_results.gps_prefix', 'GPS')}: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`;
       }
       
-      // Build pet info string with enhanced profile data
+      // Build pet info string with enhanced profile data (no specific clinic targeting for group broadcast)
       const petInfo = buildPetInfoString(emergencyRequest, t);
       
       // Build voice recording section if available
@@ -333,8 +350,22 @@ export default function ClinicResultsPage() {
         ? `\n\n🎤 ${t('clinic_results.voice_description', 'Voice Description')}:\n"${emergencyRequest.voiceTranscript}"\n\n${t('clinic_results.ai_analysis', 'AI Analysis')}: ${emergencyRequest.aiAnalyzedSymptoms || emergencyRequest.symptom}`
         : '';
       
+      // Add information about pet's regular clinic if exists
+      let regularClinicInfo = '';
+      if (emergencyRequest?.pet?.lastVisitClinicId) {
+        const regularClinic = allClinics.find(c => c.id === emergencyRequest.pet.lastVisitClinicId);
+        if (regularClinic) {
+          regularClinicInfo = `\n\n📋 ${t('clinic_results.regular_clinic_note', 'NOTE: This pet is a registered patient at')} ${regularClinic.name}`;
+          if (emergencyRequest.pet.lastVisitDate) {
+            const visitDate = new Date(emergencyRequest.pet.lastVisitDate).toLocaleDateString();
+            regularClinicInfo += ` (${t('clinic_results.last_visit', 'Last visit')}: ${visitDate})`;
+          }
+          regularClinicInfo += `\n${t('clinic_results.medical_records_available', 'Medical records may be available there for reference.')}`;
+        }
+      }
+      
       const message = emergencyRequest
-        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${voiceSection}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
+        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${voiceSection}${petInfo}${regularClinicInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
         : t('clinic_results.emergency_care_needed', 'Emergency pet care needed');
       
       const response = await apiRequest(
@@ -413,8 +444,22 @@ export default function ClinicResultsPage() {
         ? `\n\n🎤 ${t('clinic_results.voice_description', 'Voice Description')}:\n"${emergencyRequest.voiceTranscript}"\n\n${t('clinic_results.ai_analysis', 'AI Analysis')}: ${emergencyRequest.aiAnalyzedSymptoms || emergencyRequest.symptom}`
         : '';
       
+      // Add information about pet's regular clinic if exists
+      let regularClinicInfo = '';
+      if (emergencyRequest?.pet?.lastVisitClinicId) {
+        const regularClinic = allClinics.find(c => c.id === emergencyRequest.pet.lastVisitClinicId);
+        if (regularClinic) {
+          regularClinicInfo = `\n\n📋 ${t('clinic_results.regular_clinic_note', 'NOTE: This pet is a registered patient at')} ${regularClinic.name}`;
+          if (emergencyRequest.pet.lastVisitDate) {
+            const visitDate = new Date(emergencyRequest.pet.lastVisitDate).toLocaleDateString();
+            regularClinicInfo += ` (${t('clinic_results.last_visit', 'Last visit')}: ${visitDate})`;
+          }
+          regularClinicInfo += `\n${t('clinic_results.medical_records_available', 'Medical records may be available there for reference.')}`;
+        }
+      }
+      
       const message = emergencyRequest
-        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${voiceSection}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
+        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${voiceSection}${petInfo}${regularClinicInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
         : t('clinic_results.emergency_care_needed', 'Emergency pet care needed');
       
       const response = await apiRequest(
@@ -763,11 +808,12 @@ export default function ClinicResultsPage() {
             filteredClinics.map((clinic, index) => {
               const isSelected = selectedClinics.has(clinic.id);
               const canBroadcast = !!(clinic.whatsapp || clinic.email);
+              const isExistingPatient = emergencyRequest?.pet?.lastVisitClinicId === clinic.id;
               
               return (
                 <Card 
                   key={clinic.id} 
-                  className={`hover:shadow-lg transition-all ${isSelected ? 'ring-2 ring-orange-500' : ''}`}
+                  className={`hover:shadow-lg transition-all ${isSelected ? 'ring-2 ring-orange-500' : ''} ${isExistingPatient ? 'ring-2 ring-amber-400 dark:ring-amber-500' : ''}`}
                   data-testid={`card-clinic-${clinic.id}`}
                 >
                   <CardHeader>
@@ -784,8 +830,15 @@ export default function ClinicResultsPage() {
                       )}
                       
                       <div className="flex-1">
+                        {/* Existing Patient Indicator - Highest Priority */}
+                        {isExistingPatient && (
+                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 mb-2 font-bold" data-testid={`badge-existing-patient-${clinic.id}`}>
+                            ⭐ {t('clinic_results.existing_patient_badge', 'EXISTING PATIENT - Medical Records Available')}
+                          </Badge>
+                        )}
+                        
                         {/* Urgency Indicator */}
-                        {index < 3 && clinic.is24Hour && clinic.distance !== undefined && clinic.distance < 5 && (
+                        {!isExistingPatient && index < 3 && clinic.is24Hour && clinic.distance !== undefined && clinic.distance < 5 && (
                           <Badge className="bg-red-600 mb-2" data-testid="badge-urgent">
                             ⚡ {t('clinic_results.priority_clinic', 'Priority Clinic')}
                           </Badge>
