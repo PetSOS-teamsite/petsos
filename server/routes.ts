@@ -28,6 +28,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up test utilities (only in non-production)
   setupTestUtils(app);
   
+  // Test route to verify API routing works
+  app.get('/api/test', (req, res) => {
+    res.json({ message: 'API is working!' });
+  });
+  
   // Apply general rate limiter to all API routes (100 req/15min)
   app.use('/api/', generalLimiter);
   

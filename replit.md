@@ -26,11 +26,17 @@ Preferred communication style: Simple, everyday language.
 - **Design Principles**: UUID primary keys, soft deletes, JSONB for flexible metadata, timestamp tracking, foreign key constraints.
 
 ### Authentication & Authorization
-- **Implementation**: Google OAuth 2.0 + Email/Password authentication via Passport.js, role-based access control (user, admin), clinic staff access control via `clinicId` linking, session-based authentication with PostgreSQL session store.
+- **Implementation**: Multi-option professional authentication system via Passport.js, role-based access control (user, admin), clinic staff access control via `clinicId` linking, session-based authentication with PostgreSQL session store.
 - **Authentication Methods**: 
   - Google OAuth (passport-google-oauth20): One-click sign-in with Google accounts
   - Email/Password (passport-local): Traditional authentication with bcrypt password hashing
+  - Phone/Password (passport-local): Phone number authentication with country code selection (default: +852 Hong Kong)
 - **Security**: All user responses sanitized to exclude password hashes, GDPR-compliant data exports
+- **Phone Authentication**: 
+  - Phone numbers stored with country code prefix (e.g., "+85212345678")
+  - Country code selector with support for Hong Kong, China, USA/Canada, UK, Japan, South Korea, Singapore, Taiwan
+  - Unified login strategy that accepts either email or phone+countryCode as identifier
+  - Frontend UI with tabs to switch between Email and Phone authentication methods
 - **Roles**: Admin (full platform access), Clinic Staff (clinic-specific management), Regular User (pet owner features).
 
 ### Messaging & Communication
