@@ -22,9 +22,11 @@ Preferred communication style: Simple, everyday language.
 - **Emergency Broadcasts**: Enhanced content includes full pet profile information (name, species, breed, age, weight, medical notes). Support Hospital program allows prioritizing partner clinics and quick one-click broadcasting. **Existing Patient Recognition**: Clinics where the pet has previously visited are automatically highlighted and prioritized, with broadcast messages noting which clinic has medical records for faster history access.
 
 ### Data Architecture
-- **Database Schema**: Users (single `name` field, with `clinicId` for staff linking), Pets, Regions, Clinics (`isSupportHospital` field), Emergency Requests, Messages, Feature Flags, Audit Logs, Privacy Consents, Translations.
+- **Database Schema**: Users (single `name` field, with `clinicId` for staff linking), Pets, Countries (country codes, names, phone prefixes, flags), Regions (with country references), Pet Breeds (species-specific, country/global), Clinics (`isSupportHospital` field), Emergency Requests, Messages, Feature Flags, Audit Logs, Privacy Consents, Translations.
 - **Design Principles**: UUID primary keys, soft deletes, JSONB for flexible metadata, timestamp tracking, foreign key constraints.
-- **Schema Evolution**: User model simplified from separate `firstName`/`lastName` fields to single `name` field for better UX and data consistency (October 2025).
+- **Schema Evolution**: 
+  - User model simplified from separate `firstName`/`lastName` fields to single `name` field for better UX and data consistency (October 2025)
+  - Multi-region refactoring: Replaced hardcoded Hong Kong-specific values with configurable database-driven system for countries, regions, and pet breeds (October 2025)
 
 ### Authentication & Authorization
 - **Implementation**: Multi-option professional authentication system via Passport.js, role-based access control (user, admin), clinic staff access control via `clinicId` linking, session-based authentication with PostgreSQL session store.
@@ -74,6 +76,30 @@ Preferred communication style: Simple, everyday language.
 - **Privacy**: GDPR compliant, no PII collection, automatic sensitive data removal
 - **Configuration**: Optional via `SENTRY_DSN` (backend) and `VITE_SENTRY_DSN` (frontend) environment variables
 - **Documentation**: See `docs/SENTRY.md` for setup and usage guide
+
+### Multi-Region Configuration (October 2025)
+- **Architecture**: Database-driven configuration system replacing hardcoded Hong Kong-specific values
+- **Countries Management**: 
+  - Database table with country codes, names (EN/ZH), phone prefixes, flags, and active status
+  - API routes for CRUD operations (admin-only mutations, public reads)
+  - Seeded with 15 countries (HK, CN, US, JP, UK, SG, KR, TW, AU, CA, NZ, MY, TH, VN, PH)
+  - PhoneInput component dynamically loads country codes from database
+- **Regions Management**:
+  - Foreign key reference to countries table
+  - Bilingual names (EN/ZH), active status, country association
+  - Admin UI for region CRUD operations
+- **Pet Breeds Management**:
+  - Species-specific (dog, cat, bird, rabbit, hamster, other)
+  - Bilingual names (EN/ZH), country/global scope, common/uncommon flag
+  - Seeded with 50+ breeds across multiple species
+  - BreedCombobox component dynamically loads breeds from database
+- **Admin Configuration UI**: 
+  - Tabbed interface for countries, regions, and pet breeds management
+  - React Hook Form with Zod validation for type-safe mutations
+  - Proper boolean and nullable field handling
+  - Loading guards for dependent data queries
+  - Access via Admin Dashboard → Configuration
+- **Environment Variables**: DEFAULT_COUNTRY, DEFAULT_COUNTRY_CODE, DEFAULT_LANGUAGE for regional defaults
 
 ### Multi-Environment Configuration
 - **Environment Management**: Centralized configuration system supporting development, staging, and production environments
