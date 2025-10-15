@@ -1,0 +1,301 @@
+Add a Hospital Directory module inside the existing PetSOS app, allowing pet owners to discover and evaluate 24-hour animal hospitals quickly and reliably.
+
+This feature should:
+
+Extend the Home Page with a new button → Hospital List
+
+Include a Hospital List Page with filters
+
+Include an Individual Clinic Page with full details, photos, and member-gated reviews
+
+Support bilingual display (English + 繁體中文)
+
+Include analytics tracking and a “report incorrect info” function
+
+Allow only logged-in PetSOS members or admins to leave reviews
+
+Remain scalable for future partner clinic integrations
+
+(Clinic data updates handled separately via Google Form submission — not part of this prompt.)
+
+1) 🧱 Tech Stack
+
+Follow the current PetSOS architecture:
+
+Frontend: React + TypeScript + TailwindCSS
+
+Routing: React Router (extend existing routes)
+
+Backend: Node.js (Express) or Next.js API routes
+
+Database: use existing DB (PostgreSQL / Mongo) — add new collections/tables for clinics & reviews
+
+Auth: reuse PetSOS auth (JWT/session)
+
+i18n: extend current setup (i18next or equivalent)
+
+Analytics: use current provider (GA4 / PostHog)
+
+Map: Google Maps deep link (https://www.google.com/maps?q=lat,lng)
+
+2) 🏠 Pages & Flow
+🔹 Home Page
+
+Add a primary button:
+
+Hospital List / 24小時動物醫院列表
+
+→ routes to /hospitals.
+
+🔹 Hospital List Page (/hospitals)
+
+Core features
+
+Filter bar (sticky on mobile):
+
+Distance: Nearby (≤3 km) | ≤5 km | ≤10 km | All
+
+Services: Multi-select checklist (see ServiceKey list below)
+
+Support Hospital: toggle filter
+
+Sorting: Default by distance (if location granted), else alphabetically
+
+Fallback: If geolocation denied → show “District” dropdown
+
+Cards (per clinic):
+
+Thumbnail (first photo)
+
+Name (localized)
+
+Support badge
+
+Icons for top 4 services
+
+Distance indicator
+
+Call / WhatsApp buttons
+
+CTA analytics events:
+view_hospital_list, apply_hospital_filters, click_call, click_whatsapp, click_directions
+
+🔹 Clinic Detail Page (/hospitals/:id)
+
+Sections:
+1️⃣ Photo Carousel (max 5)
+2️⃣ Key Info:
+
+Phone (tel:), WhatsApp (wa.me), address, “Get Directions” button
+
+Support Hospital badge
+
+“Last updated” date
+3️⃣ Services Checklist (icons grouped by Imaging, Critical Care, Specialty, Other)
+4️⃣ Reviews (member-gated)
+5️⃣ Optional Vet Team intro
+6️⃣ Clinic Website link
+7️⃣ Report Incorrect Info button → modal → POST /api/clinics/:id/report
+
+3) 📋 Data Model
+export type ServiceKey =
+  | "ctScan" | "mri" | "xray" | "ultrasound" | "oxygenCage" | "icu"
+  | "bloodBank" | "onSiteLab" | "endoscopy" | "surgery"
+  | "exoticCare" | "cardiology" | "dentistry" | "dermatology" | "ophthalmology"
+  | "internalMedicine" | "oncology" | "physiotherapy" | "ambulance"
+  | "isolationWard" | "24hrVetOnsite" | "nightNurseOnly" | "specialistService";
+
+export interface Clinic {
+  id: string;
+  name: { en: string; zhHant: string };
+  address: { en: string; zhHant: string };
+  location: { lat: number; lng: number; district?: string };
+  phone: string;
+  whatsapp?: string;
+  website?: string;
+  supportHospital: boolean;
+  photos: string[]; // max 5
+  services: Partial<Record<ServiceKey, boolean>>;
+  extraServices?: string[];
+  team?: Array<{ name: string; title?: string; bio?: { en: string; zhHant: string }; photo?: string }>;
+  lastUpdatedISO: string;
+}
+
+Reviews (auth-gated)
+export interface ClinicReview {
+  id: string;
+  clinicId: string;
+  userId: string;
+  rating: 1|2|3|4|5;
+  comment: string;
+  lang: "en"|"zh-Hant";
+  createdAt: string;
+  verified: boolean;
+  hidden: boolean;
+}
+
+Reports
+export interface ClinicReport {
+  clinicId: string;
+  name: string;
+  email?: string;
+  message: string;
+  createdAt: string;
+}
+
+4) 🔐 Auth-Gated Review Rules
+
+View: Everyone (read-only).
+
+Post: Only PetSOS logged-in users (role=user) or admins.
+
+Admin Tools:
+
+Hide/unhide reviews
+
+Mark as verified (e.g., linked to completed emergency case)
+
+Duplicate prevention: one review per user per clinic.
+
+Auto-verification: if user has a completed emergency case at that clinic, mark verified=true automatically.
+
+Frontend behavior:
+
+If not logged in → show “Login to review” button (trigger existing login flow).
+
+If logged in → show rating + comment form.
+
+Show verified badge on verified reviews.
+
+Admins see moderation toggles.
+
+5) 🧩 Backend Endpoints
+GET /api/clinics
+  ?services=xray,ctScan&support=true&lat=..&lng=..&radiusKm=5&district=Eastern
+
+GET /api/clinics/:id
+  → full Clinic + reviews (hidden=false)
+
+POST /api/clinics/:id/reviews      (auth required)
+  { rating, comment, lang }
+  → adds one review per user; profanity filtered; 500 char limit.
+
+PATCH /api/clinics/:id/reviews/:reviewId/hide   (admin)
+PATCH /api/clinics/:id/reviews/:reviewId/verify (admin)
+
+POST /api/clinics/:id/report
+  { name, email?, message } → logs incorrect info report
+
+6) 🌍 i18n
+
+Use hospital namespace. Example:
+
+// en/hospital.json
+{
+  "ctaList": "Hospital List",
+  "filters": { "distance": "Distance", "services": "Services", "support": "Support Hospital", "all": "All" },
+  "detail": { "lastUpdated": "Last updated", "getDirections": "Get Directions", "team": "Vet Team", "website": "Website" },
+  "reviews": { "title": "Reviews", "loginToReview": "Log in to write a review", "verified": "Verified", "alreadyReviewed": "You’ve already reviewed this hospital." },
+  "actions": { "report": "Report incorrect info", "submit": "Submit" }
+}
+
+// zh-Hant/hospital.json
+{
+  "ctaList": "24小時動物醫院列表",
+  "filters": { "distance": "距離", "services": "服務", "support": "支援醫院", "all": "全部" },
+  "detail": { "lastUpdated": "最後更新", "getDirections": "導航", "team": "醫療團隊", "website": "網站" },
+  "reviews": { "title": "評價", "loginToReview": "登入後可撰寫評價", "verified": "已驗證", "alreadyReviewed": "你已為此醫院撰寫過評價" },
+  "actions": { "report": "回報資料錯誤", "submit": "提交" }
+}
+
+7) 📊 Analytics Events
+
+Integrate with existing provider.
+
+Event	Description
+view_home	home page load
+click_hospital_list_cta	click Hospital List button
+view_hospital_list	list view opened
+apply_hospital_filters	filter changed (distance/services/support)
+view_hospital_detail	detail page open
+click_hospital_call	click call button
+click_hospital_whatsapp	click WhatsApp button
+click_hospital_directions	click Get Directions
+submit_hospital_review	review submitted
+click_login_to_review	login button clicked
+admin_hide_review / admin_verify_review	moderation
+report_hospital_incorrect_info	incorrect info reported
+switch_language	language changed
+8) 🧭 Distance & Filter Logic
+
+Use browser Geolocation API; compute Haversine distance client-side.
+
+If denied → fallback to district filter.
+
+When Distance filter active → pass lat/lng/radiusKm to /api/clinics.
+
+9) ⚙️ UI Components
+
+PhotoCarousel
+
+ClinicCard
+
+ServiceIcon (with grouped icons)
+
+FilterBar (distance, services, support)
+
+ReviewSection (read-only + form gated by login)
+
+ReportModal
+
+LanguageSwitcher
+
+SupportBadge
+
+All elements responsive and bilingual.
+
+10) 🧑‍💻 Database Setup (Minimal)
+
+Tables / collections:
+
+clinics
+
+clinic_reviews
+
+clinic_reports
+
+Indexes:
+
+clinics.location (geo)
+
+clinic_reviews.clinicId
+
+Unique composite (clinicId, userId) for review uniqueness
+
+11) 📈 Acceptance Criteria
+
+✅ Home shows Hospital List CTA
+✅ List filters by Distance, Services, Support Hospital
+✅ Clinic detail includes all 6 sections
+✅ Reviews gated by login; only members/admins can post
+✅ Admin can hide/unhide & verify reviews
+✅ Multilingual support for EN / 繁
+✅ Analytics fires per spec
+✅ “Report incorrect info” works
+✅ Lighthouse mobile score ≥ 85
+
+12) 🔒 Security & Quality
+
+Profanity filter for comments
+
+Sanitize inputs (XSS safe)
+
+Limit one review/user/clinic
+
+Rate limit 5/min per IP
+
+Escape HTML in comments
+
+Hide unverified or hidden reviews from public
+
+Log admin actions
