@@ -29,6 +29,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up test utilities (only in non-production)
   setupTestUtils(app);
   
+  // Health check endpoint for Render and other platforms (no rate limiting)
+  app.get('/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  });
+  
   // Test route to verify API routing works
   app.get('/api/test', (req, res) => {
     res.json({ message: 'API is working!' });
