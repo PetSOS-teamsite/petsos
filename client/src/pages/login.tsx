@@ -68,7 +68,19 @@ export default function LoginPage() {
     },
   });
 
-  const signupForm = useForm({
+  const emailSignupForm = useForm({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      email: "",
+      phone: "",
+      countryCode: "+852",
+      password: "",
+      name: "",
+    },
+    mode: "onSubmit",
+  });
+
+  const phoneSignupForm = useForm({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       email: "",
@@ -83,24 +95,22 @@ export default function LoginPage() {
   // Reset forms when toggling between login and signup
   useEffect(() => {
     if (isSignup) {
-      signupForm.reset();
+      emailSignupForm.reset();
+      phoneSignupForm.reset();
     } else {
       loginForm.reset();
     }
-  }, [isSignup, signupForm, loginForm]);
+  }, [isSignup, emailSignupForm, phoneSignupForm, loginForm]);
 
   // Clear unused fields when switching auth methods
   useEffect(() => {
     if (authMethod === 'email') {
-      signupForm.setValue('phone', '');
-      signupForm.setValue('countryCode', '+852');
       loginForm.setValue('phone', '');
       loginForm.setValue('countryCode', '+852');
     } else {
-      signupForm.setValue('email', '');
       loginForm.setValue('email', '');
     }
-  }, [authMethod, signupForm, loginForm]);
+  }, [authMethod, loginForm]);
 
   const handleGoogleLogin = () => {
     window.location.href = "/api/auth/google?returnTo=/profile";
@@ -219,10 +229,10 @@ export default function LoginPage() {
             {authMethod === 'email' && (
               <div className="mt-4" role="tabpanel" aria-labelledby="tab-email" id="panel-email">
                 {isSignup ? (
-                  <Form {...signupForm}>
-                    <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-4">
+                  <Form {...emailSignupForm}>
+                    <form onSubmit={emailSignupForm.handleSubmit(onSignup)} className="space-y-4">
                       <FormField
-                        control={signupForm.control}
+                        control={emailSignupForm.control}
                         name="name"
                         render={({ field }) => (
                           <FormItem>
@@ -239,7 +249,7 @@ export default function LoginPage() {
                         )}
                       />
                     <FormField
-                      control={signupForm.control}
+                      control={emailSignupForm.control}
                       name="email"
                       render={({ field }) => (
                         <FormItem>
@@ -252,7 +262,7 @@ export default function LoginPage() {
                       )}
                     />
                     <FormField
-                      control={signupForm.control}
+                      control={emailSignupForm.control}
                       name="password"
                       render={({ field }) => (
                         <FormItem>
@@ -310,10 +320,10 @@ export default function LoginPage() {
             {authMethod === 'phone' && (
               <div className="mt-4" role="tabpanel" aria-labelledby="tab-phone" id="panel-phone">
                 {isSignup ? (
-                  <Form {...signupForm}>
-                    <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-4">
+                  <Form {...phoneSignupForm}>
+                    <form onSubmit={phoneSignupForm.handleSubmit(onSignup)} className="space-y-4">
                       <FormField
-                        control={signupForm.control}
+                        control={phoneSignupForm.control}
                         name="name"
                         render={({ field }) => (
                           <FormItem>
@@ -330,7 +340,7 @@ export default function LoginPage() {
                         )}
                       />
                     <FormField
-                      control={signupForm.control}
+                      control={phoneSignupForm.control}
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
@@ -339,8 +349,8 @@ export default function LoginPage() {
                             <PhoneInput
                               value={field.value || ""}
                               onChange={field.onChange}
-                              countryCode={signupForm.watch("countryCode") || "+852"}
-                              onCountryCodeChange={(code) => signupForm.setValue("countryCode", code)}
+                              countryCode={phoneSignupForm.watch("countryCode") || "+852"}
+                              onCountryCodeChange={(code) => phoneSignupForm.setValue("countryCode", code)}
                               testId="input-phone"
                             />
                           </FormControl>
@@ -349,7 +359,7 @@ export default function LoginPage() {
                       )}
                     />
                     <FormField
-                      control={signupForm.control}
+                      control={phoneSignupForm.control}
                       name="password"
                       render={({ field }) => (
                         <FormItem>
