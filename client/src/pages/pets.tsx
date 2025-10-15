@@ -277,8 +277,8 @@ export default function PetsPage() {
   };
 
   // Check if profile is incomplete and redirect
-  // Profile is complete if user has email and phone (essential for emergency contact)
-  const isProfileIncomplete = userProfile && (!userProfile.email || !userProfile.phone);
+  // Profile is complete if user has at least one contact method (email OR phone)
+  const isProfileIncomplete = userProfile && (!userProfile.email && !userProfile.phone);
 
   // Handle redirects in useEffect to avoid setState-in-render
   useEffect(() => {
