@@ -114,6 +114,14 @@ Preferred communication style: Simple, everyday language.
 ### Deployment Architecture
 - **Infrastructure**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment, Infrastructure as Code
 - **Environment Detection**: Automatic via NODE_ENV environment variable
+- **Deployment Readiness**: Application is prepared for independent deployment (not relying on Replit)
+  - Comprehensive deployment guide available in `docs/DEPLOYMENT.md`
+  - Production-ready Dockerfile with multi-stage builds
+  - Docker Compose configuration for local testing
+  - Environment templates for staging/production (`.env.production.example`)
+  - Platform-specific guides for Render, Railway, AWS, GCP, Azure, DigitalOcean
+  - Database (Neon PostgreSQL), external services, and session storage are already platform-independent
+  - Authentication supports Google OAuth and Email/Password (Replit auth optional fallback)
 
 ## External Dependencies
 
