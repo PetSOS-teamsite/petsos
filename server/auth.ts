@@ -19,7 +19,7 @@ export function sanitizeUser(user: any) {
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const BASE_URL = process.env.REPLIT_DOMAINS 
-  ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+  ? process.env.REPLIT_DOMAINS.split(',')[0]
   : 'http://localhost:5000';
 
 export function getSession() {
