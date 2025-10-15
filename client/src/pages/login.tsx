@@ -227,7 +227,12 @@ export default function LoginPage() {
                         <FormItem>
                           <FormLabel>Name</FormLabel>
                           <FormControl>
-                            <Input {...field} data-testid="input-name" />
+                            <Input 
+                              {...field} 
+                              data-testid="input-name" 
+                              autoComplete="name"
+                              placeholder="Enter your name"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -312,7 +317,12 @@ export default function LoginPage() {
                         <FormItem>
                           <FormLabel>Name</FormLabel>
                           <FormControl>
-                            <Input {...field} data-testid="input-name-phone" />
+                            <Input 
+                              {...field} 
+                              data-testid="input-name-phone" 
+                              autoComplete="name"
+                              placeholder="Enter your name"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
