@@ -837,13 +837,6 @@ export default function ClinicResultsPage() {
                           </Badge>
                         )}
                         
-                        {/* Urgency Indicator */}
-                        {!isExistingPatient && index < 3 && clinic.is24Hour && clinic.distance !== undefined && clinic.distance < 5 && (
-                          <Badge className="bg-red-600 mb-2" data-testid="badge-urgent">
-                            ⚡ {t('clinic_results.priority_clinic', 'Priority Clinic')}
-                          </Badge>
-                        )}
-                        
                         <CardTitle className="text-xl mb-2">
                           {language === 'zh-HK' && clinic.nameZh ? clinic.nameZh : clinic.name}
                         </CardTitle>
