@@ -206,13 +206,19 @@ export default function ClinicResultsPage() {
     .map(clinic => {
       // Calculate distance if user location and clinic location are available
       if (userLocation && clinic.latitude && clinic.longitude) {
-        const distance = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
-          parseFloat(clinic.latitude),
-          parseFloat(clinic.longitude)
-        );
-        return { ...clinic, distance };
+        const lat = parseFloat(clinic.latitude);
+        const lng = parseFloat(clinic.longitude);
+        
+        // Only calculate distance if we got valid numbers
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const distance = calculateDistance(
+            userLocation.lat,
+            userLocation.lng,
+            lat,
+            lng
+          );
+          return { ...clinic, distance };
+        }
       }
       return clinic;
     })

@@ -105,6 +105,12 @@ export function setupSentryErrorHandler(app: Express) {
 }
 
 export function captureException(error: Error, context?: Record<string, any>) {
+  // Only capture if Sentry is initialized
+  if (!config.monitoring.sentryDsn) {
+    console.error('Cannot capture exception - Sentry not initialized:', error);
+    return;
+  }
+
   if (context) {
     Sentry.withScope((scope) => {
       Object.entries(context).forEach(([key, value]) => {
