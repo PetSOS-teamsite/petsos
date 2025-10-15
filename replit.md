@@ -13,6 +13,10 @@ Preferred communication style: Simple, everyday language.
 - **Design Decisions**: Accessible, customizable components; minimal bundle size; Tailwind CSS for theming (dark mode, custom design tokens); type-safe form validation.
 - **Key Features**: Multi-step emergency request flow, clinic results filtering and communication, profile and pet management (CRUD with bilingual breed selection), clinic directory, admin dashboard (clinic CRUD, staff management, auto-fill GPS), clinic staff dashboard (availability toggle, emergency request management).
 - **Branding**: Text-based "PetSOS" logo; vibrant red (#EF4444) as primary color for emergency focus and consistent UI theming.
+- **UX Enhancements (October 2025)**:
+  - Profile page: Prominent pet management CTA card with paw print icon, green gradient background, and clear benefit messaging ("emergency requests only take 10 seconds!")
+  - Broadcast results: Auto-scroll to status button after broadcast, extended toast duration (8s) showing clinic count, blue-styled "View Broadcast Status" button for better visibility
+  - Post-broadcast guidance: Toast messages direct users to status page for delivery tracking while keeping 24-hour clinic list visible for self-contact
 
 ### Backend Architecture
 - **Technology Stack**: Node.js with Express.js, TypeScript, Drizzle ORM with PostgreSQL (Neon serverless), modular storage abstraction.
@@ -53,6 +57,11 @@ Preferred communication style: Simple, everyday language.
 ### Internationalization (i18n)
 - **Multi-language**: Database-stored translations (EN, zh-HK), client-side language detection.
 - **Coverage**: Comprehensive bilingual support including legal content, pet breeds, and all critical user flows.
+- **Hong Kong Localization (October 2025)**: 
+  - Pet breeds updated to use colloquial HK terminology (混種犬 → 唐狗 for "Mixed Breed")
+  - Emergency flow messaging uses friendly 毛孩 (furry kids) instead of repetitive 寵物 (pets)
+  - Professional tone adjustments (寵物緊急護理 → 寵物緊急情況 for more natural phrasing)
+  - Broadcast success messages use language-aware template strings for proper clinic count interpolation in both EN and zh-HK
 
 ### Analytics & Tracking
 - **Implementation**: Google Analytics 4 (GA4) with GDPR-compliant cookie consent
