@@ -30,10 +30,18 @@ export function PhoneInput({
     queryKey: ["/api/countries"],
   });
 
-  // Filter to only active countries and sort by name
+  // Filter to only active countries, remove duplicates by phone prefix, and sort by name
   const activeCountries = countries
     .filter((c) => c.active)
     .sort((a, b) => a.nameEn.localeCompare(b.nameEn));
+
+  // Remove duplicate phone prefixes - keep only first country for each prefix
+  const uniqueCountries = activeCountries.reduce((acc, country) => {
+    if (!acc.find(c => c.phonePrefix === country.phonePrefix)) {
+      acc.push(country);
+    }
+    return acc;
+  }, [] as Country[]);
 
   // Handle input change with proper event handling for React Hook Form
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +56,7 @@ export function PhoneInput({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {activeCountries.map((country) => (
+          {uniqueCountries.map((country) => (
             <SelectItem key={country.code} value={country.phonePrefix}>
               {country.flag} {country.phonePrefix}
             </SelectItem>
