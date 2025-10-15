@@ -216,28 +216,28 @@ export default function LoginPage() {
               <TabsTrigger value="phone" data-testid="tab-phone">Phone</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="email" className="mt-4">
-              {isSignup ? (
-                <Form {...signupForm}>
-                  <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-4">
-                    <FormField
-                      control={signupForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Name</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              data-testid="input-name" 
-                              autoComplete="name"
-                              placeholder="Enter your name"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+            {authMethod === 'email' && (
+              <div className="mt-4" role="tabpanel" aria-labelledby="tab-email" id="panel-email">
+                {isSignup ? (
+                  <Form {...signupForm}>
+                    <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-4">
+                      <FormField
+                        control={signupForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                data-testid="input-name" 
+                                placeholder="Enter your name"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     <FormField
                       control={signupForm.control}
                       name="email"
@@ -301,33 +301,34 @@ export default function LoginPage() {
                     <Button type="submit" className="w-full bg-red-600 hover:bg-red-700" data-testid="button-login">
                       Sign In
                     </Button>
-                  </form>
-                </Form>
-              )}
-            </TabsContent>
+                    </form>
+                  </Form>
+                )}
+              </div>
+            )}
             
-            <TabsContent value="phone" className="mt-4">
-              {isSignup ? (
-                <Form {...signupForm}>
-                  <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-4">
-                    <FormField
-                      control={signupForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Name</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              data-testid="input-name-phone" 
-                              autoComplete="name"
-                              placeholder="Enter your name"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+            {authMethod === 'phone' && (
+              <div className="mt-4" role="tabpanel" aria-labelledby="tab-phone" id="panel-phone">
+                {isSignup ? (
+                  <Form {...signupForm}>
+                    <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-4">
+                      <FormField
+                        control={signupForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                data-testid="input-name-phone" 
+                                placeholder="Enter your name"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     <FormField
                       control={signupForm.control}
                       name="phone"
@@ -406,7 +407,8 @@ export default function LoginPage() {
                   </form>
                 </Form>
               )}
-            </TabsContent>
+              </div>
+            )}
           </Tabs>
 
           {/* Toggle between login and signup */}
