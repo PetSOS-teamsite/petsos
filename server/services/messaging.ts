@@ -55,6 +55,13 @@ export class MessagingService {
       content = `[TEST MESSAGE]\nOriginal recipient: ${phoneNumber}\n\n${content}`;
     }
 
+    // Validate phone number (must be non-empty and contain only digits after removing common formatting)
+    const cleanedNumber = actualRecipient.replace(/[^0-9]/g, '');
+    if (!cleanedNumber || cleanedNumber.length < 8) {
+      console.error('[WhatsApp] Invalid phone number:', actualRecipient);
+      return false;
+    }
+
     try {
       const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
       console.log('[WhatsApp] Sending to URL:', url);
