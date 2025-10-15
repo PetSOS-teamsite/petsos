@@ -394,10 +394,16 @@ export default function ClinicResultsPage() {
       
       toast({
         title: t('clinic_results.broadcast_success', 'Broadcast sent successfully!'),
-        description: t('clinic_results.broadcast_success_desc', `Emergency alert sent to ${data.count} ${data.count === 1 ? 'clinic' : 'clinics'}`),
+        description: language === 'zh-HK' 
+          ? `✅ 已發送至 ${data.count} 間診所。點擊「查看廣播狀態」追蹤發送情況。`
+          : `✅ Sent to ${data.count} ${data.count === 1 ? 'clinic' : 'clinics'}. Click "View Broadcast Status" to track delivery.`,
+        duration: 8000, // Show longer for important message
       });
       setShowBroadcastDialog(false);
       setSelectedClinics(new Set());
+      
+      // Scroll to top to show the View Status button
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     onError: (error: Error) => {
       toast({
@@ -490,8 +496,12 @@ export default function ClinicResultsPage() {
       
       toast({
         title: t('clinic_results.broadcast_success', 'Emergency Alert Sent!'),
-        description: `Broadcast sent to ${data.count} 24-hour support ${data.count === 1 ? 'hospital' : 'hospitals'}`,
+        description: `✅ Broadcast sent to ${data.count} 24-hour support ${data.count === 1 ? 'hospital' : 'hospitals'}. Click "View Broadcast Status" to track delivery.`,
+        duration: 8000,
       });
+      
+      // Scroll to top to show the View Status button
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     onError: (error: Error) => {
       toast({
@@ -781,10 +791,11 @@ export default function ClinicResultsPage() {
             <Link href={`/emergency-results/${params?.requestId}/messages`}>
               <Button
                 variant="outline"
+                className="border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950"
                 data-testid="button-view-status"
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
-                {t('clinic_results.view_status', 'View Status')}
+                {t('clinic_results.view_status', 'View Broadcast Status')}
               </Button>
             </Link>
             <Button

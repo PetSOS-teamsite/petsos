@@ -34,7 +34,7 @@ const translations = [
   { key: "home.step3.desc", en: "Call or message clinics instantly", zh: "即時致電或發送訊息給診所" },
   
   // Emergency Flow
-  { key: "emergency.title", en: "Emergency Pet Care", zh: "寵物緊急護理" },
+  { key: "emergency.title", en: "Emergency Pet Care", zh: "寵物緊急情況" },
   { key: "emergency.step1.title", en: "What's happening?", zh: "發生什麼事？" },
   { key: "emergency.step2.title", en: "Where are you?", zh: "您在哪裡？" },
   { key: "emergency.step3.title", en: "How can clinics reach you?", zh: "診所如何聯絡您？" },
@@ -44,13 +44,13 @@ const translations = [
   { key: "emergency.time_step3", en: "~10s", zh: "約10秒" },
   
   // Emergency Step 1 - Symptoms
-  { key: "symptoms.urgent", en: "What's happening to your pet right now?", zh: "您的寵物現在出現什麼狀況？" },
+  { key: "symptoms.urgent", en: "What's happening to your pet right now?", zh: "毛孩現時出現什麼情況？" },
   { key: "symptoms.select_all", en: "Tap all symptoms that apply", zh: "請選擇所有適用的症狀" },
-  { key: "symptoms.describe", en: "Describe the symptoms...", zh: "請描述症狀..." },
-  { key: "emergency.select_pet", en: "Which pet is this for?", zh: "這是哪一隻寵物？" },
+  { key: "symptoms.describe", en: "Describe the symptoms...", zh: "請描述情況..." },
+  { key: "emergency.select_pet", en: "Which pet is this for?", zh: "是哪一隻毛孩？" },
   { key: "optional", en: "Optional", zh: "選填" },
-  { key: "emergency.pet_details", en: "Pet Information", zh: "寵物資料" },
-  { key: "emergency.pet_details_desc", en: "Tell us about your pet so clinics can prepare", zh: "告訴我們您寵物的資料，讓診所可以預先準備" },
+  { key: "emergency.pet_details", en: "Pet Information", zh: "毛孩資料" },
+  { key: "emergency.pet_details_desc", en: "Tell us about your pet so clinics can prepare", zh: "請提供毛孩資料，讓診所預先準備" },
   { key: "pets.select_species", en: "Select species", zh: "選擇種類" },
   { key: "pets.dog", en: "Dog", zh: "狗" },
   { key: "pets.cat", en: "Cat", zh: "貓" },
@@ -227,6 +227,14 @@ const translations = [
   { key: "profile.success.title", en: "Profile updated successfully!", zh: "個人資料已更新！" },
   { key: "profile.success.desc", en: "Your changes have been saved.", zh: "您的變更已儲存。" },
   { key: "profile.error.title", en: "Update failed", zh: "更新失敗" },
+  { key: "profile.name", en: "Name", zh: "姓名" },
+  { key: "profile.name_placeholder", en: "Enter your name", zh: "輸入您的姓名" },
+  
+  // Profile Pet CTA Section
+  { key: "profile.pets_cta.title", en: "Your Pets", zh: "毛孩資料" },
+  { key: "profile.pets_cta.desc", en: "Save your pet profiles for faster emergency help", zh: "預先登記毛孩資料，緊急時節省時間" },
+  { key: "profile.pets_cta.benefit", en: "With saved pet profiles, emergency requests only take 10 seconds!", zh: "預先登記後，緊急求助僅需10秒！" },
+  { key: "profile.pets_cta.button", en: "Add or Manage Pets", zh: "新增或管理毛孩" },
   
   // Pets
   { key: "pets.title", en: "My Pets", zh: "我的寵物" },
