@@ -450,13 +450,38 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <div className="mt-6">
-          <Link href="/pets">
-            <Button variant="outline" className="w-full" data-testid="button-manage-pets">
-              {t("profile.manage_pets", "Manage My Pets")}
-            </Button>
-          </Link>
-        </div>
+        {/* Pet Management - Prominent Call-to-Action */}
+        <Card className="mt-6 border-2 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-300">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17 10C19.2091 10 21 8.20914 21 6C21 3.79086 19.2091 2 17 2C14.7909 2 13 3.79086 13 6C13 8.20914 14.7909 10 17 10Z" fill="currentColor" opacity="0.6"/>
+                <path d="M7 10C9.20914 10 11 8.20914 11 6C11 3.79086 9.20914 2 7 2C4.79086 2 3 3.79086 3 6C3 8.20914 4.79086 10 7 10Z" fill="currentColor" opacity="0.6"/>
+                <path d="M17 22C19.2091 22 21 20.2091 21 18C21 15.7909 19.2091 14 17 14C14.7909 14 13 15.7909 13 18C13 20.2091 14.7909 22 17 22Z" fill="currentColor" opacity="0.6"/>
+                <path d="M7 22C9.20914 22 11 20.2091 11 18C11 15.7909 9.20914 14 7 14C4.79086 14 3 15.7909 3 18C3 20.2091 4.79086 22 7 22Z" fill="currentColor" opacity="0.6"/>
+                <path d="M12 13C14.2091 13 16 11.2091 16 9C16 6.79086 14.2091 5 12 5C9.79086 5 8 6.79086 8 9C8 11.2091 9.79086 13 12 13Z" fill="currentColor"/>
+                <path d="M12 22C14.7614 22 17 19.7614 17 17C17 14.2386 14.7614 12 12 12C9.23858 12 7 14.2386 7 17C7 19.7614 9.23858 22 12 22Z" fill="currentColor"/>
+              </svg>
+              {t("profile.pets_cta.title", "Your Pets")}
+            </CardTitle>
+            <CardDescription className="text-green-700 dark:text-green-400">
+              {t("profile.pets_cta.desc", "Save your pet profiles for faster emergency help")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-green-800 dark:text-green-300">
+              {t("profile.pets_cta.benefit", "With saved pet profiles, emergency requests only take 10 seconds!")}
+            </p>
+            <Link href="/pets">
+              <Button className="w-full bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-600" size="lg" data-testid="button-manage-pets">
+                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                {t("profile.pets_cta.button", "Add or Manage Pets")}
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

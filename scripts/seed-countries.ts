@@ -43,7 +43,7 @@ async function seedPetBreeds() {
     { species: 'dog', breedEn: 'Dachshund', breedZh: '臘腸犬', countryCode: null, isCommon: true },
     { species: 'dog', breedEn: 'Maltese', breedZh: '馬爾濟斯', countryCode: null, isCommon: true },
     { species: 'dog', breedEn: 'Pug', breedZh: '哈巴狗', countryCode: null, isCommon: true },
-    { species: 'dog', breedEn: 'Mixed Breed', breedZh: '混種犬', countryCode: null, isCommon: true },
+    { species: 'dog', breedEn: 'Mixed Breed', breedZh: '唐狗', countryCode: null, isCommon: true },
     
     // Common cat breeds
     { species: 'cat', breedEn: 'Persian', breedZh: '波斯貓', countryCode: null, isCommon: true },
