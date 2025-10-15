@@ -148,7 +148,6 @@ export const clinics = pgTable("clinics", {
   phone: text("phone").notNull(),
   whatsapp: text("whatsapp"),
   email: text("email"),
-  website: text("website"),
   regionId: varchar("region_id").notNull().references(() => regions.id),
   is24Hour: boolean("is_24_hour").notNull().default(false),
   isAvailable: boolean("is_available").notNull().default(true), // Real-time availability toggle
@@ -158,9 +157,6 @@ export const clinics = pgTable("clinics", {
   location: geography("location"), // PostGIS geography point for efficient spatial queries
   status: text("status").notNull().default('active'), // active, inactive, deleted
   services: text("services").array(),
-  photos: text("photos").array(), // Max 5 photos for hospital directory
-  team: text("team"), // JSONB stored as text - array of {name, title, bio: {en, zhHant}, photo}
-  lastUpdatedAt: timestamp("last_updated_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
@@ -176,50 +172,6 @@ export const insertClinicSchema = createInsertSchema(clinics).omit({
 
 export type InsertClinic = z.infer<typeof insertClinicSchema>;
 export type Clinic = typeof clinics.$inferSelect;
-
-// Clinic Reviews table (auth-gated, member-only)
-export const clinicReviews = pgTable("clinic_reviews", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  clinicId: varchar("clinic_id").notNull().references(() => clinics.id, { onDelete: 'cascade' }),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  rating: integer("rating").notNull(), // 1-5
-  comment: text("comment").notNull(),
-  lang: text("lang").notNull().default('en'), // en or zh-Hant
-  verified: boolean("verified").notNull().default(false), // Auto-verified if user has completed emergency case
-  hidden: boolean("hidden").notNull().default(false), // Admin moderation
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (table) => [
-  index("idx_clinic_reviews_clinic_id").on(table.clinicId),
-  index("idx_clinic_reviews_user_id").on(table.userId),
-]);
-
-export const insertClinicReviewSchema = createInsertSchema(clinicReviews).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type InsertClinicReview = z.infer<typeof insertClinicReviewSchema>;
-export type ClinicReview = typeof clinicReviews.$inferSelect;
-
-// Clinic Reports table (for reporting incorrect info)
-export const clinicReports = pgTable("clinic_reports", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  clinicId: varchar("clinic_id").notNull().references(() => clinics.id, { onDelete: 'cascade' }),
-  name: text("name").notNull(),
-  email: text("email"),
-  message: text("message").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (table) => [
-  index("idx_clinic_reports_clinic_id").on(table.clinicId),
-]);
-
-export const insertClinicReportSchema = createInsertSchema(clinicReports).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type InsertClinicReport = z.infer<typeof insertClinicReportSchema>;
-export type ClinicReport = typeof clinicReports.$inferSelect;
 
 // Emergency Requests table
 export const emergencyRequests = pgTable("emergency_requests", {

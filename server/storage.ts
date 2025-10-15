@@ -5,15 +5,13 @@ import {
   type Region, type InsertRegion,
   type PetBreed, type InsertPetBreed,
   type Clinic, type InsertClinic,
-  type ClinicReview, type InsertClinicReview,
-  type ClinicReport, type InsertClinicReport,
   type EmergencyRequest, type InsertEmergencyRequest,
   type Message, type InsertMessage,
   type FeatureFlag, type InsertFeatureFlag,
   type AuditLog, type InsertAuditLog,
   type PrivacyConsent, type InsertPrivacyConsent,
   type Translation, type InsertTranslation,
-  users, pets, countries, regions, petBreeds, clinics, clinicReviews, clinicReports, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations
+  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -74,19 +72,6 @@ export interface IStorage {
   createClinic(clinic: InsertClinic): Promise<Clinic>;
   updateClinic(id: string, clinic: Partial<InsertClinic>): Promise<Clinic | undefined>;
   deleteClinic(id: string): Promise<boolean>;
-
-  // Clinic Reviews
-  getClinicReview(id: string): Promise<ClinicReview | undefined>;
-  getClinicReviews(clinicId: string): Promise<ClinicReview[]>;
-  getUserClinicReview(clinicId: string, userId: string): Promise<ClinicReview | undefined>;
-  createClinicReview(review: InsertClinicReview): Promise<ClinicReview>;
-  updateClinicReview(id: string, review: Partial<InsertClinicReview>): Promise<ClinicReview | undefined>;
-  hideClinicReview(id: string, hidden: boolean): Promise<ClinicReview | undefined>;
-  verifyClinicReview(id: string, verified: boolean): Promise<ClinicReview | undefined>;
-
-  // Clinic Reports
-  getClinicReports(clinicId: string): Promise<ClinicReport[]>;
-  createClinicReport(report: InsertClinicReport): Promise<ClinicReport>;
 
   // Emergency Requests
   getEmergencyRequest(id: string): Promise<any>; // Returns emergency request with pet data joined
