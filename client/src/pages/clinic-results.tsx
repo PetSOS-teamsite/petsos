@@ -395,7 +395,7 @@ export default function ClinicResultsPage() {
       toast({
         title: t('clinic_results.broadcast_success', 'Broadcast sent successfully!'),
         description: language === 'zh-HK' 
-          ? `✅ 已發送至 ${data.count} 間診所。點擊「查看廣播狀態」追蹤發送情況。`
+          ? `✅ 毛孩緊急通知已發送至 ${data.count} 間診所。點擊「查看廣播狀態」追蹤發送情況。`
           : `✅ Sent to ${data.count} ${data.count === 1 ? 'clinic' : 'clinics'}. Click "View Broadcast Status" to track delivery.`,
         duration: 8000, // Show longer for important message
       });
@@ -496,7 +496,9 @@ export default function ClinicResultsPage() {
       
       toast({
         title: t('clinic_results.broadcast_success', 'Emergency Alert Sent!'),
-        description: `✅ Broadcast sent to ${data.count} 24-hour support ${data.count === 1 ? 'hospital' : 'hospitals'}. Click "View Broadcast Status" to track delivery.`,
+        description: language === 'zh-HK'
+          ? `✅ 毛孩緊急通知已發送至 ${data.count} 間24小時診所。點擊「查看廣播狀態」追蹤發送情況。`
+          : `✅ Broadcast sent to ${data.count} 24-hour support ${data.count === 1 ? 'hospital' : 'hospitals'}. Click "View Broadcast Status" to track delivery.`,
         duration: 8000,
       });
       
