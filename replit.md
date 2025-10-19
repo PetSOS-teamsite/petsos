@@ -59,9 +59,16 @@ Preferred communication style: Simple, everyday language.
 - **Coverage**: Comprehensive bilingual support including legal content, pet breeds, and all critical user flows.
 - **Hong Kong Localization (October 2025)**: 
   - Pet breeds updated to use colloquial HK terminology (混種犬 → 唐狗 for "Mixed Breed")
-  - Emergency flow messaging uses friendly 毛孩 (furry kids) instead of repetitive 寵物 (pets)
-  - Professional tone adjustments (寵物緊急護理 → 寵物緊急情況 for more natural phrasing)
+  - Emergency flow messaging uses friendly 毛孩 (furry kids) instead of repetitive 寵物 (pets) across 15+ UI elements
+  - Key translation updates:
+    - Emergency alerts: "毛孩緊急情況" (pet emergency situation)
+    - Pet selection: "這是哪一隻毛孩？" (Which furry kid is this?)
+    - Profile sections: "我的毛孩" (My furry kids)
+    - Broadcast messages: "毛孩緊急通知已發送" (Furry kid emergency alert sent)
+    - Symptom placeholder: "例如：狗狗呼吸困難" (natural phrasing)
+  - Professional tone adjustments for more natural Hong Kong Chinese
   - Broadcast success messages use language-aware template strings for proper clinic count interpolation in both EN and zh-HK
+  - Migration script: `scripts/migrate-hk-localization.sql` for production database updates
 
 ### Analytics & Tracking
 - **Implementation**: Google Analytics 4 (GA4) with GDPR-compliant cookie consent
