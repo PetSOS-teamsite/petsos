@@ -16,6 +16,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,9 +35,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
-import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft, Download, Shield, Trash2, AlertTriangle } from "lucide-react";
+import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft, Download, Shield, Trash2, AlertTriangle, Edit, PawPrint } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import type { User as UserType, Region } from "@shared/schema";
+import type { User as UserType, Region, Pet } from "@shared/schema";
 
 const createProfileSchema = (t: (key: string, fallback: string) => string) => z.object({
   name: z.string().min(1, t("profile.validation.name", "Name is required")).optional().or(z.literal('')),
@@ -62,6 +68,11 @@ export default function ProfilePage() {
 
   const { data: regions = [] } = useQuery<Region[]>({
     queryKey: ['/api/regions'],
+  });
+
+  const { data: pets = [], isLoading: petsLoading } = useQuery<Pet[]>({
+    queryKey: ['/api/pets'],
+    enabled: !!authUser?.id,
   });
 
   const form = useForm<ProfileFormData>({
@@ -202,7 +213,7 @@ export default function ProfilePage() {
 
   if (authLoading || userLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-gray-600 dark:text-gray-400">{t("loading.profile", "Loading profile...")}</div>
       </div>
     );
@@ -214,7 +225,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-white dark:bg-gray-900 py-8">
       <div className="max-w-2xl mx-auto px-4">
         <div className="mb-6">
           <Link href="/">
@@ -225,7 +236,91 @@ export default function ProfilePage() {
           </Link>
         </div>
 
-        <Card>
+        {/* Pet Management Section - TOP PRIORITY */}
+        <Card className="border-2 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-300">
+              <PawPrint className="w-6 h-6" />
+              {t("profile.pets_cta.title", "Your Pets")} {pets.length > 0 && `(${pets.length})`}
+            </CardTitle>
+            <CardDescription className="text-green-700 dark:text-green-400">
+              {t("profile.pets_cta.desc", "Save your pet profiles for faster emergency help")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {petsLoading ? (
+              <div className="text-sm text-green-700 dark:text-green-400">
+                {t("loading.pets", "Loading pets...")}
+              </div>
+            ) : pets.length > 0 ? (
+              <>
+                <div className="space-y-3">
+                  {pets.map((pet) => (
+                    <div
+                      key={pet.id}
+                      className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-800"
+                      data-testid={`pet-card-${pet.id}`}
+                    >
+                      <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center text-2xl">
+                        {pet.species === 'dog' ? '🐕' : pet.species === 'cat' ? '🐈' : pet.species === 'bird' ? '🦜' : pet.species === 'rabbit' ? '🐰' : pet.species === 'hamster' ? '🐹' : '🐾'}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100" data-testid={`pet-name-${pet.id}`}>
+                          {pet.name}
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400" data-testid={`pet-info-${pet.id}`}>
+                          {pet.breed} {pet.age && `• ${pet.age} ${t("pets.years", "years")}`}
+                        </p>
+                      </div>
+                      <Link href="/pets">
+                        <Button variant="ghost" size="sm" data-testid={`button-edit-pet-${pet.id}`}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+                <Link href="/pets">
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-600"
+                    size="lg"
+                    data-testid="button-add-pet"
+                  >
+                    <PawPrint className="w-5 h-5 mr-2" />
+                    {t("profile.pets_cta.add_another", "Add Another Pet")}
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                    <PawPrint className="w-8 h-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h4 className="font-semibold text-green-800 dark:text-green-300 mb-2">
+                    {t("profile.pets_empty.title", "No pets yet")}
+                  </h4>
+                  <p className="text-sm text-green-700 dark:text-green-400 mb-4">
+                    {t("profile.pets_empty.desc", "Add your first furry kid for faster emergency help. It only takes 30 seconds!")}
+                  </p>
+                </div>
+                <Link href="/pets">
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-600"
+                    size="lg"
+                    data-testid="button-add-first-pet"
+                  >
+                    <PawPrint className="w-5 h-5 mr-2" />
+                    {t("profile.pets_cta.button", "Add or Manage Pets")}
+                  </Button>
+                </Link>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Personal Information - Simplified */}
+        <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="w-6 h-6" />
@@ -238,122 +333,137 @@ export default function ProfilePage() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("profile.name", "Name")}</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <User className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                          <Input
-                            {...field}
-                            className="pl-10"
-                            placeholder={t("profile.name_placeholder", "Enter your name")}
-                            data-testid="input-name"
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("profile.email", "Email")}</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                          <Input
-                            {...field}
-                            type="email"
-                            className="pl-10"
-                            placeholder={t("profile.email_placeholder", "you@example.com")}
-                            data-testid="input-email"
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("profile.phone", "Phone Number")}</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                          <Input
-                            {...field}
-                            type="tel"
-                            className="pl-10"
-                            placeholder={t("profile.phone_placeholder", "+852 1234 5678")}
-                            data-testid="input-phone"
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="languagePreference"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("profile.language", "Language Preference")}</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("profile.name", "Name")}</FormLabel>
                         <FormControl>
-                          <SelectTrigger data-testid="select-language">
-                            <Globe className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
-                            <SelectValue placeholder={t("profile.language_placeholder", "Select language")} />
-                          </SelectTrigger>
+                          <div className="relative">
+                            <User className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                            <Input
+                              {...field}
+                              className="pl-10"
+                              placeholder={t("profile.name_placeholder", "Enter your name")}
+                              data-testid="input-name"
+                            />
+                          </div>
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="en" data-testid="option-en">English</SelectItem>
-                          <SelectItem value="zh-HK" data-testid="option-zh">繁體中文</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="regionPreference"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("profile.region", "Region Preference")}</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("profile.email", "Email")}</FormLabel>
                         <FormControl>
-                          <SelectTrigger data-testid="select-region">
-                            <MapPin className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
-                            <SelectValue placeholder={t("profile.region_placeholder", "Select region")} />
-                          </SelectTrigger>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                            <Input
+                              {...field}
+                              type="email"
+                              className="pl-10"
+                              placeholder={t("profile.email_placeholder", "you@example.com")}
+                              data-testid="input-email"
+                            />
+                          </div>
                         </FormControl>
-                        <SelectContent>
-                          {regions.map((region) => (
-                            <SelectItem key={region.id} value={region.id} data-testid={`option-region-${region.code}`}>
-                              {language === "en" ? region.nameEn : region.nameZh}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("profile.phone", "Phone Number")}</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                            <Input
+                              {...field}
+                              type="tel"
+                              className="pl-10"
+                              placeholder={t("profile.phone_placeholder", "+852 1234 5678")}
+                              data-testid="input-phone"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Collapsible Settings */}
+                <Accordion type="single" collapsible className="border rounded-lg">
+                  <AccordionItem value="settings" className="border-0">
+                    <AccordionTrigger className="px-4 hover:no-underline" data-testid="accordion-settings">
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4" />
+                        <span>{t("profile.settings", "Language & Region Settings")}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4 space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="languagePreference"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("profile.language", "Language Preference")}</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-language">
+                                  <Globe className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
+                                  <SelectValue placeholder={t("profile.language_placeholder", "Select language")} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="en" data-testid="option-en">English</SelectItem>
+                                <SelectItem value="zh-HK" data-testid="option-zh">繁體中文</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="regionPreference"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("profile.region", "Region Preference")}</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-region">
+                                  <MapPin className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
+                                  <SelectValue placeholder={t("profile.region_placeholder", "Select region")} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {regions.map((region) => (
+                                  <SelectItem key={region.id} value={region.id} data-testid={`option-region-${region.code}`}>
+                                    {language === "en" ? region.nameEn : region.nameZh}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
 
                 <Button
                   type="submit"
@@ -369,117 +479,94 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card className="mt-6">
+        {/* Privacy & Data Rights - Moved to Bottom */}
+        <Card className="mt-6 border-gray-200 dark:border-gray-800">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-red-600 dark:text-red-500" />
+            <CardTitle className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <Shield className="w-5 h-5" />
               {t("profile.privacy.title", "Privacy & Data Rights")}
             </CardTitle>
             <CardDescription>
               {t("profile.privacy.desc", "Manage your personal data and privacy settings")}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h4 className="font-medium mb-2 text-sm text-gray-700 dark:text-gray-300">
-                {t("profile.privacy.export_title", "Export Your Data")}
-              </h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                {t("profile.privacy.export_desc", "Download a copy of all your personal data in JSON format (GDPR/PDPO compliant)")}
-              </p>
-              <Button
-                onClick={handleExportData}
-                variant="outline"
-                className="w-full"
-                data-testid="button-export-data"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {t("profile.privacy.export_button", "Download My Data")}
-              </Button>
-            </div>
-
-            <div className="border-t pt-6">
-              <h4 className="font-medium mb-2 text-sm text-gray-700 dark:text-gray-300">
-                {t("profile.privacy.delete_title", "Delete Your Account")}
-              </h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                {t("profile.privacy.delete_desc", "Permanently delete your account and all associated data. This action cannot be undone.")}
-              </p>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    data-testid="button-delete-account"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    {t("profile.privacy.delete_button", "Delete My Account")}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
-                      {t("profile.delete.dialog_title", "Are you absolutely sure?")}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t("profile.delete.dialog_desc", "This action cannot be undone. This will permanently delete your account and remove all your data from our servers, including:")}
-                      <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                        <li>{t("profile.delete.dialog_item1", "Your profile and contact information")}</li>
-                        <li>{t("profile.delete.dialog_item2", "All saved pets and their medical history")}</li>
-                        <li>{t("profile.delete.dialog_item3", "All emergency request records")}</li>
-                        <li>{t("profile.delete.dialog_item4", "All privacy consents and preferences")}</li>
-                      </ul>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel data-testid="button-cancel-delete">
-                      {t("profile.delete.dialog_cancel", "Cancel")}
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteAccount}
-                      className="bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
-                      data-testid="button-confirm-delete"
+          <CardContent>
+            <Accordion type="single" collapsible>
+              <AccordionItem value="privacy">
+                <AccordionTrigger data-testid="accordion-privacy">
+                  {t("profile.privacy.expand", "View privacy options")}
+                </AccordionTrigger>
+                <AccordionContent className="space-y-6 pt-2">
+                  <div>
+                    <h4 className="font-medium mb-2 text-sm text-gray-700 dark:text-gray-300">
+                      {t("profile.privacy.export_title", "Export Your Data")}
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      {t("profile.privacy.export_desc", "Download a copy of all your personal data in JSON format (GDPR/PDPO compliant)")}
+                    </p>
+                    <Button
+                      onClick={handleExportData}
+                      variant="outline"
+                      className="w-full"
+                      data-testid="button-export-data"
                     >
-                      {t("profile.delete.dialog_confirm", "Yes, delete my account")}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </CardContent>
-        </Card>
+                      <Download className="w-4 h-4 mr-2" />
+                      {t("profile.privacy.export_button", "Download My Data")}
+                    </Button>
+                  </div>
 
-        {/* Pet Management - Prominent Call-to-Action */}
-        <Card className="mt-6 border-2 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-300">
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17 10C19.2091 10 21 8.20914 21 6C21 3.79086 19.2091 2 17 2C14.7909 2 13 3.79086 13 6C13 8.20914 14.7909 10 17 10Z" fill="currentColor" opacity="0.6"/>
-                <path d="M7 10C9.20914 10 11 8.20914 11 6C11 3.79086 9.20914 2 7 2C4.79086 2 3 3.79086 3 6C3 8.20914 4.79086 10 7 10Z" fill="currentColor" opacity="0.6"/>
-                <path d="M17 22C19.2091 22 21 20.2091 21 18C21 15.7909 19.2091 14 17 14C14.7909 14 13 15.7909 13 18C13 20.2091 14.7909 22 17 22Z" fill="currentColor" opacity="0.6"/>
-                <path d="M7 22C9.20914 22 11 20.2091 11 18C11 15.7909 9.20914 14 7 14C4.79086 14 3 15.7909 3 18C3 20.2091 4.79086 22 7 22Z" fill="currentColor" opacity="0.6"/>
-                <path d="M12 13C14.2091 13 16 11.2091 16 9C16 6.79086 14.2091 5 12 5C9.79086 5 8 6.79086 8 9C8 11.2091 9.79086 13 12 13Z" fill="currentColor"/>
-                <path d="M12 22C14.7614 22 17 19.7614 17 17C17 14.2386 14.7614 12 12 12C9.23858 12 7 14.2386 7 17C7 19.7614 9.23858 22 12 22Z" fill="currentColor"/>
-              </svg>
-              {t("profile.pets_cta.title", "Your Pets")}
-            </CardTitle>
-            <CardDescription className="text-green-700 dark:text-green-400">
-              {t("profile.pets_cta.desc", "Save your pet profiles for faster emergency help")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-green-800 dark:text-green-300">
-              {t("profile.pets_cta.benefit", "With saved pet profiles, emergency requests only take 10 seconds!")}
-            </p>
-            <Link href="/pets">
-              <Button className="w-full bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-600" size="lg" data-testid="button-manage-pets">
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-                {t("profile.pets_cta.button", "Add or Manage Pets")}
-              </Button>
-            </Link>
+                  <div className="border-t pt-6">
+                    <h4 className="font-medium mb-2 text-sm text-gray-700 dark:text-gray-300">
+                      {t("profile.privacy.delete_title", "Delete Your Account")}
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      {t("profile.privacy.delete_desc", "Permanently delete your account and all associated data. This action cannot be undone.")}
+                    </p>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          data-testid="button-delete-account"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          {t("profile.privacy.delete_button", "Delete My Account")}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
+                            {t("profile.delete.dialog_title", "Are you absolutely sure?")}
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {t("profile.delete.dialog_desc", "This action cannot be undone. This will permanently delete your account and remove all your data from our servers, including:")}
+                            <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                              <li>{t("profile.delete.dialog_item1", "Your profile and contact information")}</li>
+                              <li>{t("profile.delete.dialog_item2", "All saved pets and their medical history")}</li>
+                              <li>{t("profile.delete.dialog_item3", "All emergency request records")}</li>
+                              <li>{t("profile.delete.dialog_item4", "All privacy consents and preferences")}</li>
+                            </ul>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel data-testid="button-cancel-delete">
+                            {t("profile.delete.dialog_cancel", "Cancel")}
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDeleteAccount}
+                            className="bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                            data-testid="button-confirm-delete"
+                          >
+                            {t("profile.delete.dialog_confirm", "Yes, delete my account")}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </CardContent>
         </Card>
       </div>
