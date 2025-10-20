@@ -42,9 +42,8 @@ import type { User as UserType, Region, Pet } from "@shared/schema";
 const createProfileSchema = (t: (key: string, fallback: string) => string) => z.object({
   name: z.string().min(1, t("profile.validation.name", "Name is required")).optional().or(z.literal('')),
   email: z.string().email(t("profile.validation.email", "Please enter a valid email")),
-  phone: z.string().optional().refine((val) => !val || val.length >= 8, {
-    message: t("profile.validation.phone", "Please enter a valid phone number")
-  }),
+  phone: z.string().min(1, t("profile.validation.phone_required", "Phone number is required"))
+    .min(8, t("profile.validation.phone_length", "Please enter a valid phone number (at least 8 digits)")),
   languagePreference: z.enum(['en', 'zh-HK']),
   regionPreference: z.string().optional(),
 });
@@ -384,7 +383,10 @@ export default function ProfilePage() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("profile.phone", "Phone Number")}</FormLabel>
+                        <FormLabel>
+                          {t("profile.phone", "Phone Number")}
+                          <span className="text-red-600 dark:text-red-500 ml-1">*</span>
+                        </FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
@@ -394,6 +396,7 @@ export default function ProfilePage() {
                               className="pl-10"
                               placeholder={t("profile.phone_placeholder", "+852 1234 5678")}
                               data-testid="input-phone"
+                              required
                             />
                           </div>
                         </FormControl>
