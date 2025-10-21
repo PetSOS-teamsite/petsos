@@ -5,6 +5,7 @@ import { z } from "zod";
 import { messagingService } from "./services/messaging";
 import { setupAuth, isAuthenticated, isAdmin, sanitizeUser } from "./auth";
 import { setupTestUtils } from "./testUtils";
+import rateLimit from "express-rate-limit";
 import { 
   generalLimiter, 
   authLimiter, 
@@ -1154,11 +1155,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== DEEPSEEK AI VOICE ANALYSIS ROUTE =====
   
   // Analyze voice transcript with DeepSeek AI
-  app.post("/api/voice/analyze", async (req, res) => {
+  // Custom rate limiter for AI analysis with fallback notification
+  const aiAnalysisLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 20, // Stricter limit for AI analysis
+    message: JSON.stringify({ 
+      message: "Too many AI analysis requests. Please try again later.", 
+      fallbackAvailable: true 
+    }),
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req: any, res: any) => {
+      res.status(429).json({
+        message: "Too many AI analysis requests. Please try again later.",
+        fallbackAvailable: true
+      });
+    }
+  });
+
+  app.post("/api/voice/analyze", aiAnalysisLimiter, async (req, res) => {
     try {
+      // Validate input with size limits (max 10,000 characters)
       const { transcript, language } = z.object({
-        transcript: z.string().min(1, "Transcript cannot be empty"),
-        language: z.string().optional().default('en'),
+        transcript: z.string().min(1, "Transcript cannot be empty").max(10000, "Transcript too long"),
+        language: z.enum(['en', 'zh', 'zh-HK', 'zh-CN']).optional().default('en'),
       }).parse(req.body);
 
       // Check if DeepSeek is available
@@ -1169,8 +1189,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Analyze transcript using DeepSeek
-      const analysis = await deepseekService.analyzeVoiceTranscript(transcript, language);
+      // Set timeout for AI analysis (10 seconds)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Analysis timeout')), 10000)
+      );
+
+      // Race between analysis and timeout
+      const analysis = await Promise.race([
+        deepseekService.analyzeVoiceTranscript(transcript, language),
+        timeoutPromise
+      ]) as any;
       
       res.json({
         success: true,
@@ -1180,8 +1208,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors,
+          fallbackAvailable: true
+        });
       }
+      
+      // Handle timeout specifically
+      if (error instanceof Error && error.message === 'Analysis timeout') {
+        console.error("DeepSeek analysis timeout");
+        return res.status(504).json({ 
+          message: "AI analysis timeout. Please try again.", 
+          error: "Timeout",
+          fallbackAvailable: true
+        });
+      }
+      
       console.error("DeepSeek analysis error:", error);
       res.status(500).json({ 
         message: "AI analysis failed", 
