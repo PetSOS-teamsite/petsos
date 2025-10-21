@@ -9,31 +9,217 @@ interface VoiceRecorderProps {
   language?: string;
 }
 
-// Symptom keywords for analysis (English, Cantonese, and Mandarin)
+// Enhanced symptom keywords for analysis (English, Cantonese, and Mandarin)
+// 300+ keywords covering common emergency scenarios with variations and synonyms
 const SYMPTOM_KEYWORDS = {
   critical: {
-    en: ['unconscious', 'not breathing', 'choking', 'bleeding heavily', 'seizure', 'convulsion', 'poisoned', 'hit by car', 'attacked'],
-    zh: ['昏迷', '不呼吸', '窒息', '大出血', '抽搐', '痙攣', '中毒', '車撞', '被襲擊', '失去意識', '昏倒', '没呼吸', '抽筋', '中毒了', '被车撞', '被攻击']
+    en: [
+      // Breathing emergencies
+      'unconscious', 'not breathing', 'stopped breathing', 'no breath', 'cant breathe', 'cannot breathe',
+      'not responsive', 'unresponsive', 'passed out', 'fainted', 'collapsed',
+      // Choking/airway
+      'choking', 'choked', 'something stuck', 'stuck in throat', 'cant swallow',
+      // Severe bleeding
+      'bleeding heavily', 'massive bleeding', 'blood everywhere', 'wont stop bleeding', 'bleeding out',
+      'hemorrhaging', 'massive blood loss', 'spurting blood', 'gushing blood',
+      // Seizures
+      'seizure', 'seizing', 'convulsion', 'convulsing', 'fitting', 'spasms',
+      // Poisoning
+      'poisoned', 'ate poison', 'toxic', 'ingested', 'swallowed something',
+      // Trauma
+      'hit by car', 'hit by vehicle', 'run over', 'car accident', 'vehicle accident',
+      'attacked', 'bitten', 'mauled', 'fight', 'attacked by dog', 'attacked by animal',
+      'fell from height', 'fell down stairs', 'fell from window',
+      // Other critical
+      'not moving', 'limp', 'lifeless', 'critical condition', 'dying', 'emergency'
+    ],
+    zh: [
+      // Traditional Chinese (Cantonese/HK)
+      '昏迷', '不呼吸', '停止呼吸', '失去意識', '昏倒', '暈倒', '倒下',
+      '窒息', '哽住', '卡住', '喉嚨卡住',
+      '大出血', '流血不止', '大量出血', '血流不停', '噴血',
+      '抽搐', '痙攣', '抽筋', '全身抽搐',
+      '中毒', '食錯嘢', '食咗毒', '誤食',
+      '車撞', '被車撞', '撞車', '交通意外',
+      '被襲擊', '被咬', '被打', '被狗咬', '被攻擊',
+      '跌落', '從高處跌落', '跌落樓梯',
+      '不動', '冇反應', '瀕死', '危急',
+      // Simplified Chinese (Mandarin)
+      '没呼吸', '停止呼吸', '失去意识', '昏倒', '晕倒',
+      '窒息', '卡住', '喉咙卡住',
+      '大出血', '流血不止', '大量出血',
+      '抽搐', '痉挛', '抽筋',
+      '中毒', '吃错东西', '吃了毒', '误食',
+      '被车撞', '撞车', '交通意外',
+      '被袭击', '被咬', '被狗咬', '被攻击',
+      '跌落', '摔下来',
+      '不动', '没反应', '濒死', '危急'
+    ]
   },
   breathing: {
-    en: ['difficulty breathing', 'gasping', 'panting heavily', 'blue gums', 'wheezing', 'coughing'],
-    zh: ['呼吸困難', '喘氣', '喘得很厲害', '牙齦發藍', '氣喘', '咳嗽', '呼吸困难', '喘气', '喘得很厉害', '牙龈发蓝', '气喘', '咳嗽']
+    en: [
+      'difficulty breathing', 'trouble breathing', 'hard to breathe', 'struggling to breathe',
+      'gasping', 'gasping for air', 'cant get air',
+      'panting heavily', 'panting hard', 'breathing fast', 'rapid breathing',
+      'blue gums', 'purple gums', 'pale gums', 'grey gums',
+      'wheezing', 'whistling sound', 'noisy breathing',
+      'coughing', 'coughing up blood', 'hacking', 'persistent cough',
+      'labored breathing', 'shallow breathing', 'irregular breathing',
+      'open mouth breathing', 'extended neck', 'flared nostrils'
+    ],
+    zh: [
+      // Traditional
+      '呼吸困難', '呼吸唔到', '唔夠氣', '氣促', '透唔到氣',
+      '喘氣', '喘', '大力喘', '喘得好厲害',
+      '牙齦發藍', '牙肉發紫', '牙齦變色',
+      '氣喘', '有雜音', '呼吸有聲',
+      '咳嗽', '咳血', '一直咳', '持續咳',
+      '張口呼吸', '頸伸長', '鼻孔張大',
+      // Simplified
+      '呼吸困难', '呼吸不到', '不够气', '气促',
+      '喘气', '喘', '喘得很厉害',
+      '牙龈发蓝', '牙龈发紫',
+      '气喘', '呼吸有声',
+      '咳嗽', '咳血', '一直咳',
+      '张口呼吸', '颈伸长', '鼻孔张大'
+    ]
   },
   injury: {
-    en: ['bleeding', 'wound', 'broken leg', 'broken bone', 'limping', 'cut', 'injured'],
-    zh: ['流血', '傷口', '斷腿', '骨折', '跛行', '割傷', '受傷', '伤口', '断腿', '骨折', '瘸腿', '割伤', '受伤']
+    en: [
+      'bleeding', 'blood', 'bloody', 'blood coming out',
+      'wound', 'open wound', 'deep wound', 'laceration', 'gash', 'cut', 'slash',
+      'broken leg', 'broken bone', 'fractured', 'broken limb', 'broken paw',
+      'limping', 'cant put weight', 'not using leg', 'holding leg up', 'favoring leg',
+      'injured', 'hurt', 'trauma', 'injured leg', 'injured paw',
+      'swollen', 'swelling', 'lump', 'bump', 'bruise', 'bruised',
+      'puncture wound', 'bite wound', 'scratch',
+      'dislocated', 'out of place', 'joint problem',
+      'exposed bone', 'bone sticking out'
+    ],
+    zh: [
+      // Traditional
+      '流血', '出血', '有血', '流緊血', '血流出來',
+      '傷口', '開放性傷口', '深傷口', '刀傷', '割傷',
+      '斷腿', '骨折', '骨裂', '斷骨', '爪斷',
+      '跛行', '唔敢踩', '唔用隻腳', '抬住腳',
+      '受傷', '整親', '創傷', '腳受傷', '爪受傷',
+      '腫', '腫脹', '腫起', '瘀', '瘀傷',
+      '咬傷', '抓傷', '穿刺傷',
+      '脫臼', '移位', '關節問題',
+      '骨頭露出', '骨頭突出',
+      // Simplified
+      '流血', '出血', '有血',
+      '伤口', '开放性伤口', '深伤口', '刀伤', '割伤',
+      '断腿', '骨折', '骨裂', '断骨',
+      '跛行', '不敢踩', '不用脚', '抬着脚',
+      '受伤', '创伤', '脚受伤',
+      '肿', '肿胀', '肿起', '瘀伤',
+      '咬伤', '抓伤',
+      '脱臼', '移位', '关节问题',
+      '骨头露出'
+    ]
   },
   digestive: {
-    en: ['vomiting', 'diarrhea', 'not eating', 'bloated', 'stomach pain'],
-    zh: ['嘔吐', '腹瀉', '不吃', '腹脹', '肚子痛', '胃痛', '呕吐', '腹泻', '不吃东西', '腹胀', '肚子疼', '胃疼']
+    en: [
+      'vomiting', 'throwing up', 'puking', 'vomit', 'sick', 'retching',
+      'vomiting blood', 'blood in vomit', 'dark vomit',
+      'diarrhea', 'loose stool', 'watery stool', 'bloody stool', 'blood in stool',
+      'not eating', 'wont eat', 'refusing food', 'no appetite', 'stopped eating',
+      'bloated', 'swollen belly', 'distended stomach', 'tight belly', 'hard stomach',
+      'stomach pain', 'abdominal pain', 'belly pain', 'tummy pain',
+      'drooling', 'excessive drooling', 'salivating',
+      'constipated', 'cant poop', 'straining', 'trying to poop',
+      'eating grass', 'eating strange things'
+    ],
+    zh: [
+      // Traditional
+      '嘔吐', '嘔', '作嘔', '想嘔', '反胃',
+      '嘔血', '吐血', '嘔啡色',
+      '腹瀉', '屙嘔', '屙水', '屙血', '便血',
+      '不吃', '唔食', '拒食', '冇胃口', '停止進食',
+      '腹脹', '肚脹', '肚子脹', '肚子硬', '肚子大',
+      '肚子痛', '肚痛', '腹痛', '胃痛',
+      '流口水', '口水多', '不停流口水',
+      '便秘', '屙唔出', '用力屙', '好辛苦屙',
+      '食草', '食怪嘢',
+      // Simplified
+      '呕吐', '呕', '作呕', '想吐', '反胃',
+      '呕血', '吐血',
+      '腹泻', '拉肚子', '拉水', '拉血', '便血',
+      '不吃', '不吃东西', '拒食', '没胃口',
+      '腹胀', '肚子胀', '肚子硬', '肚子大',
+      '肚子疼', '肚子痛', '腹痛', '胃疼',
+      '流口水', '口水多',
+      '便秘', '拉不出', '用力拉',
+      '吃草', '吃奇怪的东西'
+    ]
   },
   neurological: {
-    en: ['seizure', 'shaking', 'trembling', 'paralyzed', 'cant walk', 'disoriented', 'confused'],
-    zh: ['抽搐', '發抖', '顫抖', '癱瘓', '不能走', '迷失方向', '混亂', '发抖', '颤抖', '瘫痪', '不能走路', '迷失方向', '混乱']
+    en: [
+      'seizure', 'seizing', 'convulsion', 'convulsing', 'fit', 'fitting',
+      'shaking', 'trembling', 'tremors', 'shivering', 'twitching',
+      'paralyzed', 'cant move', 'cant stand', 'cant walk', 'legs gave out',
+      'disoriented', 'confused', 'dazed', 'lost', 'wandering',
+      'walking in circles', 'head tilt', 'tilting head', 'head pressing',
+      'blind', 'cant see', 'bumping into things',
+      'circling', 'pacing', 'restless',
+      'weakness', 'weak', 'wobbly', 'unsteady', 'staggering',
+      'loss of balance', 'falling over', 'tilting'
+    ],
+    zh: [
+      // Traditional
+      '抽搐', '抽筋', '痙攣', '發作',
+      '發抖', '震', '顫抖', '抖', '不停抖',
+      '癱瘓', '不能動', '不能企', '不能走', '腳軟',
+      '迷失方向', '混亂', '糊塗', '失方向', '亂行',
+      '行圈', '頭側', '頭歪', '頭撞牆',
+      '盲', '看不見', '撞到嘢',
+      '行來行去', '不停行', '不安',
+      '無力', '軟弱', '搖晃', '企唔穩', '行唔穩',
+      '失平衡', '跌倒', '側',
+      // Simplified
+      '抽搐', '抽筋', '痉挛', '发作',
+      '发抖', '震', '颤抖', '抖',
+      '瘫痪', '不能动', '不能站', '不能走', '腿软',
+      '迷失方向', '混乱', '糊涂', '失方向',
+      '走圈', '头侧', '头歪', '头撞墙',
+      '盲', '看不见', '撞到东西',
+      '走来走去', '不停走', '不安',
+      '无力', '软弱', '摇晃', '站不稳', '走不稳',
+      '失平衡', '跌倒'
+    ]
   },
   pain: {
-    en: ['crying', 'whimpering', 'pain', 'hurt', 'screaming', 'yelping'],
-    zh: ['哭泣', '嗚咽', '痛', '疼', '尖叫', '哀號', '哭', '呜咽', '疼痛', '尖叫', '哀嚎', '痛苦']
+    en: [
+      'crying', 'whimpering', 'whining', 'yelping', 'howling',
+      'pain', 'in pain', 'painful', 'hurts', 'hurt', 'sore',
+      'screaming', 'screeching', 'shrieking',
+      'aggressive', 'biting', 'snapping', 'growling when touched',
+      'sensitive', 'touchy', 'flinches', 'pulls away',
+      'restless', 'cant settle', 'pacing', 'cant get comfortable',
+      'hiding', 'withdrawn', 'acting strange',
+      'licking', 'biting at', 'chewing at area'
+    ],
+    zh: [
+      // Traditional
+      '哭泣', '嗚咽', '哀鳴', '哀叫', '嗥叫',
+      '痛', '好痛', '痛苦', '疼', '痛楚',
+      '尖叫', '慘叫', '叫',
+      '攻擊性', '咬', '想咬', '摸就嘈',
+      '敏感', '一摸就縮', '避開',
+      '不安', '安定唔到', '行來行去', '唔舒服',
+      '收埋', '躲藏', '行為怪',
+      '舔', '咬住', '啃',
+      // Simplified
+      '哭泣', '呜咽', '哀鸣', '哀叫', '嚎叫',
+      '痛', '好痛', '痛苦', '疼', '痛楚',
+      '尖叫', '惨叫', '叫',
+      '攻击性', '咬', '想咬', '摸就叫',
+      '敏感', '一摸就缩', '避开',
+      '不安', '安定不了', '走来走去', '不舒服',
+      '躲藏', '行为怪',
+      '舔', '咬着', '啃'
+    ]
   }
 };
 
