@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { analytics } from "@/lib/analytics";
+import { formatPhoneForDisplay } from "@/lib/phoneUtils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -109,6 +110,137 @@ function buildPetInfoString(emergencyRequest: any, t: any, targetClinicId?: stri
   }
   
   return petInfo;
+}
+
+// Helper function to build structured broadcast message with clear sections
+function buildStructuredBroadcastMessage(
+  emergencyRequest: any,
+  t: any,
+  allClinics: Clinic[]
+): string {
+  if (!emergencyRequest) return t('clinic_results.emergency_care_needed', 'Emergency pet care needed');
+  
+  const sections: string[] = [];
+  
+  // Header
+  sections.push(`🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨`);
+  sections.push('');
+  
+  // Section 1: Pet Information
+  sections.push('═══════════════════════════');
+  sections.push(`📋 ${t('clinic_results.pet_info_section', 'PET INFORMATION')}`);
+  sections.push('═══════════════════════════');
+  
+  if (emergencyRequest.pet) {
+    const pet = emergencyRequest.pet;
+    if (pet.name) {
+      sections.push(`${t('clinic_results.name', 'Name')}: ${pet.name}`);
+    }
+    
+    let petDetails = emergencyRequest.petSpecies || '';
+    if (emergencyRequest.petBreed) {
+      petDetails += `, ${emergencyRequest.petBreed}`;
+    }
+    if (emergencyRequest.petAge) {
+      petDetails += `, ${emergencyRequest.petAge} ${t('common.years', 'years')}`;
+    }
+    if (pet.weight) {
+      petDetails += `, ${pet.weight}${t('clinic_results.weight_kg', 'kg')}`;
+    }
+    if (petDetails) {
+      sections.push(`${t('clinic_results.details', 'Details')}: ${petDetails}`);
+    }
+    
+    if (pet.medicalNotes && pet.medicalNotes.trim()) {
+      sections.push(`⚠️ ${t('clinic_results.medical_history', 'Medical History')}: ${pet.medicalNotes}`);
+    }
+  } else {
+    // Manual entry without profile
+    let petDetails = emergencyRequest.petSpecies || '';
+    if (emergencyRequest.petBreed) {
+      petDetails += `, ${emergencyRequest.petBreed}`;
+    }
+    if (emergencyRequest.petAge) {
+      petDetails += `, ${emergencyRequest.petAge} ${t('common.years', 'years')}`;
+    }
+    sections.push(`${t('clinic_results.pet', 'Pet')}: ${petDetails}`);
+  }
+  
+  sections.push('');
+  
+  // Section 2: Emergency Details
+  sections.push('═══════════════════════════');
+  sections.push(`🚨 ${t('clinic_results.emergency_section', 'EMERGENCY DETAILS')}`);
+  sections.push('═══════════════════════════');
+  sections.push(`${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}`);
+  
+  // Add voice recording section if available
+  if (emergencyRequest.voiceTranscript) {
+    sections.push('');
+    sections.push(`🎤 ${t('clinic_results.voice_description', 'Voice Description')}:`);
+    sections.push(`"${emergencyRequest.voiceTranscript}"`);
+    if (emergencyRequest.aiAnalyzedSymptoms) {
+      sections.push(`${t('clinic_results.ai_analysis', 'AI Analysis')}: ${emergencyRequest.aiAnalyzedSymptoms}`);
+    }
+  }
+  
+  sections.push('');
+  
+  // Section 3: Contact Information
+  sections.push('═══════════════════════════');
+  sections.push(`📞 ${t('clinic_results.contact_section', 'CONTACT INFORMATION')}`);
+  sections.push('═══════════════════════════');
+  
+  const formattedPhone = formatPhoneForDisplay(emergencyRequest.contactPhone);
+  sections.push(`${t('clinic_results.phone', 'Phone')}: ${formattedPhone}`);
+  
+  if (emergencyRequest.contactEmail) {
+    sections.push(`${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}`);
+  }
+  
+  if (emergencyRequest.contactName) {
+    sections.push(`${t('clinic_results.name', 'Name')}: ${emergencyRequest.contactName}`);
+  }
+  
+  sections.push('');
+  
+  // Section 4: Location
+  sections.push('═══════════════════════════');
+  sections.push(`📍 ${t('clinic_results.location_section', 'LOCATION')}`);
+  sections.push('═══════════════════════════');
+  
+  if (emergencyRequest.locationLatitude && emergencyRequest.locationLongitude) {
+    const mapsLink = `https://www.google.com/maps?q=${emergencyRequest.locationLatitude},${emergencyRequest.locationLongitude}`;
+    if (emergencyRequest.locationText) {
+      sections.push(emergencyRequest.locationText);
+    }
+    sections.push(`GPS: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}`);
+    sections.push(`${t('clinic_results.map', 'Map')}: ${mapsLink}`);
+  } else if (emergencyRequest.locationText) {
+    sections.push(emergencyRequest.locationText);
+  } else {
+    sections.push(t('clinic_results.location_not_provided', 'Location not provided'));
+  }
+  
+  // Add information about pet's regular clinic if exists
+  if (emergencyRequest?.pet?.lastVisitClinicId) {
+    const regularClinic = allClinics.find(c => c.id === emergencyRequest.pet.lastVisitClinicId);
+    if (regularClinic) {
+      sections.push('');
+      sections.push(`📋 ${t('clinic_results.regular_clinic_note', 'NOTE: This pet is a registered patient at')} ${regularClinic.name}`);
+      if (emergencyRequest.pet.lastVisitDate) {
+        const visitDate = new Date(emergencyRequest.pet.lastVisitDate).toLocaleDateString();
+        sections.push(`${t('clinic_results.last_visit', 'Last visit')}: ${visitDate}`);
+      }
+      sections.push(t('clinic_results.medical_records_available', 'Medical records may be available there for reference.'));
+    }
+  }
+  
+  sections.push('');
+  sections.push('═══════════════════════════');
+  sections.push(t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.'));
+  
+  return sections.join('\n');
 }
 
 export default function ClinicResultsPage() {
@@ -340,39 +472,8 @@ export default function ClinicResultsPage() {
             .filter(c => c.whatsapp || c.email)
             .map(c => c.id);
       
-      let locationInfo = emergencyRequest?.locationText || t('clinic_results.location_not_provided', 'Location not provided');
-      if (emergencyRequest?.locationLatitude && emergencyRequest?.locationLongitude) {
-        const mapsLink = `https://www.google.com/maps?q=${emergencyRequest.locationLatitude},${emergencyRequest.locationLongitude}`;
-        locationInfo = emergencyRequest.locationText 
-          ? `${emergencyRequest.locationText}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`
-          : `${t('clinic_results.gps_prefix', 'GPS')}: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`;
-      }
-      
-      // Build pet info string with enhanced profile data (no specific clinic targeting for group broadcast)
-      const petInfo = buildPetInfoString(emergencyRequest, t);
-      
-      // Build voice recording section if available
-      const voiceSection = emergencyRequest?.voiceTranscript 
-        ? `\n\n🎤 ${t('clinic_results.voice_description', 'Voice Description')}:\n"${emergencyRequest.voiceTranscript}"\n\n${t('clinic_results.ai_analysis', 'AI Analysis')}: ${emergencyRequest.aiAnalyzedSymptoms || emergencyRequest.symptom}`
-        : '';
-      
-      // Add information about pet's regular clinic if exists
-      let regularClinicInfo = '';
-      if (emergencyRequest?.pet?.lastVisitClinicId) {
-        const regularClinic = allClinics.find(c => c.id === emergencyRequest.pet.lastVisitClinicId);
-        if (regularClinic) {
-          regularClinicInfo = `\n\n📋 ${t('clinic_results.regular_clinic_note', 'NOTE: This pet is a registered patient at')} ${regularClinic.name}`;
-          if (emergencyRequest.pet.lastVisitDate) {
-            const visitDate = new Date(emergencyRequest.pet.lastVisitDate).toLocaleDateString();
-            regularClinicInfo += ` (${t('clinic_results.last_visit', 'Last visit')}: ${visitDate})`;
-          }
-          regularClinicInfo += `\n${t('clinic_results.medical_records_available', 'Medical records may be available there for reference.')}`;
-        }
-      }
-      
-      const message = emergencyRequest
-        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${voiceSection}${petInfo}${regularClinicInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
-        : t('clinic_results.emergency_care_needed', 'Emergency pet care needed');
+      // Build structured message with clear sections and formatted phone
+      const message = buildStructuredBroadcastMessage(emergencyRequest, t, allClinics);
       
       const response = await apiRequest(
         'POST',
@@ -440,39 +541,8 @@ export default function ClinicResultsPage() {
         throw new Error('No 24-hour support hospitals available');
       }
       
-      let locationInfo = emergencyRequest?.locationText || t('clinic_results.location_not_provided', 'Location not provided');
-      if (emergencyRequest?.locationLatitude && emergencyRequest?.locationLongitude) {
-        const mapsLink = `https://www.google.com/maps?q=${emergencyRequest.locationLatitude},${emergencyRequest.locationLongitude}`;
-        locationInfo = emergencyRequest.locationText 
-          ? `${emergencyRequest.locationText}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`
-          : `${t('clinic_results.gps_prefix', 'GPS')}: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`;
-      }
-      
-      // Build pet info string with enhanced profile data
-      const petInfo = buildPetInfoString(emergencyRequest, t);
-      
-      // Build voice recording section if available
-      const voiceSection = emergencyRequest?.voiceTranscript 
-        ? `\n\n🎤 ${t('clinic_results.voice_description', 'Voice Description')}:\n"${emergencyRequest.voiceTranscript}"\n\n${t('clinic_results.ai_analysis', 'AI Analysis')}: ${emergencyRequest.aiAnalyzedSymptoms || emergencyRequest.symptom}`
-        : '';
-      
-      // Add information about pet's regular clinic if exists
-      let regularClinicInfo = '';
-      if (emergencyRequest?.pet?.lastVisitClinicId) {
-        const regularClinic = allClinics.find(c => c.id === emergencyRequest.pet.lastVisitClinicId);
-        if (regularClinic) {
-          regularClinicInfo = `\n\n📋 ${t('clinic_results.regular_clinic_note', 'NOTE: This pet is a registered patient at')} ${regularClinic.name}`;
-          if (emergencyRequest.pet.lastVisitDate) {
-            const visitDate = new Date(emergencyRequest.pet.lastVisitDate).toLocaleDateString();
-            regularClinicInfo += ` (${t('clinic_results.last_visit', 'Last visit')}: ${visitDate})`;
-          }
-          regularClinicInfo += `\n${t('clinic_results.medical_records_available', 'Medical records may be available there for reference.')}`;
-        }
-      }
-      
-      const message = emergencyRequest
-        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${voiceSection}${petInfo}${regularClinicInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
-        : t('clinic_results.emergency_care_needed', 'Emergency pet care needed');
+      // Build structured message with clear sections and formatted phone
+      const message = buildStructuredBroadcastMessage(emergencyRequest, t, allClinics);
       
       const response = await apiRequest(
         'POST',
@@ -987,22 +1057,7 @@ export default function ClinicResultsPage() {
                 <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
                   <strong className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('clinic_results.message_preview', 'Message Preview')}:</strong>
                   <pre className="mt-2 text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-sans">
-                    {(() => {
-                      let locationInfo = emergencyRequest?.locationText || t('clinic_results.location_not_provided', 'Location not provided');
-                      if (emergencyRequest?.locationLatitude && emergencyRequest?.locationLongitude) {
-                        const mapsLink = `https://www.google.com/maps?q=${emergencyRequest.locationLatitude},${emergencyRequest.locationLongitude}`;
-                        locationInfo = emergencyRequest.locationText 
-                          ? `${emergencyRequest.locationText}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`
-                          : `${t('clinic_results.gps_prefix', 'GPS')}: ${emergencyRequest.locationLatitude}, ${emergencyRequest.locationLongitude}\n${t('clinic_results.map', 'Map')}: ${mapsLink}`;
-                      }
-                      
-                      // Build pet info string with enhanced profile data
-                      const petInfo = buildPetInfoString(emergencyRequest, t);
-                      
-                      return emergencyRequest
-                        ? `🚨 ${t('clinic_results.broadcast_alert_title', 'PET EMERGENCY ALERT')} 🚨\n\n${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}${petInfo}\n${t('clinic_results.location', 'Location')}: ${locationInfo}\n${t('clinic_results.contact', 'Contact')}: ${emergencyRequest.contactPhone}\n${emergencyRequest.contactEmail ? `${t('common.email', 'Email')}: ${emergencyRequest.contactEmail}` : ''}\n\n${t('clinic_results.broadcast_alert_footer', 'Please respond urgently if you can help.')}`
-                        : t('clinic_results.emergency_care_needed', 'Emergency pet care needed');
-                    })()}
+                    {buildStructuredBroadcastMessage(emergencyRequest, t, allClinics)}
                   </pre>
                 </div>
               </div>
