@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useToast } from "@/hooks/use-toast";
 
 interface VoiceRecorderProps {
   onTranscriptComplete: (transcript: string, analyzedSymptoms: string) => void;
@@ -255,14 +256,25 @@ function analyzeSymptomsFallback(transcript: string): string {
 }
 
 // Enhanced AI analysis using DeepSeek (with fallback to keyword detection)
-async function analyzeSymptoms(transcript: string, language: string = 'en'): Promise<string> {
+async function analyzeSymptoms(
+  transcript: string, 
+  language: string = 'en',
+  onFallback?: (reason: string) => void
+): Promise<string> {
   try {
+    // Set up abort controller with 12 second timeout (slightly longer than server-side 10s)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
     // Try DeepSeek AI analysis first
     const response = await fetch('/api/voice/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ transcript, language }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (response.ok) {
       const data = await response.json();
@@ -281,11 +293,29 @@ async function analyzeSymptoms(transcript: string, language: string = 'en'): Pro
       }
     }
 
+    // Handle specific error cases
+    if (response.status === 503) {
+      onFallback?.('AI service not configured');
+    } else if (response.status === 429) {
+      onFallback?.('Rate limit exceeded');
+    } else if (response.status === 504) {
+      onFallback?.('AI analysis timeout');
+    } else {
+      onFallback?.('AI service unavailable');
+    }
+
     // Fallback to keyword-based analysis
     console.log('DeepSeek not available, using keyword-based analysis');
     return analyzeSymptomsFallback(transcript);
 
   } catch (error) {
+    // Handle timeout and network errors
+    if (error instanceof Error && error.name === 'AbortError') {
+      onFallback?.('AI analysis timeout');
+    } else {
+      onFallback?.('Network error');
+    }
+    
     console.error('AI analysis error, using fallback:', error);
     // Fallback to keyword-based analysis on error
     return analyzeSymptomsFallback(transcript);
@@ -294,6 +324,7 @@ async function analyzeSymptoms(transcript: string, language: string = 'en'): Pro
 
 export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRecorderProps) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isSupported, setIsSupported] = useState(true);
@@ -401,13 +432,27 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
     if (transcript.trim()) {
       setIsAnalyzing(true);
       try {
-        const analyzedSymptoms = await analyzeSymptoms(transcript, language);
+        // Pass callback to show toast when fallback is used
+        const analyzedSymptoms = await analyzeSymptoms(transcript, language, (reason: string) => {
+          // Show user-friendly message when AI analysis falls back to keyword detection
+          toast({
+            title: t('voice_recorder.using_offline_analysis', 'Using offline analysis'),
+            description: t('voice_recorder.fallback_message', 'AI analysis unavailable. Using enhanced keyword detection.'),
+            variant: 'default',
+          });
+        });
         onTranscriptComplete(transcript, analyzedSymptoms);
       } catch (error) {
         console.error('Analysis failed:', error);
         // Fallback to keyword analysis
         const fallbackAnalysis = analyzeSymptomsFallback(transcript);
         onTranscriptComplete(transcript, fallbackAnalysis);
+        
+        toast({
+          title: t('voice_recorder.analysis_error', 'Analysis error'),
+          description: t('voice_recorder.fallback_used', 'Using offline symptom detection.'),
+          variant: 'default',
+        });
       } finally {
         setIsAnalyzing(false);
       }
