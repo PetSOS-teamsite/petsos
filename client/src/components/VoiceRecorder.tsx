@@ -223,7 +223,8 @@ const SYMPTOM_KEYWORDS = {
   }
 };
 
-function analyzeSymptoms(transcript: string): string {
+// Keyword-based fallback analysis (used when DeepSeek API is unavailable)
+function analyzeSymptomsFallback(transcript: string): string {
   const lowerTranscript = transcript.toLowerCase();
   const detectedCategories: string[] = [];
   const detectedKeywords: string[] = [];
@@ -253,12 +254,51 @@ function analyzeSymptoms(transcript: string): string {
   return detectedKeywords.slice(0, 3).join(', ');
 }
 
+// Enhanced AI analysis using DeepSeek (with fallback to keyword detection)
+async function analyzeSymptoms(transcript: string, language: string = 'en'): Promise<string> {
+  try {
+    // Try DeepSeek AI analysis first
+    const response = await fetch('/api/voice/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript, language }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.analysis) {
+        // Format DeepSeek analysis result
+        const { severity, primarySymptoms, confidence } = data.analysis;
+        const severityLabel = severity.toUpperCase();
+        const confidencePercent = Math.round(confidence * 100);
+        
+        if (primarySymptoms && primarySymptoms.length > 0) {
+          const symptoms = primarySymptoms.slice(0, 3).map((s: any) => s.symptom).join(', ');
+          return `${severityLabel} (${confidencePercent}%): ${symptoms}`;
+        }
+        
+        return `${severityLabel} (${confidencePercent}%)`;
+      }
+    }
+
+    // Fallback to keyword-based analysis
+    console.log('DeepSeek not available, using keyword-based analysis');
+    return analyzeSymptomsFallback(transcript);
+
+  } catch (error) {
+    console.error('AI analysis error, using fallback:', error);
+    // Fallback to keyword-based analysis on error
+    return analyzeSymptomsFallback(transcript);
+  }
+}
+
 export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRecorderProps) {
   const { t } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isSupported, setIsSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
@@ -352,15 +392,25 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     if (!recognitionRef.current) return;
     
     recognitionRef.current.stop();
     setIsRecording(false);
 
     if (transcript.trim()) {
-      const analyzedSymptoms = analyzeSymptoms(transcript);
-      onTranscriptComplete(transcript, analyzedSymptoms);
+      setIsAnalyzing(true);
+      try {
+        const analyzedSymptoms = await analyzeSymptoms(transcript, language);
+        onTranscriptComplete(transcript, analyzedSymptoms);
+      } catch (error) {
+        console.error('Analysis failed:', error);
+        // Fallback to keyword analysis
+        const fallbackAnalysis = analyzeSymptomsFallback(transcript);
+        onTranscriptComplete(transcript, fallbackAnalysis);
+      } finally {
+        setIsAnalyzing(false);
+      }
     }
   };
 
@@ -447,9 +497,16 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
                 {transcript}
               </p>
               <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {t('voice_recorder.analyzed', 'Analyzed symptoms:')} <span className="font-medium text-red-600 dark:text-red-400">{analyzeSymptoms(transcript)}</span>
-                </p>
+                {isAnalyzing ? (
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>{t('voice_recorder.analyzing', 'Analyzing with AI...')}</span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {t('voice_recorder.analyzed', 'Analyzed symptoms:')} <span className="font-medium text-red-600 dark:text-red-400">{analyzeSymptomsFallback(transcript)}</span>
+                  </p>
+                )}
               </div>
             </div>
           )}
