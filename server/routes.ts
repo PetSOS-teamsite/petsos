@@ -13,6 +13,7 @@ import {
   deletionLimiter,
   strictLimiter 
 } from "./middleware/rateLimiter";
+import { deepseekService } from "./services/deepseek";
 import { 
   insertUserSchema, insertPetSchema, insertClinicSchema,
   insertMessageSchema, emergencyRequests,
@@ -1147,6 +1148,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // ===== DEEPSEEK AI VOICE ANALYSIS ROUTE =====
+  
+  // Analyze voice transcript with DeepSeek AI
+  app.post("/api/voice/analyze", async (req, res) => {
+    try {
+      const { transcript, language } = z.object({
+        transcript: z.string().min(1, "Transcript cannot be empty"),
+        language: z.string().optional().default('en'),
+      }).parse(req.body);
+
+      // Check if DeepSeek is available
+      if (!deepseekService.isAvailable()) {
+        return res.status(503).json({ 
+          message: "DeepSeek AI service not configured. Please set DEEPSEEK_API_KEY environment variable.",
+          fallbackAvailable: true 
+        });
+      }
+
+      // Analyze transcript using DeepSeek
+      const analysis = await deepseekService.analyzeVoiceTranscript(transcript, language);
+      
+      res.json({
+        success: true,
+        analysis,
+        formattedMessage: deepseekService.formatForBroadcast(analysis, transcript)
+      });
+
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("DeepSeek analysis error:", error);
+      res.status(500).json({ 
+        message: "AI analysis failed", 
+        error: error instanceof Error ? error.message : "Unknown error",
+        fallbackAvailable: true
+      });
     }
   });
 
