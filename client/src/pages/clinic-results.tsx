@@ -169,22 +169,42 @@ function buildStructuredBroadcastMessage(
   sections.push('');
   
   // Section 2: Emergency Details
-  sections.push('═══════════════════════════');
-  sections.push(`🚨 ${t('clinic_results.emergency_section', 'EMERGENCY DETAILS')}`);
-  sections.push('═══════════════════════════');
-  sections.push(`${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}`);
-  
-  // Add voice recording section if available
-  if (emergencyRequest.voiceTranscript) {
+  // For voice recordings, show AI analysis FIRST, then transcript
+  if (emergencyRequest.voiceTranscript && emergencyRequest.aiAnalyzedSymptoms) {
+    sections.push('═══════════════════════════');
+    sections.push(`🤖 ${t('clinic_results.ai_analysis_section', 'AI EMERGENCY ANALYSIS')}`);
+    sections.push('═══════════════════════════');
+    sections.push(emergencyRequest.aiAnalyzedSymptoms);
     sections.push('');
-    sections.push(`🎤 ${t('clinic_results.voice_description', 'Voice Description')}:`);
+    
+    sections.push('═══════════════════════════');
+    sections.push(`🎤 ${t('clinic_results.owner_description', 'OWNER\'S DESCRIPTION')}`);
+    sections.push('═══════════════════════════');
     sections.push(`"${emergencyRequest.voiceTranscript}"`);
-    if (emergencyRequest.aiAnalyzedSymptoms) {
-      sections.push(`${t('clinic_results.ai_analysis', 'AI Analysis')}: ${emergencyRequest.aiAnalyzedSymptoms}`);
-    }
+    sections.push('');
+    
+    sections.push('═══════════════════════════');
+    sections.push(`📝 ${t('clinic_results.summary_section', 'SYMPTOM SUMMARY')}`);
+    sections.push('═══════════════════════════');
+    sections.push(emergencyRequest.symptom);
+    sections.push('');
+  } else if (emergencyRequest.voiceTranscript) {
+    // Voice recording without AI analysis (fallback used)
+    sections.push('═══════════════════════════');
+    sections.push(`🎤 ${t('clinic_results.voice_description', 'VOICE DESCRIPTION')}`);
+    sections.push('═══════════════════════════');
+    sections.push(`"${emergencyRequest.voiceTranscript}"`);
+    sections.push('');
+    sections.push(`${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}`);
+    sections.push('');
+  } else {
+    // Regular text input (no voice recording)
+    sections.push('═══════════════════════════');
+    sections.push(`🚨 ${t('clinic_results.emergency_section', 'EMERGENCY DETAILS')}`);
+    sections.push('═══════════════════════════');
+    sections.push(`${t('clinic_results.symptoms', 'Symptoms')}: ${emergencyRequest.symptom}`);
+    sections.push('');
   }
-  
-  sections.push('');
   
   // Section 3: Contact Information
   sections.push('═══════════════════════════');
