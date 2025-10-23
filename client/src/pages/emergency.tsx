@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { BreedCombobox } from "@/components/BreedCombobox";
 import { analytics } from "@/lib/analytics";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
+import { PhoneInput } from "@/components/PhoneInput";
 
 // Symptom options - simplified without categorization
 const SYMPTOMS = [
@@ -80,7 +81,7 @@ export default function EmergencyPage() {
 
   const step3Schema = z.object({
     contactName: z.string().min(2, t("validation.name_required", "Contact name is required")),
-    contactPhone: z.string().min(8, t("validation.phone_required", "Please enter a valid phone number")),
+    contactPhone: z.string().min(6, t("validation.phone_required", "Please enter a valid phone number")),
   });
 
   const emergencySchema = z.object({
@@ -89,7 +90,7 @@ export default function EmergencyPage() {
     locationLongitude: z.number().optional(),
     manualLocation: z.string().optional(),
     contactName: z.string().min(2, t("validation.name_required", "Contact name is required")),
-    contactPhone: z.string().min(8, t("validation.phone_required", "Please enter a valid phone number")),
+    contactPhone: z.string().min(6, t("validation.phone_required", "Please enter a valid phone number")),
     petId: z.string().optional(),
     petSpecies: z.string().optional(),
     petBreed: z.string().optional(),
@@ -110,6 +111,7 @@ export default function EmergencyPage() {
   const [voiceTranscript, setVoiceTranscript] = useState<string>('');
   const [aiAnalyzedSymptoms, setAiAnalyzedSymptoms] = useState<string>('');
   const [useVoiceInput, setUseVoiceInput] = useState(false);
+  const [countryCode, setCountryCode] = useState("+852"); // Default to Hong Kong
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -173,10 +175,16 @@ export default function EmergencyPage() {
     }
   }, [step, gpsDetected, gpsRetryCount, form, t]); // Added gpsRetryCount and t to dependencies
 
+  // Fetch countries for parsing phone numbers
+  const { data: countries = [] } = useQuery<any[]>({
+    queryKey: ["/api/countries"],
+    enabled: step === 3, // Only fetch when needed
+  });
+
   // Auto-fill contact information from user profile when on step 3
   useEffect(() => {
     // Only auto-fill if user hasn't manually edited the fields
-    if (step === 3 && userLoaded && !userFetching && userProfile && !contactManuallyEdited) {
+    if (step === 3 && userLoaded && !userFetching && userProfile && !contactManuallyEdited && countries.length > 0) {
       // Auto-fill if this is the first time or if user data has changed
       const hasDataChanged = !autoFilledUserData || 
         autoFilledUserData.username !== userProfile.username || 
@@ -185,7 +193,33 @@ export default function EmergencyPage() {
       if (hasDataChanged) {
         const displayName = userProfile.name || userProfile.username || "";
         form.setValue("contactName", displayName);
-        form.setValue("contactPhone", userProfile.phone || "");
+        
+        // Parse phone number to extract country code
+        if (userProfile.phone) {
+          const phone = userProfile.phone.trim();
+          // Check if phone starts with + (country code format)
+          if (phone.startsWith('+')) {
+            // Get all valid phone prefixes and sort by length (longest first)
+            const validPrefixes = countries
+              .map(c => c.phonePrefix)
+              .filter(Boolean)
+              .sort((a, b) => b.length - a.length); // Longest first to match +852 before +85
+            
+            // Find the first matching prefix
+            const matchingPrefix = validPrefixes.find(prefix => phone.startsWith(prefix));
+            
+            if (matchingPrefix) {
+              setCountryCode(matchingPrefix); // e.g., "+852"
+              form.setValue("contactPhone", phone.substring(matchingPrefix.length).trim()); // e.g., "12345678"
+            } else {
+              // No matching prefix found, use the whole number
+              form.setValue("contactPhone", phone);
+            }
+          } else {
+            form.setValue("contactPhone", phone);
+          }
+        }
+        
         setAutoFilledUserData({ username: userProfile.username, phone: userProfile.phone });
       }
     }
@@ -199,7 +233,7 @@ export default function EmergencyPage() {
         setAutoFilledUserData(null);
       }
     }
-  }, [step, form, userProfile, userLoaded, userFetching, contactManuallyEdited, autoFilledUserData]);
+  }, [step, form, userProfile, userLoaded, userFetching, contactManuallyEdited, autoFilledUserData, countries]);
 
   const createEmergencyMutation = useMutation({
     mutationFn: async (data: EmergencyFormData) => {
@@ -271,9 +305,14 @@ export default function EmergencyPage() {
         await step3Schema.parseAsync(data);
         // Get ALL form values (data param only has step 3 fields)
         const allFormValues = form.getValues();
+        // Combine country code with phone number
+        const fullPhone = allFormValues.contactPhone 
+          ? `${countryCode}${allFormValues.contactPhone}` 
+          : allFormValues.contactPhone;
         // Add voice recording data if available
         const submitData = {
           ...allFormValues,
+          contactPhone: fullPhone, // Use the combined phone number
           voiceTranscript: voiceTranscript || undefined,
           aiAnalyzedSymptoms: aiAnalyzedSymptoms || undefined,
           isVoiceRecording: useVoiceInput,
@@ -686,16 +725,16 @@ export default function EmergencyPage() {
                         <FormItem>
                           <FormLabel className="text-lg font-semibold">{t("emergency.step3.phone", "Phone Number")}</FormLabel>
                           <FormControl>
-                            <Input
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
+                            <PhoneInput
+                              value={field.value}
+                              onChange={(value) => {
+                                field.onChange(value);
                                 setContactManuallyEdited(true);
                               }}
-                              type="tel"
-                              placeholder={t("emergency.step3.phone_placeholder", "+852 1234 5678")}
-                              className="text-lg"
-                              data-testid="input-contact-phone"
+                              countryCode={countryCode}
+                              onCountryCodeChange={setCountryCode}
+                              placeholder={t("emergency.step3.phone_placeholder", "1234 5678")}
+                              testId="input-contact-phone"
                             />
                           </FormControl>
                           <FormMessage />
