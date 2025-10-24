@@ -378,9 +378,57 @@ export default function EmergencyPage() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Step 1: Symptoms FIRST (most urgent), then Pet Selection (optional) */}
+                {/* Step 1: Pet Selection FIRST (if user has pets), then Voice/Symptoms */}
                 {step === 1 && (
                   <div className="space-y-6">
+                    {/* PET SELECTION FIRST - For users with registered pets (faster flow) */}
+                    {userId && pets.length > 0 && (
+                      <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                        <FormField
+                          control={form.control}
+                          name="petId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                                {t("emergency.select_pet", "Which pet is this for?")}
+                              </FormLabel>
+                              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                                {t("emergency.select_pet_desc", "Select your pet for faster emergency help")}
+                              </p>
+                              <FormControl>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  {pets.map((pet: any) => {
+                                    const isSelected = field.value === pet.id;
+                                    return (
+                                      <button
+                                        key={pet.id}
+                                        type="button"
+                                        onClick={() => field.onChange(isSelected ? undefined : pet.id)}
+                                        className={`
+                                          p-3 rounded-lg border-2 transition-all text-left text-sm
+                                          ${isSelected 
+                                            ? 'border-blue-600 bg-blue-100 dark:bg-blue-900 shadow-md' 
+                                            : 'border-blue-200 dark:border-blue-700 hover:border-blue-400 bg-white dark:bg-gray-800'
+                                          }
+                                        `}
+                                        data-testid={`pet-card-${pet.id}`}
+                                      >
+                                        <div className="font-semibold truncate">{pet.name}</div>
+                                        <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                                          {pet.breed || pet.species}
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+
                     {/* VOICE RECORDER - For panicked users who can't type */}
                     <div className="mb-6">
                       <div className="flex items-center justify-between mb-4">
@@ -493,50 +541,7 @@ export default function EmergencyPage() {
                       )}
                     />
 
-                    {/* PET SELECTION - Optional, shown AFTER symptoms for logged-in users */}
-                    {userId && pets.length > 0 && (
-                      <FormField
-                        control={form.control}
-                        name="petId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-base font-semibold text-gray-700 dark:text-gray-300">
-                              {t("emergency.select_pet", "Which pet is this for?")} <span className="text-sm text-gray-500">({t("optional", "Optional")})</span>
-                            </FormLabel>
-                            <FormControl>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {pets.map((pet: any) => {
-                                  const isSelected = field.value === pet.id;
-                                  return (
-                                    <button
-                                      key={pet.id}
-                                      type="button"
-                                      onClick={() => field.onChange(isSelected ? undefined : pet.id)}
-                                      className={`
-                                        p-3 rounded-lg border-2 transition-all text-left text-sm
-                                        ${isSelected 
-                                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
-                                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
-                                        }
-                                      `}
-                                      data-testid={`pet-card-${pet.id}`}
-                                    >
-                                      <div className="font-semibold truncate">{pet.name}</div>
-                                      <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                                        {pet.breed || pet.species}
-                                      </div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-
-                    {/* PET DETAILS - For users without pets or anonymous users */}
+                    {/* PET DETAILS - For users without pets or anonymous users (only if no pet selected) */}
                     {(!userId || pets.length === 0 || !form.watch("petId")) && (
                       <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-4">
                         <div>

@@ -54,6 +54,7 @@ const translations = [
   { key: "symptoms.select_all", en: "Tap all symptoms that apply", zh: "請選擇所有適用的症狀" },
   { key: "symptoms.describe", en: "Describe the symptoms...", zh: "請描述情況..." },
   { key: "emergency.select_pet", en: "Which pet is this for?", zh: "是哪一隻毛孩？" },
+  { key: "emergency.select_pet_desc", en: "Select your pet for faster emergency help", zh: "選擇您的毛孩以加快緊急求助" },
   { key: "optional", en: "Optional", zh: "選填" },
   { key: "emergency.pet_details", en: "Pet Information", zh: "毛孩資料" },
   { key: "emergency.pet_details_desc", en: "Tell us about your pet so clinics can prepare", zh: "請提供毛孩資料，讓診所預先準備" },
