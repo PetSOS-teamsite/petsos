@@ -42,7 +42,9 @@ export default function ClinicsPage() {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
-  const [show24HourOnly, setShow24HourOnly] = useState(false);
+  const [show24HourOnly, setShow24HourOnly] = useState(true); // Default to 24-hour only
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   const { data: regions, isLoading: regionsLoading } = useQuery<Region[]>({
     queryKey: ["/api/regions"],
@@ -51,6 +53,40 @@ export default function ClinicsPage() {
   const { data: clinics, isLoading: clinicsLoading } = useQuery<Clinic[]>({
     queryKey: ["/api/clinics"],
   });
+
+  // Get user's GPS location on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+          setLocationError(null);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          setLocationError(error.message);
+        }
+      );
+    } else {
+      setLocationError("Geolocation not supported");
+    }
+  }, []);
+
+  // Calculate distance between two coordinates (Haversine formula)
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
 
   const filteredClinics = clinics?.filter((clinic) => {
     const matchesSearch =
@@ -65,6 +101,19 @@ export default function ClinicsPage() {
     const matches24Hour = !show24HourOnly || clinic.is24Hour;
 
     return matchesSearch && matchesRegion && matches24Hour && clinic.status === "active";
+  })
+  // Sort by distance if user location is available
+  ?.sort((a, b) => {
+    if (!userLocation) return 0;
+    
+    const distanceA = a.latitude && a.longitude 
+      ? calculateDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude)
+      : Infinity;
+    const distanceB = b.latitude && b.longitude
+      ? calculateDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude)
+      : Infinity;
+    
+    return distanceA - distanceB;
   });
 
   // Track clinic search when filters change
@@ -161,6 +210,41 @@ export default function ClinicsPage() {
               {t("clinics.24h_only", "Show 24-Hour Emergency Clinics Only")}
             </Label>
           </div>
+
+          {/* Location Status Banner */}
+          {locationError ? (
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg" data-testid="banner-location-error">
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium text-yellow-900 dark:text-yellow-100 mb-1">
+                    {t("clinics.location_unavailable", "Location unavailable")}
+                  </p>
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    {t("clinics.location_error_msg", "Please enable location permissions to see distances and sort by nearest clinics. Clinics are shown in alphabetical order.")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : userLocation ? (
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg" data-testid="banner-location-success">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <p className="text-sm text-blue-900 dark:text-blue-100">
+                  {t("clinics.location_enabled", "📍 Showing distances from your location - clinics sorted by nearest first")}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg" data-testid="banner-location-loading">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-gray-500 animate-pulse" />
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {t("clinics.location_loading", "Getting your location...")}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Results Count */}
@@ -214,12 +298,17 @@ export default function ClinicsPage() {
                       </CardTitle>
                       <div className="flex items-start gap-2 text-gray-600 dark:text-gray-400">
                         <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
-                        <div className="text-sm">
+                        <div className="text-sm flex-1">
                           <p data-testid={`text-clinic-address-${clinic.id}`}>
                             {clinic.address}
                           </p>
                           {clinic.addressZh && (
                             <p className="text-gray-500 dark:text-gray-500">{clinic.addressZh}</p>
+                          )}
+                          {userLocation && clinic.latitude && clinic.longitude && (
+                            <p className="text-blue-600 dark:text-blue-400 font-medium mt-1" data-testid={`text-clinic-distance-${clinic.id}`}>
+                              📍 {calculateDistance(userLocation.lat, userLocation.lng, clinic.latitude, clinic.longitude).toFixed(1)} km {t("clinics.away", "away")}
+                            </p>
                           )}
                         </div>
                       </div>

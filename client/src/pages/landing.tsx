@@ -24,22 +24,19 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#EF4444] dark:bg-[#DC2626]">
-      {/* Top Navigation Bar - Language Switcher & Login */}
+      {/* Top Navigation Bar - Login (Left) & Language Switcher (Right) */}
       <div className="container mx-auto px-4 pt-4">
         <div className="flex justify-between items-center">
-          <div className="flex-1"></div>
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher />
-            <Button
-              onClick={handleLogin}
-              size="sm"
-              className="px-4 py-2 border-2 border-white bg-transparent text-white hover:bg-white hover:text-red-600 font-medium transition-all"
-              data-testid="button-login-corner"
-            >
-              <UserCircle className="mr-2 h-4 w-4" />
-              {t('landing.login_profile_button', 'Login / Create Pet Profile')}
-            </Button>
-          </div>
+          <Button
+            onClick={handleLogin}
+            size="sm"
+            className="px-4 py-2 border-2 border-white bg-transparent text-white hover:bg-white hover:text-red-600 font-medium transition-all"
+            data-testid="button-login-corner"
+          >
+            <UserCircle className="mr-2 h-4 w-4" />
+            {t('landing.login_profile_button', 'Login / Create Pet Profile')}
+          </Button>
+          <LanguageSwitcher />
         </div>
       </div>
       
