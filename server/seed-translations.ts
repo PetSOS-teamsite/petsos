@@ -34,10 +34,16 @@ const translations = [
   { key: "home.step3.desc", en: "Call or message clinics instantly", zh: "即時致電或發送訊息給診所" },
   
   // Emergency Flow
-  { key: "emergency.title", en: "Emergency Pet Care", zh: "寵物緊急情況" },
+  { key: "emergency.title", en: "Emergency Pet Care", zh: "緊急求助" },
   { key: "emergency.step1.title", en: "What's happening?", zh: "發生什麼事？" },
   { key: "emergency.step2.title", en: "Where are you?", zh: "您在哪裡？" },
   { key: "emergency.step3.title", en: "How can clinics reach you?", zh: "診所如何聯絡您？" },
+  
+  // Instant Emergency Broadcast
+  { key: "emergency.instant_broadcast_title", en: "INSTANT EMERGENCY BROADCAST", zh: "即時緊急廣播" },
+  { key: "emergency.instant_broadcast_desc", en: "Send alert to {count} available 24-hour support {plural} NOW", zh: "即時通知 {count} 間24小時支援醫院" },
+  { key: "emergency.instant_broadcast_tip", en: "Fastest way to get help - One click to reach all partner hospitals", zh: "最快取得協助 - 一鍵聯絡所有合作醫院" },
+  { key: "emergency.instant_broadcast_button", en: "BROADCAST NOW", zh: "立即廣播" },
   { key: "emergency.step_indicator", en: "Step {step} of 3", zh: "第 {step} 步，共3步" },
   { key: "emergency.time_step1", en: "~30s", zh: "約30秒" },
   { key: "emergency.time_step2", en: "~15s", zh: "約15秒" },
@@ -309,6 +315,7 @@ const translations = [
   { key: "common.home", en: "Home", zh: "主頁" },
   { key: "common.email", en: "Email", zh: "電郵" },
   { key: "common.years", en: "years", zh: "歲" },
+  { key: "common.sending", en: "Sending...", zh: "發送中..." },
   { key: "button.back", en: "Back", zh: "返回" },
   { key: "button.back_home", en: "Back to Home", zh: "返回主頁" },
   { key: "button.cancel", en: "Cancel", zh: "取消" },

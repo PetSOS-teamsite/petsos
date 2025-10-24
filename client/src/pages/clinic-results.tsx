@@ -664,12 +664,14 @@ export default function ClinicResultsPage() {
                 <div className="flex items-start gap-4 text-white">
                   <Send className="h-10 w-10 mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="text-xl font-bold mb-1">🚨 INSTANT EMERGENCY BROADCAST</h3>
+                    <h3 className="text-xl font-bold mb-1">🚨 {t('emergency.instant_broadcast_title', 'INSTANT EMERGENCY BROADCAST')}</h3>
                     <p className="text-sm text-red-50">
-                      Send alert to {supportHospitals24h.length} available 24-hour support {supportHospitals24h.length === 1 ? 'hospital' : 'hospitals'} NOW
+                      {t('emergency.instant_broadcast_desc', 'Send alert to {count} available 24-hour support {plural} NOW')
+                        .replace('{count}', String(supportHospitals24h.length))
+                        .replace('{plural}', supportHospitals24h.length === 1 ? 'hospital' : 'hospitals')}
                     </p>
                     <p className="text-xs text-red-100 mt-2">
-                      ⚡ Fastest way to get help - One click to reach all partner hospitals
+                      ⚡ {t('emergency.instant_broadcast_tip', 'Fastest way to get help - One click to reach all partner hospitals')}
                     </p>
                   </div>
                 </div>
@@ -683,12 +685,12 @@ export default function ClinicResultsPage() {
                   {quickBroadcastMutation.isPending ? (
                     <>
                       <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                      Sending...
+                      {t('common.sending', 'Sending...')}
                     </>
                   ) : (
                     <>
                       <Send className="h-5 w-5 mr-2" />
-                      BROADCAST NOW
+                      {t('emergency.instant_broadcast_button', 'BROADCAST NOW')}
                     </>
                   )}
                 </Button>
