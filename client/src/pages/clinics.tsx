@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { analytics } from "@/lib/analytics";
+import { SEO } from "@/components/SEO";
 
 type Clinic = {
   id: string;
@@ -39,7 +40,7 @@ type Region = {
 };
 
 export default function ClinicsPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [show24HourOnly, setShow24HourOnly] = useState(true); // Default to 24-hour only
@@ -136,8 +137,24 @@ export default function ClinicsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
+    <>
+      <SEO
+        title={language === 'zh-HK'
+          ? "24小時獸醫診所目錄 - PetSOS | GPS距離顯示"
+          : "24-Hour Veterinary Clinics Directory - PetSOS | GPS Distance Tracking"
+        }
+        description={language === 'zh-HK'
+          ? "搜尋香港24小時動物醫院。GPS自動顯示距離，按最近診所排序。覆蓋港島、九龍、新界所有地區。一鍵致電或WhatsApp聯絡，毛孩緊急情況最快找到協助。"
+          : "Search 24-hour animal hospitals in Hong Kong. GPS-powered distance tracking, sorted by nearest clinics. Coverage across Hong Kong Island, Kowloon, and New Territories. One-tap call or WhatsApp contact for fast emergency help."
+        }
+        keywords={language === 'zh-HK'
+          ? "24小時獸醫, 動物醫院目錄, GPS尋找診所, 最近獸醫, 香港島, 九龍, 新界, WhatsApp聯絡"
+          : "24-hour vet directory, animal hospital finder, GPS clinic search, nearest vet, Hong Kong Island, Kowloon, New Territories, WhatsApp contact"
+        }
+        canonical="https://petsos.site/clinics"
+      />
+      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+        {/* Header */}
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
@@ -360,6 +377,7 @@ export default function ClinicsPage() {
           )}
         </div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }

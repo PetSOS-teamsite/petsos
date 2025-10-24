@@ -5,10 +5,11 @@ import { useLocation } from "wouter";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Footer } from "@/components/footer";
+import { SEO } from "@/components/SEO";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const handleLogin = () => {
     setLocation("/login");
@@ -23,8 +24,24 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#EF4444] dark:bg-[#DC2626]">
-      {/* Top Navigation Bar - Login (Left) & Language Switcher (Right) */}
+    <>
+      <SEO
+        title={language === 'zh-HK' 
+          ? "PetSOS - 香港24小時寵物緊急求助 | 即時通知動物醫院" 
+          : "PetSOS - Emergency 24-Hour Veterinary Care in Hong Kong | Pet Emergency Help"
+        }
+        description={language === 'zh-HK'
+          ? "一按即時通知香港24小時動物醫院。GPS定位最近診所，WhatsApp廣播求助，3步驟完成緊急求助。港島、九龍、新界全覆蓋。毛孩緊急情況時最快獲得專業協助。"
+          : "Alert 24-hour animal hospitals in Hong Kong with one tap. GPS-powered emergency pet care with instant WhatsApp broadcast to nearby clinics. Fast help when your pet needs it most. Hong Kong Island, Kowloon, New Territories coverage."
+        }
+        keywords={language === 'zh-HK'
+          ? "寵物緊急, 24小時獸醫, 動物醫院香港, 緊急求助, 毛孩, GPS尋找診所, WhatsApp廣播, 香港寵物, 緊急護理"
+          : "pet emergency Hong Kong, 24-hour vet, emergency veterinary care, animal hospital, pet SOS, GPS clinic finder, WhatsApp alert, emergency pet help"
+        }
+        canonical="https://petsos.site/"
+      />
+      <div className="min-h-screen bg-[#EF4444] dark:bg-[#DC2626]">
+        {/* Top Navigation Bar - Login (Left) & Language Switcher (Right) */}
       <div className="container mx-auto px-4 pt-4">
         <div className="flex justify-between items-center">
           <Button
@@ -129,6 +146,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <Footer />
-    </div>
+      </div>
+    </>
   );
 }
