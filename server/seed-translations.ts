@@ -9,6 +9,8 @@ const translations = [
   { key: "landing.subtitle", en: "Alert 24-hour animal hospitals with one tap", zh: "一按即時通知24小時動物醫院" },
   { key: "landing.emergency_button", en: "Emergency Help Now", zh: "緊急求助" },
   { key: "landing.login_button", en: "Log In / Sign Up", zh: "登入 / 註冊" },
+  { key: "landing.login_profile_button", en: "Login / Create Pet Profile", zh: "登入 / 建立毛孩檔案" },
+  { key: "landing.find_hospitals_button", en: "Find Nearby 24-Hour Hospitals", zh: "尋找附近24小時醫院" },
   { key: "landing.quick_access", en: "Emergency access available without login • Get help in under 60 seconds", zh: "無需登入即可緊急求助 • 60秒內獲得協助" },
   { key: "landing.feature1.title", en: "Fast Emergency Flow", zh: "快速緊急求助" },
   { key: "landing.feature1.desc", en: "3-step emergency request in under 30 seconds. Every second counts when your pet needs help.", zh: "3步驟完成緊急求助，只需30秒。寵物需要幫助時，分秒必爭。" },

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Clock, Phone, MapPin, AlertCircle } from "lucide-react";
+import { Clock, Phone, MapPin, AlertCircle, UserCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -18,12 +18,28 @@ export default function LandingPage() {
     setLocation("/emergency");
   };
 
+  const handleFindHospitals = () => {
+    setLocation("/clinics");
+  };
+
   return (
     <div className="min-h-screen bg-[#EF4444] dark:bg-[#DC2626]">
-      {/* Language Switcher - Top Right */}
+      {/* Top Navigation Bar - Language Switcher & Login */}
       <div className="container mx-auto px-4 pt-4">
-        <div className="flex justify-end">
-          <LanguageSwitcher />
+        <div className="flex justify-between items-center">
+          <div className="flex-1"></div>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <Button
+              onClick={handleLogin}
+              size="sm"
+              className="px-4 py-2 border-2 border-white bg-transparent text-white hover:bg-white hover:text-red-600 font-medium transition-all"
+              data-testid="button-login-corner"
+            >
+              <UserCircle className="mr-2 h-4 w-4" />
+              {t('landing.login_profile_button', 'Login / Create Pet Profile')}
+            </Button>
+          </div>
         </div>
       </div>
       
@@ -51,12 +67,13 @@ export default function LandingPage() {
               {t('landing.emergency_button', 'Emergency Help Now')}
             </Button>
             <Button
-              onClick={handleLogin}
+              onClick={handleFindHospitals}
               size="lg"
               className="px-8 py-7 text-lg border-2 border-white bg-transparent text-white hover:bg-white hover:text-red-600 font-semibold transition-all"
-              data-testid="button-login"
+              data-testid="button-find-hospitals"
             >
-              {t('landing.login_button', 'Log In / Sign Up')}
+              <MapPin className="mr-2 h-5 w-5" />
+              {t('landing.find_hospitals_button', 'Find Nearby 24-Hour Hospitals')}
             </Button>
           </div>
           <p className="text-sm text-white/80">
