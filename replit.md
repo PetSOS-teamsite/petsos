@@ -2,6 +2,8 @@
 
 PetSOS is an emergency veterinary care coordination platform designed to quickly connect pet owners with 24-hour veterinary clinics. It facilitates one-tap broadcasting of emergency cases to nearby clinics and offers direct communication channels (Call/WhatsApp). The platform supports user and pet profiles, multi-region operations with global scalability, and comprehensive privacy/compliance tracking, aiming to streamline emergency pet care coordination and improve pet welfare during crises.
 
+**Brand Identity**: Emergency-focused design with vibrant red (#EF4444) primary color, emergency cross + paw print favicon, professional bilingual SEO optimization for Hong Kong market (English/Traditional Chinese).
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -12,7 +14,13 @@ Preferred communication style: Simple, everyday language.
 - **Technology Stack**: React with TypeScript (Vite), Wouter for routing, TanStack React Query for state management, shadcn/ui (Radix UI + Tailwind CSS) for UI components, React Hook Form with Zod for forms.
 - **Design Decisions**: Accessible, customizable components; minimal bundle size; Tailwind CSS for theming (dark mode, custom design tokens); type-safe form validation.
 - **Key Features**: Multi-step emergency request flow, clinic results filtering and communication, profile and pet management (CRUD with bilingual breed selection), clinic directory, admin dashboard (clinic CRUD, staff management, auto-fill GPS), clinic staff dashboard (availability toggle, emergency request management).
-- **Branding**: Text-based "PetSOS" logo; vibrant red (#EF4444) as primary color for emergency focus and consistent UI theming.
+- **Branding & SEO (October 2025)**:
+  - Visual Identity: Text-based "PetSOS" logo, vibrant red (#EF4444) primary color, custom SVG favicon (emergency cross + paw print)
+  - SEO Component: Reusable `<SEO>` component for page-specific meta tags (title, description, keywords, OG, Twitter)
+  - Page-Level SEO: Bilingual optimization (EN/ZH-HK) for Landing, Emergency, and Clinics pages
+  - Meta Tags: Comprehensive Open Graph, Twitter Cards, geo-targeting (Hong Kong), theme colors
+  - Keywords Strategy: Emergency-focused (24-hour vet, pet emergency, GPS clinic finder), local search optimization
+  - **Known Limitation**: As a client-side SPA, social media scrapers (Facebook, WhatsApp, Twitter) see only homepage meta tags from static HTML. For full per-page social sharing previews, SSR or static pre-rendering would be required. Current implementation optimizes for Google search (which executes JS) and user-facing meta tags.
 - **UX Enhancements (October 2025)**:
   - Profile page: Prominent pet management CTA card with paw print icon, green gradient background, and clear benefit messaging ("emergency requests only take 10 seconds!")
   - Broadcast results: Auto-scroll to status button after broadcast, extended toast duration (8s) showing clinic count, blue-styled "View Broadcast Status" button for better visibility

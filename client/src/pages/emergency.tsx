@@ -20,6 +20,7 @@ import { BreedCombobox } from "@/components/BreedCombobox";
 import { analytics } from "@/lib/analytics";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { PhoneInput } from "@/components/PhoneInput";
+import { SEO } from "@/components/SEO";
 
 // Symptom options - simplified without categorization
 const SYMPTOMS = [
@@ -340,9 +341,25 @@ export default function EmergencyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-50 to-white dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="max-w-2xl mx-auto pt-8">
-        {/* Progress indicator */}
+    <>
+      <SEO
+        title={language === 'zh-HK'
+          ? "緊急求助 - PetSOS | 即時聯絡24小時動物醫院"
+          : "Emergency Pet Care - PetSOS | Connect with 24-Hour Vets Instantly"
+        }
+        description={language === 'zh-HK'
+          ? "毛孩緊急情況？3步驟即時通知香港24小時獸醫診所。支援語音輸入、AI分析症狀、WhatsApp廣播求助。港島、九龍、新界全覆蓋，最快獲得專業協助。"
+          : "Pet emergency? Connect with 24-hour veterinary clinics in Hong Kong in 3 simple steps. Voice input, AI symptom analysis, instant WhatsApp broadcast. Fast professional help across Hong Kong Island, Kowloon, and New Territories."
+        }
+        keywords={language === 'zh-HK'
+          ? "寵物緊急, 緊急求助表格, 語音輸入, AI分析, WhatsApp廣播, 24小時獸醫, 香港動物醫院"
+          : "pet emergency form, voice input, AI symptom analysis, WhatsApp broadcast, 24-hour vet Hong Kong, emergency animal hospital"
+        }
+        canonical="https://petsos.site/emergency"
+      />
+      <div className="min-h-screen bg-gradient-to-b from-red-50 to-white dark:from-gray-900 dark:to-gray-800 p-4">
+        <div className="max-w-2xl mx-auto pt-8">
+          {/* Progress indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t("emergency.step_indicator", "Step {step} of 3").replace("{step}", String(step))}</span>
@@ -820,6 +837,7 @@ export default function EmergencyPage() {
           </p>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
