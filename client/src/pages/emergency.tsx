@@ -555,16 +555,36 @@ export default function EmergencyPage() {
                             <FormItem>
                               <FormLabel>{t("pets.species", "Species")} <span className="text-red-500">*</span></FormLabel>
                               <FormControl>
-                                <select
-                                  {...field}
-                                  value={field.value || ""}
-                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                  data-testid="select-pet-species"
-                                >
-                                  <option value="">{t("pets.select_species", "Select species")}</option>
-                                  <option value="dog">{t("pets.dog", "Dog")}</option>
-                                  <option value="cat">{t("pets.cat", "Cat")}</option>
-                                </select>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => field.onChange("dog")}
+                                    className={`
+                                      p-4 rounded-lg border-2 transition-all font-medium text-base
+                                      ${field.value === "dog"
+                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 text-blue-900 dark:text-blue-100' 
+                                        : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+                                      }
+                                    `}
+                                    data-testid="button-species-dog"
+                                  >
+                                    🐕 {t("pets.dog", "Dog")}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => field.onChange("cat")}
+                                    className={`
+                                      p-4 rounded-lg border-2 transition-all font-medium text-base
+                                      ${field.value === "cat"
+                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 text-blue-900 dark:text-blue-100' 
+                                        : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+                                      }
+                                    `}
+                                    data-testid="button-species-cat"
+                                  >
+                                    🐱 {t("pets.cat", "Cat")}
+                                  </button>
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
