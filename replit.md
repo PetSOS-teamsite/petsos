@@ -38,6 +38,12 @@ Preferred communication style: Simple, everyday language.
 
 ### Messaging & Communication
 - **Architecture**: WhatsApp Business API as primary, email fallback, queue-based processing, template-based messaging.
+- **WhatsApp Templates**: Meta-approved message templates for emergency broadcasts in English and Traditional Chinese (6 templates total):
+  - **Full Template** (`emergency_pet_alert_full_*`): For registered pets with medical history (11 variables: last visited clinic, pet profile, symptoms, medical notes, owner contact)
+  - **New Template** (`emergency_pet_alert_new_*`): For registered pets without visit history (10 variables: pet profile, symptoms, medical notes, owner contact)
+  - **Basic Template** (`emergency_pet_alert_basic_*`): For anonymous users (7 variables: species, breed, age, symptoms, location, owner contact)
+- **Template Selection**: Automatic detection based on pet registration status and language preference (user's `languagePreference` field)
+- **Implementation**: `buildTemplateMessage()` method dynamically builds template variables from emergency request and pet data, sends via WhatsApp template API with automatic email fallback
 
 ### Geolocation & Region Support
 - **Implementation**: PostGIS for server-side geospatial queries (ST_DWithin, ST_Distance), geography column with GIST spatial index, automatic location sync trigger, centroid-based region definitions, auto-user location detection, manual override.
