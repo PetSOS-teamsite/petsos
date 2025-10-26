@@ -413,7 +413,11 @@ export default function ClinicResultsPage() {
       if (aIsExisting && !bIsExisting) return -1;
       if (!aIsExisting && bIsExisting) return 1;
       
-      // SECOND PRIORITY: Clinics with known distance
+      // SECOND PRIORITY: Partner clinics
+      if (a.isPartner && !b.isPartner) return -1;
+      if (!a.isPartner && b.isPartner) return 1;
+      
+      // THIRD PRIORITY: Clinics with known distance
       const distA = a.distance !== undefined ? a.distance : Infinity;
       const distB = b.distance !== undefined ? b.distance : Infinity;
       
@@ -421,7 +425,7 @@ export default function ClinicResultsPage() {
         return distA - distB;
       }
       
-      // THIRD PRIORITY: 24-hour clinics
+      // FOURTH PRIORITY: 24-hour clinics
       if (a.is24Hour && !b.is24Hour) return -1;
       if (!a.is24Hour && b.is24Hour) return 1;
       
@@ -998,10 +1002,10 @@ export default function ClinicResultsPage() {
               return (
                 <Card 
                   key={clinic.id} 
-                  className={`hover:shadow-lg transition-all ${isSelected ? 'ring-2 ring-orange-500' : ''} ${isExistingPatient ? 'ring-2 ring-amber-400 dark:ring-amber-500' : ''}`}
+                  className={`hover:shadow-lg transition-all border-l-4 border-l-red-600 ${isSelected ? 'ring-2 ring-orange-500' : ''} ${isExistingPatient ? 'ring-2 ring-amber-400 dark:ring-amber-500' : ''}`}
                   data-testid={`card-clinic-${clinic.id}`}
                 >
-                  <CardHeader>
+                  <CardHeader className="pb-3">
                     <div className="flex items-start gap-3">
                       {/* Selection Checkbox */}
                       {canBroadcast && (
@@ -1014,7 +1018,7 @@ export default function ClinicResultsPage() {
                         </div>
                       )}
                       
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         {/* Existing Patient Indicator - Highest Priority */}
                         {isExistingPatient && (
                           <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 mb-2 font-bold" data-testid={`badge-existing-patient-${clinic.id}`}>
@@ -1022,92 +1026,93 @@ export default function ClinicResultsPage() {
                           </Badge>
                         )}
                         
-                        <CardTitle className="text-xl mb-2">
+                        {/* Partner Badge */}
+                        {clinic.isPartner && !isExistingPatient && (
+                          <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 mb-2 font-bold" data-testid={`badge-partner-${clinic.id}`}>
+                            ⭐ PetSOS Partner
+                          </Badge>
+                        )}
+                        
+                        {/* Clinic Name - Compact */}
+                        <CardTitle className="text-lg mb-1 leading-tight">
                           {language === 'zh-HK' && clinic.nameZh ? clinic.nameZh : clinic.name}
+                          {language === 'zh-HK' && clinic.nameZh && (
+                            <span className="block text-sm font-normal text-gray-500 dark:text-gray-400 mt-0.5">
+                              {clinic.name}
+                            </span>
+                          )}
                         </CardTitle>
                         
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {clinic.isAvailable ? (
-                            <Badge className="bg-green-600" data-testid={`badge-available-${clinic.id}`}>
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              {t('clinic_results.available_now', 'Available Now')}
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-gray-500" data-testid={`badge-unavailable-${clinic.id}`}>
-                              {t('clinic_results.unavailable', 'Unavailable')}
-                            </Badge>
-                          )}
-                          {clinic.is24Hour && (
-                            <Badge className="bg-blue-600" data-testid={`badge-24hour-${clinic.id}`}>
-                              <Clock className="h-3 w-3 mr-1" />
-                              {t('clinic_results.24_hours', '24 Hours')}
-                            </Badge>
-                          )}
-                          {clinic.isSupportHospital && (
-                            <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 font-semibold" data-testid={`badge-support-hospital-${clinic.id}`}>
-                              ⭐ PetSOS Partner
-                            </Badge>
-                          )}
-                          {clinic.distance !== undefined && (
-                            <Badge variant="outline" data-testid={`badge-distance-${clinic.id}`}>
-                              <Navigation className="h-3 w-3 mr-1" />
-                              {clinic.distance.toFixed(1)} {t('clinic_results.km', 'km')}
-                            </Badge>
-                          )}
+                        {/* Distance Badge - Prominent */}
+                        {clinic.distance !== undefined && (
+                          <div className="inline-flex items-center gap-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-xs font-semibold mb-2" data-testid={`text-clinic-distance-${clinic.id}`}>
+                            <MapPin className="h-3 w-3" />
+                            {clinic.distance.toFixed(1)} km {language === 'zh-HK' ? '距離' : 'away'}
+                          </div>
+                        )}
+                        
+                        {/* Address - Single Line Truncated */}
+                        <div className="text-xs text-gray-600 dark:text-gray-400 truncate mb-2" data-testid={`text-clinic-address-${clinic.id}`}>
+                          {language === 'zh-HK' && clinic.addressZh ? clinic.addressZh : clinic.address}
+                        </div>
+                        
+                        {/* Additional Badges in Compact Row */}
+                        <div className="flex flex-wrap gap-1.5">
                           {clinic.whatsapp && (
-                            <Badge variant="outline" className="bg-green-50 dark:bg-green-950">
+                            <Badge variant="outline" className="bg-green-50 dark:bg-green-950 text-xs">
                               <MessageCircle className="h-3 w-3 mr-1" />
-                              {t('clinic_results.whatsapp', 'WhatsApp')}
+                              WhatsApp
                             </Badge>
                           )}
                         </div>
                       </div>
+                      
+                      {/* 24-Hour Badge - Prominent with Brand Color */}
+                      {clinic.is24Hour && (
+                        <Badge className="bg-red-600 hover:bg-red-700 shrink-0" data-testid={`badge-24hour-${clinic.id}`}>
+                          <Clock className="h-3 w-3 mr-1" />
+                          {language === 'zh-HK' ? '24小時' : '24hrs'}
+                        </Badge>
+                      )}
                     </div>
                   </CardHeader>
                   
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
-                        <MapPin className="h-5 w-5 mt-0.5 text-gray-500" />
-                        <div className="flex-1">
-                          <p>{language === 'zh-HK' && clinic.addressZh ? clinic.addressZh : clinic.address}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2 pt-3">
+                  <CardContent className="pt-0">
+                    {/* Action Buttons - Compact Row */}
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleCall(clinic.phone, clinic.id, clinic.name)}
+                        size="sm"
+                        className="flex-1 bg-red-600 hover:bg-red-700"
+                        data-testid={`button-call-${clinic.id}`}
+                      >
+                        <Phone className="h-4 w-4 mr-1" />
+                        {language === 'zh-HK' ? '致電' : 'Call'}
+                      </Button>
+                      {clinic.whatsapp && (
                         <Button
-                          onClick={() => handleCall(clinic.phone, clinic.id, clinic.name)}
+                          onClick={() => handleWhatsApp(clinic.whatsapp!, clinic.id, clinic.name)}
+                          variant="outline"
                           size="sm"
-                          className="flex-1 bg-blue-600 hover:bg-blue-700"
-                          data-testid={`button-call-${clinic.id}`}
+                          className="flex-1 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          data-testid={`button-whatsapp-${clinic.id}`}
                         >
-                          <Phone className="h-4 w-4 mr-1" />
-                          {t('clinic_results.call', 'Call')}
+                          <MessageCircle className="h-4 w-4 mr-1" />
+                          WhatsApp
                         </Button>
-                        {clinic.whatsapp && (
-                          <Button
-                            onClick={() => handleWhatsApp(clinic.whatsapp!, clinic.id, clinic.name)}
-                            size="sm"
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                            data-testid={`button-whatsapp-${clinic.id}`}
-                          >
-                            <MessageCircle className="h-4 w-4 mr-1" />
-                            {t('clinic_results.whatsapp', 'WhatsApp')}
-                          </Button>
-                        )}
-                        {clinic.latitude && clinic.longitude && (
-                          <Button
-                            onClick={() => handleOpenMaps(clinic.latitude!, clinic.longitude!, clinic.name)}
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            data-testid={`button-maps-${clinic.id}`}
-                          >
-                            <ExternalLink className="h-4 w-4 mr-1" />
-                            {t('clinic_results.maps', 'Maps')}
-                          </Button>
-                        )}
-                      </div>
+                      )}
+                      {clinic.latitude && clinic.longitude && (
+                        <Button
+                          onClick={() => handleOpenMaps(clinic.latitude!, clinic.longitude!, clinic.name)}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          data-testid={`button-maps-${clinic.id}`}
+                        >
+                          <Navigation className="h-4 w-4 mr-1" />
+                          {language === 'zh-HK' ? '導航' : 'Maps'}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
