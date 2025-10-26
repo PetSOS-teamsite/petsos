@@ -679,12 +679,12 @@ export default function ClinicResultsPage() {
       
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setEditFormData({
-            ...editFormData,
+          setEditFormData(prev => ({
+            ...prev,
             locationLatitude: position.coords.latitude,
             locationLongitude: position.coords.longitude,
             manualLocation: "", // Clear manual location when GPS is used
-          });
+          }));
           setEditGpsDetecting(false);
           setEditGpsError(null);
           toast({
