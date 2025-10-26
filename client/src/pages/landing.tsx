@@ -41,18 +41,9 @@ export default function LandingPage() {
         canonical="https://petsos.site/"
       />
       <div className="min-h-screen bg-[#EF4444] dark:bg-[#DC2626]">
-        {/* Top Navigation Bar - Login (Left) & Language Switcher (Right) */}
+        {/* Top Navigation Bar - Language Switcher (Right) */}
       <div className="container mx-auto px-4 pt-4">
-        <div className="flex justify-between items-center">
-          <Button
-            onClick={handleLogin}
-            size="sm"
-            className="px-4 py-2 border-2 border-white bg-transparent text-white hover:bg-white hover:text-red-600 font-medium transition-all"
-            data-testid="button-login-corner"
-          >
-            <UserCircle className="mr-2 h-4 w-4" />
-            {t('landing.login_profile_button', 'Login / Create Pet Profile')}
-          </Button>
+        <div className="flex justify-end items-center">
           <LanguageSwitcher />
         </div>
       </div>
@@ -70,24 +61,35 @@ export default function LandingPage() {
           </p>
           
           {/* Emergency CTA - Most Prominent */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+          <div className="flex flex-col gap-4 items-center mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
+              <Button
+                onClick={handleEmergency}
+                size="lg"
+                className="bg-white hover:bg-gray-100 text-red-600 px-10 py-7 text-xl font-bold shadow-lg"
+                data-testid="button-emergency-now"
+              >
+                <AlertCircle className="mr-2 h-6 w-6" />
+                {t('landing.emergency_button', 'Emergency Help Now')}
+              </Button>
+              <Button
+                onClick={handleFindHospitals}
+                size="lg"
+                className="px-8 py-7 text-lg border-2 border-white bg-transparent text-white hover:bg-white hover:text-red-600 font-semibold transition-all"
+                data-testid="button-find-hospitals"
+              >
+                <MapPin className="mr-2 h-5 w-5" />
+                {t('landing.find_hospitals_button', 'Find Nearby 24-Hour Hospitals')}
+              </Button>
+            </div>
             <Button
-              onClick={handleEmergency}
+              onClick={handleLogin}
               size="lg"
-              className="bg-white hover:bg-gray-100 text-red-600 px-10 py-7 text-xl font-bold shadow-lg"
-              data-testid="button-emergency-now"
+              className="px-8 py-6 text-base border-2 border-white bg-transparent text-white hover:bg-white hover:text-red-600 font-medium transition-all"
+              data-testid="button-login-corner"
             >
-              <AlertCircle className="mr-2 h-6 w-6" />
-              {t('landing.emergency_button', 'Emergency Help Now')}
-            </Button>
-            <Button
-              onClick={handleFindHospitals}
-              size="lg"
-              className="px-8 py-7 text-lg border-2 border-white bg-transparent text-white hover:bg-white hover:text-red-600 font-semibold transition-all"
-              data-testid="button-find-hospitals"
-            >
-              <MapPin className="mr-2 h-5 w-5" />
-              {t('landing.find_hospitals_button', 'Find Nearby 24-Hour Hospitals')}
+              <UserCircle className="mr-2 h-5 w-5" />
+              {t('landing.login_profile_button', 'Login / Create Pet Profile')}
             </Button>
           </div>
           <p className="text-sm text-white/80">
