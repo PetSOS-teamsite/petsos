@@ -3,7 +3,7 @@ import { storage } from "./storage";
 const translations = [
   // App Title
   { key: "app.title", en: "PetSOS", zh: "PetSOS" },
-  { key: "app.disclaimer", en: "⚠️ PetSOS provides emergency guidance only and is not medical advice. If in doubt, contact a vet immediately.", zh: "⚠️ PetSOS 只提供緊急支援，並非專業獸醫診斷或醫療建議。如有疑問，請立即聯絡獸醫。" },
+  { key: "app.disclaimer", en: "⚠️ Disclaimer: PetSOS is a non-profit information tool designed to help pet owners quickly connect with 24-hour animal hospitals in emergencies. The platform does not provide medical advice or guarantee the quality of any clinic's services. Please contact your chosen clinic directly for professional assistance.", zh: "⚠️ 重要提示：PetSOS 為非牟利資訊平台，旨在協助寵物主人於緊急情況下快速連繫 24 小時動物醫院。本平台不提供醫療建議，亦不保證診所服務質素。使用者應自行判斷及聯絡診所以獲取專業協助。" },
   
   // Landing Page
   { key: "landing.subtitle", en: "Alert 24-hour animal hospitals with one tap", zh: "一按即時通知24小時動物醫院" },
@@ -18,7 +18,7 @@ const translations = [
   { key: "landing.feature2.desc", en: "Find nearest 24-hour veterinary clinics across Hong Kong Island, Kowloon, and New Territories.", zh: "搜尋港島、九龍及新界區內最近的24小時獸醫診所。" },
   { key: "landing.feature3.title", en: "One-Tap Broadcast", zh: "一鍵廣播" },
   { key: "landing.feature3.desc", en: "Alert multiple clinics instantly via WhatsApp with one tap. Get help faster.", zh: "一鍵透過WhatsApp即時通知多間診所，更快獲得協助。" },
-  { key: "landing.disclaimer", en: "PetSOS provides emergency guidance only and is not medical advice. If in doubt, contact a vet immediately.", zh: "PetSOS 只提供緊急支援，並非專業獸醫診斷或醫療建議。如有疑問，請立即聯絡獸醫。" },
+  { key: "landing.disclaimer", en: "⚠️ Disclaimer: PetSOS is a non-profit information tool designed to help pet owners quickly connect with 24-hour animal hospitals in emergencies. The platform does not provide medical advice or guarantee the quality of any clinic's services. Please contact your chosen clinic directly for professional assistance.", zh: "⚠️ 重要提示：PetSOS 為非牟利資訊平台，旨在協助寵物主人於緊急情況下快速連繫 24 小時動物醫院。本平台不提供醫療建議，亦不保證診所服務質素。使用者應自行判斷及聯絡診所以獲取專業協助。" },
   
   // Home Page
   { key: "home.emergency.button", en: "Emergency Care Now", zh: "緊急求助" },
