@@ -414,8 +414,8 @@ export default function ClinicResultsPage() {
       if (!aIsExisting && bIsExisting) return 1;
       
       // SECOND PRIORITY: Partner clinics
-      if (a.isPartner && !b.isPartner) return -1;
-      if (!a.isPartner && b.isPartner) return 1;
+      if (a.isSupportHospital && !b.isSupportHospital) return -1;
+      if (!a.isSupportHospital && b.isSupportHospital) return 1;
       
       // THIRD PRIORITY: Clinics with known distance
       const distA = a.distance !== undefined ? a.distance : Infinity;
@@ -1027,7 +1027,7 @@ export default function ClinicResultsPage() {
                         )}
                         
                         {/* Partner Badge */}
-                        {clinic.isPartner && !isExistingPatient && (
+                        {clinic.isSupportHospital && !isExistingPatient && (
                           <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 mb-2 font-bold" data-testid={`badge-partner-${clinic.id}`}>
                             ⭐ PetSOS Partner
                           </Badge>

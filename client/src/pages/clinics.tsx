@@ -106,8 +106,8 @@ export default function ClinicsPage() {
   // Sort by partner status first, then by distance
   ?.sort((a, b) => {
     // Partner clinics always come first
-    if (a.isPartner && !b.isPartner) return -1;
-    if (!a.isPartner && b.isPartner) return 1;
+    if (a.isSupportHospital && !b.isSupportHospital) return -1;
+    if (!a.isSupportHospital && b.isSupportHospital) return 1;
     
     // Within same partner status, sort by distance if location available
     if (!userLocation) return 0;
@@ -332,6 +332,13 @@ export default function ClinicsPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
+                      {/* Partner Badge */}
+                      {clinic.isSupportHospital && (
+                        <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 mb-2 font-bold" data-testid={`badge-partner-${clinic.id}`}>
+                          ⭐ PetSOS Partner
+                        </Badge>
+                      )}
+                      
                       {/* Clinic Name - Compact */}
                       <CardTitle className="text-lg mb-1 leading-tight">
                         <span className="flex items-center gap-1.5 font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors" data-testid={`text-clinic-name-${clinic.id}`}>
