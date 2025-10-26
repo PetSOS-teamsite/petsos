@@ -22,6 +22,7 @@ Preferred communication style: Simple, everyday language.
 - **Core Services**: Messaging (WhatsApp Business API, email fallback), Storage (users, pets, clinics, requests, audit logs), Queue System (retry logic, DLQ), Rate Limiting.
 - **Security**: Production-grade rate limiting, `trust proxy` for accurate IP tracking, GDPR/PDPO compliance features.
 - **Emergency Broadcasts**: Enhanced content includes full pet profile information. The Support Hospital program prioritizes partner clinics and enables one-click broadcasting. Existing Patient Recognition highlights and prioritizes clinics where a pet has previously visited.
+- **Route Ordering Constraint**: In Express routing, specific routes (e.g., `/api/users/export`, `/api/users/gdpr-delete`) must be defined BEFORE parameterized routes (e.g., `/api/users/:id`) to prevent incorrect route matching. This is critical for GDPR endpoints.
 
 ### Data Architecture
 - **Database Schema**: Users, Pets, Countries, Regions, Pet Breeds, Clinics, Emergency Requests, Messages, Feature Flags, Audit Logs, Privacy Consents, Translations.
