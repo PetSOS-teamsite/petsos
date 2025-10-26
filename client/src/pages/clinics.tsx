@@ -149,10 +149,10 @@ export default function ClinicsPage() {
       return;
     }
     
-    // Search Google for clinic name and address - usually shows Google Business page
-    const searchQuery = `${clinic.name} ${clinic.address}`;
-    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
-    window.open(googleSearchUrl, "_blank");
+    // Open Google Maps to show clinic with reviews and business info
+    const query = `${clinic.name}, ${clinic.address}`;
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    window.open(mapsUrl, "_blank");
   };
 
   return (
