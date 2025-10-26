@@ -437,7 +437,7 @@ export class MessagingService {
         `${isZhHk ? '名稱' : 'Name'}: ${variables[1]}\n` +
         `${isZhHk ? '物種' : 'Species'}: ${variables[2]}\n` +
         `${isZhHk ? '緊急症狀' : 'Emergency'}: ${variables[6]}\n` +
-        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[10]} (${variables[10]})`;
+        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[9]} (${variables[10]})`;
       
     } else if (pet) {
       // New registered pet (no visit history)
