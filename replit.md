@@ -14,7 +14,7 @@ Preferred communication style: Simple, everyday language.
 - **Key Features**: Multi-step emergency request flow, clinic results filtering and communication, profile and pet management (CRUD with bilingual breed selection), clinic directory, admin dashboard, clinic staff dashboard.
 - **Branding & SEO**: Text-based "PetSOS" logo, vibrant red (#EF4444) primary color, custom SVG favicon (emergency cross + paw print), reusable `<SEO>` component for page-specific meta tags, bilingual optimization (EN/ZH-HK) for key pages, comprehensive Open Graph and Twitter Cards, geo-targeting for Hong Kong.
 - **Progressive Web App (PWA)**: Full PWA support with web app manifest, multiple icon sizes (192x192, 512x512, 180x180 Apple Touch Icon), installable to home screen on iOS/Android, standalone display mode, emergency and clinic shortcuts, generated from SVG using Sharp.
-- **UX Enhancements**: Prominent pet management CTA, auto-scroll to status button post-broadcast, extended toast duration, blue-styled "View Broadcast Status" button, post-broadcast guidance to status page, compressed VoiceRecorder UI with collapsible tips (info icon), and emergency request edit functionality with real-time broadcast message updates.
+- **UX Enhancements**: Prominent pet management CTA, auto-scroll to status button post-broadcast, extended toast duration, blue-styled "View Broadcast Status" button, post-broadcast guidance to status page, compressed VoiceRecorder UI with collapsible tips (info icon), emergency request edit functionality with real-time broadcast message updates, severity-ordered emergency symptoms (critical → serious → moderate), and compact clinic action buttons (Call/WhatsApp/Maps) in single horizontal row for improved scanability.
 
 ### Backend Architecture
 - **Technology Stack**: Node.js with Express.js, TypeScript, Drizzle ORM with PostgreSQL (Neon serverless), modular storage abstraction.
@@ -38,6 +38,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Emergency Request Management
 - **Creation**: Multi-step emergency request form (symptoms & pet → location → contact info with optional voice recording) supports both authenticated and anonymous users for emergency flexibility.
+- **Symptom Selection**: Symptoms ordered by severity level to help users identify critical emergencies quickly:
+  - **Critical** (7 symptoms): Unconscious/unresponsive, not breathing, seizure, choking, severe bleeding, major trauma, poisoning - require immediate action
+  - **Serious** (5 symptoms): Collapse, bloated abdomen, severe pain, repeated vomiting, severe diarrhea - urgent attention needed
+  - **Moderate** (4 symptoms): Fracture, eye injury, not eating 24+ hours, other symptoms - concerning but less immediately life-threatening
 - **Voice Recording**: Compressed UI with collapsible tips (info icon trigger), AI-powered symptom analysis from voice transcripts using OpenAI, bilingual support (EN/ZH-HK), automatic fallback to manual text entry.
 - **Editing**: Post-submission edit functionality allows users to update contact information, symptoms, and location via edit button on clinic results page.
   - **Authorization**: Authenticated users can edit their own requests or anonymous requests; anonymous users can only edit anonymous requests
