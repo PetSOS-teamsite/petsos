@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Clock, Navigation } from "lucide-react";
+import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Clock, Navigation, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,6 +140,19 @@ export default function ClinicsPage() {
     // Open Google Maps with clinic location
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}&query_place_id=${encodeURIComponent(name)}`;
     window.open(mapsUrl, "_blank");
+  };
+
+  const handleCardClick = (clinic: Clinic, e: React.MouseEvent) => {
+    // Prevent navigation if clicking on buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) {
+      return;
+    }
+    
+    // Search Google for clinic name and address - usually shows Google Business page
+    const searchQuery = `${clinic.name} ${clinic.address}`;
+    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
+    window.open(googleSearchUrl, "_blank");
   };
 
   return (
@@ -302,7 +315,8 @@ export default function ClinicsPage() {
             filteredClinics.map((clinic) => (
               <Card
                 key={clinic.id}
-                className="hover:shadow-lg transition-shadow border-l-4 border-l-red-600"
+                className="group hover:shadow-lg hover:border-l-red-700 transition-all border-l-4 border-l-red-600 cursor-pointer"
+                onClick={(e) => handleCardClick(clinic, e)}
                 data-testid={`card-clinic-${clinic.id}`}
               >
                 <CardHeader className="pb-3">
@@ -310,8 +324,9 @@ export default function ClinicsPage() {
                     <div className="flex-1 min-w-0">
                       {/* Clinic Name - Compact */}
                       <CardTitle className="text-lg mb-1 leading-tight">
-                        <span className="block font-bold text-gray-900 dark:text-white" data-testid={`text-clinic-name-${clinic.id}`}>
+                        <span className="flex items-center gap-1.5 font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors" data-testid={`text-clinic-name-${clinic.id}`}>
                           {language === 'zh-HK' && clinic.nameZh ? clinic.nameZh : clinic.name}
+                          <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-red-600 flex-shrink-0" />
                         </span>
                         {language === 'zh-HK' && clinic.nameZh && (
                           <span className="block text-sm font-normal text-gray-500 dark:text-gray-400 mt-0.5">
