@@ -50,6 +50,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ===== USER ROUTES =====
   // Note: User registration is handled by /api/auth/signup in auth.ts
+  // IMPORTANT: Specific routes must come BEFORE parameterized :id routes
+
+  // GDPR/PDPO: Export user data
+  app.get("/api/users/export", exportLimiter, isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const exportData = await storage.exportUserData(userId);
+
+      // Sanitize user data before export to remove password hashes
+      const sanitizedExportData = {
+        ...exportData,
+        user: sanitizeUser(exportData.user)
+      };
+
+      // Log export for audit
+      await storage.createAuditLog({
+        entityType: 'user',
+        entityId: userId,
+        action: 'export_data',
+        userId: userId,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      // Set headers for JSON download (use res.send instead of res.json to preserve headers)
+      const filename = `petsos-data-export-${userId}-${new Date().toISOString()}.json`;
+      res.status(200)
+        .set({
+          'Content-Type': 'application/json; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`
+        })
+        .send(JSON.stringify(sanitizedExportData, null, 2));
+    } catch (error) {
+      console.error("Error exporting user data:", error);
+      res.status(500).json({ message: "Failed to export user data" });
+    }
+  });
+
+  // GDPR/PDPO: Delete user data (Right to be Forgotten)
+  app.delete("/api/users/gdpr-delete", deletionLimiter, isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+
+      // Log deletion request BEFORE deleting
+      await storage.createAuditLog({
+        entityType: 'user',
+        entityId: userId,
+        action: 'gdpr_delete_request',
+        userId: userId,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      // Perform GDPR-compliant deletion
+      const result = await storage.deleteUserDataGDPR(userId);
+
+      if (!result.success) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Destroy session after successful deletion
+      req.session.destroy((err: Error) => {
+        if (err) {
+          console.error("Error destroying session after GDPR delete:", err);
+        }
+      });
+
+      res.json({
+        success: true,
+        message: "Your account and all associated data have been permanently deleted",
+        deletedRecords: result.deletedRecords
+      });
+    } catch (error) {
+      console.error("Error deleting user data:", error);
+      res.status(500).json({ message: "Failed to delete user data" });
+    }
+  });
 
   // Get user by ID
   app.get("/api/users/:id", isAuthenticated, async (req: any, res) => {
@@ -163,82 +240,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // GDPR/PDPO: Export user data
-  app.get("/api/users/export", exportLimiter, isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = (req.user as any).id;
-      const exportData = await storage.exportUserData(userId);
-
-      // Sanitize user data before export to remove password hashes
-      const sanitizedExportData = {
-        ...exportData,
-        user: sanitizeUser(exportData.user)
-      };
-
-      // Log export for audit
-      await storage.createAuditLog({
-        entityType: 'user',
-        entityId: userId,
-        action: 'export_data',
-        userId: userId,
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent')
-      });
-
-      // Set headers for JSON download (use res.send instead of res.json to preserve headers)
-      const filename = `petsos-data-export-${userId}-${new Date().toISOString()}.json`;
-      res.status(200)
-        .set({
-          'Content-Type': 'application/json; charset=utf-8',
-          'Content-Disposition': `attachment; filename="${filename}"`
-        })
-        .send(JSON.stringify(sanitizedExportData, null, 2));
-    } catch (error) {
-      console.error("Error exporting user data:", error);
-      res.status(500).json({ message: "Failed to export user data" });
-    }
-  });
-
-  // GDPR/PDPO: Delete user data (Right to be Forgotten)
-  app.delete("/api/users/gdpr-delete", deletionLimiter, isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = (req.user as any).id;
-
-      // Log deletion request BEFORE deleting
-      await storage.createAuditLog({
-        entityType: 'user',
-        entityId: userId,
-        action: 'gdpr_delete_request',
-        userId: userId,
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent')
-      });
-
-      // Perform GDPR-compliant deletion
-      const result = await storage.deleteUserDataGDPR(userId);
-
-      if (!result.success) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      // Destroy session after successful deletion
-      req.session.destroy((err: Error) => {
-        if (err) {
-          console.error("Error destroying session after GDPR delete:", err);
-        }
-      });
-
-      res.json({
-        success: true,
-        message: "Your account and all associated data have been permanently deleted",
-        deletedRecords: result.deletedRecords
-      });
-    } catch (error) {
-      console.error("Error deleting user data:", error);
-      res.status(500).json({ message: "Failed to delete user data" });
     }
   });
 
