@@ -103,8 +103,13 @@ export default function ClinicsPage() {
 
     return matchesSearch && matchesRegion && matches24Hour && clinic.status === "active";
   })
-  // Sort by distance if user location is available
+  // Sort by partner status first, then by distance
   ?.sort((a, b) => {
+    // Partner clinics always come first
+    if (a.isPartner && !b.isPartner) return -1;
+    if (!a.isPartner && b.isPartner) return 1;
+    
+    // Within same partner status, sort by distance if location available
     if (!userLocation) return 0;
     
     const distanceA = a.latitude && a.longitude 
