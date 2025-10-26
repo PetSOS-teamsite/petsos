@@ -42,7 +42,7 @@ Preferred communication style: Simple, everyday language.
   - **Critical** (7 symptoms): Unconscious/unresponsive, not breathing, seizure, choking, severe bleeding, major trauma, poisoning - require immediate action
   - **Serious** (5 symptoms): Collapse, bloated abdomen, severe pain, repeated vomiting, severe diarrhea - urgent attention needed
   - **Moderate** (4 symptoms): Fracture, eye injury, not eating 24+ hours, other symptoms - concerning but less immediately life-threatening
-- **Voice Recording**: Compressed UI with collapsible tips (info icon trigger), AI-powered symptom analysis from voice transcripts using OpenAI, bilingual support (EN/ZH-HK), automatic fallback to manual text entry.
+- **Voice Recording**: Compact UI design with reduced padding and spacing (15-20% less vertical space), collapsible tips (info icon trigger), smaller text and icons while maintaining readability, AI-powered symptom analysis from voice transcripts using OpenAI, bilingual support (EN/ZH-HK), automatic fallback to manual text entry.
 - **Editing**: Post-submission edit functionality allows users to update contact information, symptoms, and location via edit button on clinic results page.
   - **Authorization**: Authenticated users can edit their own requests or anonymous requests; anonymous users can only edit anonymous requests
   - **Real-time Updates**: Edited data automatically reflects in broadcast message previews since `buildStructuredBroadcastMessage()` reads from the updated emergency request object
