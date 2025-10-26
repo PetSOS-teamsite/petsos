@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Clock } from "lucide-react";
+import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Clock, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -136,6 +136,18 @@ export default function ClinicsPage() {
     window.open(`https://wa.me/${whatsapp.replace(/[^0-9+]/g, "")}`, "_blank");
   };
 
+  const handleMaps = (latitude: number, longitude: number, name: string) => {
+    // Open Google Maps with clinic location
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}&query_place_id=${encodeURIComponent(name)}`;
+    window.open(mapsUrl, "_blank");
+    
+    // Track maps navigation
+    analytics.trackClinicContact({
+      contactMethod: 'maps',
+      clinicId: name,
+    });
+  };
+
   return (
     <>
       <SEO
@@ -196,7 +208,7 @@ export default function ClinicsPage() {
             <Tabs value={selectedRegion} onValueChange={setSelectedRegion}>
               <TabsList className="grid w-full grid-cols-4" data-testid="tabs-region">
                 <TabsTrigger value="all" data-testid="tab-all">
-                  {t("clinics.all_regions", "All Regions")}
+                  {t("clinics.all_regions", "全港", "All HK")}
                 </TabsTrigger>
                 {regions?.map((region) => (
                   <TabsTrigger
@@ -204,7 +216,7 @@ export default function ClinicsPage() {
                     value={region.id}
                     data-testid={`tab-region-${region.code}`}
                   >
-                    {t(`clinics.${region.code.toLowerCase()}`, region.code)}
+                    {language === 'zh-HK' ? region.nameZh : region.nameEn}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -271,8 +283,11 @@ export default function ClinicsPage() {
           </div>
         ) : (
           <div className="max-w-4xl mx-auto mb-4">
-            <p className="text-gray-600 dark:text-gray-400" data-testid="text-results-count">
-              {filteredClinics?.length || 0} {filteredClinics?.length !== 1 ? t("clinics.count_plural", "clinics") : t("clinics.count", "clinic")} {t("clinics.found", "found")}
+            <p className="text-gray-600 dark:text-gray-400 text-sm" data-testid="text-results-count">
+              {language === 'zh-HK' 
+                ? `已找到 ${filteredClinics?.length || 0} 間診所`
+                : `${filteredClinics?.length || 0} ${filteredClinics?.length !== 1 ? 'clinics' : 'clinic'} found`
+              }
             </p>
           </div>
         )}
@@ -297,68 +312,81 @@ export default function ClinicsPage() {
             filteredClinics.map((clinic) => (
               <Card
                 key={clinic.id}
-                className="hover:shadow-lg transition-shadow"
+                className="hover:shadow-lg transition-shadow border-l-4 border-l-red-600"
                 data-testid={`card-clinic-${clinic.id}`}
               >
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <CardTitle className="text-xl mb-2">
-                        <span data-testid={`text-clinic-name-${clinic.id}`}>
-                          {clinic.name}
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      {/* Clinic Name - Compact */}
+                      <CardTitle className="text-lg mb-1 leading-tight">
+                        <span className="block font-bold text-gray-900 dark:text-white" data-testid={`text-clinic-name-${clinic.id}`}>
+                          {language === 'zh-HK' && clinic.nameZh ? clinic.nameZh : clinic.name}
                         </span>
-                        {clinic.nameZh && (
-                          <span className="block text-lg font-normal text-gray-600 dark:text-gray-400 mt-1">
-                            {clinic.nameZh}
+                        {language === 'zh-HK' && clinic.nameZh && (
+                          <span className="block text-sm font-normal text-gray-500 dark:text-gray-400 mt-0.5">
+                            {clinic.name}
                           </span>
                         )}
                       </CardTitle>
-                      <div className="flex items-start gap-2 text-gray-600 dark:text-gray-400">
-                        <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
-                        <div className="text-sm flex-1">
-                          <p data-testid={`text-clinic-address-${clinic.id}`}>
-                            {clinic.address}
-                          </p>
-                          {clinic.addressZh && (
-                            <p className="text-gray-500 dark:text-gray-500">{clinic.addressZh}</p>
-                          )}
-                          {userLocation && clinic.latitude && clinic.longitude && (
-                            <p className="text-blue-600 dark:text-blue-400 font-medium mt-1" data-testid={`text-clinic-distance-${clinic.id}`}>
-                              📍 {calculateDistance(userLocation.lat, userLocation.lng, clinic.latitude, clinic.longitude).toFixed(1)} km {t("clinics.away", "away")}
-                            </p>
-                          )}
+                      
+                      {/* Distance Badge - Prominent */}
+                      {userLocation && clinic.latitude && clinic.longitude && (
+                        <div className="inline-flex items-center gap-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-xs font-semibold mb-2" data-testid={`text-clinic-distance-${clinic.id}`}>
+                          <MapPin className="h-3 w-3" />
+                          {calculateDistance(userLocation.lat, userLocation.lng, clinic.latitude, clinic.longitude).toFixed(1)} km {language === 'zh-HK' ? '距離' : 'away'}
                         </div>
+                      )}
+                      
+                      {/* Address - Single Line Truncated */}
+                      <div className="text-xs text-gray-600 dark:text-gray-400 truncate" data-testid={`text-clinic-address-${clinic.id}`}>
+                        {language === 'zh-HK' && clinic.addressZh ? clinic.addressZh : clinic.address}
                       </div>
                     </div>
+                    
+                    {/* 24-Hour Badge - Prominent with Brand Color */}
                     {clinic.is24Hour && (
-                      <Badge className="bg-green-600 hover:bg-green-700" data-testid={`badge-24hour-${clinic.id}`}>
+                      <Badge className="bg-red-600 hover:bg-red-700 shrink-0" data-testid={`badge-24hour-${clinic.id}`}>
                         <Clock className="h-3 w-3 mr-1" />
-                        {t("results.24_hours", "24 Hours")}
+                        {language === 'zh-HK' ? '24小時' : '24hrs'}
                       </Badge>
                     )}
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
+                  {/* Action Buttons - Compact Row */}
                   <div className="flex gap-2">
                     <Button
                       onClick={() => handleCall(clinic.phone)}
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 bg-red-600 hover:bg-red-700"
                       data-testid={`button-call-${clinic.id}`}
                     >
                       <Phone className="h-4 w-4 mr-1" />
-                      {t("results.call", "Call")}
+                      {language === 'zh-HK' ? '致電' : 'Call'}
                     </Button>
                     {clinic.whatsapp && (
                       <Button
                         onClick={() => handleWhatsApp(clinic.whatsapp!)}
                         variant="outline"
                         size="sm"
-                        className="flex-1"
+                        className="flex-1 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                         data-testid={`button-whatsapp-${clinic.id}`}
                       >
                         <MessageCircle className="h-4 w-4 mr-1" />
-                        {t("results.whatsapp", "WhatsApp")}
+                        WhatsApp
+                      </Button>
+                    )}
+                    {clinic.latitude && clinic.longitude && (
+                      <Button
+                        onClick={() => handleMaps(clinic.latitude!, clinic.longitude!, clinic.name)}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        data-testid={`button-maps-${clinic.id}`}
+                      >
+                        <Navigation className="h-4 w-4 mr-1" />
+                        {language === 'zh-HK' ? '導航' : 'Maps'}
                       </Button>
                     )}
                   </div>
