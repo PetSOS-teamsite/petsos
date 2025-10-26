@@ -27,29 +27,36 @@ import { Separator } from "@/components/ui/separator";
 import { PhoneInput } from "@/components/PhoneInput";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-const loginSchema = z.object({
-  email: z.string().optional().refine((val) => !val || z.string().email().safeParse(val).success, {
-    message: "Invalid email address"
-  }),
-  phone: z.string().optional(),
-  countryCode: z.string().default("+852"),
+// Email-specific schemas
+const emailLoginSchema = z.object({
+  email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-}).refine((data) => data.email || data.phone, {
-  message: "Either email or phone is required",
-  path: ["email"],
+  phone: z.string().optional(),
+  countryCode: z.string().optional(),
 });
 
-const signupSchema = z.object({
-  email: z.string().optional().refine((val) => !val || z.string().email().safeParse(val).success, {
-    message: "Invalid email address"
-  }),
+const emailSignupSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   phone: z.string().optional(),
+  countryCode: z.string().optional(),
+});
+
+// Phone-specific schemas
+const phoneLoginSchema = z.object({
+  phone: z.string().min(1, "Phone number is required"),
   countryCode: z.string().default("+852"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().optional(),
+});
+
+const phoneSignupSchema = z.object({
   name: z.string().min(1, "Name is required"),
-}).refine((data) => data.email || data.phone, {
-  message: "Either email or phone is required",
-  path: ["email"],
+  phone: z.string().min(1, "Phone number is required"),
+  countryCode: z.string().default("+852"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().optional(),
 });
 
 export default function LoginPage() {
@@ -58,36 +65,46 @@ export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const loginForm = useForm({
-    resolver: zodResolver(loginSchema),
+  const emailLoginForm = useForm({
+    resolver: zodResolver(emailLoginSchema),
     defaultValues: {
       email: "",
+      password: "",
+      phone: "",
+      countryCode: "+852",
+    },
+  });
+
+  const phoneLoginForm = useForm({
+    resolver: zodResolver(phoneLoginSchema),
+    defaultValues: {
       phone: "",
       countryCode: "+852",
       password: "",
+      email: "",
     },
   });
 
   const emailSignupForm = useForm({
-    resolver: zodResolver(signupSchema),
+    resolver: zodResolver(emailSignupSchema),
     defaultValues: {
+      name: "",
       email: "",
+      password: "",
       phone: "",
       countryCode: "+852",
-      password: "",
-      name: "",
     },
     mode: "onSubmit",
   });
 
   const phoneSignupForm = useForm({
-    resolver: zodResolver(signupSchema),
+    resolver: zodResolver(phoneSignupSchema),
     defaultValues: {
-      email: "",
+      name: "",
       phone: "",
       countryCode: "+852",
       password: "",
-      name: "",
+      email: "",
     },
     mode: "onSubmit",
   });
@@ -98,25 +115,16 @@ export default function LoginPage() {
       emailSignupForm.reset();
       phoneSignupForm.reset();
     } else {
-      loginForm.reset();
+      emailLoginForm.reset();
+      phoneLoginForm.reset();
     }
-  }, [isSignup, emailSignupForm, phoneSignupForm, loginForm]);
-
-  // Clear unused fields when switching auth methods
-  useEffect(() => {
-    if (authMethod === 'email') {
-      loginForm.setValue('phone', '');
-      loginForm.setValue('countryCode', '+852');
-    } else {
-      loginForm.setValue('email', '');
-    }
-  }, [authMethod, loginForm]);
+  }, [isSignup, emailSignupForm, phoneSignupForm, emailLoginForm, phoneLoginForm]);
 
   const handleGoogleLogin = () => {
     window.location.href = "/api/auth/google?returnTo=/profile";
   };
 
-  const onLogin = async (data: z.infer<typeof loginSchema>) => {
+  const onLogin = async (data: any) => {
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -148,7 +156,7 @@ export default function LoginPage() {
     }
   };
 
-  const onSignup = async (data: z.infer<typeof signupSchema>) => {
+  const onSignup = async (data: any) => {
     try {
       // Clear unused fields based on auth method
       const cleanedData = authMethod === 'email' 
@@ -280,10 +288,10 @@ export default function LoginPage() {
                   </form>
                 </Form>
               ) : (
-                <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
+                <Form {...emailLoginForm}>
+                  <form onSubmit={emailLoginForm.handleSubmit(onLogin)} className="space-y-4">
                     <FormField
-                      control={loginForm.control}
+                      control={emailLoginForm.control}
                       name="email"
                       render={({ field }) => (
                         <FormItem>
@@ -296,7 +304,7 @@ export default function LoginPage() {
                       )}
                     />
                     <FormField
-                      control={loginForm.control}
+                      control={emailLoginForm.control}
                       name="password"
                       render={({ field }) => (
                         <FormItem>
@@ -377,10 +385,10 @@ export default function LoginPage() {
                   </form>
                 </Form>
               ) : (
-                <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
+                <Form {...phoneLoginForm}>
+                  <form onSubmit={phoneLoginForm.handleSubmit(onLogin)} className="space-y-4">
                     <FormField
-                      control={loginForm.control}
+                      control={phoneLoginForm.control}
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
@@ -389,8 +397,8 @@ export default function LoginPage() {
                             <PhoneInput
                               value={field.value || ""}
                               onChange={field.onChange}
-                              countryCode={loginForm.watch("countryCode") || "+852"}
-                              onCountryCodeChange={(code) => loginForm.setValue("countryCode", code)}
+                              countryCode={phoneLoginForm.watch("countryCode") || "+852"}
+                              onCountryCodeChange={(code) => phoneLoginForm.setValue("countryCode", code)}
                               testId="input-phone"
                             />
                           </FormControl>
@@ -399,7 +407,7 @@ export default function LoginPage() {
                       )}
                     />
                     <FormField
-                      control={loginForm.control}
+                      control={phoneLoginForm.control}
                       name="password"
                       render={({ field }) => (
                         <FormItem>
