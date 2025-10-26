@@ -50,6 +50,8 @@ Preferred communication style: Simple, everyday language.
   - **Real-time Updates**: Edited data automatically reflects in broadcast message previews since `buildStructuredBroadcastMessage()` reads from the updated emergency request object
   - **Validation**: Uses `insertEmergencyRequestSchema.partial()` with Zod validation
   - **Audit Trail**: All edits are logged with user ID, IP address, and user agent for security and compliance
+  - **GPS Location Support**: Edit dialog includes "Use GPS Location" button that triggers browser geolocation API to auto-detect coordinates; displays green success indicator with coordinates (6 decimal places) when detected, red error message if GPS fails/denied; functional setState prevents stale closure bugs when user edits fields during async GPS detection
+  - **Bilingual UI**: Fully bilingual edit dialog with Traditional Chinese and English labels for all fields (Contact Name: 聯絡人姓名, Contact Phone: 聯絡電話, Symptoms: 症狀, Location: 位置, buttons: 取消/Cancel, 儲存變更/Save Changes); symptoms field changed to read-only display; location section includes GPS button, status indicators, manual input field, and helper text
 
 ### Messaging & Communication
 - **Architecture**: WhatsApp Business API as primary, email fallback, queue-based processing, template-based messaging.
