@@ -27,12 +27,10 @@ export function setupTestUtils(app: Express) {
         await storage.updateUser(sub, { role: 'admin' });
       }
 
-      // Create session
+      // Create session - Passport expects just the user ID
+      // serializeUser stores user.id, deserializeUser fetches the full user from database
       (req.session as any).passport = {
-        user: {
-          claims: { sub, email, name },
-          expires_at: Math.floor(Date.now() / 1000) + 3600
-        }
+        user: sub  // Just the user ID, not the full OIDC claims object
       };
 
       await new Promise((resolve, reject) => {
