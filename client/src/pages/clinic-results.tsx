@@ -290,7 +290,11 @@ export default function ClinicResultsPage() {
     contactPhone: "",
     symptom: "",
     manualLocation: "",
+    locationLatitude: undefined as number | undefined,
+    locationLongitude: undefined as number | undefined,
   });
+  const [editGpsDetecting, setEditGpsDetecting] = useState(false);
+  const [editGpsError, setEditGpsError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Fetch emergency request to get location
@@ -659,8 +663,42 @@ export default function ClinicResultsPage() {
         contactPhone: emergencyRequest.contactPhone || "",
         symptom: emergencyRequest.symptom || "",
         manualLocation: emergencyRequest.manualLocation || "",
+        locationLatitude: emergencyRequest.locationLatitude ? parseFloat(emergencyRequest.locationLatitude) : undefined,
+        locationLongitude: emergencyRequest.locationLongitude ? parseFloat(emergencyRequest.locationLongitude) : undefined,
       });
+      setEditGpsError(null);
       setShowEditDialog(true);
+    }
+  };
+
+  // Detect GPS location for edit dialog
+  const handleEditUseGps = () => {
+    if ("geolocation" in navigator) {
+      setEditGpsDetecting(true);
+      setEditGpsError(null);
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setEditFormData({
+            ...editFormData,
+            locationLatitude: position.coords.latitude,
+            locationLongitude: position.coords.longitude,
+            manualLocation: "", // Clear manual location when GPS is used
+          });
+          setEditGpsDetecting(false);
+          setEditGpsError(null);
+          toast({
+            title: t('emergency.gps.success', 'Location Detected'),
+            description: t('emergency.gps.success_desc', 'Your GPS location has been detected successfully'),
+          });
+        },
+        (error) => {
+          setEditGpsDetecting(false);
+          setEditGpsError(t('emergency.gps.error', 'Unable to detect location. Please check your location permissions.'));
+        }
+      );
+    } else {
+      setEditGpsError(t('emergency.gps.not_supported', 'Geolocation is not supported by this browser'));
     }
   };
 
@@ -1186,16 +1224,23 @@ export default function ClinicResultsPage() {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{t('clinic_results.edit_request_title', 'Edit Emergency Request')}</DialogTitle>
+            <DialogTitle>
+              {language === 'zh-HK' ? '編輯緊急求助資料' : 'Edit Emergency Request'}
+            </DialogTitle>
             <DialogDescription>
-              {t('clinic_results.edit_request_description', 'Update your emergency request details. Changes will be reflected in future broadcasts.')}
+              {language === 'zh-HK' 
+                ? '更新您的緊急求助資料。變更將反映在未來的廣播訊息中。'
+                : 'Update your emergency request details. Changes will be reflected in future broadcasts.'
+              }
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             {/* Contact Name */}
             <div>
-              <Label htmlFor="edit-contact-name">{t('clinic_results.contact_name', 'Contact Name')}</Label>
+              <Label htmlFor="edit-contact-name">
+                {language === 'zh-HK' ? '聯絡人姓名' : 'Contact Name'}
+              </Label>
               <Input
                 id="edit-contact-name"
                 value={editFormData.contactName}
@@ -1207,7 +1252,9 @@ export default function ClinicResultsPage() {
 
             {/* Contact Phone */}
             <div>
-              <Label htmlFor="edit-contact-phone">{t('clinic_results.contact_phone', 'Contact Phone')}</Label>
+              <Label htmlFor="edit-contact-phone">
+                {language === 'zh-HK' ? '聯絡電話' : 'Contact Phone'}
+              </Label>
               <Input
                 id="edit-contact-phone"
                 value={editFormData.contactPhone}
@@ -1217,29 +1264,76 @@ export default function ClinicResultsPage() {
               />
             </div>
 
-            {/* Symptoms */}
+            {/* Symptoms - Bilingual */}
             <div>
-              <Label htmlFor="edit-symptom">{t('clinic_results.symptoms', 'Symptoms')}</Label>
-              <Textarea
-                id="edit-symptom"
-                value={editFormData.symptom}
-                onChange={(e) => setEditFormData({ ...editFormData, symptom: e.target.value })}
-                placeholder={t('emergency.symptom_placeholder', 'Describe symptoms...')}
-                rows={3}
-                data-testid="input-edit-symptom"
-              />
+              <Label htmlFor="edit-symptom" className="text-gray-700 dark:text-gray-300">
+                {language === 'zh-HK' ? '症狀' : 'Symptoms'}
+              </Label>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {editFormData.symptom}
+              </div>
             </div>
 
-            {/* Manual Location */}
+            {/* Location - with GPS */}
             <div>
-              <Label htmlFor="edit-location">{t('clinic_results.location', 'Location')}</Label>
+              <Label htmlFor="edit-location" className="text-gray-700 dark:text-gray-300">
+                {language === 'zh-HK' ? '位置' : 'Location'}
+              </Label>
+              
+              {/* GPS Button */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full mt-2 mb-2"
+                onClick={handleEditUseGps}
+                disabled={editGpsDetecting}
+                data-testid="button-use-gps"
+              >
+                {editGpsDetecting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {language === 'zh-HK' ? '偵測位置中...' : 'Detecting location...'}
+                  </>
+                ) : (
+                  <>
+                    <Navigation className="h-4 w-4 mr-2" />
+                    {language === 'zh-HK' ? '使用 GPS 定位' : 'Use GPS Location'}
+                  </>
+                )}
+              </Button>
+              
+              {/* GPS Status */}
+              {editFormData.locationLatitude && editFormData.locationLongitude && (
+                <div className="text-xs text-green-600 dark:text-green-400 mb-2 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  {language === 'zh-HK' 
+                    ? `GPS 位置已偵測: ${editFormData.locationLatitude.toFixed(6)}, ${editFormData.locationLongitude.toFixed(6)}`
+                    : `GPS location detected: ${editFormData.locationLatitude.toFixed(6)}, ${editFormData.locationLongitude.toFixed(6)}`
+                  }
+                </div>
+              )}
+              
+              {/* GPS Error */}
+              {editGpsError && (
+                <div className="text-xs text-red-600 dark:text-red-400 mb-2">
+                  {editGpsError}
+                </div>
+              )}
+              
+              {/* Manual Location Input */}
               <Input
                 id="edit-location"
                 value={editFormData.manualLocation}
                 onChange={(e) => setEditFormData({ ...editFormData, manualLocation: e.target.value })}
-                placeholder={t('emergency.location_placeholder', 'Area or address')}
+                placeholder={language === 'zh-HK' ? '地區或地址' : 'Area or address'}
                 data-testid="input-edit-location"
               />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {language === 'zh-HK' 
+                  ? '使用 GPS 或手動輸入地址'
+                  : 'Use GPS or manually enter address'
+                }
+              </p>
             </div>
           </div>
 
@@ -1249,7 +1343,7 @@ export default function ClinicResultsPage() {
               onClick={() => setShowEditDialog(false)}
               data-testid="button-cancel-edit"
             >
-              {t('common.cancel', 'Cancel')}
+              {language === 'zh-HK' ? '取消' : 'Cancel'}
             </Button>
             <Button
               onClick={handleEditSubmit}
@@ -1257,7 +1351,7 @@ export default function ClinicResultsPage() {
               data-testid="button-save-edit"
             >
               {editRequestMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {t('common.save', 'Save Changes')}
+              {language === 'zh-HK' ? '儲存變更' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
