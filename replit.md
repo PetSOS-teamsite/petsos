@@ -13,6 +13,7 @@ Preferred communication style: Simple, everyday language.
 - **Design Decisions**: Accessible, customizable components; minimal bundle size; Tailwind CSS for theming (dark mode, custom design tokens); type-safe form validation.
 - **Key Features**: Multi-step emergency request flow, clinic results filtering and communication, profile and pet management (CRUD with bilingual breed selection), clinic directory, admin dashboard, clinic staff dashboard.
 - **Branding & SEO**: Text-based "PetSOS" logo, vibrant red (#EF4444) primary color, custom SVG favicon (emergency cross + paw print), reusable `<SEO>` component for page-specific meta tags, bilingual optimization (EN/ZH-HK) for key pages, comprehensive Open Graph and Twitter Cards, geo-targeting for Hong Kong.
+- **Progressive Web App (PWA)**: Full PWA support with web app manifest, multiple icon sizes (192x192, 512x512, 180x180 Apple Touch Icon), installable to home screen on iOS/Android, standalone display mode, emergency and clinic shortcuts, generated from SVG using Sharp.
 - **UX Enhancements**: Prominent pet management CTA, auto-scroll to status button post-broadcast, extended toast duration, blue-styled "View Broadcast Status" button, and post-broadcast guidance to status page.
 
 ### Backend Architecture
@@ -113,6 +114,7 @@ Preferred communication style: Simple, everyday language.
 - **date-fns**: Date manipulation.
 - **nanoid**: Unique ID generation.
 - **express-rate-limit**: Rate limiting middleware.
+- **sharp**: Image processing for icon generation (SVG to PNG conversion).
 
 ### Error Tracking & Monitoring
 - **@sentry/node**: Backend error tracking and performance monitoring.
