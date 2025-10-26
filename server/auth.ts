@@ -111,6 +111,12 @@ export async function setupAuth(app: Express) {
     app.get(
       "/api/auth/google",
       (req, res, next) => {
+        // Guard against missing session
+        if (!req.session) {
+          console.error('[Auth] Session not available at Google OAuth start');
+          return res.redirect("/login?error=session_failed");
+        }
+        
         const returnTo = req.query.returnTo as string;
         if (returnTo && returnTo.startsWith('/')) {
           (req.session as any).returnTo = returnTo;
@@ -124,6 +130,12 @@ export async function setupAuth(app: Express) {
       "/api/auth/google/callback",
       passport.authenticate("google", { failureRedirect: "/login" }),
       (req, res) => {
+        // Guard against missing session
+        if (!req.session) {
+          console.error('[Auth] Session not available after Google OAuth');
+          return res.redirect("/login?error=session_failed");
+        }
+        
         const returnTo = (req.session as any).returnTo || "/profile";
         delete (req.session as any).returnTo;
         
@@ -131,7 +143,7 @@ export async function setupAuth(app: Express) {
         req.session.save((err) => {
           if (err) {
             console.error('[Auth] Session save error:', err);
-            return res.redirect("/login");
+            return res.redirect("/login?error=session_save_failed");
           }
           res.redirect(returnTo);
         });
