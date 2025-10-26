@@ -26,6 +26,8 @@ import { FcGoogle } from "react-icons/fc";
 import { Separator } from "@/components/ui/separator";
 import { PhoneInput } from "@/components/PhoneInput";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useTranslation } from "@/hooks/useTranslation";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 // Email-specific schemas
 const emailLoginSchema = z.object({
@@ -64,6 +66,7 @@ export default function LoginPage() {
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const emailLoginForm = useForm({
     resolver: zodResolver(emailLoginSchema),
@@ -187,11 +190,17 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-red-600">
-            PetSOS
-          </CardTitle>
+          <div className="flex justify-between items-start mb-2">
+            <div className="flex-1" />
+            <CardTitle className="text-3xl font-bold text-red-600 flex-1 text-center">
+              PetSOS
+            </CardTitle>
+            <div className="flex-1 flex justify-end">
+              <LanguageSwitcher />
+            </div>
+          </div>
           <CardDescription>
-            {isSignup ? "Create your account" : "Sign in to your account"}
+            {isSignup ? t("login.create_account", "Create your account") : t("login.sign_in", "Sign in to your account")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -203,7 +212,7 @@ export default function LoginPage() {
             data-testid="button-google-login"
           >
             <FcGoogle className="mr-2 h-5 w-5" />
-            Continue with Google
+            {t("login.google", "Continue with Google")}
           </Button>
 
           <div className="relative">
@@ -212,7 +221,7 @@ export default function LoginPage() {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
+                {t("login.or_continue", "Or continue with")}
               </span>
             </div>
           </div>
@@ -220,8 +229,8 @@ export default function LoginPage() {
           {/* Email/Phone Tabs */}
           <Tabs value={authMethod} className="w-full" onValueChange={(value) => setAuthMethod(value as 'email' | 'phone')}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="email" data-testid="tab-email">Email</TabsTrigger>
-              <TabsTrigger value="phone" data-testid="tab-phone">Phone</TabsTrigger>
+              <TabsTrigger value="email" data-testid="tab-email">{t("login.email", "Email")}</TabsTrigger>
+              <TabsTrigger value="phone" data-testid="tab-phone">{t("login.phone", "Phone")}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="email">

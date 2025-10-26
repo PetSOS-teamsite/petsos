@@ -442,6 +442,12 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
           });
         });
         onTranscriptComplete(transcript, analyzedSymptoms);
+        
+        // Show success feedback
+        toast({
+          title: t('voice_recorder.success', 'Voice recording complete'),
+          description: t('voice_recorder.success_description', 'Your symptoms have been analyzed successfully'),
+        });
       } catch (error) {
         console.error('Analysis failed:', error);
         // Fallback to keyword analysis
@@ -449,13 +455,21 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
         onTranscriptComplete(transcript, fallbackAnalysis);
         
         toast({
-          title: t('voice_recorder.analysis_error', 'Analysis error'),
+          title: t('voice_recorder.analysis_error', 'Analysis completed'),
           description: t('voice_recorder.fallback_used', 'Using offline symptom detection.'),
           variant: 'default',
         });
       } finally {
         setIsAnalyzing(false);
       }
+    } else {
+      // No transcript recorded
+      setError(t('voice_recorder.no_transcript', 'No speech detected. Please try again.'));
+      toast({
+        title: t('voice_recorder.error_no_speech', 'No speech detected'),
+        description: t('voice_recorder.error_no_speech_description', 'Please speak clearly and try recording again.'),
+        variant: 'destructive',
+      });
     }
   };
 

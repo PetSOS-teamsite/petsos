@@ -21,6 +21,8 @@ import PetsPage from "@/pages/pets";
 import ClinicsPage from "@/pages/clinics";
 import AdminClinicsPage from "@/pages/admin-clinics";
 import AdminConfigPage from "@/pages/admin-config";
+import AdminDashboardPage from "@/pages/admin-dashboard";
+import AdminAnalyticsPage from "@/pages/admin-analytics";
 import AdminLoginPage from "@/pages/admin-login";
 import ClinicDashboardPage from "@/pages/clinic-dashboard";
 import PrivacyPolicyPage from "@/pages/privacy-policy";
@@ -70,6 +72,12 @@ function Router() {
       
       {/* Admin routes */}
       <Route path="/admin/login" component={AdminLoginPage} />
+      <Route path="/admin">
+        {isAuthenticated && isAdmin ? <AdminDashboardPage /> : <AdminLoginPage />}
+      </Route>
+      <Route path="/admin/analytics">
+        {isAuthenticated && isAdmin ? <AdminAnalyticsPage /> : <AdminLoginPage />}
+      </Route>
       <Route path="/admin/clinics">
         {isAuthenticated && isAdmin ? <AdminClinicsPage /> : <AdminLoginPage />}
       </Route>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, Filter, X, Users, Link2, Copy, Settings } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, Filter, X, Users, Link2, Copy, Settings, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -458,8 +458,14 @@ export default function AdminClinicsPage() {
               </div>
             </div>
             <div className="flex gap-2">
+              <Link href="/admin">
+                <Button variant="outline" size="sm" data-testid="button-admin-dashboard">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+              </Link>
               <Link href="/admin/config">
-                <Button variant="outline" data-testid="button-admin-config">
+                <Button variant="outline" size="sm" data-testid="button-admin-config">
                   <Settings className="h-4 w-4 mr-2" />
                   Configuration
                 </Button>

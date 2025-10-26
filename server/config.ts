@@ -70,6 +70,36 @@ export function getEnvironment(): Environment {
 }
 
 /**
+ * Validate required environment variables for production and staging
+ */
+function validateEnvironmentVariables(env: Environment): void {
+  if (env === 'development') {
+    return; // Skip validation in development
+  }
+
+  const required: string[] = [];
+  const missing: string[] = [];
+
+  if (env === 'production' || env === 'staging') {
+    required.push('DATABASE_URL', 'SESSION_SECRET');
+  }
+
+  required.forEach((varName) => {
+    if (!process.env[varName]) {
+      missing.push(varName);
+    }
+  });
+
+  if (missing.length > 0) {
+    const message = `Missing required environment variables: ${missing.join(', ')}`;
+    console.error(`[Config Error] ${message}`);
+    throw new Error(message);
+  }
+
+  console.log('[Config] All required environment variables are set');
+}
+
+/**
  * Load configuration for current environment
  */
 export function loadConfig(): AppConfig {
@@ -77,6 +107,9 @@ export function loadConfig(): AppConfig {
   const isDevelopment = env === 'development';
   const isStaging = env === 'staging';
   const isProduction = env === 'production';
+
+  // Validate environment variables before proceeding
+  validateEnvironmentVariables(env);
   
   // In development, warn about missing required variables
   if (isDevelopment) {
