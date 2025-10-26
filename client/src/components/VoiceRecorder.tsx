@@ -1,9 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Mic, MicOff, Loader2, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface VoiceRecorderProps {
   onTranscriptComplete: (transcript: string, analyzedSymptoms: string) => void;
@@ -490,7 +495,7 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
     <Card className={isRecording ? "border-red-500 bg-red-50 dark:bg-red-950" : ""}>
       <CardContent className="pt-6">
         <div className="space-y-4">
-          {/* Recording Status */}
+          {/* Recording Status and Button */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {isRecording ? (
@@ -513,14 +518,7 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
                     {t('voice_recorder.recorded', 'Voice recorded successfully')}
                   </p>
                 </>
-              ) : (
-                <>
-                  <MicOff className="h-6 w-6 text-gray-400" />
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {t('voice_recorder.ready', 'Ready to record')}
-                  </p>
-                </>
-              )}
+              ) : null}
             </div>
 
             {/* Record Button */}
@@ -545,6 +543,23 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
               </Button>
             )}
           </div>
+          
+          {/* Collapsible Instructions */}
+          {!transcript && !isRecording && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                <Info className="h-4 w-4" />
+                {t('voice_recorder.tip_short', 'Speak clearly — we\'ll analyze and guide you automatically')}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    💡 {t('voice_recorder.tip', 'Tip: Speak clearly and describe your pet\'s symptoms. The system will automatically analyze and categorize the emergency.')}
+                  </p>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
 
           {/* Transcript Display */}
           {transcript && (
@@ -577,13 +592,6 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
               <p>{error}</p>
             </div>
           )}
-
-          {/* Instructions */}
-          <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              💡 {t('voice_recorder.tip', 'Tip: Speak clearly and describe your pet\'s symptoms. The system will automatically analyze and categorize the emergency.')}
-            </p>
-          </div>
         </div>
       </CardContent>
     </Card>
