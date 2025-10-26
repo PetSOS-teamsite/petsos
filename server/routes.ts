@@ -1063,24 +1063,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update emergency request status
-  app.patch("/api/emergency-requests/:id", isAuthenticated, async (req: any, res) => {
+  // Update emergency request (allows both authenticated users and anonymous for emergency flexibility)
+  app.patch("/api/emergency-requests/:id", async (req: any, res) => {
     try {
-      const requestingUserId = (req.user as any).id;
       const request = await storage.getEmergencyRequest(req.params.id);
       
       if (!request) {
         return res.status(404).json({ message: "Emergency request not found" });
       }
       
-      // Only the owner or admin can update emergency requests
-      const requestingUser = await storage.getUser(requestingUserId);
-      if (!requestingUser) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      
-      if (request.userId !== requestingUserId && requestingUser.role !== 'admin') {
-        return res.status(403).json({ message: "Forbidden - You can only update your own emergency requests" });
+      // Authorization logic: Allow if user is authenticated and owns the request, is admin, or if request is anonymous
+      if (req.user) {
+        // User is authenticated - verify ownership, admin role, or anonymous request
+        const requestingUserId = (req.user as any).id;
+        const requestingUser = await storage.getUser(requestingUserId);
+        
+        if (!requestingUser) {
+          return res.status(401).json({ message: "Unauthorized" });
+        }
+        
+        // Allow if: user owns the request, is admin, OR request was created anonymously
+        const isOwner = request.userId === requestingUserId;
+        const isAdmin = requestingUser.role === 'admin';
+        const isAnonymousRequest = !request.userId;
+        
+        if (!isOwner && !isAdmin && !isAnonymousRequest) {
+          return res.status(403).json({ message: "Forbidden - You can only update your own emergency requests" });
+        }
+      } else {
+        // Anonymous user - only allow if request was created anonymously
+        if (request.userId) {
+          return res.status(403).json({ message: "Forbidden - This emergency belongs to a registered user" });
+        }
       }
       
       const updateData = insertEmergencyRequestSchema.partial().parse(req.body);
@@ -1090,7 +1104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityType: 'emergency_request',
         entityId: request.id,
         action: 'update',
-        userId: requestingUserId,
+        userId: req.user ? (req.user as any).id : null,
         changes: updateData,
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
