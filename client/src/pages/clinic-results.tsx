@@ -4,12 +4,13 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, MessageCircle, MapPin, Clock, Navigation, Send, Loader2, BarChart3, AlertCircle, Search, Filter, CheckCircle2, ExternalLink } from "lucide-react";
+import { Phone, MessageCircle, MapPin, Clock, Navigation, Send, Loader2, BarChart3, AlertCircle, Search, Filter, CheckCircle2, ExternalLink, Edit2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -25,6 +26,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Clinic {
   id: string;
@@ -275,6 +284,13 @@ export default function ClinicResultsPage() {
   const [onlyWhatsApp, setOnlyWhatsApp] = useState(false);
   const [selectedClinics, setSelectedClinics] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    contactName: "",
+    contactPhone: "",
+    symptom: "",
+    manualLocation: "",
+  });
   const { toast } = useToast();
 
   // Fetch emergency request to get location
@@ -604,6 +620,51 @@ export default function ClinicResultsPage() {
     },
   });
 
+  // Edit emergency request mutation
+  const editRequestMutation = useMutation({
+    mutationFn: async (data: typeof editFormData) => {
+      const response = await apiRequest(
+        'PATCH',
+        `/api/emergency-requests/${params?.requestId}`,
+        data
+      );
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/emergency-requests', params?.requestId] });
+      toast({
+        title: t('clinic_results.edit_success', 'Emergency request updated'),
+        description: t('clinic_results.edit_success_description', 'Your changes have been saved successfully.'),
+      });
+      setShowEditDialog(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('clinic_results.edit_failed', 'Update failed'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Open edit dialog with current data
+  const handleOpenEditDialog = () => {
+    if (emergencyRequest) {
+      setEditFormData({
+        contactName: emergencyRequest.contactName || "",
+        contactPhone: emergencyRequest.contactPhone || "",
+        symptom: emergencyRequest.symptom || "",
+        manualLocation: emergencyRequest.manualLocation || "",
+      });
+      setShowEditDialog(true);
+    }
+  };
+
+  // Handle edit form submission
+  const handleEditSubmit = () => {
+    editRequestMutation.mutate(editFormData);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -631,7 +692,19 @@ export default function ClinicResultsPage() {
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400 mt-1" />
                 <div className="flex-1">
-                  <CardTitle className="text-lg text-red-900 dark:text-red-100">{t('clinic_results.emergency_request', 'Emergency Request')}</CardTitle>
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-lg text-red-900 dark:text-red-100">{t('clinic_results.emergency_request', 'Emergency Request')}</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleOpenEditDialog}
+                      className="text-red-700 dark:text-red-300 hover:text-red-900 dark:hover:text-red-100"
+                      data-testid="button-edit-request"
+                    >
+                      <Edit2 className="h-4 w-4 mr-1" />
+                      {t('common.edit', 'Edit')}
+                    </Button>
+                  </div>
                   <p className="text-sm text-red-700 dark:text-red-300 mt-2">
                     <strong>{t('clinic_results.symptoms', 'Symptoms')}:</strong> {emergencyRequest.symptom}
                   </p>
@@ -642,13 +715,14 @@ export default function ClinicResultsPage() {
                       {emergencyRequest.petAge && ` (${emergencyRequest.petAge} ${t('common.years', 'years')})`}
                     </p>
                   )}
-                  {emergencyRequest.locationText && (
+                  {emergencyRequest.manualLocation && (
                     <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                      <strong>{t('clinic_results.location', 'Location')}:</strong> {emergencyRequest.locationText}
+                      <strong>{t('clinic_results.location', 'Location')}:</strong> {emergencyRequest.manualLocation}
                     </p>
                   )}
                   <p className="text-sm text-red-700 dark:text-red-300 mt-1">
                     <strong>{t('clinic_results.contact', 'Contact')}:</strong> {emergencyRequest.contactPhone}
+                    {emergencyRequest.contactName && ` (${emergencyRequest.contactName})`}
                   </p>
                 </div>
               </div>
@@ -1099,6 +1173,87 @@ export default function ClinicResultsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Emergency Request Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('clinic_results.edit_request_title', 'Edit Emergency Request')}</DialogTitle>
+            <DialogDescription>
+              {t('clinic_results.edit_request_description', 'Update your emergency request details. Changes will be reflected in future broadcasts.')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Contact Name */}
+            <div>
+              <Label htmlFor="edit-contact-name">{t('clinic_results.contact_name', 'Contact Name')}</Label>
+              <Input
+                id="edit-contact-name"
+                value={editFormData.contactName}
+                onChange={(e) => setEditFormData({ ...editFormData, contactName: e.target.value })}
+                placeholder={t('emergency.name_placeholder', 'Your name')}
+                data-testid="input-edit-contact-name"
+              />
+            </div>
+
+            {/* Contact Phone */}
+            <div>
+              <Label htmlFor="edit-contact-phone">{t('clinic_results.contact_phone', 'Contact Phone')}</Label>
+              <Input
+                id="edit-contact-phone"
+                value={editFormData.contactPhone}
+                onChange={(e) => setEditFormData({ ...editFormData, contactPhone: e.target.value })}
+                placeholder={t('emergency.phone_placeholder', '+852 1234 5678')}
+                data-testid="input-edit-contact-phone"
+              />
+            </div>
+
+            {/* Symptoms */}
+            <div>
+              <Label htmlFor="edit-symptom">{t('clinic_results.symptoms', 'Symptoms')}</Label>
+              <Textarea
+                id="edit-symptom"
+                value={editFormData.symptom}
+                onChange={(e) => setEditFormData({ ...editFormData, symptom: e.target.value })}
+                placeholder={t('emergency.symptom_placeholder', 'Describe symptoms...')}
+                rows={3}
+                data-testid="input-edit-symptom"
+              />
+            </div>
+
+            {/* Manual Location */}
+            <div>
+              <Label htmlFor="edit-location">{t('clinic_results.location', 'Location')}</Label>
+              <Input
+                id="edit-location"
+                value={editFormData.manualLocation}
+                onChange={(e) => setEditFormData({ ...editFormData, manualLocation: e.target.value })}
+                placeholder={t('emergency.location_placeholder', 'Area or address')}
+                data-testid="input-edit-location"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowEditDialog(false)}
+              data-testid="button-cancel-edit"
+            >
+              {t('common.cancel', 'Cancel')}
+            </Button>
+            <Button
+              onClick={handleEditSubmit}
+              disabled={editRequestMutation.isPending}
+              data-testid="button-save-edit"
+            >
+              {editRequestMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {t('common.save', 'Save Changes')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
