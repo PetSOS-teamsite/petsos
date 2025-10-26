@@ -126,7 +126,15 @@ export async function setupAuth(app: Express) {
       (req, res) => {
         const returnTo = (req.session as any).returnTo || "/profile";
         delete (req.session as any).returnTo;
-        res.redirect(returnTo);
+        
+        // Explicitly save session before redirect to ensure it persists
+        req.session.save((err) => {
+          if (err) {
+            console.error('[Auth] Session save error:', err);
+            return res.redirect("/login");
+          }
+          res.redirect(returnTo);
+        });
       }
     );
   } else {
