@@ -208,13 +208,17 @@ export default function ClinicsPage() {
             />
           </div>
 
-          {/* Region Filter Tabs */}
+          {/* Region Filter Tabs - Scrollable on mobile */}
           {regionsLoading ? (
             <Skeleton className="h-12 w-full" />
           ) : (
             <Tabs value={selectedRegion} onValueChange={setSelectedRegion}>
-              <TabsList className="grid w-full grid-cols-4" data-testid="tabs-region">
-                <TabsTrigger value="all" data-testid="tab-all">
+              <TabsList className="inline-flex w-full h-auto p-1 overflow-x-auto scrollbar-hide" data-testid="tabs-region">
+                <TabsTrigger 
+                  value="all" 
+                  data-testid="tab-all"
+                  className="flex-shrink-0 min-w-[80px] h-10 px-4"
+                >
                   {language === 'zh-HK' ? '全港' : 'All HK'}
                 </TabsTrigger>
                 {regions?.map((region) => (
@@ -222,6 +226,7 @@ export default function ClinicsPage() {
                     key={region.id}
                     value={region.id}
                     data-testid={`tab-region-${region.code}`}
+                    className="flex-shrink-0 min-w-[80px] h-10 px-4"
                   >
                     {language === 'zh-HK' ? region.nameZh : region.nameEn}
                   </TabsTrigger>
@@ -250,28 +255,28 @@ export default function ClinicsPage() {
 
           {/* Location Status Banner - Compact */}
           {locationError ? (
-            <div className="p-2.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg" data-testid="banner-location-error">
+            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg" data-testid="banner-location-error">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
-                <p className="text-xs text-yellow-900 dark:text-yellow-100">
+                <p className="text-sm text-yellow-900 dark:text-yellow-100">
                   {language === 'zh-HK' ? '無法取得位置 - 請啟用定位以顯示距離' : 'Location unavailable - Enable GPS to see distances'}
                 </p>
               </div>
             </div>
           ) : userLocation ? (
-            <div className="p-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg" data-testid="banner-location-success">
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg" data-testid="banner-location-success">
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-red-600 dark:text-red-400" />
-                <p className="text-xs text-red-900 dark:text-red-100 font-medium">
+                <MapPin className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+                <p className="text-sm text-red-900 dark:text-red-100 font-medium">
                   {language === 'zh-HK' ? '📍 已按距離排序 - 最近的診所優先顯示' : '📍 Sorted by distance - Nearest clinics first'}
                 </p>
               </div>
             </div>
           ) : (
-            <div className="p-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg" data-testid="banner-location-loading">
+            <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg" data-testid="banner-location-loading">
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-gray-500 animate-pulse" />
-                <p className="text-xs text-gray-600 dark:text-gray-400">
+                <MapPin className="h-4 w-4 text-gray-500 animate-pulse flex-shrink-0" />
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {language === 'zh-HK' ? '正在取得位置...' : 'Getting your location...'}
                 </p>
               </div>
