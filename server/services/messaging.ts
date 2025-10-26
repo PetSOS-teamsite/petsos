@@ -31,7 +31,96 @@ interface SendMessageOptions {
 export class MessagingService {
   
   /**
-   * Send a message via WhatsApp Business API
+   * Send a WhatsApp template message using approved Meta templates
+   */
+  private async sendWhatsAppTemplateMessage(
+    phoneNumber: string,
+    templateName: string,
+    templateVariables: string[]
+  ): Promise<boolean> {
+    console.log('[WhatsApp Template] Attempting to send template message...');
+    console.log('[WhatsApp Template] Template:', templateName);
+    console.log('[WhatsApp Template] Variables count:', templateVariables.length);
+    console.log('[WhatsApp Template] Has Access Token:', !!WHATSAPP_ACCESS_TOKEN);
+    console.log('[WhatsApp Template] Has Phone Number ID:', !!WHATSAPP_PHONE_NUMBER_ID);
+    
+    if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+      console.error('[WhatsApp Template] Credentials not configured - missing token or phone number ID');
+      return false;
+    }
+
+    // Validate phone number
+    const cleanedNumber = phoneNumber.replace(/[^0-9]/g, '');
+    if (!cleanedNumber || cleanedNumber.length < 8) {
+      console.error('[WhatsApp Template] Invalid phone number:', phoneNumber);
+      return false;
+    }
+
+    try {
+      const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+      
+      // Build template component parameters
+      const parameters = templateVariables.map(value => ({
+        type: 'text',
+        text: value
+      }));
+      
+      const payload = {
+        messaging_product: 'whatsapp',
+        to: cleanedNumber,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: {
+            code: templateName.endsWith('_zh_hk') ? 'zh_HK' : 'en'
+          },
+          components: [
+            {
+              type: 'body',
+              parameters: parameters
+            }
+          ]
+        }
+      };
+      
+      console.log('[WhatsApp Template] Request payload:', JSON.stringify(payload, null, 2));
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      console.log('[WhatsApp Template] Response status:', response.status);
+      
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('[WhatsApp Template] API error response:', error);
+        try {
+          const errorJson = JSON.parse(error);
+          console.error('[WhatsApp Template] Parsed error:', JSON.stringify(errorJson, null, 2));
+        } catch (e) {
+          // Error wasn't JSON
+        }
+        return false;
+      }
+
+      const result = await response.json();
+      console.log('[WhatsApp Template] Message sent successfully!');
+      console.log('[WhatsApp Template] API Response:', JSON.stringify(result, null, 2));
+      console.log('[WhatsApp Template] Message ID:', result.messages?.[0]?.id);
+      return true;
+    } catch (error) {
+      console.error('[WhatsApp Template] Error sending message:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Send a message via WhatsApp Business API (legacy plain text - for fallback only)
    */
   private async sendWhatsAppMessage(phoneNumber: string, content: string): Promise<boolean> {
     console.log('[WhatsApp] Attempting to send message...');
@@ -173,7 +262,32 @@ export class MessagingService {
       let success = false;
 
       if (message.messageType === 'whatsapp') {
-        success = await this.sendWhatsAppMessage(message.recipient, message.content);
+        // Check if this is a template message (content starts with "[Template: ")
+        if (message.content.startsWith('[Template: ')) {
+          // Extract template name from content
+          const templateMatch = message.content.match(/\[Template: ([^\]]+)\]/);
+          if (templateMatch) {
+            const templateName = templateMatch[1];
+            
+            // Rebuild template data from emergency request
+            const emergencyRequestId = message.emergencyRequestId;
+            const templateData = await this.buildTemplateMessage(emergencyRequestId);
+            
+            if (templateData && templateData.templateName === templateName) {
+              success = await this.sendWhatsAppTemplateMessage(
+                message.recipient,
+                templateData.templateName,
+                templateData.variables
+              );
+            } else {
+              console.error('[Process Message] Failed to rebuild template data');
+              success = false;
+            }
+          }
+        } else {
+          // Legacy plain text message
+          success = await this.sendWhatsAppMessage(message.recipient, message.content);
+        }
         
         // If WhatsApp fails, try email fallback
         if (!success) {
@@ -183,7 +297,7 @@ export class MessagingService {
             const emailSuccess = await this.sendEmail(
               clinic.email,
               'Emergency Pet Request',
-              message.content
+              message.content.replace(/\[Template: [^\]]+\]\s*/, '') // Remove template prefix for email
             );
             
             if (emailSuccess) {
@@ -260,6 +374,123 @@ export class MessagingService {
   }
 
   /**
+   * Build WhatsApp template message based on emergency request data
+   */
+  private async buildTemplateMessage(
+    emergencyRequestId: string,
+    language: string = 'en'
+  ): Promise<{ templateName: string; variables: string[]; fallbackText: string } | null> {
+    // Fetch emergency request with related data
+    const emergencyRequest = await storage.getEmergencyRequest(emergencyRequestId);
+    if (!emergencyRequest) {
+      console.error('[Template Builder] Emergency request not found:', emergencyRequestId);
+      return null;
+    }
+
+    // Fetch pet data if available
+    let pet = null;
+    if (emergencyRequest.petId) {
+      pet = await storage.getPet(emergencyRequest.petId);
+    }
+
+    // Fetch user data for language preference
+    let user = null;
+    if (emergencyRequest.userId) {
+      user = await storage.getUser(emergencyRequest.userId);
+    }
+
+    // Determine language (user preference > parameter > default)
+    const userLanguage = user?.languagePreference || language || 'en';
+    const isZhHk = userLanguage === 'zh-HK';
+    const langSuffix = isZhHk ? '_zh_hk' : '_en';
+
+    // Determine which template to use
+    let templateName: string;
+    let variables: string[] = [];
+    let fallbackText = '';
+
+    // Check if pet has visit history (registered pet with medical history)
+    if (pet && pet.lastVisitClinicId) {
+      templateName = `emergency_pet_alert_full${langSuffix}`;
+      
+      // Fetch last visited clinic name
+      const lastClinic = await storage.getClinic(pet.lastVisitClinicId);
+      const lastClinicName = lastClinic ? (isZhHk && lastClinic.nameZh ? lastClinic.nameZh : lastClinic.name) : (isZhHk ? '不詳' : 'Unknown');
+      
+      // Build 11 variables for full template
+      variables = [
+        lastClinicName, // {{1}} Last visited clinic
+        pet.name || (isZhHk ? '未命名' : 'Unnamed'), // {{2}} Pet name
+        emergencyRequest.petSpecies || (isZhHk ? '不詳' : 'Unknown'), // {{3}} Species
+        emergencyRequest.petBreed || (isZhHk ? '不詳' : 'Unknown'), // {{4}} Breed
+        emergencyRequest.petAge ? `${emergencyRequest.petAge} ${isZhHk ? '歲' : 'years'}` : (isZhHk ? '不詳' : 'Unknown'), // {{5}} Age
+        pet.weight ? `${pet.weight}${isZhHk ? '公斤' : 'kg'}` : (isZhHk ? '不詳' : 'Unknown'), // {{6}} Weight
+        emergencyRequest.symptom || (isZhHk ? '緊急情況' : 'Emergency situation'), // {{7}} Critical symptom
+        pet.medicalNotes || (isZhHk ? '無' : 'None'), // {{8}} Medical notes
+        emergencyRequest.manualLocation || (isZhHk ? '不詳' : 'Unknown'), // {{9}} Location
+        emergencyRequest.contactName || (isZhHk ? '寵物主人' : 'Pet Owner'), // {{10}} Owner name
+        emergencyRequest.contactPhone || (isZhHk ? '不詳' : 'Unknown'), // {{11}} Owner phone
+      ];
+      
+      fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
+        `${isZhHk ? '已登記寵物（有醫療記錄）' : 'REGISTERED PET WITH MEDICAL HISTORY'}\n` +
+        `${isZhHk ? '名稱' : 'Name'}: ${variables[1]}\n` +
+        `${isZhHk ? '物種' : 'Species'}: ${variables[2]}\n` +
+        `${isZhHk ? '緊急症狀' : 'Emergency'}: ${variables[6]}\n` +
+        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[10]} (${variables[10]})`;
+      
+    } else if (pet) {
+      // New registered pet (no visit history)
+      templateName = `emergency_pet_alert_new${langSuffix}`;
+      
+      // Build 10 variables for new template
+      variables = [
+        pet.name || (isZhHk ? '未命名' : 'Unnamed'), // {{1}} Pet name
+        emergencyRequest.petSpecies || (isZhHk ? '不詳' : 'Unknown'), // {{2}} Species
+        emergencyRequest.petBreed || (isZhHk ? '不詳' : 'Unknown'), // {{3}} Breed
+        emergencyRequest.petAge ? `${emergencyRequest.petAge} ${isZhHk ? '歲' : 'years'}` : (isZhHk ? '不詳' : 'Unknown'), // {{4}} Age
+        pet.weight ? `${pet.weight}${isZhHk ? '公斤' : 'kg'}` : (isZhHk ? '不詳' : 'Unknown'), // {{5}} Weight
+        emergencyRequest.symptom || (isZhHk ? '緊急情況' : 'Emergency situation'), // {{6}} Critical symptom
+        pet.medicalNotes || (isZhHk ? '無' : 'None'), // {{7}} Medical notes
+        emergencyRequest.manualLocation || (isZhHk ? '不詳' : 'Unknown'), // {{8}} Location
+        emergencyRequest.contactName || (isZhHk ? '寵物主人' : 'Pet Owner'), // {{9}} Owner name
+        emergencyRequest.contactPhone || (isZhHk ? '不詳' : 'Unknown'), // {{10}} Owner phone
+      ];
+      
+      fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
+        `${isZhHk ? '名稱' : 'Name'}: ${variables[0]}\n` +
+        `${isZhHk ? '物種' : 'Species'}: ${variables[1]}\n` +
+        `${isZhHk ? '緊急症狀' : 'Emergency'}: ${variables[5]}\n` +
+        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[8]} (${variables[9]})`;
+      
+    } else {
+      // Anonymous user (basic template)
+      templateName = `emergency_pet_alert_basic${langSuffix}`;
+      
+      // Build 7 variables for basic template
+      variables = [
+        emergencyRequest.petSpecies || (isZhHk ? '不詳' : 'Unknown'), // {{1}} Species
+        emergencyRequest.petBreed || (isZhHk ? '不詳' : 'Unknown'), // {{2}} Breed
+        emergencyRequest.petAge ? `${emergencyRequest.petAge} ${isZhHk ? '歲' : 'years'}` : (isZhHk ? '不詳' : 'Unknown'), // {{3}} Age
+        emergencyRequest.symptom || (isZhHk ? '緊急情況' : 'Emergency situation'), // {{4}} Critical symptom
+        emergencyRequest.manualLocation || (isZhHk ? '不詳' : 'Unknown'), // {{5}} Location
+        emergencyRequest.contactName || (isZhHk ? '寵物主人' : 'Pet Owner'), // {{6}} Owner name
+        emergencyRequest.contactPhone || (isZhHk ? '不詳' : 'Unknown'), // {{7}} Owner phone
+      ];
+      
+      fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
+        `${isZhHk ? '物種' : 'Species'}: ${variables[0]}\n` +
+        `${isZhHk ? '緊急症狀' : 'Emergency'}: ${variables[3]}\n` +
+        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[5]} (${variables[6]})`;
+    }
+
+    console.log('[Template Builder] Selected template:', templateName);
+    console.log('[Template Builder] Variables count:', variables.length);
+    
+    return { templateName, variables, fallbackText };
+  }
+
+  /**
    * Broadcast emergency to multiple clinics
    */
   async broadcastEmergency(
@@ -268,6 +499,15 @@ export class MessagingService {
     message: string
   ): Promise<Message[]> {
     const messages: Message[] = [];
+
+    // Build template message once for all clinics
+    const templateData = await this.buildTemplateMessage(emergencyRequestId);
+    if (!templateData) {
+      console.error('[Broadcast] Failed to build template message');
+      throw new Error('Failed to build emergency message template');
+    }
+
+    const { templateName, variables, fallbackText } = templateData;
 
     for (const clinicId of clinicIds) {
       const clinic = await storage.getClinic(clinicId);
@@ -279,13 +519,16 @@ export class MessagingService {
       // Determine message type and recipient based on available contact methods
       let messageType: 'whatsapp' | 'email';
       let recipient: string;
+      let contentToStore: string;
 
       if (clinic.whatsapp) {
         messageType = 'whatsapp';
         recipient = clinic.whatsapp;
+        contentToStore = `[Template: ${templateName}] ${fallbackText}`;
       } else if (clinic.email) {
         messageType = 'email';
         recipient = clinic.email;
+        contentToStore = fallbackText; // Email uses fallback text
       } else {
         console.warn(`No valid contact method (WhatsApp or email) for clinic ${clinicId}`);
         
@@ -295,7 +538,7 @@ export class MessagingService {
           clinicId,
           recipient: clinic.phone || 'unknown',
           messageType: 'whatsapp',
-          content: message,
+          content: fallbackText,
           status: 'failed',
           errorMessage: 'No valid WhatsApp or email contact available',
           failedAt: new Date(),
@@ -304,15 +547,24 @@ export class MessagingService {
         continue;
       }
 
-      const msg = await this.sendMessage({
+      // Create message record with template info embedded in content
+      const msg = await storage.createMessage({
         emergencyRequestId,
         clinicId,
         recipient,
         messageType,
-        content: message,
+        content: contentToStore,
+        status: 'queued',
       });
 
-      messages.push(msg);
+      // Try to send immediately
+      await this.processMessage(msg.id);
+      
+      // Reload message to get updated status
+      const updatedMsg = await storage.getMessage(msg.id);
+      if (updatedMsg) {
+        messages.push(updatedMsg);
+      }
     }
 
     return messages;
