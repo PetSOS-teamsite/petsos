@@ -22,8 +22,9 @@ import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { PhoneInput } from "@/components/PhoneInput";
 import { SEO } from "@/components/SEO";
 
-// Symptom options - simplified without categorization
+// Symptom options - ordered by severity level (critical → serious → moderate)
 const SYMPTOMS = [
+  // CRITICAL - Life-threatening emergencies requiring immediate action
   { key: "unconscious", en: "Unconscious / Unresponsive", zh: "昏迷 / 失去意識" },
   { key: "breathing", en: "Not breathing / Severe difficulty breathing", zh: "呼吸停止 / 嚴重呼吸困難" },
   { key: "seizure", en: "Seizure / Convulsions", zh: "癲癇發作 / 抽搐" },
@@ -31,11 +32,15 @@ const SYMPTOMS = [
   { key: "bleeding", en: "Severe bleeding / Hemorrhage", zh: "嚴重出血 / 流血不止" },
   { key: "trauma", en: "Hit by vehicle / Major trauma", zh: "車禍撞擊 / 嚴重外傷" },
   { key: "poisoning", en: "Poisoning / Toxic ingestion", zh: "中毒 / 誤食毒物" },
+  
+  // SERIOUS - Urgent conditions needing quick attention
   { key: "unable_stand", en: "Collapse / Cannot stand", zh: "倒下 / 無法站立" },
   { key: "swollen", en: "Bloated abdomen / Distended", zh: "腹部腫脹 / 腹脹" },
   { key: "pain", en: "Severe pain / Distress", zh: "劇烈疼痛 / 痛苦不安" },
   { key: "vomiting", en: "Repeated vomiting", zh: "持續嘔吐" },
   { key: "diarrhea", en: "Severe diarrhea / Blood in stool", zh: "嚴重腹瀉 / 便血" },
+  
+  // MODERATE - Concerning symptoms needing veterinary care
   { key: "broken_bone", en: "Fracture / Cannot move limb", zh: "骨折 / 肢體無法移動" },
   { key: "eye_injury", en: "Eye injury / Sudden blindness", zh: "眼部受傷 / 突然失明" },
   { key: "not_eating", en: "Not eating/drinking for 24+ hours", zh: "24小時以上拒絕進食飲水" },

@@ -339,23 +339,25 @@ export default function ClinicsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex gap-2">
                     <Button
                       onClick={() => handleCall(clinic.phone)}
-                      className="flex-1 min-w-[140px]"
+                      size="sm"
+                      className="flex-1"
                       data-testid={`button-call-${clinic.id}`}
                     >
-                      <Phone className="h-4 w-4 mr-2" />
+                      <Phone className="h-4 w-4 mr-1" />
                       {t("results.call", "Call")}
                     </Button>
                     {clinic.whatsapp && (
                       <Button
                         onClick={() => handleWhatsApp(clinic.whatsapp!)}
                         variant="outline"
-                        className="flex-1 min-w-[140px]"
+                        size="sm"
+                        className="flex-1"
                         data-testid={`button-whatsapp-${clinic.id}`}
                       >
-                        <MessageCircle className="h-4 w-4 mr-2" />
+                        <MessageCircle className="h-4 w-4 mr-1" />
                         {t("results.whatsapp", "WhatsApp")}
                       </Button>
                     )}

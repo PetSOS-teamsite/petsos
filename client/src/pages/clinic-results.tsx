@@ -1074,22 +1074,24 @@ export default function ClinicResultsPage() {
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-2 pt-3">
+                      <div className="flex gap-2 pt-3">
                         <Button
                           onClick={() => handleCall(clinic.phone, clinic.id, clinic.name)}
-                          className="flex-1 min-w-[120px] bg-blue-600 hover:bg-blue-700"
+                          size="sm"
+                          className="flex-1 bg-blue-600 hover:bg-blue-700"
                           data-testid={`button-call-${clinic.id}`}
                         >
-                          <Phone className="h-4 w-4 mr-2" />
+                          <Phone className="h-4 w-4 mr-1" />
                           {t('clinic_results.call', 'Call')}
                         </Button>
                         {clinic.whatsapp && (
                           <Button
                             onClick={() => handleWhatsApp(clinic.whatsapp!, clinic.id, clinic.name)}
-                            className="flex-1 min-w-[120px] bg-green-600 hover:bg-green-700"
+                            size="sm"
+                            className="flex-1 bg-green-600 hover:bg-green-700"
                             data-testid={`button-whatsapp-${clinic.id}`}
                           >
-                            <MessageCircle className="h-4 w-4 mr-2" />
+                            <MessageCircle className="h-4 w-4 mr-1" />
                             {t('clinic_results.whatsapp', 'WhatsApp')}
                           </Button>
                         )}
@@ -1097,11 +1099,12 @@ export default function ClinicResultsPage() {
                           <Button
                             onClick={() => handleOpenMaps(clinic.latitude!, clinic.longitude!, clinic.name)}
                             variant="outline"
-                            className="flex-1 min-w-[120px]"
+                            size="sm"
+                            className="flex-1"
                             data-testid={`button-maps-${clinic.id}`}
                           >
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Maps
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                            {t('clinic_results.maps', 'Maps')}
                           </Button>
                         )}
                       </div>
