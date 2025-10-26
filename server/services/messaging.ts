@@ -65,7 +65,18 @@ export class MessagingService {
     try {
       const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
       console.log('[WhatsApp] Sending to URL:', url);
-      console.log('[WhatsApp] Recipient:', actualRecipient);
+      console.log('[WhatsApp] Recipient (original):', phoneNumber);
+      console.log('[WhatsApp] Recipient (cleaned):', cleanedNumber);
+      console.log('[WhatsApp] Actual recipient:', actualRecipient);
+      
+      const payload = {
+        messaging_product: 'whatsapp',
+        to: cleanedNumber, // Use cleaned number without dashes
+        type: 'text',
+        text: { body: content },
+      };
+      
+      console.log('[WhatsApp] Request payload:', JSON.stringify(payload, null, 2));
       
       const response = await fetch(url, {
         method: 'POST',
@@ -73,12 +84,7 @@ export class MessagingService {
           'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: actualRecipient,
-          type: 'text',
-          text: { body: content },
-        }),
+        body: JSON.stringify(payload),
       });
 
       console.log('[WhatsApp] Response status:', response.status);
@@ -86,11 +92,20 @@ export class MessagingService {
       if (!response.ok) {
         const error = await response.text();
         console.error('[WhatsApp] API error response:', error);
+        try {
+          const errorJson = JSON.parse(error);
+          console.error('[WhatsApp] Parsed error:', JSON.stringify(errorJson, null, 2));
+        } catch (e) {
+          // Error wasn't JSON
+        }
         return false;
       }
 
       const result = await response.json();
-      console.log('[WhatsApp] Message sent successfully:', result);
+      console.log('[WhatsApp] Message sent successfully!');
+      console.log('[WhatsApp] API Response:', JSON.stringify(result, null, 2));
+      console.log('[WhatsApp] Message ID:', result.messages?.[0]?.id);
+      console.log('[WhatsApp] WhatsApp ID:', result.contacts?.[0]?.wa_id);
       return true;
     } catch (error) {
       console.error('[WhatsApp] Error sending message:', error);
