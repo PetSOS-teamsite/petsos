@@ -70,7 +70,7 @@ export default function ProfilePage() {
   });
 
   const { data: pets = [], isLoading: petsLoading } = useQuery<Pet[]>({
-    queryKey: ['/api/pets'],
+    queryKey: ['/api/users', authUser?.id, 'pets'],
     enabled: !!authUser?.id,
   });
 
