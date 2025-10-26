@@ -33,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
@@ -318,56 +319,104 @@ function CountriesTab() {
         </Dialog>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Flag</TableHead>
-            <TableHead>Code</TableHead>
-            <TableHead>Name (EN)</TableHead>
-            <TableHead>Name (ZH)</TableHead>
-            <TableHead>Phone Prefix</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {countries.map((country) => (
-            <TableRow key={country.id} data-testid={`row-country-${country.code}`}>
-              <TableCell>{country.flag}</TableCell>
-              <TableCell>{country.code}</TableCell>
-              <TableCell>{country.nameEn}</TableCell>
-              <TableCell>{country.nameZh}</TableCell>
-              <TableCell>{country.phonePrefix}</TableCell>
-              <TableCell>
-                <span className={country.active ? "text-green-600" : "text-gray-400"}>
+      {/* Mobile View - Cards */}
+      <div className="block md:hidden space-y-4">
+        {countries.map((country) => (
+          <Card key={country.id} data-testid={`card-country-${country.code}`}>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{country.flag}</span>
+                  <div>
+                    <p className="font-semibold">{country.nameEn}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{country.nameZh}</p>
+                  </div>
+                </div>
+                <span className={`text-sm ${country.active ? "text-green-600" : "text-gray-400"}`}>
                   {country.active ? "Active" : "Inactive"}
                 </span>
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleOpenDialog(country)}
-                    data-testid={`button-edit-country-${country.code}`}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => deleteMutation.mutate(country.id)}
-                    disabled={deleteMutation.isPending}
-                    data-testid={`button-delete-country-${country.code}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
+              </div>
+              <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mb-3">
+                <span>Code: {country.code}</span>
+                <span>Phone: {country.phonePrefix}</span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenDialog(country)}
+                  className="flex-1"
+                >
+                  <Edit className="h-4 w-4 mr-1" /> Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => deleteMutation.mutate(country.id)}
+                  disabled={deleteMutation.isPending}
+                  className="flex-1"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" /> Delete
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop View - Table */}
+      <div className="hidden md:block overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Flag</TableHead>
+              <TableHead>Code</TableHead>
+              <TableHead>Name (EN)</TableHead>
+              <TableHead>Name (ZH)</TableHead>
+              <TableHead>Phone Prefix</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {countries.map((country) => (
+              <TableRow key={country.id} data-testid={`row-country-${country.code}`}>
+                <TableCell>{country.flag}</TableCell>
+                <TableCell>{country.code}</TableCell>
+                <TableCell>{country.nameEn}</TableCell>
+                <TableCell>{country.nameZh}</TableCell>
+                <TableCell>{country.phonePrefix}</TableCell>
+                <TableCell>
+                  <span className={country.active ? "text-green-600" : "text-gray-400"}>
+                    {country.active ? "Active" : "Inactive"}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenDialog(country)}
+                      data-testid={`button-edit-country-${country.code}`}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteMutation.mutate(country.id)}
+                      disabled={deleteMutation.isPending}
+                      data-testid={`button-delete-country-${country.code}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
