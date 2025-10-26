@@ -452,9 +452,9 @@ export default function EmergencyPage() {
                     )}
 
                     {/* VOICE RECORDER - For panicked users who can't type */}
-                    <div className="mb-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
                           🎤 {t('emergency.voice_option', 'Too panicked to type? Use voice instead')}
                         </h3>
                       </div>
