@@ -362,7 +362,10 @@ export default function ClinicsPage() {
                   {/* Action Buttons - Compact Row */}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => handleCall(clinic.phone)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCall(clinic.phone);
+                      }}
                       size="sm"
                       className="flex-1 bg-red-600 hover:bg-red-700"
                       data-testid={`button-call-${clinic.id}`}
@@ -372,7 +375,10 @@ export default function ClinicsPage() {
                     </Button>
                     {clinic.whatsapp && (
                       <Button
-                        onClick={() => handleWhatsApp(clinic.whatsapp!)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleWhatsApp(clinic.whatsapp!);
+                        }}
                         variant="outline"
                         size="sm"
                         className="flex-1 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -384,7 +390,10 @@ export default function ClinicsPage() {
                     )}
                     {clinic.latitude && clinic.longitude && (
                       <Button
-                        onClick={() => handleMaps(clinic.latitude!, clinic.longitude!, clinic.name)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMaps(clinic.latitude!, clinic.longitude!, clinic.name);
+                        }}
                         variant="outline"
                         size="sm"
                         className="flex-1 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
