@@ -1,0 +1,52 @@
+
+# Check remote tracking
+git remote -v
+* main
+  replit-agent
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+62284cd (HEAD -> main, origin/main, origin/HEAD, gitsafe-backup/main, gitsafe-backup/HEAD) Add screenshot to illustrate app functionality
+6bbd90b Update project overview and key features description
+51478f7 Enhance page visibility with SEO and site icon optimization
+811a7e7 Deploy application with build optimizations and production configurations
+9fc5e53 Add a screenshot of the platform's interface
+gitsafe-backup  git://gitsafe:5418/backup.git (fetch)
+gitsafe-backup  git://gitsafe:5418/backup.git (push)
+origin  https://github.com/petsos-teamsite/petsos.git (fetch)
+origin  https://github.com/petsos-teamsite/petsos.git (push)
+~/workspace$ # Check what commit is on your remote main branch
+git log origin/main --oneline -5
+
+# See if your landing page redesign commit is there
+git log --all --grep="landing" --oneline
+62284cd (HEAD -> main, origin/main, origin/HEAD, gitsafe-backup/main, gitsafe-backup/HEAD) Add screenshot to illustrate app functionality
+6bbd90b Update project overview and key features description
+51478f7 Enhance page visibility with SEO and site icon optimization
+811a7e7 Deploy application with build optimizations and production configurations
+9fc5e53 Add a screenshot of the platform's interface
+51478f7 Enhance page visibility with SEO and site icon optimization
+1f5f1ce Enhance page visibility with SEO and site icon optimization
+60a6406 Add user login and nearby hospital search buttons to landing page
+8dd2f15 Add user login and nearby hospital search buttons to landing page
+7c1672c Update tagline to alert 24-hour animal hospitals with one tap
+cd83599 Update tagline to alert 24-hour animal hospitals with one tap
+97926fb Improve clinic search results and landing page layout on different screen sizes
+eda413a Improve clinic search results and landing page layout on different screen sizes
+94f0c03 Improve the visual appearance of the login button on the landing page
+70fae21 Improve the visual appearance of the login button on the landing page
+facf898 Update branding and homepage design to reflect the PetSOS identity
+6c09933 Update branding and homepage design to reflect the PetSOS identity
+f893609 Update branding with the official PetSOS logo across the application
+37a65d5 Update branding with the official PetSOS logo across the application
+190d5a8 Improve and complete Chinese translations for the emergency pet care platform
+7493687 Improve and complete Chinese translations for the emergency pet care platform
+7011cfa Add internationalization and language switching to the landing page
+924f108 Add internationalization and language switching to the landing page
+2bad46b Update home route to always display landing page
+e1d831a Update home route to always display landing page
+5cd5b5a Restructure app routing and enhance landing page for emergency access
+0e2cf6c Restructure app routing and enhance landing page for emergency access
+44775d0 Add secure login and user authentication system to the platform
+5a6268d Add secure login and user authentication system to the platform
