@@ -109,16 +109,6 @@ export default function LoginPage() {
     mode: "onSubmit",
   });
 
-  // Reset forms when toggling between login and signup
-  useEffect(() => {
-    if (isSignup) {
-      emailSignupForm.reset();
-      phoneSignupForm.reset();
-    } else {
-      emailLoginForm.reset();
-      phoneLoginForm.reset();
-    }
-  }, [isSignup, emailSignupForm, phoneSignupForm, emailLoginForm, phoneLoginForm]);
 
   const handleGoogleLogin = () => {
     window.location.href = "/api/auth/google?returnTo=/profile";
@@ -228,14 +218,13 @@ export default function LoginPage() {
           </div>
 
           {/* Email/Phone Tabs */}
-          <Tabs defaultValue="email" className="w-full" onValueChange={(value) => setAuthMethod(value as 'email' | 'phone')}>
+          <Tabs value={authMethod} className="w-full" onValueChange={(value) => setAuthMethod(value as 'email' | 'phone')}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="email" data-testid="tab-email">Email</TabsTrigger>
               <TabsTrigger value="phone" data-testid="tab-phone">Phone</TabsTrigger>
             </TabsList>
             
-            {authMethod === 'email' && (
-              <div className="mt-4" role="tabpanel" aria-labelledby="tab-email" id="panel-email">
+            <TabsContent value="email">
                 {isSignup ? (
                   <Form {...emailSignupForm}>
                     <form onSubmit={emailSignupForm.handleSubmit(onSignup)} className="space-y-4">
@@ -322,11 +311,9 @@ export default function LoginPage() {
                     </form>
                   </Form>
                 )}
-              </div>
-            )}
+            </TabsContent>
             
-            {authMethod === 'phone' && (
-              <div className="mt-4" role="tabpanel" aria-labelledby="tab-phone" id="panel-phone">
+            <TabsContent value="phone">
                 {isSignup ? (
                   <Form {...phoneSignupForm}>
                     <form onSubmit={phoneSignupForm.handleSubmit(onSignup)} className="space-y-4">
@@ -425,8 +412,7 @@ export default function LoginPage() {
                   </form>
                 </Form>
               )}
-              </div>
-            )}
+            </TabsContent>
           </Tabs>
 
           {/* Toggle between login and signup */}
