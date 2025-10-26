@@ -493,28 +493,28 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
 
   return (
     <Card className={isRecording ? "border-red-500 bg-red-50 dark:bg-red-950" : ""}>
-      <CardContent className="pt-6">
-        <div className="space-y-4">
+      <CardContent className="pt-4 pb-4">
+        <div className="space-y-3">
           {/* Recording Status and Button */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {isRecording ? (
                 <>
                   <div className="relative">
-                    <Mic className="h-6 w-6 text-red-600 dark:text-red-400" />
+                    <Mic className="h-5 w-5 text-red-600 dark:text-red-400" />
                     <span className="absolute -right-1 -top-1 flex h-3 w-3">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                     </span>
                   </div>
-                  <p className="font-medium text-red-600 dark:text-red-400">
+                  <p className="text-sm font-medium text-red-600 dark:text-red-400">
                     {t('voice_recorder.recording', 'Recording... Speak now')}
                   </p>
                 </>
               ) : transcript ? (
                 <>
-                  <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
-                  <p className="font-medium text-green-600 dark:text-green-400">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <p className="text-sm font-medium text-green-600 dark:text-green-400">
                     {t('voice_recorder.recorded', 'Voice recorded successfully')}
                   </p>
                 </>
@@ -547,13 +547,13 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
           {/* Collapsible Instructions */}
           {!transcript && !isRecording && (
             <Collapsible>
-              <CollapsibleTrigger className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">
-                <Info className="h-4 w-4" />
+              <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                <Info className="h-3.5 w-3.5" />
                 {t('voice_recorder.tip_short', 'Speak clearly — we\'ll analyze and guide you automatically')}
               </CollapsibleTrigger>
-              <CollapsibleContent className="pt-2">
-                <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3">
-                  <p className="text-sm text-blue-800 dark:text-blue-200">
+              <CollapsibleContent className="pt-1.5">
+                <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-2">
+                  <p className="text-xs text-blue-800 dark:text-blue-200">
                     💡 {t('voice_recorder.tip', 'Tip: Speak clearly and describe your pet\'s symptoms. The system will automatically analyze and categorize the emergency.')}
                   </p>
                 </div>
@@ -563,16 +563,16 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
 
           {/* Transcript Display */}
           {transcript && (
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4" data-testid="voice-transcript">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3" data-testid="voice-transcript">
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                 {t('voice_recorder.transcript', 'Transcript:')}
               </p>
-              <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
+              <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
                 {transcript}
               </p>
-              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                 {isAnalyzing ? (
-                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                     <Loader2 className="h-3 w-3 animate-spin" />
                     <span>{t('voice_recorder.analyzing', 'Analyzing with AI...')}</span>
                   </div>
@@ -587,8 +587,8 @@ export function VoiceRecorder({ onTranscriptComplete, language = 'en' }: VoiceRe
 
           {/* Error Display */}
           {error && (
-            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm">
-              <AlertCircle className="h-4 w-4" />
+            <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 text-xs">
+              <AlertCircle className="h-3.5 w-3.5" />
               <p>{error}</p>
             </div>
           )}
