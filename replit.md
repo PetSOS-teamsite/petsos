@@ -14,7 +14,7 @@ Preferred communication style: Simple, everyday language.
 - **Key Features**: Multi-step emergency request flow, clinic results filtering and communication, profile and pet management (CRUD with bilingual breed selection), clinic directory, admin dashboard, clinic staff dashboard.
 - **Branding & SEO**: Text-based "PetSOS" logo, vibrant red (#EF4444) primary color, custom SVG favicon (emergency cross + paw print), reusable `<SEO>` component for page-specific meta tags, bilingual optimization (EN/ZH-HK) for key pages, comprehensive Open Graph and Twitter Cards, geo-targeting for Hong Kong.
 - **Progressive Web App (PWA)**: Full PWA support with web app manifest, multiple icon sizes (192x192, 512x512, 180x180 Apple Touch Icon), installable to home screen on iOS/Android, standalone display mode, emergency and clinic shortcuts, generated from SVG using Sharp.
-- **UX Enhancements**: Prominent pet management CTA, auto-scroll to status button post-broadcast, extended toast duration, blue-styled "View Broadcast Status" button, and post-broadcast guidance to status page.
+- **UX Enhancements**: Prominent pet management CTA, auto-scroll to status button post-broadcast, extended toast duration, blue-styled "View Broadcast Status" button, post-broadcast guidance to status page, compressed VoiceRecorder UI with collapsible tips (info icon), and emergency request edit functionality with real-time broadcast message updates.
 
 ### Backend Architecture
 - **Technology Stack**: Node.js with Express.js, TypeScript, Drizzle ORM with PostgreSQL (Neon serverless), modular storage abstraction.
@@ -35,6 +35,15 @@ Preferred communication style: Simple, everyday language.
 - **Security**: User responses sanitized, GDPR-compliant data exports.
 - **Phone Authentication**: Phone numbers stored with country code prefix, country code selector for multiple regions, unified login strategy.
 - **Roles**: Admin, Clinic Staff, Regular User.
+
+### Emergency Request Management
+- **Creation**: Multi-step emergency request form (symptoms & pet → location → contact info with optional voice recording) supports both authenticated and anonymous users for emergency flexibility.
+- **Voice Recording**: Compressed UI with collapsible tips (info icon trigger), AI-powered symptom analysis from voice transcripts using OpenAI, bilingual support (EN/ZH-HK), automatic fallback to manual text entry.
+- **Editing**: Post-submission edit functionality allows users to update contact information, symptoms, and location via edit button on clinic results page.
+  - **Authorization**: Authenticated users can edit their own requests or anonymous requests; anonymous users can only edit anonymous requests
+  - **Real-time Updates**: Edited data automatically reflects in broadcast message previews since `buildStructuredBroadcastMessage()` reads from the updated emergency request object
+  - **Validation**: Uses `insertEmergencyRequestSchema.partial()` with Zod validation
+  - **Audit Trail**: All edits are logged with user ID, IP address, and user agent for security and compliance
 
 ### Messaging & Communication
 - **Architecture**: WhatsApp Business API as primary, email fallback, queue-based processing, template-based messaging.
