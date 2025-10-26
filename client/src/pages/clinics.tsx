@@ -140,12 +140,6 @@ export default function ClinicsPage() {
     // Open Google Maps with clinic location
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}&query_place_id=${encodeURIComponent(name)}`;
     window.open(mapsUrl, "_blank");
-    
-    // Track maps navigation
-    analytics.trackClinicContact({
-      contactMethod: 'maps',
-      clinicId: name,
-    });
   };
 
   return (
@@ -208,7 +202,7 @@ export default function ClinicsPage() {
             <Tabs value={selectedRegion} onValueChange={setSelectedRegion}>
               <TabsList className="grid w-full grid-cols-4" data-testid="tabs-region">
                 <TabsTrigger value="all" data-testid="tab-all">
-                  {t("clinics.all_regions", "全港", "All HK")}
+                  {language === 'zh-HK' ? '全港' : 'All HK'}
                 </TabsTrigger>
                 {regions?.map((region) => (
                   <TabsTrigger
@@ -223,53 +217,49 @@ export default function ClinicsPage() {
             </Tabs>
           )}
 
-          {/* 24 Hour Filter */}
-          <div className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+          {/* 24 Hour Filter - Brand Styled */}
+          <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800">
             <Switch
               id="24hour-filter"
               checked={show24HourOnly}
               onCheckedChange={setShow24HourOnly}
               data-testid="switch-24hour-filter"
+              className="data-[state=checked]:bg-red-600"
             />
             <Label
               htmlFor="24hour-filter"
-              className="flex items-center gap-2 cursor-pointer text-base font-medium"
+              className="flex items-center gap-2 cursor-pointer text-sm font-medium text-red-900 dark:text-red-100"
             >
-              <Clock className="h-5 w-5 text-green-600" />
-              {t("clinics.24h_only", "Show 24-Hour Emergency Clinics Only")}
+              <Clock className="h-4 w-4 text-red-600 dark:text-red-400" />
+              {language === 'zh-HK' ? '只顯示24小時診所' : 'Show 24-Hour Clinics Only'}
             </Label>
           </div>
 
-          {/* Location Status Banner */}
+          {/* Location Status Banner - Compact */}
           {locationError ? (
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg" data-testid="banner-location-error">
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-medium text-yellow-900 dark:text-yellow-100 mb-1">
-                    {t("clinics.location_unavailable", "Location unavailable")}
-                  </p>
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                    {t("clinics.location_error_msg", "Please enable location permissions to see distances and sort by nearest clinics. Clinics are shown in alphabetical order.")}
-                  </p>
-                </div>
+            <div className="p-2.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg" data-testid="banner-location-error">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                <p className="text-xs text-yellow-900 dark:text-yellow-100">
+                  {language === 'zh-HK' ? '無法取得位置 - 請啟用定位以顯示距離' : 'Location unavailable - Enable GPS to see distances'}
+                </p>
               </div>
             </div>
           ) : userLocation ? (
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg" data-testid="banner-location-success">
+            <div className="p-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg" data-testid="banner-location-success">
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <p className="text-sm text-blue-900 dark:text-blue-100">
-                  {t("clinics.location_enabled", "📍 Showing distances from your location - clinics sorted by nearest first")}
+                <MapPin className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <p className="text-xs text-red-900 dark:text-red-100 font-medium">
+                  {language === 'zh-HK' ? '📍 已按距離排序 - 最近的診所優先顯示' : '📍 Sorted by distance - Nearest clinics first'}
                 </p>
               </div>
             </div>
           ) : (
-            <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg" data-testid="banner-location-loading">
+            <div className="p-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg" data-testid="banner-location-loading">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-gray-500 animate-pulse" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {t("clinics.location_loading", "Getting your location...")}
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {language === 'zh-HK' ? '正在取得位置...' : 'Getting your location...'}
                 </p>
               </div>
             </div>
@@ -293,7 +283,7 @@ export default function ClinicsPage() {
         )}
 
         {/* Clinic List */}
-        <div className="max-w-4xl mx-auto space-y-4">
+        <div className="max-w-4xl mx-auto space-y-3">
           {clinicsLoading ? (
             <>
               {[1, 2, 3].map((i) => (
