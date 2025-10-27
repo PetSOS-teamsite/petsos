@@ -56,6 +56,7 @@ function Router() {
       {/* Home route - show landing page for everyone */}
       <Route path="/" component={LandingPage} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/signup" component={LoginPage} />
       
       {/* Protected routes - require authentication */}
       <Route path="/profile">
