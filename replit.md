@@ -9,6 +9,7 @@ Preferred communication style: Simple, everyday language.
 ### UI/UX Decisions
 - **Frontend Stack**: React with TypeScript (Vite), Wouter for routing, TanStack React Query for state management, shadcn/ui (Radix UI + Tailwind CSS) for UI components, React Hook Form with Zod for forms.
 - **Design Principles**: Accessible, customizable components; minimal bundle size; Tailwind CSS for theming (dark mode, custom design tokens); type-safe form validation.
+- **Routing**: Dedicated `/signup` and `/login` routes both point to LoginPage component; page detects current route to default to appropriate mode (signup vs login). This enables direct navigation to signup via URL and supports external links.
 - **Branding**: Text-based "PetSOS" logo, vibrant red (#EF4444) primary color, custom SVG favicon (emergency cross + paw print).
 - **PWA Support**: Full Progressive Web App (PWA) support with web app manifest, multiple icon sizes, installable to home screen, standalone display mode, emergency and clinic shortcuts.
 - **Localization**: Bilingual optimization (EN/ZH-HK) for key pages, comprehensive Open Graph and Twitter Cards, geo-targeting for Hong Kong, database-stored translations, colloquial HK terminology for pet breeds.
