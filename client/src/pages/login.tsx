@@ -62,9 +62,9 @@ const phoneSignupSchema = z.object({
 });
 
 export default function LoginPage() {
-  const [isSignup, setIsSignup] = useState(false);
+  const [location, setLocation] = useLocation();
+  const [isSignup, setIsSignup] = useState(location === '/signup');
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { t } = useTranslation();
 
