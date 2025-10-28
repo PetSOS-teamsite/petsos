@@ -42,8 +42,8 @@ export default function LandingPage() {
         canonical="https://petsos.site/"
         language={language}
       />
-      <StructuredData data={createOrganizationSchema(language)} />
-      <StructuredData data={createWebSiteSchema(language)} />
+      <StructuredData data={createOrganizationSchema(language)} id="schema-organization" />
+      <StructuredData data={createWebSiteSchema(language)} id="schema-website" />
       <div className="min-h-screen bg-[#EF4444] dark:bg-[#DC2626]">
         {/* Top Navigation Bar - Language Switcher (Right) */}
       <div className="container mx-auto px-4 pt-4">

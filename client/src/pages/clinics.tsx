@@ -180,7 +180,7 @@ export default function ClinicsPage() {
         canonical="https://petsos.site/clinics"
         language={language}
       />
-      <StructuredData data={createVeterinaryDirectorySchema(language)} />
+      <StructuredData data={createVeterinaryDirectorySchema(language)} id="schema-veterinary-directory" />
       <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
         {/* Header */}
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10">

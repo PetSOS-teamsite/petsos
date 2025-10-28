@@ -98,28 +98,7 @@ export function SEO({
       }
     }
 
-    // Add hreflang tags for bilingual support
-    // Remove existing hreflang tags
-    const existingHreflangs = document.querySelectorAll('link[rel="alternate"][hreflang]');
-    existingHreflangs.forEach(tag => tag.remove());
-
-    // Add hreflang tags for both languages
-    const baseUrl = canonical || window.location.origin + window.location.pathname;
-    const languages = [
-      { code: 'en', url: baseUrl },
-      { code: 'zh-HK', url: baseUrl },
-      { code: 'x-default', url: baseUrl } // Default language
-    ];
-
-    languages.forEach(({ code, url }) => {
-      const link = document.createElement('link');
-      link.rel = 'alternate';
-      link.hreflang = code;
-      link.href = url;
-      document.head.appendChild(link);
-    });
-
-    // Update HTML lang attribute
+    // Update HTML lang attribute to reflect current language
     document.documentElement.lang = language === 'zh-HK' ? 'zh-HK' : 'en';
   }, [title, description, keywords, ogImage, canonical, noindex, language, location]); // Re-run on location change
 
