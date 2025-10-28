@@ -28,6 +28,7 @@ Preferred communication style: Simple, everyday language.
 - **Geolocation**: PostGIS for server-side geospatial queries (ST_DWithin, ST_Distance), geography column with GIST spatial index, auto-user location detection, manual override.
 - **Messaging Architecture**: WhatsApp Business API as primary, email fallback, queue-based processing, template-based messaging (full, new, basic templates dynamically selected based on pet registration and language).
 - **Analytics & Monitoring**: Google Analytics 4 (GA4) with GDPR-compliant cookie consent, Sentry for backend and frontend error tracking and performance monitoring.
+- **SEO Optimization**: Comprehensive bilingual SEO implementation including sitemap.xml, robots.txt, Schema.org structured data (Organization, WebSite, EmergencyService, VeterinaryDirectory, FAQ schemas), dynamic meta tags (Open Graph, Twitter Cards), HTML lang attribute switching, canonical URLs. StructuredData component with required explicit IDs for collision-free schema injection.
 - **Multi-Environment Configuration**: Centralized configuration for development, staging, and production environments using `.env` files.
 - **Deployment**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment, Infrastructure as Code.
 
