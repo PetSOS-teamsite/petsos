@@ -21,6 +21,7 @@ import { analytics } from "@/lib/analytics";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { PhoneInput } from "@/components/PhoneInput";
 import { SEO } from "@/components/SEO";
+import { StructuredData, createEmergencyServiceSchema, createFAQSchema } from "@/components/StructuredData";
 
 // Symptom options - ordered by severity level (critical → serious → moderate)
 const SYMPTOMS = [
@@ -345,6 +346,51 @@ export default function EmergencyPage() {
     }
   };
 
+  // Create bilingual FAQ data
+  const faqData = language === 'zh-HK' ? [
+    {
+      question: "寵物緊急情況時應該怎麼辦？",
+      answer: "如果您的寵物出現緊急情況，請使用PetSOS立即聯繫24小時動物醫院。我們的系統可以在3個步驟內通知多家診所，包括選擇症狀、提供位置和聯絡方式。"
+    },
+    {
+      question: "PetSOS如何運作？",
+      answer: "PetSOS通過3步驟幫助您快速聯繫24小時獸醫診所：1) 選擇症狀或使用AI語音輸入 2) 分享您的GPS位置 3) 提供聯絡資訊。我們會透過WhatsApp即時廣播您的求助訊息給附近的診所。"
+    },
+    {
+      question: "使用PetSOS需要登入嗎？",
+      answer: "不需要！緊急情況下可以匿名使用PetSOS。但如果您已登記寵物資料，系統可以自動填寫資訊，讓求助過程更快速。"
+    },
+    {
+      question: "PetSOS覆蓋香港哪些地區？",
+      answer: "PetSOS覆蓋香港所有地區，包括香港島、九龍和新界。我們的GPS系統會自動找出距離您最近的24小時動物醫院。"
+    },
+    {
+      question: "如何知道哪些症狀是緊急情況？",
+      answer: "嚴重症狀包括：昏迷或失去意識、呼吸困難、癲癇發作、嚴重出血、中毒等。如果您不確定，請立即聯繫獸醫。PetSOS可以幫助您快速聯絡多家24小時診所。"
+    }
+  ] : [
+    {
+      question: "What should I do in a pet emergency?",
+      answer: "If your pet is experiencing an emergency, use PetSOS to immediately contact 24-hour animal hospitals. Our system notifies multiple clinics in 3 simple steps: select symptoms, provide location, and share contact information."
+    },
+    {
+      question: "How does PetSOS work?",
+      answer: "PetSOS helps you connect with 24-hour veterinary clinics in 3 steps: 1) Select symptoms or use AI voice input 2) Share your GPS location 3) Provide contact details. We instantly broadcast your emergency request to nearby clinics via WhatsApp."
+    },
+    {
+      question: "Do I need to login to use PetSOS?",
+      answer: "No! You can use PetSOS anonymously during emergencies. However, if you have registered pet profiles, the system can auto-fill information to make the process even faster."
+    },
+    {
+      question: "Which areas does PetSOS cover in Hong Kong?",
+      answer: "PetSOS covers all regions of Hong Kong including Hong Kong Island, Kowloon, and New Territories. Our GPS system automatically finds the nearest 24-hour animal hospitals to your location."
+    },
+    {
+      question: "How do I know if a symptom is an emergency?",
+      answer: "Critical symptoms include: unconsciousness, difficulty breathing, seizures, severe bleeding, poisoning, and trauma. If unsure, contact a vet immediately. PetSOS can help you quickly reach multiple 24-hour clinics."
+    }
+  ];
+
   return (
     <>
       <SEO
@@ -361,7 +407,10 @@ export default function EmergencyPage() {
           : "pet emergency form, voice input, AI symptom analysis, WhatsApp broadcast, 24-hour vet Hong Kong, emergency animal hospital"
         }
         canonical="https://petsos.site/emergency"
+        language={language}
       />
+      <StructuredData data={createEmergencyServiceSchema(language)} id="schema-emergency-service" />
+      <StructuredData data={createFAQSchema(faqData)} id="schema-faq" />
       <div className="min-h-screen bg-gradient-to-b from-red-50 to-white dark:from-gray-900 dark:to-gray-800 p-4">
         <div className="max-w-2xl mx-auto pt-8">
           {/* Progress indicator */}

@@ -1,24 +1,36 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface StructuredDataProps {
   data: Record<string, any>;
+  id: string; // Required to ensure uniqueness
 }
 
-export function StructuredData({ data }: StructuredDataProps) {
+export function StructuredData({ data, id }: StructuredDataProps) {
+  const scriptIdRef = useRef<string>(id);
+
   useEffect(() => {
+    const scriptId = scriptIdRef.current;
+    
+    // Remove existing script with same ID to avoid duplicates
+    const existingScript = document.getElementById(scriptId);
+    if (existingScript) {
+      existingScript.remove();
+    }
+
+    // Create and append new script
     const script = document.createElement('script');
     script.type = 'application/ld+json';
     script.text = JSON.stringify(data);
-    script.id = `structured-data-${Date.now()}`;
+    script.id = scriptId;
     document.head.appendChild(script);
 
     return () => {
-      const existingScript = document.getElementById(script.id);
-      if (existingScript) {
-        document.head.removeChild(existingScript);
+      const scriptToRemove = document.getElementById(scriptId);
+      if (scriptToRemove) {
+        scriptToRemove.remove();
       }
     };
-  }, [data]);
+  }, [data, id]);
 
   return null;
 }
@@ -57,16 +69,39 @@ export function createEmergencyServiceSchema(language: string = 'en') {
       ? "24小時寵物緊急求助服務，即時連接香港所有24小時獸醫診所。GPS定位、WhatsApp廣播、快速回應。"
       : "24-hour pet emergency service connecting you instantly to all 24-hour veterinary clinics in Hong Kong. GPS location, WhatsApp broadcast, fast response.",
     "url": "https://petsos.site/emergency",
+    "image": "https://petsos.site/icon-512.png",
     "serviceType": language === 'zh-HK' ? "獸醫緊急服務" : "Veterinary Emergency Service",
-    "areaServed": {
-      "@type": "City",
-      "name": language === 'zh-HK' ? "香港" : "Hong Kong",
-      "containedInPlace": {
-        "@type": "AdministrativeArea",
-        "name": language === 'zh-HK' ? "香港特別行政區" : "Hong Kong SAR"
-      }
+    "provider": {
+      "@type": "Organization",
+      "name": "PetSOS",
+      "url": "https://petsos.site"
     },
-    "availableLanguage": ["en", "zh-HK"],
+    "areaServed": [
+      {
+        "@type": "AdministrativeArea",
+        "name": language === 'zh-HK' ? "香港島" : "Hong Kong Island"
+      },
+      {
+        "@type": "AdministrativeArea",
+        "name": language === 'zh-HK' ? "九龍" : "Kowloon"
+      },
+      {
+        "@type": "AdministrativeArea",
+        "name": language === 'zh-HK' ? "新界" : "New Territories"
+      }
+    ],
+    "availableLanguage": [
+      {
+        "@type": "Language",
+        "name": "English",
+        "alternateName": "en"
+      },
+      {
+        "@type": "Language",
+        "name": language === 'zh-HK' ? "繁體中文（香港）" : "Traditional Chinese (Hong Kong)",
+        "alternateName": "zh-HK"
+      }
+    ],
     "hoursAvailable": {
       "@type": "OpeningHoursSpecification",
       "dayOfWeek": [
@@ -81,8 +116,13 @@ export function createEmergencyServiceSchema(language: string = 'en') {
       "opens": "00:00",
       "closes": "23:59"
     },
-    "telephone": "+852",
-    "priceRange": "Free"
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": language === 'zh-HK' ? "緊急服務" : "Emergency Service",
+      "availableLanguage": ["en", "zh-HK"],
+      "areaServed": "HK"
+    },
+    "priceRange": "$$"
   };
 }
 
