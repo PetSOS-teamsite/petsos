@@ -6,6 +6,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Footer } from "@/components/footer";
 import { SEO } from "@/components/SEO";
+import { StructuredData, createOrganizationSchema, createWebSiteSchema } from "@/components/StructuredData";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
@@ -39,7 +40,10 @@ export default function LandingPage() {
           : "pet emergency Hong Kong, 24-hour vet, emergency veterinary care, animal hospital, pet SOS, GPS clinic finder, WhatsApp alert, emergency pet help"
         }
         canonical="https://petsos.site/"
+        language={language}
       />
+      <StructuredData data={createOrganizationSchema(language)} />
+      <StructuredData data={createWebSiteSchema(language)} />
       <div className="min-h-screen bg-[#EF4444] dark:bg-[#DC2626]">
         {/* Top Navigation Bar - Language Switcher (Right) */}
       <div className="container mx-auto px-4 pt-4">
