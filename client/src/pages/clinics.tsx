@@ -30,6 +30,7 @@ type Clinic = {
   longitude: number | null;
   status: string;
   services: string[];
+  isSupportHospital?: boolean;
 };
 
 type Region = {
