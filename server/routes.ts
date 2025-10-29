@@ -48,8 +48,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     : path.resolve(import.meta.dirname, 'public');
     
   app.get('/sitemap.xml', (req, res) => {
-    res.type('application/xml');
-    res.sendFile('sitemap.xml', { root: publicDir });
+    // Disable all caching to force Google to fetch fresh copy
+    res.set({
+      'Content-Type': 'application/xml; charset=UTF-8',
+      'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    res.removeHeader('ETag');
+    res.sendFile('sitemap.xml', { 
+      root: publicDir,
+      etag: false,
+      lastModified: false
+    });
   });
   
   app.get('/robots.txt', (req, res) => {
