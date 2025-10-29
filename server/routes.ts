@@ -23,6 +23,8 @@ import {
   insertAuditLogSchema, insertPrivacyConsentSchema,
   insertTranslationSchema, insertEmergencyRequestSchema
 } from "@shared/schema";
+import path from "path";
+import { config } from "./config";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Replit Auth
@@ -38,6 +40,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: new Date().toISOString(),
       uptime: process.uptime()
     });
+  });
+  
+  // Serve sitemap.xml and robots.txt with correct content-type headers
+  const publicDir = config.isDevelopment 
+    ? path.resolve(import.meta.dirname, '../client/public')
+    : path.resolve(import.meta.dirname, 'public');
+    
+  app.get('/sitemap.xml', (req, res) => {
+    res.type('application/xml');
+    res.sendFile('sitemap.xml', { root: publicDir });
+  });
+  
+  app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    res.sendFile('robots.txt', { root: publicDir });
   });
   
   // Test route to verify API routing works
