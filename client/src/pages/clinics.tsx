@@ -14,7 +14,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { analytics } from "@/lib/analytics";
 import { SEO } from "@/components/SEO";
-import { StructuredData, createVeterinaryDirectorySchema } from "@/components/StructuredData";
+import { StructuredData, createVeterinaryDirectorySchema, createBreadcrumbSchema } from "@/components/StructuredData";
 
 type Clinic = {
   id: string;
@@ -181,6 +181,13 @@ export default function ClinicsPage() {
         language={language}
       />
       <StructuredData data={createVeterinaryDirectorySchema(language)} id="schema-veterinary-directory" />
+      <StructuredData 
+        data={createBreadcrumbSchema([
+          { name: language === 'zh-HK' ? "主頁" : "Home", url: "https://petsos.site/" },
+          { name: language === 'zh-HK' ? "診所目錄" : "Clinics", url: "https://petsos.site/clinics" }
+        ])} 
+        id="schema-breadcrumb-clinics" 
+      />
       <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
         {/* Header */}
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10">
