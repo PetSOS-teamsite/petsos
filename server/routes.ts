@@ -81,11 +81,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get('/sitemap-oct29.xml', (req, res) => {
     // Dated sitemap URL to bypass all caching layers
+    // Accepts optional ?v= parameter for additional cache busting
     res.set({
       'Content-Type': 'application/xml; charset=UTF-8',
       'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
       'Pragma': 'no-cache',
-      'Expires': '0'
+      'Expires': '0',
+      'X-Robots-Tag': 'noindex'
     });
     res.removeHeader('ETag');
     res.sendFile('sitemap-oct29.xml', { 
