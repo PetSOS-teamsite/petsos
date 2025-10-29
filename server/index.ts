@@ -28,6 +28,17 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
+// Prevent HTML caching to avoid users loading old JS bundles
+app.use((req, res, next) => {
+  // Don't cache HTML files to ensure users always get latest app version
+  if (req.path === '/' || req.path.endsWith('.html')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
