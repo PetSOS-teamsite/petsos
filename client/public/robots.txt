@@ -17,8 +17,8 @@ Disallow: /profile
 Disallow: /pets
 Disallow: /message-status
 
-# Sitemap location
-Sitemap: https://petsos.site/sitemap.xml
+# Sitemap location (with cache-busting parameter to bypass CDN cache)
+Sitemap: https://petsos.site/sitemap-oct29.xml?v=20251029
 
 # Crawl-delay for respectful crawling (optional)
 Crawl-delay: 1
