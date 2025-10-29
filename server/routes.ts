@@ -63,6 +63,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  app.get('/sitemap-2025.xml', (req, res) => {
+    // Alternate sitemap URL to bypass caching
+    res.set({
+      'Content-Type': 'application/xml; charset=UTF-8',
+      'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    res.removeHeader('ETag');
+    res.sendFile('sitemap-2025.xml', { 
+      root: publicDir,
+      etag: false,
+      lastModified: false
+    });
+  });
+  
   app.get('/robots.txt', (req, res) => {
     res.type('text/plain');
     res.sendFile('robots.txt', { root: publicDir });
