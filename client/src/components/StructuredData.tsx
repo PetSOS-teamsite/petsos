@@ -246,3 +246,136 @@ export function createWebSiteSchema(language: string = 'en') {
     "inLanguage": ["en", "zh-HK"]
   };
 }
+
+// Helper function to create BreadcrumbList schema for navigation
+export function createBreadcrumbSchema(items: Array<{ name: string; url: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": items.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "name": item.name,
+      "item": item.url
+    }))
+  };
+}
+
+// Helper function to create HowTo schema for emergency request process
+export function createHowToSchema(language: string = 'en') {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": language === 'zh-HK' 
+      ? "如何使用PetSOS發出寵物緊急求助"
+      : "How to Request Emergency Pet Care with PetSOS",
+    "description": language === 'zh-HK'
+      ? "3步驟即時連接香港24小時動物醫院，GPS定位、WhatsApp廣播、快速回應"
+      : "Connect to 24-hour veterinary clinics in Hong Kong in 3 simple steps with GPS location, WhatsApp broadcast, and fast response",
+    "image": "https://petsos.site/og-image.png",
+    "totalTime": "PT2M",
+    "estimatedCost": {
+      "@type": "MonetaryAmount",
+      "currency": "HKD",
+      "value": "0"
+    },
+    "tool": [
+      {
+        "@type": "HowToTool",
+        "name": language === 'zh-HK' ? "智能手機" : "Smartphone"
+      },
+      {
+        "@type": "HowToTool",
+        "name": language === 'zh-HK' ? "GPS定位" : "GPS Location"
+      }
+    ],
+    "step": [
+      {
+        "@type": "HowToStep",
+        "name": language === 'zh-HK' ? "描述緊急情況" : "Describe Emergency",
+        "text": language === 'zh-HK'
+          ? "選擇寵物症狀，可使用語音記錄或文字輸入。AI會協助分析症狀嚴重程度。"
+          : "Select your pet's symptoms using voice recording or text input. AI assists with severity analysis.",
+        "url": "https://petsos.site/emergency#step1",
+        "image": "https://petsos.site/icon-512.png"
+      },
+      {
+        "@type": "HowToStep",
+        "name": language === 'zh-HK' ? "確認位置" : "Confirm Location",
+        "text": language === 'zh-HK'
+          ? "系統自動GPS定位，顯示最近的24小時動物醫院。可手動調整位置。"
+          : "System automatically detects your GPS location and shows nearest 24-hour clinics. Manual adjustment available.",
+        "url": "https://petsos.site/emergency#step2",
+        "image": "https://petsos.site/icon-512.png"
+      },
+      {
+        "@type": "HowToStep",
+        "name": language === 'zh-HK' ? "發送求助" : "Send Request",
+        "text": language === 'zh-HK'
+          ? "確認聯絡資料後，系統即時透過WhatsApp向附近診所廣播求助訊息，並可直接致電診所。"
+          : "After confirming contact details, system broadcasts emergency request to nearby clinics via WhatsApp. Direct call option available.",
+        "url": "https://petsos.site/emergency#step3",
+        "image": "https://petsos.site/icon-512.png"
+      }
+    ]
+  };
+}
+
+// Helper function to create LocalBusiness schema for individual clinics with enhanced details
+export function createLocalBusinessSchema(clinic: {
+  id: string;
+  name: string;
+  nameZh?: string | null;
+  address: string;
+  addressZh?: string | null;
+  phone: string;
+  whatsapp?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  is24Hour: boolean;
+  regionId?: string | null;
+}, language: string = 'en') {
+  const schema: any = {
+    "@context": "https://schema.org",
+    "@type": "VeterinaryClinic",
+    "name": language === 'zh-HK' && clinic.nameZh ? clinic.nameZh : clinic.name,
+    "telephone": clinic.phone,
+    "url": `https://petsos.site/clinics#${clinic.id}`,
+    "priceRange": "$$-$$$",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": language === 'zh-HK' && clinic.addressZh ? clinic.addressZh : clinic.address,
+      "addressLocality": language === 'zh-HK' ? "香港" : "Hong Kong",
+      "addressRegion": clinic.regionId || "HK",
+      "addressCountry": "HK"
+    },
+    "availableLanguage": ["en", "zh-HK"]
+  };
+
+  if (clinic.latitude && clinic.longitude) {
+    schema.geo = {
+      "@type": "GeoCoordinates",
+      "latitude": clinic.latitude,
+      "longitude": clinic.longitude
+    };
+  }
+
+  if (clinic.is24Hour) {
+    schema.openingHoursSpecification = {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": [
+        "Monday",
+        "Tuesday",
+        "Wednesday", 
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "opens": "00:00",
+      "closes": "23:59"
+    };
+  }
+
+  return schema;
+}

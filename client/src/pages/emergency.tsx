@@ -21,7 +21,7 @@ import { analytics } from "@/lib/analytics";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { PhoneInput } from "@/components/PhoneInput";
 import { SEO } from "@/components/SEO";
-import { StructuredData, createEmergencyServiceSchema, createFAQSchema } from "@/components/StructuredData";
+import { StructuredData, createEmergencyServiceSchema, createFAQSchema, createHowToSchema, createBreadcrumbSchema } from "@/components/StructuredData";
 
 // Symptom options - ordered by severity level (critical → serious → moderate)
 const SYMPTOMS = [
@@ -411,6 +411,14 @@ export default function EmergencyPage() {
       />
       <StructuredData data={createEmergencyServiceSchema(language)} id="schema-emergency-service" />
       <StructuredData data={createFAQSchema(faqData)} id="schema-faq" />
+      <StructuredData data={createHowToSchema(language)} id="schema-howto-emergency" />
+      <StructuredData 
+        data={createBreadcrumbSchema([
+          { name: language === 'zh-HK' ? "主頁" : "Home", url: "https://petsos.site/" },
+          { name: language === 'zh-HK' ? "緊急求助" : "Emergency", url: "https://petsos.site/emergency" }
+        ])} 
+        id="schema-breadcrumb-emergency" 
+      />
       <div className="min-h-screen bg-gradient-to-b from-red-50 to-white dark:from-gray-900 dark:to-gray-800 p-4">
         <div className="max-w-2xl mx-auto pt-8">
           {/* Progress indicator */}
