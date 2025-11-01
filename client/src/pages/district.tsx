@@ -31,8 +31,8 @@ const HONG_KONG_DISTRICTS: District[] = [
     regionCode: "HKI",
     latitude: 22.2819,
     longitude: 114.1580,
-    descriptionEn: "Find 24-hour emergency veterinary clinics in Central, Hong Kong. Immediate pet care services near Central MTR, IFC, and surrounding areas.",
-    descriptionZh: "尋找中環24小時緊急獸醫診所。提供中環港鐵站、國際金融中心及附近地區即時寵物護理服務。",
+    descriptionEn: "When your dog, cat, or beloved pet needs emergency care in Central, every second counts. Find nearby 24-hour veterinary clinics ready to help—whether it's late at night, on a holiday, or during a weekend crisis.",
+    descriptionZh: "當您的狗狗、貓咪或心愛寵物在中環需要緊急護理時，分秒必爭。尋找附近隨時候命的24小時獸醫診所—無論深夜、假期或週末緊急情況。",
     keywordsEn: "Central vet, 24-hour animal hospital Central, emergency pet care Central Hong Kong, veterinary clinic Central MTR",
     keywordsZh: "中環獸醫, 中環24小時動物醫院, 中環寵物緊急護理, 中環港鐵獸醫診所"
   },
@@ -43,8 +43,8 @@ const HONG_KONG_DISTRICTS: District[] = [
     regionCode: "KLN",
     latitude: 22.2976,
     longitude: 114.1722,
-    descriptionEn: "24-hour emergency veterinary services in Tsim Sha Tsui, Kowloon. Find nearby animal hospitals near TST MTR, Harbour City, and Nathan Road.",
-    descriptionZh: "尖沙咀九龍24小時緊急獸醫服務。尋找尖沙咀港鐵站、海港城及彌敦道附近動物醫院。",
+    descriptionEn: "Your pet's emergency can't wait. Connect instantly with 24-hour veterinary clinics in Tsim Sha Tsui ready to provide urgent care. Help is available right now, any time of day or night.",
+    descriptionZh: "您寵物的緊急情況不能等待。即時聯繫尖沙咀24小時獸醫診所，隨時提供緊急護理。無論日夜，即刻獲得幫助。",
     keywordsEn: "Tsim Sha Tsui vet, TST animal hospital, 24-hour pet clinic Kowloon, emergency vet Nathan Road",
     keywordsZh: "尖沙咀獸醫, 尖沙咀動物醫院, 九龍24小時寵物診所, 彌敦道緊急獸醫"
   },
@@ -55,8 +55,8 @@ const HONG_KONG_DISTRICTS: District[] = [
     regionCode: "KLN",
     latitude: 22.3193,
     longitude: 114.1694,
-    descriptionEn: "Emergency vet clinics open 24 hours in Mong Kok. Immediate pet emergency care near Mong Kok MTR, Ladies' Market, and Argyle Street.",
-    descriptionZh: "旺角24小時緊急獸醫診所。提供旺角港鐵站、女人街及亞皆老街附近即時寵物緊急護理。",
+    descriptionEn: "Is your pet sick or injured in Mong Kok? Get immediate help from 24-hour emergency vets near you. One tap connects you to all available clinics—no searching, no delays.",
+    descriptionZh: "您的寵物在旺角生病或受傷？立即獲得附近24小時緊急獸醫的幫助。一按即可聯繫所有可用診所—無需搜尋，無需延誤。",
     keywordsEn: "Mong Kok vet, 24-hour veterinary Mong Kok, pet emergency Argyle Street, animal hospital Ladies Market",
     keywordsZh: "旺角獸醫, 旺角24小時獸醫, 亞皆老街寵物緊急, 女人街動物醫院"
   },
@@ -67,8 +67,8 @@ const HONG_KONG_DISTRICTS: District[] = [
     regionCode: "HKI",
     latitude: 22.2799,
     longitude: 114.1853,
-    descriptionEn: "Find 24-hour pet emergency services in Causeway Bay. Veterinary clinics near Times Square, Causeway Bay MTR, and Victoria Park.",
-    descriptionZh: "尋找銅鑼灣24小時寵物緊急服務。時代廣場、銅鑼灣港鐵站及維多利亞公園附近獸醫診所。",
+    descriptionEn: "When your pet needs emergency care in Causeway Bay, don't panic—help is closer than you think. Alert all 24-hour vets instantly and get your pet the urgent care they need.",
+    descriptionZh: "當您的寵物在銅鑼灣需要緊急護理時，不要驚慌—幫助就在附近。即時通知所有24小時獸醫，讓您的寵物獲得所需的緊急護理。",
     keywordsEn: "Causeway Bay vet, emergency animal hospital Causeway Bay, 24-hour pet clinic Times Square, veterinary Victoria Park",
     keywordsZh: "銅鑼灣獸醫, 銅鑼灣緊急動物醫院, 時代廣場24小時寵物診所, 維多利亞公園獸醫"
   },
@@ -79,8 +79,8 @@ const HONG_KONG_DISTRICTS: District[] = [
     regionCode: "HKI",
     latitude: 22.2769,
     longitude: 114.1722,
-    descriptionEn: "24-hour emergency veterinary care in Wan Chai, Hong Kong Island. Animal hospitals near Wan Chai MTR, Convention Centre, and Happy Valley.",
-    descriptionZh: "香港島灣仔24小時緊急獸醫護理。灣仔港鐵站、會議展覽中心及跑馬地附近動物醫院。",
+    descriptionEn: "Facing a pet emergency in Wan Chai? You're not alone. Connect with experienced 24-hour emergency vets who understand your pet needs help now, not later.",
+    descriptionZh: "在灣仔面對寵物緊急情況？您並不孤單。聯繫經驗豐富的24小時緊急獸醫，他們明白您的寵物現在就需要幫助。",
     keywordsEn: "Wan Chai vet, 24-hour animal hospital Wan Chai, emergency pet care Happy Valley, veterinary clinic Convention Centre",
     keywordsZh: "灣仔獸醫, 灣仔24小時動物醫院, 跑馬地緊急寵物護理, 會展獸醫診所"
   },
@@ -91,8 +91,8 @@ const HONG_KONG_DISTRICTS: District[] = [
     regionCode: "NTI",
     latitude: 22.3817,
     longitude: 114.1886,
-    descriptionEn: "Emergency vet services in Sha Tin, New Territories. 24-hour animal hospitals near Sha Tin MTR, New Town Plaza, and Ma On Shan.",
-    descriptionZh: "新界沙田緊急獸醫服務。沙田港鐵站、新城市廣場及馬鞍山附近24小時動物醫院。",
+    descriptionEn: "Pet emergency in Sha Tin or New Territories? Fast access to 24-hour veterinary care can save your pet's life. Get connected to emergency vets immediately.",
+    descriptionZh: "沙田或新界寵物緊急情況？快速獲得24小時獸醫護理可以拯救您寵物的生命。立即聯繫緊急獸醫。",
     keywordsEn: "Sha Tin vet, New Territories animal hospital, 24-hour pet clinic Sha Tin, emergency vet Ma On Shan",
     keywordsZh: "沙田獸醫, 新界動物醫院, 沙田24小時寵物診所, 馬鞍山緊急獸醫"
   }
@@ -268,13 +268,16 @@ export default function DistrictPage() {
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-bold text-red-900 dark:text-red-100 mb-2">
-                  {language === 'zh-HK' ? '寵物緊急情況？' : 'Pet Emergency?'}
+                  {language === 'zh-HK' ? '您的寵物正處於危險中？' : 'Is Your Pet in Distress?'}
                 </h2>
-                <p className="text-red-800 dark:text-red-200 mb-4">
+                <p className="text-red-800 dark:text-red-200 mb-2">
                   {language === 'zh-HK' 
-                    ? `即時向${district.nameZh}附近所有24小時診所發送緊急通知`
-                    : `Send emergency alerts to all 24-hour clinics near ${district.nameEn} instantly`
+                    ? `我們明白這有多可怕。即時通知${district.nameZh}所有24小時緊急獸醫。他們會在數秒內收到訊息—讓您的寵物更快獲得幫助。`
+                    : `We know how scary this is. Instantly alert all 24-hour emergency vets in ${district.nameEn}. They'll get your message in seconds—so your pet gets help faster.`
                   }
+                </p>
+                <p className="text-sm text-red-700 dark:text-red-300 mb-4 font-medium">
+                  {language === 'zh-HK' ? '大多數診所在5-15分鐘內回應' : 'Most vets respond within 5-15 minutes'}
                 </p>
                 <Button
                   onClick={() => {
@@ -401,9 +404,20 @@ export default function DistrictPage() {
             <Card>
               <CardContent className="p-12 text-center">
                 <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  {language === 'zh-HK' ? '此地區暫無診所資料' : 'No clinics found in this area'}
+                <p className="text-lg font-semibold text-foreground mb-2">
+                  {language === 'zh-HK' ? '我們正在更新此地區的診所列表' : 'We're updating our clinic list for this area'}
                 </p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {language === 'zh-HK' 
+                    ? '同時，請查看附近地區或致電我們遍布香港的合作診所' 
+                    : 'Meanwhile, check nearby districts or call our partner clinics across Hong Kong'
+                  }
+                </p>
+                <Link href="/clinics">
+                  <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50">
+                    {language === 'zh-HK' ? '瀏覽所有診所' : 'View All Clinics'}
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           )}
@@ -412,22 +426,57 @@ export default function DistrictPage() {
         {/* Local Information */}
         <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/10">
           <CardHeader>
-            <CardTitle className="text-blue-900 dark:text-blue-100">
-              {language === 'zh-HK' ? '關於本地區' : 'About This Area'}
+            <CardTitle className="text-blue-900 dark:text-blue-100 flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              {language === 'zh-HK' ? `${district.nameZh}緊急獸醫護理` : `Emergency Vet Care in ${district.nameEn}`}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 text-sm text-blue-800 dark:text-blue-200">
+            <div className="space-y-4 text-sm text-blue-800 dark:text-blue-200">
               <p>
                 {language === 'zh-HK' 
-                  ? `PetSOS為${district.nameZh}地區提供24小時緊急獸醫轉介服務。透過一鍵式緊急通知系統，您可以即時聯繫附近所有支援緊急服務的動物醫院。`
-                  : `PetSOS provides 24-hour emergency veterinary referral services for the ${district.nameEn} area. Through our one-tap emergency notification system, you can instantly contact all nearby animal hospitals that support emergency services.`
+                  ? `當您的寵物生病或受傷時，尋找幫助不應增加您的壓力。PetSOS一鍵即可連接您與${district.nameZh}所有24小時緊急獸醫。`
+                  : `When your pet is sick or injured, finding help shouldn't add to your stress. PetSOS instantly connects you with every 24-hour emergency vet in ${district.nameEn}—with one tap.`
                 }
               </p>
-              <p>
+              <div className="bg-white dark:bg-blue-950 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                  {language === 'zh-HK' ? '接下來會發生什麼？' : 'What happens next?'}
+                </h4>
+                <ul className="space-y-2 text-blue-900 dark:text-blue-100">
+                  <li className="flex gap-2">
+                    <span className="text-blue-600 dark:text-blue-400">✓</span>
+                    {language === 'zh-HK' 
+                      ? '所有附近診所透過WhatsApp收到您寵物的詳情'
+                      : 'All nearby clinics receive your pet's details via WhatsApp'
+                    }
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-blue-600 dark:text-blue-400">✓</span>
+                    {language === 'zh-HK' 
+                      ? '您會看到他們的位置並獲得即時導航'
+                      : 'You'll see their locations and get instant directions'
+                    }
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-blue-600 dark:text-blue-400">✓</span>
+                    {language === 'zh-HK' 
+                      ? '可直接致電他們。大多數診所在5-15分鐘內回應'
+                      : 'You can call them directly. Most clinics respond within 5-15 minutes'
+                    }
+                  </li>
+                </ul>
+              </div>
+              <p className="font-medium text-blue-900 dark:text-blue-100 text-center pt-2">
+                {language === 'zh-HK' 
+                  ? '您並不孤單。幫助比您想像的更近。'
+                  : 'You're not alone in this. Help is closer than you think.'
+                }
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-300 italic">
                 {language === 'zh-HK'
-                  ? '我們的平台支援GPS定位、WhatsApp即時通訊，以及直接致電功能，確保您的寵物在緊急情況下得到最快速的醫療救援。'
-                  : 'Our platform supports GPS location, WhatsApp instant messaging, and direct calling features to ensure your pet receives the fastest medical assistance during emergencies.'
+                  ? '* PetSOS是一個連接平台，不提供獸醫服務。所有醫療服務由獨立註冊獸醫診所提供。'
+                  : '* PetSOS is a connection platform and does not provide veterinary services. All medical care is provided by independent licensed veterinary clinics.'
                 }
               </p>
             </div>
