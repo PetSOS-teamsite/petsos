@@ -6,7 +6,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, MapPin, Phone, ChevronRight, ChevronLeft, CheckCircle } from "lucide-react";
@@ -690,6 +690,11 @@ export default function EmergencyPage() {
                                   testId="combobox-pet-breed"
                                 />
                               </FormControl>
+                              <FormDescription className="text-xs text-muted-foreground">
+                                {language === "en" 
+                                  ? "💡 Can't find your pet's breed? No worries! Just type it in and press Enter."
+                                  : "💡 找不到品種？沒關係！直接輸入然後按Enter即可。"}
+                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
