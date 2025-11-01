@@ -256,7 +256,10 @@ export default function ClinicsPage() {
             <Switch
               id="24hour-filter"
               checked={show24HourOnly}
-              onCheckedChange={setShow24HourOnly}
+              onCheckedChange={(value) => {
+                console.log('[24h Filter] Switch toggled:', value);
+                setShow24HourOnly(value);
+              }}
               data-testid="switch-24hour-filter"
               className="data-[state=checked]:bg-red-600"
             />
