@@ -125,11 +125,16 @@ export function BreedCombobox({
           <CommandList>
             <CommandEmpty>
               {searchValue ? (
-                <div className="py-2 text-center text-sm">
-                  Press Enter to use "{searchValue}"
+                <div className="py-2 px-4 text-center text-sm">
+                  <div className="text-green-600 dark:text-green-400 font-medium mb-1">
+                    ✓ Custom breed ready!
+                  </div>
+                  <div className="text-muted-foreground">
+                    Click anywhere outside or press Enter to save "{searchValue}"
+                  </div>
                 </div>
               ) : (
-                "No breed found."
+                "No breed found. Type to add custom breed."
               )}
             </CommandEmpty>
             <CommandGroup>
