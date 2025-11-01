@@ -159,4 +159,74 @@ export const analytics = {
       });
     }
   },
+
+  // Track district page view
+  trackDistrictPageView(data: {
+    district: string;
+    region: string;
+    language: string;
+  }) {
+    this.event('district_page_view', {
+      event_category: 'Marketing',
+      district: data.district,
+      region: data.region,
+      language: data.language,
+    });
+  },
+
+  // Track district card click
+  trackDistrictClick(data: {
+    district: string;
+    region: string;
+    source: 'index' | 'other';
+  }) {
+    this.event('district_click', {
+      event_category: 'Navigation',
+      district: data.district,
+      region: data.region,
+      source: data.source,
+    });
+  },
+
+  // Track resources page interaction
+  trackResourcesInteraction(data: {
+    interactionType: 'emergency_tip_view' | 'critical_sign_view' | 'emergency_cta_click' | 'clinic_guide_view';
+    section?: string;
+    language: string;
+  }) {
+    this.event('resources_interaction', {
+      event_category: 'Content',
+      interaction_type: data.interactionType,
+      section: data.section,
+      language: data.language,
+    });
+  },
+
+  // Track FAQ interaction
+  trackFAQInteraction(data: {
+    action: 'question_expand' | 'emergency_cta_click' | 'clinics_cta_click';
+    questionId?: number;
+    language: string;
+  }) {
+    this.event('faq_interaction', {
+      event_category: 'Content',
+      action: data.action,
+      question_id: data.questionId,
+      language: data.language,
+    });
+  },
+
+  // Track language switch
+  trackLanguageSwitch(data: {
+    from: string;
+    to: string;
+    page: string;
+  }) {
+    this.event('language_switch', {
+      event_category: 'User Preference',
+      from_language: data.from,
+      to_language: data.to,
+      page: data.page,
+    });
+  },
 };

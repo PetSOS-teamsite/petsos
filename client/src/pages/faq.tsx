@@ -10,6 +10,7 @@ import {
 import { HelpCircle, Phone, Clock, MapPin, MessageCircle } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { StructuredData } from "@/components/StructuredData";
+import { analytics } from "@/lib/analytics";
 
 interface FAQItem {
   questionEn: string;
@@ -158,7 +159,21 @@ export default function FAQPage() {
         {/* FAQ Accordion */}
         <Card className="mb-8">
           <CardContent className="p-6">
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion 
+              type="single" 
+              collapsible 
+              className="w-full"
+              onValueChange={(value) => {
+                if (value) {
+                  const questionId = parseInt(value.replace('item-', ''));
+                  analytics.trackFAQInteraction({
+                    action: 'question_expand',
+                    questionId,
+                    language
+                  });
+                }
+              }}
+            >
               {FAQ_ITEMS.map((item, index) => (
                 <AccordionItem key={index} value={`item-${index}`} data-testid={`faq-item-${index}`}>
                   <AccordionTrigger className="text-left font-semibold hover:text-red-600 transition-colors">
@@ -175,7 +190,13 @@ export default function FAQPage() {
 
         {/* Quick Action Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <Link href="/emergency">
+          <Link 
+            href="/emergency"
+            onClick={() => analytics.trackFAQInteraction({
+              action: 'emergency_cta_click',
+              language
+            })}
+          >
             <Card className="p-6 border-red-600 hover:shadow-lg transition-all cursor-pointer bg-red-50 dark:bg-red-900/10" data-testid="card-emergency-cta">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-red-600 rounded-full">
@@ -193,7 +214,13 @@ export default function FAQPage() {
             </Card>
           </Link>
 
-          <Link href="/clinics">
+          <Link 
+            href="/clinics"
+            onClick={() => analytics.trackFAQInteraction({
+              action: 'clinics_cta_click',
+              language
+            })}
+          >
             <Card className="p-6 border-blue-600 hover:shadow-lg transition-all cursor-pointer bg-blue-50 dark:bg-blue-900/10" data-testid="card-clinics-cta">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-blue-600 rounded-full">

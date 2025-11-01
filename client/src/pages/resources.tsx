@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Heart, 
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { StructuredData } from "@/components/StructuredData";
+import { analytics } from "@/lib/analytics";
 
 interface EmergencyTip {
   titleEn: string;
@@ -224,7 +226,14 @@ export default function ResourcesPage() {
               ))}
             </ul>
             <div className="mt-6 pt-6 border-t border-red-200 dark:border-red-800">
-              <Link href="/emergency">
+              <Link 
+                href="/emergency"
+                onClick={() => analytics.trackResourcesInteraction({
+                  interactionType: 'emergency_cta_click',
+                  section: 'critical_signs',
+                  language
+                })}
+              >
                 <Card className="p-4 bg-red-600 hover:bg-red-700 transition-colors cursor-pointer">
                   <div className="flex items-center justify-center gap-2 text-white font-semibold">
                     <Clock className="h-5 w-5" />

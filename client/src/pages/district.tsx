@@ -1,11 +1,13 @@
 import { useParams, useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Phone, MessageCircle, Navigation, Clock, MapPin, ArrowLeft, ExternalLink } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { StructuredData } from "@/components/StructuredData";
+import { analytics } from "@/lib/analytics";
 import type { Clinic } from "@shared/schema";
 
 interface District {
@@ -111,6 +113,17 @@ export default function DistrictPage() {
     queryKey: ['/api/clinics'],
     enabled: !!district,
   });
+
+  // Track district page view
+  useEffect(() => {
+    if (district) {
+      analytics.trackDistrictPageView({
+        district: district.slug,
+        region: district.regionCode,
+        language,
+      });
+    }
+  }, [district, language]);
 
   if (!district) {
     return (
@@ -264,7 +277,14 @@ export default function DistrictPage() {
                   }
                 </p>
                 <Button
-                  onClick={() => navigate('/emergency')}
+                  onClick={() => {
+                    analytics.event('district_emergency_cta_click', {
+                      event_category: 'CTA',
+                      district: district.slug,
+                      region: district.regionCode,
+                    });
+                    navigate('/emergency');
+                  }}
                   className="bg-red-600 hover:bg-red-700"
                   data-testid="button-emergency-cta"
                 >
