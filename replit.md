@@ -28,6 +28,8 @@ Preferred communication style: Simple, everyday language.
 - **Geolocation**: PostGIS for server-side geospatial queries (ST_DWithin, ST_Distance), geography column with GIST spatial index, auto-user location detection, manual override.
 - **Messaging Architecture**: WhatsApp Business API as primary, email fallback, queue-based processing, template-based messaging (full, new, basic templates dynamically selected based on pet registration and language).
 - **Analytics & Monitoring**: Google Analytics 4 (GA4) with GDPR-compliant cookie consent, Sentry for backend and frontend error tracking and performance monitoring.
+  - **Custom Event Tracking**: District page views, district card clicks, resources page interactions (emergency tips, critical signs, clinic guide), FAQ accordion expansions, language switching, all tracked with district/region/language parameters for detailed engagement analysis
+  - **Marketing Analytics**: Comprehensive tracking of district landing pages, resources center, and FAQ interactions to measure content effectiveness and user engagement patterns
 - **SEO Optimization (2025)**: Comprehensive bilingual SEO with performance-first approach:
   - **Core Web Vitals Monitoring**: Real-time tracking of LCP, INP, CLS, FCP, TTFB via web-vitals library integrated with Google Analytics
   - **Performance Optimizations**: Single Google Font (Inter) with font-display: swap and preload, WebP images (62.5% smaller OG image: 72KB→27KB), fetchpriority="high" on critical assets, DNS prefetch for external resources
@@ -35,10 +37,10 @@ Preferred communication style: Simple, everyday language.
   - **Local SEO**: Hong Kong geo-targeting (22.3193, 114.1694), district-specific keywords (Central, Tsim Sha Tsui, Mong Kok + Chinese), enhanced Organization schema with address and contact points
   - **Technical SEO**: Canonical URLs site-wide, sitemap.xml with cache-busting, robots.txt, dynamic meta tags (Open Graph, Twitter Cards), HTML lang attribute switching, mobile-first optimization
   - **Social Integration**: Facebook/Instagram sameAs properties in Organization schema
-  - **District Marketing Pages**: Dedicated landing pages for 6 major Hong Kong districts (Central, Causeway Bay, Wan Chai, Tsim Sha Tsui, Mong Kok, Sha Tin) with bilingual content, local SEO keywords, geo-coordinates, and nearby clinic listings
-  - **Resources Center**: Comprehensive Traditional Chinese marketing content including pet emergency handling guide, critical warning signs, clinic selection criteria, and preventive care information with HowTo structured data
-  - **FAQ Page**: Bilingual frequently asked questions with FAQPage structured data for rich snippets in search results
-  - Successfully submitted to Google Search Console with 15+ pages indexed (increased from 6)
+  - **District Marketing Pages**: Dedicated landing pages for 6 major Hong Kong districts (Central, Causeway Bay, Wan Chai, Tsim Sha Tsui, Mong Kok, Sha Tin) with bilingual content, local SEO keywords, geo-coordinates, nearby clinic listings, and analytics tracking for page views and CTA clicks
+  - **Resources Center**: Comprehensive Traditional Chinese marketing content including pet emergency handling guide, critical warning signs, clinic selection criteria, and preventive care information with HowTo structured data and interaction tracking
+  - **FAQ Page**: Bilingual frequently asked questions with FAQPage structured data for rich snippets in search results, includes accordion expansion tracking and CTA analytics
+  - **Google Search Console**: Sitemap.xml submitted with 15 indexed pages (increased from 6), robots.txt updated with cache-busting, comprehensive setup documentation in docs/GOOGLE_SEARCH_CONSOLE_SETUP.md
 - **Multi-Environment Configuration**: Centralized configuration for development, staging, and production environments using `.env` files.
 - **Deployment**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment, Infrastructure as Code.
 
