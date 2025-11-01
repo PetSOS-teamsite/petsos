@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, ArrowRight } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { StructuredData } from "@/components/StructuredData";
+import { analytics } from "@/lib/analytics";
 
 interface District {
   slug: string;
@@ -134,7 +135,15 @@ export default function DistrictsIndexPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {hkiDistricts.map(district => (
-              <Link key={district.slug} href={`/district/${district.slug}`}>
+              <Link 
+                key={district.slug} 
+                href={`/district/${district.slug}`}
+                onClick={() => analytics.trackDistrictClick({
+                  district: district.slug,
+                  region: district.regionCode,
+                  source: 'index'
+                })}
+              >
                 <Card className="hover:shadow-lg hover:border-red-600 transition-all cursor-pointer h-full" data-testid={`card-district-${district.slug}`}>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
@@ -161,7 +170,15 @@ export default function DistrictsIndexPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {klnDistricts.map(district => (
-              <Link key={district.slug} href={`/district/${district.slug}`}>
+              <Link 
+                key={district.slug} 
+                href={`/district/${district.slug}`}
+                onClick={() => analytics.trackDistrictClick({
+                  district: district.slug,
+                  region: district.regionCode,
+                  source: 'index'
+                })}
+              >
                 <Card className="hover:shadow-lg hover:border-red-600 transition-all cursor-pointer h-full" data-testid={`card-district-${district.slug}`}>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
@@ -188,7 +205,15 @@ export default function DistrictsIndexPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {ntiDistricts.map(district => (
-              <Link key={district.slug} href={`/district/${district.slug}`}>
+              <Link 
+                key={district.slug} 
+                href={`/district/${district.slug}`}
+                onClick={() => analytics.trackDistrictClick({
+                  district: district.slug,
+                  region: district.regionCode,
+                  source: 'index'
+                })}
+              >
                 <Card className="hover:shadow-lg hover:border-red-600 transition-all cursor-pointer h-full" data-testid={`card-district-${district.slug}`}>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
