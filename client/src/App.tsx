@@ -19,6 +19,10 @@ import MessageStatusPage from "@/pages/message-status";
 import ProfilePage from "@/pages/profile";
 import PetsPage from "@/pages/pets";
 import ClinicsPage from "@/pages/clinics";
+import DistrictPage from "@/pages/district";
+import DistrictsIndexPage from "@/pages/districts-index";
+import ResourcesPage from "@/pages/resources";
+import FAQPage from "@/pages/faq";
 import AdminClinicsPage from "@/pages/admin-clinics";
 import AdminConfigPage from "@/pages/admin-config";
 import AdminDashboardPage from "@/pages/admin-dashboard";
@@ -50,6 +54,10 @@ function Router() {
     <Switch>
       {/* Public routes - accessible to everyone */}
       <Route path="/clinics" component={ClinicsPage} />
+      <Route path="/districts" component={DistrictsIndexPage} />
+      <Route path="/district/:district" component={DistrictPage} />
+      <Route path="/resources" component={ResourcesPage} />
+      <Route path="/faq" component={FAQPage} />
       <Route path="/emergency" component={EmergencyPage} />
       <Route path="/emergency-results/:requestId" component={ClinicResultsPage} />
       <Route path="/emergency-results/:requestId/messages" component={MessageStatusPage} />

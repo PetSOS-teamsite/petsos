@@ -22,7 +22,76 @@
     <loc>https://petsos.site/clinics</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
-    <lastmod>2025-10-28</lastmod>
+    <lastmod>2025-11-01</lastmod>
+  </url>
+  
+  <!-- Districts Index -->
+  <url>
+    <loc>https://petsos.site/districts</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2025-11-01</lastmod>
+  </url>
+  
+  <!-- District Pages - Hong Kong Island -->
+  <url>
+    <loc>https://petsos.site/district/central</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2025-11-01</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/causeway-bay</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2025-11-01</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/wan-chai</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2025-11-01</lastmod>
+  </url>
+  
+  <!-- District Pages - Kowloon -->
+  <url>
+    <loc>https://petsos.site/district/tsim-sha-tsui</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2025-11-01</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/mong-kok</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2025-11-01</lastmod>
+  </url>
+  
+  <!-- District Pages - New Territories -->
+  <url>
+    <loc>https://petsos.site/district/sha-tin</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2025-11-01</lastmod>
+  </url>
+  
+  <!-- Resources / Pet Emergency Care Guide -->
+  <url>
+    <loc>https://petsos.site/resources</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2025-11-01</lastmod>
+  </url>
+  
+  <!-- FAQ Page -->
+  <url>
+    <loc>https://petsos.site/faq</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2025-11-01</lastmod>
   </url>
   
   <!-- Login / Signup Page -->

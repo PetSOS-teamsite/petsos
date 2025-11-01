@@ -35,7 +35,10 @@ Preferred communication style: Simple, everyday language.
   - **Local SEO**: Hong Kong geo-targeting (22.3193, 114.1694), district-specific keywords (Central, Tsim Sha Tsui, Mong Kok + Chinese), enhanced Organization schema with address and contact points
   - **Technical SEO**: Canonical URLs site-wide, sitemap.xml with cache-busting, robots.txt, dynamic meta tags (Open Graph, Twitter Cards), HTML lang attribute switching, mobile-first optimization
   - **Social Integration**: Facebook/Instagram sameAs properties in Organization schema
-  - Successfully submitted to Google Search Console with 6 pages indexed
+  - **District Marketing Pages**: Dedicated landing pages for 6 major Hong Kong districts (Central, Causeway Bay, Wan Chai, Tsim Sha Tsui, Mong Kok, Sha Tin) with bilingual content, local SEO keywords, geo-coordinates, and nearby clinic listings
+  - **Resources Center**: Comprehensive Traditional Chinese marketing content including pet emergency handling guide, critical warning signs, clinic selection criteria, and preventive care information with HowTo structured data
+  - **FAQ Page**: Bilingual frequently asked questions with FAQPage structured data for rich snippets in search results
+  - Successfully submitted to Google Search Console with 15+ pages indexed (increased from 6)
 - **Multi-Environment Configuration**: Centralized configuration for development, staging, and production environments using `.env` files.
 - **Deployment**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment, Infrastructure as Code.
 
