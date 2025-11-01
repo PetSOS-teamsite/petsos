@@ -7,7 +7,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { HelpCircle, Phone, Clock, MapPin, MessageCircle } from "lucide-react";
+import { HelpCircle, Phone, Clock, MapPin, MessageCircle, AlertTriangle } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { StructuredData } from "@/components/StructuredData";
 import { analytics } from "@/lib/analytics";
@@ -23,8 +23,8 @@ const FAQ_ITEMS: FAQItem[] = [
   {
     questionEn: "What is PetSOS and how does it work?",
     questionZh: "PetSOS是什麼？如何運作？",
-    answerEn: "PetSOS is a Hong Kong-based emergency veterinary care coordination platform. When your pet has an emergency, you can submit a request through our platform, and we'll instantly notify all nearby 24-hour veterinary clinics via WhatsApp and email. You'll receive direct contact details and can reach clinics immediately through Call, WhatsApp, or Maps.",
-    answerZh: "PetSOS是一個香港緊急獸醫護理協調平台。當您的寵物遇到緊急情況時，您可以透過我們的平台提交請求，我們會即時透過WhatsApp和電郵通知附近所有24小時獸醫診所。您將收到直接聯絡資料，並可立即透過致電、WhatsApp或地圖聯絡診所。"
+    answerEn: "PetSOS instantly alerts all nearby 24-hour emergency vets when your pet needs help. Submit your emergency, and we'll notify clinics via WhatsApp. You'll get their contact details immediately so you can call, message, or get directions right away. Note: PetSOS is a connection platform—we don't provide veterinary services. All medical care is provided by independent licensed vet clinics.",
+    answerZh: "當您的寵物需要幫助時，PetSOS會即時通知所有附近的24小時緊急獸醫。提交您的緊急情況，我們會透過WhatsApp通知診所。您會立即獲得他們的聯絡資料，以便致電、發訊息或獲取導航。注意：PetSOS是一個連接平台—我們不提供獸醫服務。所有醫療服務由獨立註冊獸醫診所提供。"
   },
   {
     questionEn: "Is PetSOS available 24/7?",
@@ -41,8 +41,8 @@ const FAQ_ITEMS: FAQItem[] = [
   {
     questionEn: "How quickly will clinics respond to my emergency request?",
     questionZh: "診所會多快回應我的緊急請求？",
-    answerEn: "Response times vary by clinic and their current capacity. Most clinics aim to respond within 5-15 minutes. We recommend calling the clinic directly (using our Call button) for the fastest response, as some clinics may answer phone calls more quickly than digital messages during busy periods.",
-    answerZh: "回應時間因診所和當時運作量而異。大多數診所目標在5-15分鐘內回應。我們建議直接致電診所（使用我們的致電按鈕）以獲得最快回應，因為部分診所在繁忙時段可能會優先接聽電話。"
+    answerEn: "Most clinics respond within 5-15 minutes. We recommend calling the clinic directly (using our Call button) for the fastest response, as some clinics may answer phone calls more quickly than digital messages during busy periods. Remember: Even if you don't get a digital response, you can always call the clinic directly using our Call button. The number works 24/7.",
+    answerZh: "大多數診所在5-15分鐘內回應。我們建議直接致電診所（使用我們的致電按鈕）以獲得最快回應，因為部分診所在繁忙時段可能會優先接聽電話。請記住：即使您沒有收到數位回應，您隨時可以使用我們的致電按鈕直接致電診所。電話24/7全天候運作。"
   },
   {
     questionEn: "Which areas of Hong Kong does PetSOS cover?",
@@ -79,6 +79,24 @@ const FAQ_ITEMS: FAQItem[] = [
     questionZh: "我如何知道診所現在是否營業？",
     answerEn: "All clinics in our directory are marked with their operating hours. Clinics offering 24-hour service display a red '24hrs' badge. You can also use our 24-hour filter on the clinic directory page to show only clinics that are always open.",
     answerZh: "目錄中的所有診所都標示了營業時間。提供24小時服務的診所會顯示紅色的「24hrs」標誌。您也可以在診所目錄頁面使用24小時篩選器，僅顯示全天候營業的診所。"
+  },
+  {
+    questionEn: "How much will emergency vet care cost?",
+    questionZh: "緊急獸醫護理費用是多少？",
+    answerEn: "Emergency vet costs vary depending on treatment needed. A basic emergency consultation typically ranges from HK$800-2,000. More serious cases requiring surgery, hospitalization, or intensive care can range from HK$5,000-30,000+. We recommend calling the clinic before visiting to ask about expected costs for your pet's specific situation. Remember: PetSOS is completely free—you only pay the clinic for actual veterinary services.",
+    answerZh: "緊急獸醫費用因所需治療而異。基本緊急諮詢通常為港幣$800-2,000。需要手術、住院或深切治療的嚴重病例費用可能為港幣$5,000-30,000以上。我們建議在前往診所前致電詢問您寵物具體情況的預計費用。請記住：PetSOS完全免費—您只需支付診所提供的實際獸醫服務費用。"
+  },
+  {
+    questionEn: "What should I do while waiting for the clinic to respond?",
+    questionZh: "等待診所回應期間我應該做什麼？",
+    answerEn: "While you wait (most clinics respond within 5-15 minutes): Keep your pet calm and comfortable. Don't give food or water unless instructed. Gently restrain injured pets to prevent further harm. Have your pet's medical history ready if available. IMPORTANT: If your pet stops breathing or collapses, don't wait for a response—call the nearest emergency vet immediately or go there directly.",
+    answerZh: "在等待期間（大多數診所在5-15分鐘內回應）：保持寵物冷靜和舒適。除非有指示，否則不要給予食物或水。輕輕約束受傷的寵物以防進一步傷害。如有可能，準備好寵物的病歷。重要提示：如果您的寵物停止呼吸或倒地，不要等待回應—立即致電最近的緊急獸醫或直接前往。"
+  },
+  {
+    questionEn: "What if no clinics respond to my request?",
+    questionZh: "如果沒有診所回應我的請求怎麼辦？",
+    answerEn: "In the rare case no clinic responds within 15 minutes, we recommend calling the clinics directly using our Call button—phone calls often get faster attention during very busy periods. You can also check our clinic directory to find the nearest 24-hour vet and head there directly. Our platform shows you real-time directions and contact details for every clinic, even without a response.",
+    answerZh: "在極少數情況下，如果15分鐘內沒有診所回應，我們建議使用我們的致電按鈕直接致電診所—在非常繁忙的時段，電話通常會獲得更快的關注。您也可以查看我們的診所目錄，找到最近的24小時獸醫並直接前往。即使沒有回應，我們的平台也會為您顯示每間診所的即時導航和聯絡資料。"
   }
 ];
 
@@ -156,6 +174,34 @@ export default function FAQPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Life-Threatening Emergency Warning */}
+        <Card className="mb-6 border-red-500 bg-red-50 dark:bg-red-900/20">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-red-600 rounded-full flex-shrink-0">
+                <AlertTriangle className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-red-900 dark:text-red-100 mb-2">
+                  {language === 'zh-HK' ? '🚨 危及生命的緊急情況？' : '🚨 LIFE-THREATENING EMERGENCY?'}
+                </h3>
+                <p className="text-sm text-red-800 dark:text-red-200 mb-3">
+                  {language === 'zh-HK'
+                    ? '如果您的寵物已停止呼吸、失去知覺或嚴重流血，請跳過PetSOS並直接前往最近的24小時獸醫診所。使用我們的診所目錄提前致電。'
+                    : 'If your pet has stopped breathing, is unconscious, or bleeding severely, skip PetSOS and go directly to the nearest 24-hour vet. Call ahead using our clinic directory.'
+                  }
+                </p>
+                <Link href="/clinics">
+                  <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40" size="sm">
+                    <Phone className="h-4 w-4 mr-2" />
+                    {language === 'zh-HK' ? '查看診所目錄' : 'View Clinic Directory'}
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* FAQ Accordion */}
         <Card className="mb-8">
           <CardContent className="p-6">
