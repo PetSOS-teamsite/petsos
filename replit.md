@@ -28,7 +28,14 @@ Preferred communication style: Simple, everyday language.
 - **Geolocation**: PostGIS for server-side geospatial queries (ST_DWithin, ST_Distance), geography column with GIST spatial index, auto-user location detection, manual override.
 - **Messaging Architecture**: WhatsApp Business API as primary, email fallback, queue-based processing, template-based messaging (full, new, basic templates dynamically selected based on pet registration and language).
 - **Analytics & Monitoring**: Google Analytics 4 (GA4) with GDPR-compliant cookie consent, Sentry for backend and frontend error tracking and performance monitoring.
-- **SEO Optimization**: Comprehensive bilingual SEO implementation including sitemap.xml (with cache-busting strategy for CDN), robots.txt, Schema.org structured data (Organization, WebSite, EmergencyService, VeterinaryDirectory, FAQ, HowTo, BreadcrumbList, LocalBusiness schemas), dynamic meta tags (Open Graph, Twitter Cards), HTML lang attribute switching, canonical URLs. StructuredData component with required explicit IDs for collision-free schema injection. Custom OG image (1200x630) for social sharing with bilingual branding. Successfully submitted to Google Search Console.
+- **SEO Optimization (2025)**: Comprehensive bilingual SEO with performance-first approach:
+  - **Core Web Vitals Monitoring**: Real-time tracking of LCP, INP, CLS, FCP, TTFB via web-vitals library integrated with Google Analytics
+  - **Performance Optimizations**: Single Google Font (Inter) with font-display: swap and preload, WebP images (62.5% smaller OG image: 72KB→27KB), fetchpriority="high" on critical assets, DNS prefetch for external resources
+  - **Structured Data**: 8 schema types (Organization with geo-coordinates, WebSite, EmergencyService, VeterinaryDirectory, FAQ, HowTo, BreadcrumbList, LocalBusiness, AggregateRating), all schemas use WebP images
+  - **Local SEO**: Hong Kong geo-targeting (22.3193, 114.1694), district-specific keywords (Central, Tsim Sha Tsui, Mong Kok + Chinese), enhanced Organization schema with address and contact points
+  - **Technical SEO**: Canonical URLs site-wide, sitemap.xml with cache-busting, robots.txt, dynamic meta tags (Open Graph, Twitter Cards), HTML lang attribute switching, mobile-first optimization
+  - **Social Integration**: Facebook/Instagram sameAs properties in Organization schema
+  - Successfully submitted to Google Search Console with 6 pages indexed
 - **Multi-Environment Configuration**: Centralized configuration for development, staging, and production environments using `.env` files.
 - **Deployment**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment, Infrastructure as Code.
 
@@ -80,7 +87,8 @@ Preferred communication style: Simple, everyday language.
 ### Development & Utilities
 - **TypeScript**: Language.
 - **nanoid**: Unique ID generation.
-- **sharp**: Image processing (SVG to PNG conversion).
+- **sharp**: Image processing (SVG to PNG/WebP conversion).
+- **web-vitals**: Core Web Vitals monitoring (LCP, INP, CLS, FCP, TTFB).
 
 ### Error Tracking & Monitoring
 - **@sentry/node**: Backend error tracking and performance monitoring.

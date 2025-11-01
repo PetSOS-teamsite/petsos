@@ -44,17 +44,43 @@ export function createOrganizationSchema(language: string = 'en') {
     "alternateName": language === 'zh-HK' ? "寵物緊急求助" : "Pet Emergency Service",
     "url": "https://petsos.site",
     "logo": "https://petsos.site/icon-512.png",
+    "image": "https://petsos.site/og-image.webp",
     "description": language === 'zh-HK' 
       ? "一按即時通知香港24小時動物醫院。GPS定位最近診所，WhatsApp廣播求助，3步驟完成緊急求助。"
       : "Alert 24-hour animal hospitals in Hong Kong with one tap. GPS-powered emergency pet care with instant WhatsApp broadcast to nearby clinics.",
     "foundingDate": "2025",
-    "areaServed": {
-      "@type": "City",
-      "name": language === 'zh-HK' ? "香港" : "Hong Kong"
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "22.3193",
+      "longitude": "114.1694"
+    },
+    "areaServed": [
+      {
+        "@type": "City",
+        "name": language === 'zh-HK' ? "香港" : "Hong Kong",
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": "22.3193",
+          "longitude": "114.1694"
+        }
+      }
+    ],
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "HK",
+      "addressRegion": language === 'zh-HK' ? "香港" : "Hong Kong"
     },
     "sameAs": [
-      "https://petsos.site"
-    ]
+      "https://petsos.site",
+      "https://www.facebook.com/petsos",
+      "https://www.instagram.com/petsos.hk"
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": language === 'zh-HK' ? "緊急服務" : "Emergency Service",
+      "availableLanguage": ["en", "zh-HK"],
+      "areaServed": "HK"
+    }
   };
 }
 
@@ -69,7 +95,7 @@ export function createEmergencyServiceSchema(language: string = 'en') {
       ? "24小時寵物緊急求助服務，即時連接香港所有24小時獸醫診所。GPS定位、WhatsApp廣播、快速回應。"
       : "24-hour pet emergency service connecting you instantly to all 24-hour veterinary clinics in Hong Kong. GPS location, WhatsApp broadcast, fast response.",
     "url": "https://petsos.site/emergency",
-    "image": "https://petsos.site/icon-512.png",
+    "image": "https://petsos.site/og-image.webp",
     "serviceType": language === 'zh-HK' ? "獸醫緊急服務" : "Veterinary Emergency Service",
     "provider": {
       "@type": "Organization",
@@ -378,4 +404,19 @@ export function createLocalBusinessSchema(clinic: {
   }
 
   return schema;
+}
+
+// Helper function to create AggregateRating schema
+export function createAggregateRatingSchema(ratingValue: number, reviewCount: number, bestRating: number = 5) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "PetSOS - Emergency Veterinary Care Platform",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": ratingValue.toString(),
+      "reviewCount": reviewCount.toString(),
+      "bestRating": bestRating.toString()
+    }
+  };
 }
