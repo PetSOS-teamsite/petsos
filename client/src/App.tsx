@@ -38,6 +38,9 @@ function Router() {
   const hasClinicAccess = user?.clinicId;
   const [location] = useLocation();
   
+  // Track page views
+  usePageTracking();
+  
   // Don't handle API routes - let them go to the server
   if (location.startsWith('/api/')) {
     return null;
@@ -92,8 +95,6 @@ function Router() {
 }
 
 function App() {
-  usePageTracking();
-
   useEffect(() => {
     document.title = "PetSOS";
   }, []);
