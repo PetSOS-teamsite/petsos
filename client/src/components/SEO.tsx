@@ -15,7 +15,7 @@ export function SEO({
   title,
   description,
   keywords,
-  ogImage = 'https://petsos.site/og-image.png',
+  ogImage = 'https://petsos.site/og-image.webp',
   canonical,
   noindex = false,
   language = 'en',
