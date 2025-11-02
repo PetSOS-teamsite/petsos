@@ -1,0 +1,61 @@
+==> Deploying...
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+5:20:24 PM [express] serving on port 10000
+     ==> Your service is live 🎉
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> 
+     ==> Available at your primary URL https://petsos.site + 2 more domains
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> Deploying...
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+5:22:02 PM [express] serving on port 10000
+     ==> Your service is live 🎉
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> 
+     ==> Available at your primary URL https://petsos.site + 2 more domains
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> Detected service running on port 10000
+     ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+5:27:46 PM [express] GET /api/auth/google/callback 302 in 2ms
+     ==> Deploying...
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+5:30:49 PM [express] serving on port 10000
+     ==> Your service is live 🎉
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> 
+     ==> Available at your primary URL https://petsos.site + 2 more domains
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
