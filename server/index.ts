@@ -28,13 +28,16 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
-// Prevent HTML caching to avoid users loading old JS bundles
+// Prevent caching to avoid users loading old JS bundles
 app.use((req, res, next) => {
-  // Don't cache HTML files to ensure users always get latest app version
-  if (req.path === '/' || req.path.endsWith('.html')) {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  // Aggressive cache prevention for HTML, JS, and CSS files
+  if (req.path === '/' || req.path.endsWith('.html') || req.path.endsWith('.js') || req.path.endsWith('.css')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
+    // Tell Cloudflare to bypass cache
+    res.setHeader('CDN-Cache-Control', 'no-store');
+    res.setHeader('Cloudflare-CDN-Cache-Control', 'no-store');
   }
   next();
 });

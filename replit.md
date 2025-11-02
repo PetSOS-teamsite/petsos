@@ -7,6 +7,8 @@ The production deployment at petsos.site uses white-labeled authentication witho
 - **Required Environment Variables**: PRODUCTION_URL=https://petsos.site, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SESSION_SECRET, DATABASE_URL
 - **Excluded Variables**: REPLIT_DOMAINS, REPL_ID, ISSUER_URL (must NOT be set in production to avoid Replit consent screen)
 - **Google OAuth Callback**: https://petsos.site/api/auth/google/callback must be configured in Google Cloud Console
+- **Build Command**: `npm install --include=dev && rm -rf dist && npm run build` (includes dist cleanup to prevent cache corruption)
+- **Cache Prevention**: Aggressive no-cache headers on HTML/JS/CSS to bypass Cloudflare CDN caching
 - See docs/PRODUCTION_DEPLOYMENT.md for complete deployment instructions
 
 ## User Preferences
