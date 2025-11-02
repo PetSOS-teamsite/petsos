@@ -432,12 +432,17 @@ export class MessagingService {
         emergencyRequest.contactPhone || (isZhHk ? '不詳' : 'Unknown'), // {{11}} Owner phone
       ];
       
-      fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
-        `${isZhHk ? '已登記寵物（有醫療記錄）' : 'REGISTERED PET WITH MEDICAL HISTORY'}\n` +
-        `${isZhHk ? '名稱' : 'Name'}: ${variables[1]}\n` +
-        `${isZhHk ? '物種' : 'Species'}: ${variables[2]}\n` +
-        `${isZhHk ? '緊急症狀' : 'Emergency'}: ${variables[6]}\n` +
-        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[9]} (${variables[10]})`;
+      fallbackText = `🚨 EMERGENCY PET ALERT / 緊急寵物求助 🚨\n\n` +
+        `REGISTERED PET WITH MEDICAL HISTORY\n已登記寵物（有醫療記錄）\n\n` +
+        `Name / 名稱: ${variables[1]}\n` +
+        `Species / 物種: ${variables[2]}\n` +
+        `Breed / 品種: ${variables[3]}\n` +
+        `Age / 年齡: ${variables[4]}\n` +
+        `Weight / 體重: ${variables[5]}\n` +
+        `Emergency Symptom / 緊急症狀: ${variables[6]}\n` +
+        `Medical Notes / 醫療記錄: ${variables[7]}\n` +
+        `Location / 位置: ${variables[8]}\n` +
+        `Owner Contact / 主人聯絡: ${variables[9]} (${variables[10]})`;
       
     } else if (pet) {
       // New registered pet (no visit history)
@@ -457,11 +462,17 @@ export class MessagingService {
         emergencyRequest.contactPhone || (isZhHk ? '不詳' : 'Unknown'), // {{10}} Owner phone
       ];
       
-      fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
-        `${isZhHk ? '名稱' : 'Name'}: ${variables[0]}\n` +
-        `${isZhHk ? '物種' : 'Species'}: ${variables[1]}\n` +
-        `${isZhHk ? '緊急症狀' : 'Emergency'}: ${variables[5]}\n` +
-        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[8]} (${variables[9]})`;
+      fallbackText = `🚨 EMERGENCY PET ALERT / 緊急寵物求助 🚨\n\n` +
+        `REGISTERED PET (NEW)\n已登記寵物（新）\n\n` +
+        `Name / 名稱: ${variables[0]}\n` +
+        `Species / 物種: ${variables[1]}\n` +
+        `Breed / 品種: ${variables[2]}\n` +
+        `Age / 年齡: ${variables[3]}\n` +
+        `Weight / 體重: ${variables[4]}\n` +
+        `Emergency Symptom / 緊急症狀: ${variables[5]}\n` +
+        `Medical Notes / 醫療記錄: ${variables[6]}\n` +
+        `Location / 位置: ${variables[7]}\n` +
+        `Owner Contact / 主人聯絡: ${variables[8]} (${variables[9]})`;
       
     } else {
       // Anonymous user (basic template)
@@ -478,10 +489,14 @@ export class MessagingService {
         emergencyRequest.contactPhone || (isZhHk ? '不詳' : 'Unknown'), // {{7}} Owner phone
       ];
       
-      fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
-        `${isZhHk ? '物種' : 'Species'}: ${variables[0]}\n` +
-        `${isZhHk ? '緊急症狀' : 'Emergency'}: ${variables[3]}\n` +
-        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[5]} (${variables[6]})`;
+      fallbackText = `🚨 EMERGENCY PET ALERT / 緊急寵物求助 🚨\n\n` +
+        `EMERGENCY REQUEST\n緊急求助\n\n` +
+        `Species / 物種: ${variables[0]}\n` +
+        `Breed / 品種: ${variables[1]}\n` +
+        `Age / 年齡: ${variables[2]}\n` +
+        `Emergency Symptom / 緊急症狀: ${variables[3]}\n` +
+        `Location / 位置: ${variables[4]}\n` +
+        `Owner Contact / 主人聯絡: ${variables[5]} (${variables[6]})`;
     }
 
     console.log('[Template Builder] Selected template:', templateName);
