@@ -448,14 +448,14 @@ export default function DistrictPage() {
                     <span className="text-blue-600 dark:text-blue-400">✓</span>
                     {language === 'zh-HK' 
                       ? '所有附近診所透過WhatsApp收到您寵物的詳情'
-                      : 'All nearby clinics receive your pet's details via WhatsApp'
+                      : "All nearby clinics receive your pet's details via WhatsApp"
                     }
                   </li>
                   <li className="flex gap-2">
                     <span className="text-blue-600 dark:text-blue-400">✓</span>
                     {language === 'zh-HK' 
                       ? '您會看到他們的位置並獲得即時導航'
-                      : 'You'll see their locations and get instant directions'
+                      : "You'll see their locations and get instant directions"
                     }
                   </li>
                   <li className="flex gap-2">
@@ -470,7 +470,7 @@ export default function DistrictPage() {
               <p className="font-medium text-blue-900 dark:text-blue-100 text-center pt-2">
                 {language === 'zh-HK' 
                   ? '您並不孤單。幫助比您想像的更近。'
-                  : 'You're not alone in this. Help is closer than you think.'
+                  : "You're not alone in this. Help is closer than you think."
                 }
               </p>
               <p className="text-xs text-blue-700 dark:text-blue-300 italic">
