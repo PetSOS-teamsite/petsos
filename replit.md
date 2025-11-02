@@ -1,6 +1,14 @@
 ## Overview
 PetSOS is an emergency veterinary care coordination platform designed to quickly connect pet owners with 24-hour veterinary clinics. It enables one-tap broadcasting of emergency cases to nearby clinics and offers direct communication channels (Call/WhatsApp). The platform supports user and pet profiles, multi-region operations with global scalability, and comprehensive privacy compliance, aiming to streamline emergency pet care coordination and improve pet welfare during crises.
 
+## Production Deployment (petsos.site)
+The production deployment at petsos.site uses white-labeled authentication without Replit branding:
+- **Authentication Methods**: Google OAuth, Email/Password, Phone/Password
+- **Required Environment Variables**: PRODUCTION_URL=https://petsos.site, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SESSION_SECRET, DATABASE_URL
+- **Excluded Variables**: REPLIT_DOMAINS, REPL_ID, ISSUER_URL (must NOT be set in production to avoid Replit consent screen)
+- **Google OAuth Callback**: https://petsos.site/api/auth/google/callback must be configured in Google Cloud Console
+- See docs/PRODUCTION_DEPLOYMENT.md for complete deployment instructions
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
