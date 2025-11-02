@@ -116,18 +116,24 @@ export function loadConfig(): AppConfig {
     if (!process.env.DATABASE_URL) {
       console.warn('[Config] DATABASE_URL not set - database features will not work');
     }
-    if (!process.env.REPLIT_DOMAINS) {
-      console.warn('[Config] REPLIT_DOMAINS not set - authentication will not work');
+    if (!process.env.REPLIT_DOMAINS && !process.env.PRODUCTION_URL) {
+      console.warn('[Config] Neither REPLIT_DOMAINS nor PRODUCTION_URL set - authentication may not work correctly');
     }
     if (!process.env.SESSION_SECRET) {
       console.warn('[Config] SESSION_SECRET not set - using default (insecure for production)');
     }
   } else {
-    // In staging/production, require all critical variables
-    const requiredVars = ['DATABASE_URL', 'REPLIT_DOMAINS', 'SESSION_SECRET'];
+    // In staging/production, require critical variables
+    // Note: Either REPLIT_DOMAINS or PRODUCTION_URL can be used for authentication
+    const requiredVars = ['DATABASE_URL', 'SESSION_SECRET'];
     const missing = requiredVars.filter(v => !process.env[v]);
     if (missing.length > 0) {
       throw new Error(`Missing required environment variables for ${env}: ${missing.join(', ')}`);
+    }
+    
+    // Warn if neither auth domain is configured
+    if (!process.env.REPLIT_DOMAINS && !process.env.PRODUCTION_URL) {
+      console.warn('[Config] Neither REPLIT_DOMAINS nor PRODUCTION_URL set - Google OAuth may not work');
     }
   }
   
@@ -151,8 +157,8 @@ export function loadConfig(): AppConfig {
     },
     
     auth: {
-      // Use empty string in development if not set, otherwise it's guaranteed to exist
-      replitDomains: process.env.REPLIT_DOMAINS || (isDevelopment ? '' : process.env.REPLIT_DOMAINS!),
+      // REPLIT_DOMAINS is now optional - if not set, app uses PRODUCTION_URL for Google OAuth
+      replitDomains: process.env.REPLIT_DOMAINS || '',
     },
     
     rateLimit: {
