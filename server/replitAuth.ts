@@ -166,9 +166,37 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/callback", (req, res, next) => {
     const authDomain = getAuthDomain(req.hostname);
-    passport.authenticate(`replitauth:${authDomain}`, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login",
+    console.log('[Auth Callback] Hostname:', req.hostname);
+    console.log('[Auth Callback] Auth Domain:', authDomain);
+    console.log('[Auth Callback] Query params:', req.query);
+    console.log('[Auth Callback] Session ID:', (req.session as any)?.id);
+    
+    passport.authenticate(`replitauth:${authDomain}`, (err: any, user: any, info: any) => {
+      if (err) {
+        console.error('[Auth Callback] Authentication error:', err);
+        return res.redirect("/api/login");
+      }
+      if (!user) {
+        console.error('[Auth Callback] No user returned, info:', info);
+        return res.redirect("/api/login");
+      }
+      
+      console.log('[Auth Callback] User authenticated successfully:', user.claims?.email);
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error('[Auth Callback] Login error:', loginErr);
+          return res.redirect("/api/login");
+        }
+        
+        // Explicitly save session
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('[Auth Callback] Session save error:', saveErr);
+          }
+          console.log('[Auth Callback] Session saved, redirecting to:', (req.session as any).returnTo || '/');
+          res.redirect((req.session as any).returnTo || '/');
+        });
+      });
     })(req, res, next);
   });
 
