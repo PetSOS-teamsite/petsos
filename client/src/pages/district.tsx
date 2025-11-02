@@ -405,7 +405,7 @@ export default function DistrictPage() {
               <CardContent className="p-12 text-center">
                 <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-lg font-semibold text-foreground mb-2">
-                  {language === 'zh-HK' ? '我們正在更新此地區的診所列表' : 'We're updating our clinic list for this area'}
+                  {language === 'zh-HK' ? '我們正在更新此地區的診所列表' : "We're updating our clinic list for this area"}
                 </p>
                 <p className="text-sm text-muted-foreground mb-4">
                   {language === 'zh-HK' 
