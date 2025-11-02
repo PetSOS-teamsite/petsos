@@ -28,6 +28,9 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
+// Use Render's git commit hash as version identifier for cache busting
+const BUILD_VERSION = process.env.RENDER_GIT_COMMIT || Date.now().toString();
+
 // Prevent caching to avoid users loading old JS bundles
 app.use((req, res, next) => {
   // Aggressive cache prevention for HTML, JS, and CSS files
@@ -38,6 +41,8 @@ app.use((req, res, next) => {
     // Tell Cloudflare to bypass cache
     res.setHeader('CDN-Cache-Control', 'no-store');
     res.setHeader('Cloudflare-CDN-Cache-Control', 'no-store');
+    // Add version header for debugging
+    res.setHeader('X-Build-Version', BUILD_VERSION);
   }
   next();
 });
@@ -91,6 +96,41 @@ app.use((req, res, next) => {
   if (config.isDevelopment) {
     await setupVite(app, server);
   } else {
+    // In production, intercept HTML requests and inject version into asset URLs
+    // This bypasses Cloudflare's edge cache by creating unique URLs per deployment
+    const fs = require('fs');
+    const path = require('path');
+    
+    app.use((req, res, next) => {
+      if (req.path === '/' || req.path.endsWith('.html')) {
+        const distPath = path.resolve(import.meta.dirname, "public");
+        const indexPath = path.resolve(distPath, "index.html");
+        
+        fs.readFile(indexPath, "utf-8", (err: any, html: string) => {
+          if (err) {
+            next();
+            return;
+          }
+          
+          // Inject version parameter into all JS and CSS asset URLs
+          const versionedHtml = html
+            .replace(
+              /<script([^>]*)\ssrc="([^"?]+\.js)"/g,
+              `<script$1 src="$2?v=${BUILD_VERSION}"`
+            )
+            .replace(
+              /<link([^>]*)\shref="([^"?]+\.css)"/g,
+              `<link$1 href="$2?v=${BUILD_VERSION}"`
+            );
+          
+          res.setHeader('Content-Type', 'text/html');
+          res.send(versionedHtml);
+        });
+      } else {
+        next();
+      }
+    });
+    
     serveStatic(app);
   }
 
