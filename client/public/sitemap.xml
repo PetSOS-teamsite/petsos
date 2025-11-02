@@ -38,21 +38,21 @@
     <loc>https://petsos.site/district/central</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-01</lastmod>
+    <lastmod>2025-11-02</lastmod>
   </url>
   
   <url>
     <loc>https://petsos.site/district/causeway-bay</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-01</lastmod>
+    <lastmod>2025-11-02</lastmod>
   </url>
   
   <url>
     <loc>https://petsos.site/district/wan-chai</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-01</lastmod>
+    <lastmod>2025-11-02</lastmod>
   </url>
   
   <!-- District Pages - Kowloon -->
@@ -60,14 +60,14 @@
     <loc>https://petsos.site/district/tsim-sha-tsui</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-01</lastmod>
+    <lastmod>2025-11-02</lastmod>
   </url>
   
   <url>
     <loc>https://petsos.site/district/mong-kok</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-01</lastmod>
+    <lastmod>2025-11-02</lastmod>
   </url>
   
   <!-- District Pages - New Territories -->
@@ -75,7 +75,7 @@
     <loc>https://petsos.site/district/sha-tin</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-01</lastmod>
+    <lastmod>2025-11-02</lastmod>
   </url>
   
   <!-- Resources / Pet Emergency Care Guide -->
@@ -91,7 +91,7 @@
     <loc>https://petsos.site/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2025-11-01</lastmod>
+    <lastmod>2025-11-02</lastmod>
   </url>
   
   <!-- Login / Signup Page -->
