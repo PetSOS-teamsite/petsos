@@ -1,0 +1,90 @@
+All logs
+Search
+Search
+
+Nov 3, 2:22 AM - 2:26 AM
+GMT+8
+
+Menu
+
+==> Downloading cache...
+==> Cloning from https://github.com/PetSOS-teamsite/petsos
+==> Checking out commit e14135d7897fb62aea7f50bfa7e42d8283370f6e in branch main
+==> Transferred 294MB in 2s. Extraction took 7s.
+==> Using Node.js version 22.16.0 (default)
+==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+==> Running build command 'npm install --include=dev && rm -rf dist && npm run build && echo "Build timestamp: $(date)"'...
+up to date, audited 623 packages in 1s
+79 packages are looking for funding
+  run `npm fund` for details
+9 vulnerabilities (3 low, 5 moderate, 1 high)
+To address issues that do not require attention, run:
+  npm audit fix
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+Some issues need review, and may require choosing
+a different dependency.
+Run `npm audit` for details.
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+vite v5.4.20 building for production...
+transforming...
+Browserslist: browsers data (caniuse-lite) is 13 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 2462 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                     4.35 kB │ gzip:   1.45 kB
+../dist/public/assets/index-zT4gZeY3.css     85.59 kB │ gzip:  14.05 kB
+../dist/public/assets/index-DutNtGt_.js   1,090.03 kB │ gzip: 323.96 kB
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 6.25s
+  dist/index.js  119.1kb
+⚡ Done in 12ms
+Build timestamp: Sun Nov  2 18:24:30 UTC 2025
+==> Uploading build...
+==> Uploaded in 13.3s. Compression took 6.4s
+==> Build successful 🎉
+==> Deploying...
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+file:///opt/render/project/src/dist/index.js:6
+  throw Error('Dynamic require of "' + x + '" is not supported');
+        ^
+Error: Dynamic require of "fs" is not supported
+    at file:///opt/render/project/src/dist/index.js:6:9
+    at file:///opt/render/project/src/dist/index.js:3288:17
+Node.js v22.16.0
+==> Exited with status 1
+==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+file:///opt/render/project/src/dist/index.js:6
+  throw Error('Dynamic require of "' + x + '" is not supported');
+        ^
+Error: Dynamic require of "fs" is not supported
+    at file:///opt/render/project/src/dist/index.js:6:9
+    at file:///opt/render/project/src/dist/index.js:3288:17
+Node.js v22.16.0
