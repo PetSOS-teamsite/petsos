@@ -1,0 +1,50 @@
+==> Downloading cache...
+==> Cloning from https://github.com/PetSOS-teamsite/petsos
+==> Checking out commit 461ed14f44c7a9e706d9349afed9d448e7fdc76d in branch main
+==> Transferred 294MB in 2s. Extraction took 6s.
+==> Using Node.js version 22.16.0 (default)
+==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+==> Running build command 'npm install --include=dev && npm run build'...
+up to date, audited 623 packages in 1s
+79 packages are looking for funding
+  run `npm fund` for details
+9 vulnerabilities (3 low, 5 moderate, 1 high)
+To address issues that do not require attention, run:
+  npm audit fix
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+Some issues need review, and may require choosing
+a different dependency.
+Run `npm audit` for details.
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+vite v5.4.20 building for production...
+transforming...
+Browserslist: browsers data (caniuse-lite) is 13 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 24 modules transformed.
+x Build failed in 1.74s
+error during build:
+[vite:esbuild] Transform failed with 1 error:
+/opt/render/project/src/client/src/pages/district.tsx:451:61: ERROR: Expected "}" but found "s"
+file: /opt/render/project/src/client/src/pages/district.tsx:451:61
+Expected "}" but found "s"
+449|                      {language === 'zh-HK' 
+450|                        ? '所有附近診所透過WhatsApp收到您寵物的詳情'
+451|                        : 'All nearby clinics receive your pet's details via WhatsApp'
+   |                                                               ^
+452|                      }
+453|                    </li>
+    at failureErrorWithLog (/opt/render/project/src/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+    at /opt/render/project/src/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+    at responseCallbacks.<computed> (/opt/render/project/src/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+    at handleIncomingPacket (/opt/render/project/src/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+    at Socket.readFromStdout (/opt/render/project/src/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+    at Socket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+==> Build failed 😞
+==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
