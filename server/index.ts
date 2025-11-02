@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initSentry, setupSentryMiddleware, setupSentryErrorHandler, captureException } from "./sentry";
 import { config } from "./config";
+import fs from "fs";
+import path from "path";
 
 const app = express();
 
@@ -98,9 +100,6 @@ app.use((req, res, next) => {
   } else {
     // In production, intercept HTML requests and inject version into asset URLs
     // This bypasses Cloudflare's edge cache by creating unique URLs per deployment
-    const fs = require('fs');
-    const path = require('path');
-    
     app.use((req, res, next) => {
       if (req.path === '/' || req.path.endsWith('.html')) {
         const distPath = path.resolve(import.meta.dirname, "public");
