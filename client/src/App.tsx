@@ -12,6 +12,9 @@ import { initSentry } from "@/lib/sentry";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import HomePage from "@/pages/home";
 import LandingPage from "@/pages/landing";
+
+// Cache-busting: Force new bundle hash for Cloudflare bypass
+const BUILD_VERSION = "2025-11-03-14-40-production";
 import LoginPage from "@/pages/login";
 import EmergencyPage from "@/pages/emergency";
 import ClinicResultsPage from "@/pages/clinic-results";
