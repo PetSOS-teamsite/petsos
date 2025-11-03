@@ -1,0 +1,79 @@
+name: Deployment Notifications
+
+on:
+  push:
+    branches:
+      - main
+  
+  workflow_dispatch:
+
+jobs:
+  notify-deployment:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Get commit info
+        id: commit
+        run: |
+          echo "message=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
+          echo "author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      
+      - name: Wait for deployment propagation
+        run: sleep 60
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install tsx
+        run: npm install -g tsx
+      
+      - name: Check deployment status
+        id: check
+        run: |
+          npx tsx scripts/monitor-deployments.ts
+        continue-on-error: true
+      
+      - name: Create deployment summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const now = new Date().toLocaleString('en-US', { 
+              timeZone: 'Asia/Hong_Kong',
+              dateStyle: 'full',
+              timeStyle: 'short'
+            });
+            
+            const status = '${{ steps.check.outcome }}' === 'success' ? '✅ Deployed' : '⚠️ Deployment Issue';
+            const statusIcon = '${{ steps.check.outcome }}' === 'success' ? '🟢' : '🟡';
+            
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: '${{ steps.check.outcome }}' === 'success' ? 'success' : 'failure',
+              target_url: `${context.payload.repository.html_url}/actions/runs/${context.runId}`,
+              description: status,
+              context: 'deployment/sync-check'
+            });
+            
+            core.summary
+              .addHeading(`${statusIcon} Deployment Status`)
+              .addRaw(`**Commit:** ${{ steps.commit.outputs.message }}`)
+              .addBreak()
+              .addRaw(`**Author:** ${{ steps.commit.outputs.author }}`)
+              .addBreak()
+              .addRaw(`**SHA:** ${{ steps.commit.outputs.sha }}`)
+              .addBreak()
+              .addRaw(`**Time:** ${now}`)
+              .addHeading('Sites', 3)
+              .addList([
+                '[petsos.site](https://petsos.site)',
+                '[petsos-app.onrender.com](https://petsos-app.onrender.com)'
+              ])
+              .write();

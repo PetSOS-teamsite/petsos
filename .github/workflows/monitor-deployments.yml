@@ -1,0 +1,161 @@
+name: Monitor Deployments
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+  
+  # Also run after any push to main (to verify deployment completed)
+  push:
+    branches:
+      - main
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install tsx
+        run: npm install -g tsx
+      
+      - name: Run deployment monitoring
+        id: monitor
+        run: |
+          npx tsx scripts/monitor-deployments.ts
+        continue-on-error: true
+      
+      - name: Create issue if deployments are out of sync
+        if: steps.monitor.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const now = new Date().toLocaleString('en-US', { 
+              timeZone: 'Asia/Hong_Kong',
+              dateStyle: 'full',
+              timeStyle: 'long'
+            });
+            
+            // Check if there's already an open issue
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'deployment-sync'
+            });
+            
+            if (issues.data.length > 0) {
+              // Update existing issue with new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues.data[0].number,
+                body: `## ⚠️ Still Out of Sync\n\nThe deployments are still not synchronized.\n\n**Detected at:** ${now}\n\nPlease check the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for details.`
+              });
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '⚠️ Deployment Sync Issue Detected',
+                labels: ['deployment-sync', 'bug'],
+                body: `## Deployment Synchronization Alert
+            
+            The monitoring script has detected that **petsos.site** and **petsos-app.onrender.com** are out of sync.
+            
+            **Detected at:** ${now}
+            
+            ### Possible Causes
+            
+            1. **Render hasn't auto-deployed** - Check if auto-deploy is enabled in Render dashboard
+            2. **Different code versions** - Production might be ahead or behind the Render deployment
+            3. **Bundle mismatch** - JavaScript or CSS bundles differ between sites
+            4. **Page accessibility** - One or more pages return different status codes
+            
+            ### Recommended Actions
+            
+            1. **Check Render Dashboard**
+               - Go to https://dashboard.render.com
+               - Verify auto-deploy is enabled
+               - Check recent deployment logs
+            
+            2. **Manual Deployment Trigger**
+               \`\`\`bash
+               git commit --allow-empty -m "Trigger Render redeploy"
+               git push origin main
+               \`\`\`
+            
+            3. **Verify Both Sites**
+               - Visit https://petsos.site
+               - Visit https://petsos-app.onrender.com
+               - Compare bundle versions in browser dev tools
+            
+            4. **Run Local Check**
+               \`\`\`bash
+               npx tsx scripts/monitor-deployments.ts
+               \`\`\`
+            
+            ### Details
+            
+            Check the [workflow run logs](${context.payload.repository.html_url}/actions/runs/${context.runId}) for detailed comparison output.
+            
+            ---
+            
+            This issue will automatically close when the deployments are back in sync.`
+              });
+            }
+      
+      - name: Close issue if deployments are in sync
+        if: steps.monitor.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Find open deployment-sync issues
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'deployment-sync'
+            });
+            
+            const now = new Date().toLocaleString('en-US', { 
+              timeZone: 'Asia/Hong_Kong',
+              dateStyle: 'full',
+              timeStyle: 'long'
+            });
+            
+            // Close all open sync issues
+            for (const issue of issues.data) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `## ✅ Deployments Back in Sync\n\nBoth deployments are now synchronized.\n\n**Verified at:** ${now}\n\nClosing this issue automatically.`
+              });
+              
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+            }
+      
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ steps.monitor.outcome }}" == "success" ]; then
+            echo "✅ Both deployments are in sync"
+          else
+            echo "⚠️ Deployments are out of sync - issue created/updated"
+          fi
