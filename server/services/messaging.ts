@@ -1,11 +1,16 @@
 import { storage } from "../storage";
 import type { InsertMessage, Message } from "@shared/schema";
 import { sendGmailEmail } from "../gmail-client";
+import { Client as LineClient } from '@line/bot-sdk';
 
 // WhatsApp Business API configuration
 const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || 'https://graph.facebook.com/v17.0';
 const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
 const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
+
+// LINE Messaging API configuration
+const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET;
 
 // Email configuration (will be set up via integration)
 const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@petemergency.com';
@@ -24,7 +29,7 @@ interface SendMessageOptions {
   emergencyRequestId: string;
   clinicId: string;
   recipient: string;
-  messageType: 'whatsapp' | 'email';
+  messageType: 'whatsapp' | 'email' | 'line';
   content: string;
 }
 
@@ -223,6 +228,47 @@ export class MessagingService {
   }
 
   /**
+   * Send a LINE message using LINE Messaging API
+   */
+  private async sendLineMessage(lineUserId: string, content: string): Promise<boolean> {
+    console.log('[LINE] Attempting to send message...');
+    console.log('[LINE] Has Access Token:', !!LINE_CHANNEL_ACCESS_TOKEN);
+    console.log('[LINE] Has Channel Secret:', !!LINE_CHANNEL_SECRET);
+    
+    if (!LINE_CHANNEL_ACCESS_TOKEN || !LINE_CHANNEL_SECRET) {
+      console.error('[LINE] Credentials not configured - missing token or secret');
+      return false;
+    }
+
+    // Validate LINE user ID
+    if (!lineUserId || lineUserId.trim().length === 0) {
+      console.error('[LINE] Invalid LINE user ID:', lineUserId);
+      return false;
+    }
+
+    try {
+      // Initialize LINE client
+      const lineClient = new LineClient({
+        channelAccessToken: LINE_CHANNEL_ACCESS_TOKEN,
+        channelSecret: LINE_CHANNEL_SECRET,
+      });
+
+      // Send text message
+      await lineClient.pushMessage(lineUserId, {
+        type: 'text',
+        text: content,
+      });
+
+      console.log('[LINE] Message sent successfully!');
+      console.log('[LINE] Recipient User ID:', lineUserId);
+      return true;
+    } catch (error) {
+      console.error('[LINE] Error sending message:', error);
+      return false;
+    }
+  }
+
+  /**
    * Send a message with automatic fallback
    */
   async sendMessage(options: SendMessageOptions): Promise<Message> {
@@ -314,6 +360,10 @@ export class MessagingService {
         }
       } else if (message.messageType === 'email') {
         success = await this.sendEmail(message.recipient, 'Emergency Pet Request', message.content);
+      } else if (message.messageType === 'line') {
+        // Send LINE message
+        const cleanContent = message.content.replace(/\[Template: [^\]]+\]\s*/, ''); // Remove template prefix for LINE
+        success = await this.sendLineMessage(message.recipient, cleanContent);
       }
 
       if (success) {
@@ -517,11 +567,16 @@ export class MessagingService {
       }
 
       // Determine message type and recipient based on available contact methods
-      let messageType: 'whatsapp' | 'email';
+      // Priority: LINE > WhatsApp > Email
+      let messageType: 'whatsapp' | 'email' | 'line';
       let recipient: string;
       let contentToStore: string;
 
-      if (clinic.whatsapp) {
+      if (clinic.lineUserId) {
+        messageType = 'line';
+        recipient = clinic.lineUserId;
+        contentToStore = fallbackText; // LINE uses fallback text (clean format)
+      } else if (clinic.whatsapp) {
         messageType = 'whatsapp';
         recipient = clinic.whatsapp;
         contentToStore = `[Template: ${templateName}] ${fallbackText}`;
@@ -530,7 +585,7 @@ export class MessagingService {
         recipient = clinic.email;
         contentToStore = fallbackText; // Email uses fallback text
       } else {
-        console.warn(`No valid contact method (WhatsApp or email) for clinic ${clinicId}`);
+        console.warn(`No valid contact method (LINE, WhatsApp or Email) for clinic ${clinicId}`);
         
         // Create failed message record for tracking
         await storage.createMessage({
@@ -540,7 +595,7 @@ export class MessagingService {
           messageType: 'whatsapp',
           content: fallbackText,
           status: 'failed',
-          errorMessage: 'No valid WhatsApp or email contact available',
+          errorMessage: 'No valid LINE, WhatsApp or Email contact available',
           failedAt: new Date(),
         });
         

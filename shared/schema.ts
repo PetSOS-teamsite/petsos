@@ -148,6 +148,7 @@ export const clinics = pgTable("clinics", {
   phone: text("phone").notNull(),
   whatsapp: text("whatsapp"),
   email: text("email"),
+  lineUserId: text("line_user_id"), // LINE Official Account user ID for receiving emergency notifications
   regionId: varchar("region_id").notNull().references(() => regions.id),
   is24Hour: boolean("is_24_hour").notNull().default(false),
   isAvailable: boolean("is_available").notNull().default(true), // Real-time availability toggle
@@ -210,7 +211,7 @@ export const messages = pgTable("messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   emergencyRequestId: varchar("emergency_request_id").notNull().references(() => emergencyRequests.id, { onDelete: 'cascade' }),
   clinicId: varchar("clinic_id").notNull().references(() => clinics.id, { onDelete: 'cascade' }),
-  messageType: text("message_type").notNull(), // whatsapp, email
+  messageType: text("message_type").notNull(), // whatsapp, email, line
   recipient: text("recipient").notNull(),
   content: text("content").notNull(),
   status: text("status").notNull().default('queued'), // queued, sent, delivered, failed
