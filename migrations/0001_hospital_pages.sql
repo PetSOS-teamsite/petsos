@@ -9,7 +9,7 @@ CREATE TABLE "hospitals" (
   "region_id" varchar NOT NULL,
   "latitude" numeric,
   "longitude" numeric,
-  "location" "geography(Point, 4326)",
+  "location" geography(Point,4326),
   "phone" text,
   "whatsapp" text,
   "website_url" text,

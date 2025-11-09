@@ -61,7 +61,8 @@ export default function HospitalDetailPage() {
   // Track page view
   useEffect(() => {
     if (hospital) {
-      analytics.track('hospital_page_view', {
+      analytics.event('hospital_page_view', {
+        event_category: 'Hospital',
         hospital_id: hospital.id,
         hospital_slug: hospital.slug,
         region: hospital.regionId,
@@ -79,7 +80,8 @@ export default function HospitalDetailPage() {
       });
     },
     onSuccess: () => {
-      analytics.track('hospital_report_submitted', {
+      analytics.event('hospital_report_submitted', {
+        event_category: 'Hospital',
         hospital_id: hospital?.id,
         hospital_slug: hospital?.slug,
       });
@@ -105,7 +107,8 @@ export default function HospitalDetailPage() {
 
   const handleCall = (phone: string | null) => {
     if (phone && hospital) {
-      analytics.track('hospital_cta_click', {
+      analytics.event('hospital_cta_click', {
+        event_category: 'Hospital',
         type: 'call',
         hospital_id: hospital.id,
         hospital_slug: hospital.slug,
@@ -116,7 +119,8 @@ export default function HospitalDetailPage() {
 
   const handleWhatsApp = (whatsapp: string | null) => {
     if (whatsapp && hospital) {
-      analytics.track('hospital_cta_click', {
+      analytics.event('hospital_cta_click', {
+        event_category: 'Hospital',
         type: 'whatsapp',
         hospital_id: hospital.id,
         hospital_slug: hospital.slug,
@@ -128,7 +132,8 @@ export default function HospitalDetailPage() {
 
   const handleMaps = () => {
     if (!hospital) return;
-    analytics.track('hospital_cta_click', {
+    analytics.event('hospital_cta_click', {
+      event_category: 'Hospital',
       type: 'maps',
       hospital_id: hospital.id,
       hospital_slug: hospital.slug,
