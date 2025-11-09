@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Stethoscope, Building2 } from "lucide-react";
+import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Stethoscope, Building2, X, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { analytics } from "@/lib/analytics";
@@ -21,10 +22,30 @@ type Region = {
   nameZh: string;
 };
 
+type HospitalWithDistance = Hospital & {
+  distance?: number;
+};
+
+// Calculate distance between two points using Haversine formula
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Radius of Earth in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export default function HospitalsPage() {
   const { t, language } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("distance");
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   const { data: regions, isLoading: regionsLoading } = useQuery<Region[]>({
     queryKey: ["/api/regions"],
@@ -34,6 +55,27 @@ export default function HospitalsPage() {
     queryKey: ["/api/hospitals"],
   });
 
+  // Get user location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          setLocationError(null);
+        },
+        (error) => {
+          console.log("Geolocation error:", error.message);
+          setLocationError(error.message);
+        }
+      );
+    } else {
+      setLocationError("Geolocation not supported");
+    }
+  }, []);
+
   // Track page view
   useEffect(() => {
     analytics.event('hospital_list_page_view', {
@@ -42,18 +84,57 @@ export default function HospitalsPage() {
     });
   }, [language]);
 
-  const filteredHospitals = hospitals?.filter((hospital) => {
-    const matchesSearch =
-      !searchQuery ||
-      hospital.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      hospital.nameZh?.includes(searchQuery) ||
-      hospital.addressEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      hospital.addressZh?.includes(searchQuery);
+  // Add distance to hospitals and filter
+  const hospitalsWithDistance: HospitalWithDistance[] = useMemo(() => {
+    if (!hospitals) return [];
+    
+    return hospitals.map((hospital) => {
+      let distance: number | undefined;
+      if (userLocation && hospital.latitude && hospital.longitude) {
+        distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          parseFloat(hospital.latitude),
+          parseFloat(hospital.longitude)
+        );
+      }
+      return { ...hospital, distance };
+    });
+  }, [hospitals, userLocation]);
 
-    const matchesRegion = selectedRegion === "all" || hospital.regionId === selectedRegion;
+  const filteredHospitals = useMemo(() => {
+    let filtered = hospitalsWithDistance.filter((hospital) => {
+      const matchesSearch =
+        !searchQuery ||
+        hospital.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        hospital.nameZh?.includes(searchQuery) ||
+        hospital.addressEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        hospital.addressZh?.includes(searchQuery);
 
-    return matchesSearch && matchesRegion;
-  });
+      const matchesRegion = selectedRegion === "all" || hospital.regionId === selectedRegion;
+
+      return matchesSearch && matchesRegion;
+    });
+
+    // Sort
+    if (sortBy === "distance" && userLocation) {
+      filtered.sort((a, b) => {
+        if (a.distance === undefined) return 1;
+        if (b.distance === undefined) return -1;
+        return a.distance - b.distance;
+      });
+    } else if (sortBy === "name") {
+      filtered.sort((a, b) => {
+        const nameA = language === 'zh-HK' ? a.nameZh : a.nameEn;
+        const nameB = language === 'zh-HK' ? b.nameZh : b.nameEn;
+        return nameA.localeCompare(nameB);
+      });
+    } else if (sortBy === "newest") {
+      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    return filtered;
+  }, [hospitalsWithDistance, searchQuery, selectedRegion, sortBy, language, userLocation]);
 
   const handleCall = (hospital: Hospital) => {
     if (hospital.phone) {
@@ -134,33 +215,71 @@ export default function HospitalsPage() {
               <LanguageSwitcher />
             </div>
 
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder={language === 'zh-HK' ? "搜尋醫院名稱或地址..." : "Search hospital name or address..."}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-search"
-                />
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder={language === 'zh-HK' ? "搜尋醫院名稱或地址..." : "Search hospital name or address..."}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-9"
+                    data-testid="input-search"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      data-testid="button-clear-search"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full md:w-[180px]" data-testid="select-sort">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="distance" data-testid="sort-distance">
+                      {language === 'zh-HK' ? '距離' : 'Distance'}
+                    </SelectItem>
+                    <SelectItem value="name" data-testid="sort-name">
+                      {language === 'zh-HK' ? '名稱' : 'Name'}
+                    </SelectItem>
+                    <SelectItem value="newest" data-testid="sort-newest">
+                      {language === 'zh-HK' ? '最新' : 'Newest'}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {!regionsLoading && regions && (
-                <Tabs value={selectedRegion} onValueChange={setSelectedRegion} className="w-full md:w-auto">
-                  <TabsList data-testid="tabs-region">
-                    <TabsTrigger value="all" data-testid="tab-all">
-                      {language === 'zh-HK' ? '全部' : 'All'}
-                    </TabsTrigger>
-                    {regions.map((region) => (
-                      <TabsTrigger key={region.id} value={region.id} data-testid={`tab-${region.code}`}>
-                        {language === 'zh-HK' ? region.nameZh : region.nameEn}
+              <div className="flex items-center justify-between">
+                {!regionsLoading && regions && (
+                  <Tabs value={selectedRegion} onValueChange={setSelectedRegion} className="flex-1">
+                    <TabsList data-testid="tabs-region">
+                      <TabsTrigger value="all" data-testid="tab-all">
+                        {language === 'zh-HK' ? '全部' : 'All'}
                       </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
-              )}
+                      {regions.map((region) => (
+                        <TabsTrigger key={region.id} value={region.id} data-testid={`tab-${region.code}`}>
+                          {language === 'zh-HK' ? region.nameZh : region.nameEn}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </Tabs>
+                )}
+                {filteredHospitals && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 ml-4" data-testid="text-results-count">
+                    {language === 'zh-HK' 
+                      ? `顯示 ${filteredHospitals.length} 間醫院`
+                      : `Showing ${filteredHospitals.length} ${filteredHospitals.length === 1 ? 'hospital' : 'hospitals'}`
+                    }
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -182,45 +301,64 @@ export default function HospitalsPage() {
             </div>
           ) : filteredHospitals && filteredHospitals.length > 0 ? (
             <div className="space-y-4">
-              {filteredHospitals.map((hospital) => (
+              {filteredHospitals.map((hospital) => {
+                // Collect all badges
+                const allBadges = [];
+                if (hospital.open247) {
+                  allBadges.push({ key: '24/7', content: '24/7', variant: 'default', className: 'bg-red-500', testId: `badge-24-7-${hospital.slug}` });
+                }
+                if (hospital.icuLevel) {
+                  allBadges.push({ key: 'icu', content: <><Stethoscope className="h-3 w-3 mr-1" />ICU</>, variant: 'outline', testId: `badge-icu-${hospital.slug}` });
+                }
+                if (hospital.imagingCT) {
+                  allBadges.push({ key: 'ct', content: 'CT', variant: 'outline', testId: `badge-ct-${hospital.slug}` });
+                }
+                if (hospital.parking) {
+                  allBadges.push({ key: 'parking', content: language === 'zh-HK' ? '停車場' : 'Parking', variant: 'outline', testId: `badge-parking-${hospital.slug}` });
+                }
+                if (hospital.wheelchairAccess) {
+                  allBadges.push({ key: 'wheelchair', content: '♿', variant: 'outline', testId: `badge-wheelchair-${hospital.slug}` });
+                }
+                
+                const visibleBadges = allBadges.slice(0, 4);
+                const hiddenBadgesCount = allBadges.length - 4;
+
+                return (
                 <Card key={hospital.id} className="hover:shadow-lg transition-shadow" data-testid={`card-hospital-${hospital.slug}`}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <CardTitle className="text-lg mb-1" data-testid={`text-hospital-name-${hospital.slug}`}>
-                          {language === 'zh-HK' ? hospital.nameZh : hospital.nameEn}
-                        </CardTitle>
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <CardTitle className="text-lg" data-testid={`text-hospital-name-${hospital.slug}`}>
+                            {language === 'zh-HK' ? hospital.nameZh : hospital.nameEn}
+                          </CardTitle>
+                          {hospital.distance !== undefined && (
+                            <div className="flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap" data-testid={`text-distance-${hospital.slug}`}>
+                              <Navigation className="h-3 w-3" />
+                              {hospital.distance.toFixed(1)} km
+                            </div>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
-                          <MapPin className="h-4 w-4" />
+                          <MapPin className="h-4 w-4 flex-shrink-0" />
                           <span data-testid={`text-hospital-address-${hospital.slug}`}>
                             {language === 'zh-HK' ? hospital.addressZh : hospital.addressEn}
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {hospital.open247 && (
-                            <Badge variant="default" className="bg-red-500" data-testid={`badge-24-7-${hospital.slug}`}>
-                              24/7
+                          {visibleBadges.map((badge: any) => (
+                            <Badge 
+                              key={badge.key} 
+                              variant={badge.variant as any} 
+                              className={badge.className}
+                              data-testid={badge.testId}
+                            >
+                              {badge.content}
                             </Badge>
-                          )}
-                          {hospital.icuLevel && (
-                            <Badge variant="outline" data-testid={`badge-icu-${hospital.slug}`}>
-                              <Stethoscope className="h-3 w-3 mr-1" />
-                              ICU
-                            </Badge>
-                          )}
-                          {hospital.imagingCT && (
-                            <Badge variant="outline" data-testid={`badge-ct-${hospital.slug}`}>
-                              CT
-                            </Badge>
-                          )}
-                          {hospital.parking && (
-                            <Badge variant="outline" data-testid={`badge-parking-${hospital.slug}`}>
-                              {language === 'zh-HK' ? '停車場' : 'Parking'}
-                            </Badge>
-                          )}
-                          {hospital.wheelchairAccess && (
-                            <Badge variant="outline" data-testid={`badge-wheelchair-${hospital.slug}`}>
-                              ♿
+                          ))}
+                          {hiddenBadgesCount > 0 && (
+                            <Badge variant="outline" className="text-xs" data-testid={`badge-more-${hospital.slug}`}>
+                              +{hiddenBadgesCount}
                             </Badge>
                           )}
                         </div>
@@ -269,7 +407,8 @@ export default function HospitalsPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <Card>

@@ -5,7 +5,7 @@ import {
   ArrowLeft, Phone, MessageCircle, MapPin, Globe, Clock, 
   AlertCircle, CheckCircle, Info, Stethoscope, Activity,
   Siren, FlaskConical, Home, CreditCard, Navigation as NavigationIcon,
-  Calendar
+  Calendar, ChevronRight, ArrowUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -47,15 +47,20 @@ export default function HospitalDetailPage() {
   const { user } = useAuth();
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportNotes, setReportNotes] = useState("");
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   const { data: hospital, isLoading: hospitalLoading } = useQuery<Hospital>({
     queryKey: [`/api/hospitals/slug/${slug}`],
     enabled: !!slug,
   });
 
-  const { data: consultFees, isLoading: feesLoading } = useQuery<HospitalConsultFee[]>({
+  const { data: consultFees, isLoading: feesLoading} = useQuery<HospitalConsultFee[]>({
     queryKey: [`/api/hospitals/${hospital?.id}/fees`],
     enabled: !!hospital?.id,
+  });
+
+  const { data: regions } = useQuery<Array<{ id: string; nameEn: string; nameZh: string }>>({
+    queryKey: ["/api/regions"],
   });
 
   // Track page view
@@ -70,6 +75,19 @@ export default function HospitalDetailPage() {
       });
     }
   }, [hospital, language]);
+
+  // Back to top button visibility
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const reportMutation = useMutation({
     mutationFn: async (data: { notes: string }) => {
@@ -222,6 +240,35 @@ export default function HospitalDetailPage() {
               </Link>
               <LanguageSwitcher />
             </div>
+
+            {/* Breadcrumb */}
+            <nav className="flex items-center gap-2 text-sm mb-4" aria-label="Breadcrumb" data-testid="breadcrumb">
+              <Link href="/" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+                {language === 'zh-HK' ? '首頁' : 'Home'}
+              </Link>
+              <ChevronRight className="h-4 w-4 text-gray-400" />
+              <Link href="/hospitals" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+                {language === 'zh-HK' ? '醫院' : 'Hospitals'}
+              </Link>
+              {(() => {
+                const region = regions?.find(r => r.id === hospital.regionId);
+                if (region) {
+                  return (
+                    <>
+                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {language === 'zh-HK' ? region.nameZh : region.nameEn}
+                      </span>
+                    </>
+                  );
+                }
+                return null;
+              })()}
+              <ChevronRight className="h-4 w-4 text-gray-400" />
+              <span className="text-gray-900 dark:text-white font-medium truncate max-w-[200px]">
+                {language === 'zh-HK' ? hospital.nameZh : hospital.nameEn}
+              </span>
+            </nav>
             
             <div className="mb-4">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2" data-testid="text-hospital-name">
@@ -251,13 +298,6 @@ export default function HospitalDetailPage() {
                 )}
               </div>
             </div>
-
-            {hospital.lastVerifiedAt && (
-              <p className="text-xs text-gray-500 dark:text-gray-400" data-testid="text-verified">
-                {language === 'zh-HK' ? '最後核實：' : 'Last verified: '}
-                {format(new Date(hospital.lastVerifiedAt), 'yyyy-MM-dd')}
-              </p>
-            )}
           </div>
         </div>
 
@@ -265,9 +305,18 @@ export default function HospitalDetailPage() {
           {/* Quick Facts */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="text-lg" data-testid="text-quick-facts">
-                {language === 'zh-HK' ? '主要設施' : 'Key Facilities'}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg" data-testid="text-quick-facts">
+                  {language === 'zh-HK' ? '主要設施' : 'Key Facilities'}
+                </CardTitle>
+                {hospital.lastVerifiedAt && (
+                  <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400" data-testid="text-verified">
+                    <CheckCircle className="h-3 w-3" />
+                    {language === 'zh-HK' ? '核實於 ' : 'Verified '}
+                    {format(new Date(hospital.lastVerifiedAt), 'yyyy-MM-dd')}
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
@@ -333,7 +382,7 @@ export default function HospitalDetailPage() {
                          species === 'cat' ? (language === 'zh-HK' ? '貓' : 'Cat') :
                          (language === 'zh-HK' ? '其他' : 'Other')}
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         {fees.map((fee) => (
                           <div key={fee.id} className="border rounded-lg p-3" data-testid={`fee-${species}-${fee.feeType}`}>
                             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -685,6 +734,18 @@ export default function HospitalDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Back to Top Button */}
+        {showBackToTop && (
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-24 right-4 z-30 p-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+            aria-label={language === 'zh-HK' ? '返回頂部' : 'Back to top'}
+            data-testid="button-back-to-top"
+          >
+            <ArrowUp className="h-5 w-5" />
+          </button>
+        )}
       </div>
     </>
   );
