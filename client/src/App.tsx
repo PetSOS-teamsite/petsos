@@ -30,6 +30,8 @@ import AdminClinicsPage from "@/pages/admin-clinics";
 import AdminConfigPage from "@/pages/admin-config";
 import AdminDashboardPage from "@/pages/admin-dashboard";
 import AdminAnalyticsPage from "@/pages/admin-analytics";
+import AdminUsersPage from "@/pages/admin-users";
+import AdminPetsPage from "@/pages/admin-pets";
 import AdminLoginPage from "@/pages/admin-login";
 import ClinicDashboardPage from "@/pages/clinic-dashboard";
 import PrivacyPolicyPage from "@/pages/privacy-policy";
@@ -95,6 +97,12 @@ function Router() {
       </Route>
       <Route path="/admin/clinics">
         {isAuthenticated && isAdmin ? <AdminClinicsPage /> : <AdminLoginPage />}
+      </Route>
+      <Route path="/admin/users">
+        {isAuthenticated && isAdmin ? <AdminUsersPage /> : <AdminLoginPage />}
+      </Route>
+      <Route path="/admin/pets">
+        {isAuthenticated && isAdmin ? <AdminPetsPage /> : <AdminLoginPage />}
       </Route>
       <Route path="/admin/config">
         {isAuthenticated && isAdmin ? <AdminConfigPage /> : <AdminLoginPage />}
