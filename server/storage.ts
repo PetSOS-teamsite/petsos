@@ -11,7 +11,10 @@ import {
   type AuditLog, type InsertAuditLog,
   type PrivacyConsent, type InsertPrivacyConsent,
   type Translation, type InsertTranslation,
-  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations
+  type Hospital, type InsertHospital,
+  type HospitalConsultFee, type InsertHospitalConsultFee,
+  type HospitalUpdate, type InsertHospitalUpdate,
+  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -108,6 +111,26 @@ export interface IStorage {
   getTranslation(key: string, language: string): Promise<Translation | undefined>;
   createTranslation(translation: InsertTranslation): Promise<Translation>;
   updateTranslation(id: string, translation: Partial<InsertTranslation>): Promise<Translation | undefined>;
+
+  // Hospitals
+  getHospital(id: string): Promise<Hospital | undefined>;
+  getHospitalBySlug(slug: string): Promise<Hospital | undefined>;
+  getHospitalsByRegion(region: string): Promise<Hospital[]>;
+  getAllHospitals(): Promise<Hospital[]>;
+  createHospital(hospital: InsertHospital): Promise<Hospital>;
+  updateHospital(id: string, hospital: Partial<InsertHospital>): Promise<Hospital | undefined>;
+  deleteHospital(id: string): Promise<boolean>;
+
+  // Hospital Consult Fees
+  getConsultFeesByHospitalId(hospitalId: string): Promise<HospitalConsultFee[]>;
+  createConsultFee(fee: InsertHospitalConsultFee): Promise<HospitalConsultFee>;
+  updateConsultFee(id: string, fee: Partial<InsertHospitalConsultFee>): Promise<HospitalConsultFee | undefined>;
+  deleteConsultFee(id: string): Promise<boolean>;
+
+  // Hospital Updates
+  getHospitalUpdatesByHospitalId(hospitalId: string): Promise<HospitalUpdate[]>;
+  createHospitalUpdate(update: InsertHospitalUpdate): Promise<HospitalUpdate>;
+  updateHospitalUpdate(id: string, update: Partial<InsertHospitalUpdate>): Promise<HospitalUpdate | undefined>;
 
   // GDPR/PDPO Compliance
   exportUserData(userId: string): Promise<{
