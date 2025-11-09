@@ -37,6 +37,8 @@ import AdminLoginPage from "@/pages/admin-login";
 import ClinicDashboardPage from "@/pages/clinic-dashboard";
 import PrivacyPolicyPage from "@/pages/privacy-policy";
 import TermsOfServicePage from "@/pages/terms-of-service";
+import HospitalsPage from "@/pages/hospitals";
+import HospitalDetailPage from "@/pages/hospital-detail";
 import NotFound from "@/pages/not-found";
 
 // Initialize Sentry as early as possible
@@ -60,6 +62,8 @@ function Router() {
     <Switch>
       {/* Public routes - accessible to everyone */}
       <Route path="/clinics" component={ClinicsPage} />
+      <Route path="/hospitals" component={HospitalsPage} />
+      <Route path="/hospitals/:slug" component={HospitalDetailPage} />
       <Route path="/districts" component={DistrictsIndexPage} />
       <Route path="/district/:district" component={DistrictPage} />
       <Route path="/resources" component={ResourcesPage} />
