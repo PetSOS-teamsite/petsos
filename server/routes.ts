@@ -305,6 +305,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== ADMIN ROUTES =====
+  
+  // Get all users (admin only)
+  app.get("/api/admin/users", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Sanitize all users before returning
+      const sanitizedUsers = users.map(sanitizeUser);
+      res.json(sanitizedUsers);
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get all pets (admin only)
+  app.get("/api/admin/pets", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const pets = await storage.getAllPets();
+      res.json(pets);
+    } catch (error) {
+      console.error("Error fetching all pets:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // ===== PET ROUTES =====
   
   // Get pets for user

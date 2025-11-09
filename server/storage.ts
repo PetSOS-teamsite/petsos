@@ -32,6 +32,7 @@ export interface IStorage {
   // Pets
   getPet(id: string): Promise<Pet | undefined>;
   getPetsByUserId(userId: string): Promise<Pet[]>;
+  getAllPets(): Promise<Pet[]>;
   createPet(pet: InsertPet): Promise<Pet>;
   updatePet(id: string, pet: Partial<InsertPet>): Promise<Pet | undefined>;
   deletePet(id: string): Promise<boolean>;
@@ -194,6 +195,7 @@ export class MemStorage implements IStorage {
         phone: '+852 2123 4567',
         whatsapp: '+85291234567',
         email: 'info@centralvet.hk',
+        lineUserId: null,
         regionId: 'hki-region',
         is24Hour: true,
         isAvailable: true,
@@ -215,6 +217,7 @@ export class MemStorage implements IStorage {
         phone: '+852 2234 5678',
         whatsapp: '+85292345678',
         email: 'contact@happypets.hk',
+        lineUserId: null,
         regionId: 'kln-region',
         is24Hour: true,
         isAvailable: true,
@@ -236,6 +239,7 @@ export class MemStorage implements IStorage {
         phone: '+852 2345 6789',
         whatsapp: '+85293456789',
         email: 'care@ntanimal.hk',
+        lineUserId: null,
         regionId: 'nti-region',
         is24Hour: false,
         isAvailable: true,
@@ -257,6 +261,7 @@ export class MemStorage implements IStorage {
         phone: '+852 2456 7890',
         whatsapp: '+85294567890',
         email: 'emergency@islandpet.hk',
+        lineUserId: null,
         regionId: 'hki-region',
         is24Hour: true,
         isAvailable: true,
@@ -362,6 +367,10 @@ export class MemStorage implements IStorage {
 
   async getPetsByUserId(userId: string): Promise<Pet[]> {
     return Array.from(this.pets.values()).filter(pet => pet.userId === userId);
+  }
+
+  async getAllPets(): Promise<Pet[]> {
+    return Array.from(this.pets.values());
   }
 
   async createPet(insertPet: InsertPet): Promise<Pet> {
@@ -592,6 +601,7 @@ export class MemStorage implements IStorage {
       addressZh: insertClinic.addressZh ?? null,
       whatsapp: insertClinic.whatsapp ?? null,
       email: insertClinic.email ?? null,
+      lineUserId: insertClinic.lineUserId ?? null,
       latitude: insertClinic.latitude ?? null,
       longitude: insertClinic.longitude ?? null,
       location: null, // PostGIS geography field (not used in MemStorage)
@@ -1171,6 +1181,10 @@ class DatabaseStorage implements IStorage {
 
   async getPetsByUserId(userId: string): Promise<Pet[]> {
     return await db.select().from(pets).where(eq(pets.userId, userId));
+  }
+
+  async getAllPets(): Promise<Pet[]> {
+    return await db.select().from(pets);
   }
 
   async createPet(insertPet: InsertPet): Promise<Pet> {
