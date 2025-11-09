@@ -5,6 +5,9 @@ import { z } from "zod";
 import { messagingService } from "./services/messaging";
 import { setupAuth, isAuthenticated, isAdmin, sanitizeUser } from "./auth";
 import { setupTestUtils } from "./testUtils";
+import { db } from "./db";
+import { messages } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import rateLimit from "express-rate-limit";
 import { 
   generalLimiter, 
@@ -1552,6 +1555,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/audit-logs/:entityType/:entityId", isAuthenticated, isAdmin, async (req, res) => {
     const logs = await storage.getAuditLogsByEntity(req.params.entityType, req.params.entityId);
     res.json(logs);
+  });
+
+  // ===== DIAGNOSTIC ROUTES (Admin Only) =====
+  
+  // Test WhatsApp connection and credentials
+  app.post("/api/admin/test-whatsapp", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { phoneNumber, message } = z.object({
+        phoneNumber: z.string().min(8, "Phone number required"),
+        message: z.string().optional().default("Test message from PetSOS")
+      }).parse(req.body);
+
+      const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
+      const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || 'https://graph.facebook.com/v17.0';
+
+      // Check if credentials exist
+      if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+        return res.status(400).json({
+          success: false,
+          error: "WhatsApp credentials not configured",
+          details: {
+            hasAccessToken: !!WHATSAPP_ACCESS_TOKEN,
+            hasPhoneNumberId: !!WHATSAPP_PHONE_NUMBER_ID,
+            apiUrl: WHATSAPP_API_URL
+          }
+        });
+      }
+
+      // Clean phone number
+      const cleanedNumber = phoneNumber.replace(/[^0-9]/g, '');
+      
+      // Test API connection
+      const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+      
+      const payload = {
+        messaging_product: 'whatsapp',
+        to: cleanedNumber,
+        type: 'text',
+        text: { body: message },
+      };
+
+      console.log('[WhatsApp Test] Sending to:', url);
+      console.log('[WhatsApp Test] Payload:', JSON.stringify(payload, null, 2));
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const responseData = await response.json();
+      
+      console.log('[WhatsApp Test] Response status:', response.status);
+      console.log('[WhatsApp Test] Response data:', JSON.stringify(responseData, null, 2));
+
+      if (!response.ok) {
+        return res.status(response.status).json({
+          success: false,
+          error: "WhatsApp API returned an error",
+          statusCode: response.status,
+          details: responseData,
+          debugInfo: {
+            url,
+            phoneNumber: cleanedNumber,
+            hasToken: !!WHATSAPP_ACCESS_TOKEN,
+            phoneNumberId: WHATSAPP_PHONE_NUMBER_ID
+          }
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "WhatsApp test message sent successfully!",
+        response: responseData,
+        debugInfo: {
+          phoneNumber: cleanedNumber,
+          messageId: responseData.messages?.[0]?.id
+        }
+      });
+
+    } catch (error) {
+      console.error('[WhatsApp Test] Error:', error);
+      res.status(500).json({
+        success: false,
+        error: "Test failed with exception",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Get failed messages with details (admin only)
+  app.get("/api/admin/failed-messages", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      // Query database directly for failed messages
+      const query = await db.select().from(messages as any).where(eq((messages as any).status, 'failed')).limit(100);
+      
+      res.json({
+        total: query.length,
+        messages: query.map((m: any) => ({
+          id: m.id,
+          emergencyRequestId: m.emergencyRequestId,
+          recipient: m.recipient,
+          messageType: m.messageType,
+          status: m.status,
+          error: m.errorMessage,
+          retryCount: m.retryCount,
+          createdAt: m.createdAt,
+          failedAt: m.failedAt,
+          content: m.content?.substring(0, 100) + '...' || ''
+        }))
+      });
+    } catch (error) {
+      console.error('[Failed Messages] Error:', error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
   });
 
   const httpServer = createServer(app);
