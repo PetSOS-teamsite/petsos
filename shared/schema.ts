@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, integer, jsonb, decimal, index, customType } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, jsonb, decimal, index, uniqueIndex, customType } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -307,3 +307,124 @@ export const insertTranslationSchema = createInsertSchema(translations).omit({
 
 export type InsertTranslation = z.infer<typeof insertTranslationSchema>;
 export type Translation = typeof translations.$inferSelect;
+
+// Hospitals table - detailed 24-hour animal hospital profiles
+export const hospitals = pgTable("hospitals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  slug: text("slug").notNull().unique(),
+  nameEn: text("name_en").notNull(),
+  nameZh: text("name_zh").notNull(),
+  addressEn: text("address_en").notNull(),
+  addressZh: text("address_zh").notNull(),
+  regionId: varchar("region_id").notNull().references(() => regions.id),
+  latitude: decimal("latitude"),
+  longitude: decimal("longitude"),
+  location: geography("location"), // PostGIS geography point
+  phone: text("phone"),
+  whatsapp: text("whatsapp"),
+  websiteUrl: text("website_url"),
+  open247: boolean("open_247").notNull().default(true),
+  liveStatus: text("live_status"), // normal | busy | critical_only
+  photos: jsonb("photos"), // Array of photo URLs
+  lastVerifiedAt: timestamp("last_verified_at"),
+  verifiedById: varchar("verified_by_id").references(() => users.id, { onDelete: 'set null' }),
+  
+  // Owner-centric details
+  onSiteVet247: boolean("on_site_vet_247"),
+  triagePolicy: text("triage_policy"),
+  typicalWaitBand: text("typical_wait_band"),
+  isolationWard: boolean("isolation_ward"),
+  ambulanceSupport: boolean("ambulance_support"),
+  icuLevel: text("icu_level"),
+  nurse24h: boolean("nurse_24h"),
+  ownerVisitPolicy: text("owner_visit_policy"),
+  eolSupport: boolean("eol_support"),
+  imagingXray: boolean("imaging_xray"),
+  imagingUS: boolean("imaging_us"),
+  imagingCT: boolean("imaging_ct"),
+  sameDayCT: boolean("same_day_ct"),
+  inHouseLab: boolean("in_house_lab"),
+  extLabCutoff: text("ext_lab_cutoff"),
+  bloodBankAccess: text("blood_bank_access"),
+  sxEmergencySoft: boolean("sx_emergency_soft"),
+  sxEmergencyOrtho: boolean("sx_emergency_ortho"),
+  anaesMonitoring: text("anaes_monitoring"),
+  specialistAvail: text("specialist_avail"),
+  speciesAccepted: text("species_accepted").array(),
+  whatsappTriage: boolean("whatsapp_triage"),
+  languages: text("languages").array(),
+  parking: boolean("parking"),
+  wheelchairAccess: boolean("wheelchair_access"),
+  payMethods: text("pay_methods").array(),
+  admissionDeposit: boolean("admission_deposit"),
+  depositBand: text("deposit_band"),
+  insuranceSupport: text("insurance_support").array(),
+  recheckWindow: text("recheck_window"),
+  refundPolicy: text("refund_policy"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_hospital_location").using("gist", table.location),
+  index("idx_hospital_region").on(table.regionId),
+]);
+
+export const insertHospitalSchema = createInsertSchema(hospitals).omit({
+  id: true,
+  location: true, // Auto-populated from lat/lng
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertHospital = z.infer<typeof insertHospitalSchema>;
+export type Hospital = typeof hospitals.$inferSelect;
+
+// Hospital Consult Fees table
+export const hospitalConsultFees = pgTable("hospital_consult_fees", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  hospitalId: varchar("hospital_id").notNull().references(() => hospitals.id, { onDelete: 'cascade' }),
+  feeType: text("fee_type").notNull(), // day | evening | night_ph
+  species: text("species").notNull(), // dog | cat | exotic
+  minFee: decimal("min_fee"),
+  maxFee: decimal("max_fee"),
+  currency: text("currency").notNull().default('HKD'),
+  notes: text("notes"),
+  lastUpdated: timestamp("last_updated").notNull().defaultNow(),
+}, (table) => [
+  index("idx_consult_fees_hospital").on(table.hospitalId),
+  // Unique constraint to prevent duplicate fee entries
+  uniqueIndex("idx_consult_fees_unique").on(table.hospitalId, table.feeType, table.species),
+]);
+
+export const insertHospitalConsultFeeSchema = createInsertSchema(hospitalConsultFees).omit({
+  id: true,
+});
+
+export type InsertHospitalConsultFee = z.infer<typeof insertHospitalConsultFeeSchema>;
+export type HospitalConsultFee = typeof hospitalConsultFees.$inferSelect;
+
+// Hospital Updates table - tracks changes and user submissions
+export const hospitalUpdates = pgTable("hospital_updates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  hospitalId: varchar("hospital_id").notNull().references(() => hospitals.id, { onDelete: 'cascade' }),
+  submittedById: varchar("submitted_by_id").references(() => users.id, { onDelete: 'set null' }),
+  updateType: text("update_type").notNull(), // info_correction | fee_update | service_update
+  fieldName: text("field_name"),
+  oldValue: text("old_value"),
+  newValue: text("new_value"),
+  status: text("status").notNull().default('pending'), // pending | approved | rejected
+  reviewedById: varchar("reviewed_by_id").references(() => users.id, { onDelete: 'set null' }),
+  reviewedAt: timestamp("reviewed_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_hospital_updates_hospital").on(table.hospitalId),
+]);
+
+export const insertHospitalUpdateSchema = createInsertSchema(hospitalUpdates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertHospitalUpdate = z.infer<typeof insertHospitalUpdateSchema>;
+export type HospitalUpdate = typeof hospitalUpdates.$inferSelect;
