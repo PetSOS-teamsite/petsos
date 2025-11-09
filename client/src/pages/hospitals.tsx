@@ -256,23 +256,25 @@ export default function HospitalsPage() {
                 </Select>
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4">
                 {!regionsLoading && regions && (
-                  <Tabs value={selectedRegion} onValueChange={setSelectedRegion} className="flex-1">
-                    <TabsList data-testid="tabs-region">
-                      <TabsTrigger value="all" data-testid="tab-all">
-                        {language === 'zh-HK' ? '全部' : 'All'}
-                      </TabsTrigger>
-                      {regions.map((region) => (
-                        <TabsTrigger key={region.id} value={region.id} data-testid={`tab-${region.code}`}>
-                          {language === 'zh-HK' ? region.nameZh : region.nameEn}
+                  <div className="overflow-x-auto flex-shrink-0">
+                    <Tabs value={selectedRegion} onValueChange={setSelectedRegion}>
+                      <TabsList data-testid="tabs-region" className="w-max md:w-auto">
+                        <TabsTrigger value="all" data-testid="tab-all">
+                          {language === 'zh-HK' ? '全部' : 'All'}
                         </TabsTrigger>
-                      ))}
-                    </TabsList>
-                  </Tabs>
+                        {regions.map((region) => (
+                          <TabsTrigger key={region.id} value={region.id} data-testid={`tab-${region.code}`}>
+                            {language === 'zh-HK' ? region.nameZh : region.nameEn}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </Tabs>
+                  </div>
                 )}
                 {filteredHospitals && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 ml-4" data-testid="text-results-count">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 flex-shrink-0" data-testid="text-results-count">
                     {language === 'zh-HK' 
                       ? `顯示 ${filteredHospitals.length} 間醫院`
                       : `Showing ${filteredHospitals.length} ${filteredHospitals.length === 1 ? 'hospital' : 'hospitals'}`
