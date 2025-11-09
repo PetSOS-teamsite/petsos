@@ -14,7 +14,10 @@ import {
   Building2,
   MapPin,
   Phone,
-  Calendar
+  Calendar,
+  Users,
+  Heart,
+  Stethoscope
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,7 +148,7 @@ export default function AdminDashboardPage() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button
                 onClick={handleRefresh}
                 variant="outline"
@@ -155,10 +158,28 @@ export default function AdminDashboardPage() {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
+              <Link href="/admin/users">
+                <Button variant="outline" size="sm" data-testid="button-admin-users">
+                  <Users className="h-4 w-4 mr-2" />
+                  Users
+                </Button>
+              </Link>
+              <Link href="/admin/pets">
+                <Button variant="outline" size="sm" data-testid="button-admin-pets">
+                  <Heart className="h-4 w-4 mr-2" />
+                  Pets
+                </Button>
+              </Link>
               <Link href="/admin/clinics">
                 <Button variant="outline" size="sm" data-testid="button-admin-clinics">
                   <Building2 className="h-4 w-4 mr-2" />
                   Clinics
+                </Button>
+              </Link>
+              <Link href="/admin/diagnostics">
+                <Button variant="outline" size="sm" data-testid="button-admin-diagnostics">
+                  <Stethoscope className="h-4 w-4 mr-2" />
+                  Diagnostics
                 </Button>
               </Link>
               <Link href="/admin/config">
