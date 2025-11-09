@@ -32,6 +32,7 @@ import AdminDashboardPage from "@/pages/admin-dashboard";
 import AdminAnalyticsPage from "@/pages/admin-analytics";
 import AdminUsersPage from "@/pages/admin-users";
 import AdminPetsPage from "@/pages/admin-pets";
+import AdminDiagnosticsPage from "@/pages/admin-diagnostics";
 import AdminLoginPage from "@/pages/admin-login";
 import ClinicDashboardPage from "@/pages/clinic-dashboard";
 import PrivacyPolicyPage from "@/pages/privacy-policy";
@@ -106,6 +107,9 @@ function Router() {
       </Route>
       <Route path="/admin/config">
         {isAuthenticated && isAdmin ? <AdminConfigPage /> : <AdminLoginPage />}
+      </Route>
+      <Route path="/admin/diagnostics">
+        {isAuthenticated && isAdmin ? <AdminDiagnosticsPage /> : <AdminLoginPage />}
       </Route>
       
       <Route component={NotFound} />
