@@ -1,0 +1,193 @@
+Integrate the Hospital Pages Function within the PetSOS app to display detailed, owner‑friendly profiles for each 24‑hour animal hospital. The feature should be fully embedded under the PetSOS app namespace (e.g., /app/hospitals/[slug]) and reuse existing app theming, authentication, and analytics systems.
+
+Core Objective
+
+Provide pet owners with:
+
+Essential hospital details (name, address, region, 24/7 status)
+
+Owner‑centric service breakdowns (ICU, CT, triage policy, insurance, etc.)
+
+Reference consultation fees (Day / Evening / Night/PH)
+
+Quick contact actions (Call / WhatsApp / Maps)
+
+Accuracy & Transparency — last verified date, and “Report incorrect info” button.
+
+Function Path & Integration
+
+Namespace: /app/hospitals (under PetSOS)
+
+Routes:
+
+/app/hospitals → list view (filter by region, open 24/7, services)
+
+/app/hospitals/[slug] → detail view (full page)
+
+Parent app modules reused:
+
+AuthContext (for user/member login)
+
+UI Kit (buttons, badges, modals)
+
+Analytics (PostHog event tracking)
+
+I18nContext (EN/繁 switching)
+
+ReportModal (for incorrect info)
+
+Tech Stack
+
+Next.js 14 + TypeScript + Tailwind (PetSOS design system)
+
+Prisma + PostgreSQL (extend PetSOS DB)
+
+Supabase Storage / Cloudflare R2 for photos
+
+next-auth roles (admin, hospital_editor, user)
+
+next-intl for i18n
+
+PostHog for analytics
+
+Data Model (added under PetSOS schema)
+model Hospital {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  nameEn           String
+  nameTc           String
+  addressEn        String
+  addressTc        String
+  region           String   // HKI | KLN | NT
+  lat              Float?
+  lng              Float?
+  phone            String?
+  whatsapp         String?
+  websiteUrl       String?
+  open247          Boolean  @default(true)
+  liveStatus       String?  // normal | busy | critical_only
+  photos           Json?
+  lastVerifiedAt   DateTime?
+  verifiedById     String?
+
+
+  // Owner-centric details
+  onSiteVet247      Boolean?
+  triagePolicy      String?
+  typicalWaitBand   String?
+  isolationWard     Boolean?
+  ambulanceSupport  Boolean?
+  icuLevel          String?
+  nurse24h          Boolean?
+  ownerVisitPolicy  String?
+  eolSupport        Boolean?
+  imagingXray       Boolean?
+  imagingUS         Boolean?
+  imagingCT         Boolean?
+  sameDayCT         Boolean?
+  inHouseLab        Boolean?
+  extLabCutoff      String?
+  bloodBankAccess   String?
+  sxEmergencySoft   Boolean?
+  sxEmergencyOrtho  Boolean?
+  anaesMonitoring   String?
+  specialistAvail   String?
+  speciesAccepted   String[]
+  whatsappTriage    Boolean?
+  languages         String[]
+  parking           Boolean?
+  wheelchairAccess  Boolean?
+  payMethods        String[]
+  admissionDeposit  Boolean?
+  depositBand       String?
+  insuranceSupport  String[]
+  recheckWindow     String?
+  refundPolicy      String?
+
+
+  consultFees      HospitalConsultFee[]
+  updates          HospitalUpdate[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+API Endpoints (under PetSOS API namespace)
+
+GET /api/app/hospitals?region=HKI&services=ER,CT — list view.
+
+GET /api/app/hospitals/[slug] — single hospital detail.
+
+PUT /api/app/hospitals/[id] — admin update.
+
+POST /api/app/hospitals/ingest-update — Typeform/Google Form payload ingestion.
+
+POST /api/app/hospitals/[id]/report — report incorrect info.
+
+All APIs inherit existing PetSOS authentication middleware.
+
+UI Components (under /components/app/hospitals/)
+
+HospitalHeader.tsx — name, badge, CTAs
+
+ConsultFeesTable.tsx — reference fees table
+
+QuickFactsChips.tsx — ICU, Oxygen, Direct billing, Parking, Wheelchair, 24/7 vet
+
+SectionEmergencyTriage.tsx — triage info
+
+SectionDiagnostics.tsx — X-ray, US, CT, Lab
+
+SectionHospitalisation.tsx — ICU, nurse, EoL
+
+SectionPayment.tsx — methods, deposit, insurance
+
+SectionAccess.tsx — transport, accessibility
+
+PhotoCarousel.tsx
+
+ReportIncorrectInfoModal.tsx
+
+UI Behavior
+
+Default open: Consult Fees + Emergency & Triage
+
+Collapsible sections with motion transitions
+
+Sticky bottom CTA bar (Call / WhatsApp / Maps)
+
+Display Last verified on [date]
+
+Show disclaimer: “Information is for reference only; final charges by hospital.”
+
+Analytics Events
+
+hospital_page_view { hospital_id, region }
+
+cta_click { type, hospital_id }
+
+report_incorrect_clicked { hospital_id }
+
+Acceptance Criteria
+
+Lighthouse ≥ 90 mobile
+
+Bilingual EN/繁 toggle
+
+Valid JSON‑LD (MedicalClinic)
+
+Proper role-based editing via PetSOS CMS
+
+“Incorrect info?” working via modal + webhook
+
+Next Step
+
+Implement DB migration
+
+Build /app/hospitals/[slug] page & components
+
+Connect ingestion API to Typeform queue
+
+QA + PostHog setup
+
+Seed 24‑hour hospitals dataset and test consult fee display
+
+This function sits under PetSOS App → /app/hospitals, leveraging all existing app contexts, UI kits, and user login logic.
