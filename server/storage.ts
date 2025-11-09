@@ -165,6 +165,9 @@ export class MemStorage implements IStorage {
   private auditLogs: Map<string, AuditLog>;
   private privacyConsents: Map<string, PrivacyConsent>;
   private translations: Map<string, Translation>;
+  private hospitals: Map<string, Hospital>;
+  private hospitalConsultFees: Map<string, HospitalConsultFee>;
+  private hospitalUpdates: Map<string, HospitalUpdate>;
 
   constructor() {
     this.users = new Map();
@@ -179,6 +182,9 @@ export class MemStorage implements IStorage {
     this.auditLogs = new Map();
     this.privacyConsents = new Map();
     this.translations = new Map();
+    this.hospitals = new Map();
+    this.hospitalConsultFees = new Map();
+    this.hospitalUpdates = new Map();
     
     // Seed test user
     const testUser: User = {
@@ -876,6 +882,162 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  // Hospitals
+  async getHospital(id: string): Promise<Hospital | undefined> {
+    return this.hospitals.get(id);
+  }
+
+  async getHospitalBySlug(slug: string): Promise<Hospital | undefined> {
+    return Array.from(this.hospitals.values()).find(
+      hospital => hospital.slug === slug
+    );
+  }
+
+  async getHospitalsByRegion(regionId: string): Promise<Hospital[]> {
+    return Array.from(this.hospitals.values()).filter(
+      hospital => hospital.regionId === regionId
+    );
+  }
+
+  async getAllHospitals(): Promise<Hospital[]> {
+    return Array.from(this.hospitals.values());
+  }
+
+  async createHospital(insertHospital: InsertHospital): Promise<Hospital> {
+    const id = randomUUID();
+    const now = new Date();
+    const hospital: Hospital = {
+      ...insertHospital,
+      id,
+      createdAt: now,
+      updatedAt: now,
+      latitude: insertHospital.latitude ?? null,
+      longitude: insertHospital.longitude ?? null,
+      location: null,
+      phone: insertHospital.phone ?? null,
+      whatsapp: insertHospital.whatsapp ?? null,
+      websiteUrl: insertHospital.websiteUrl ?? null,
+      open247: insertHospital.open247 ?? true,
+      liveStatus: insertHospital.liveStatus ?? null,
+      photos: insertHospital.photos ?? null,
+      lastVerifiedAt: insertHospital.lastVerifiedAt ?? null,
+      verifiedById: insertHospital.verifiedById ?? null,
+      onSiteVet247: insertHospital.onSiteVet247 ?? null,
+      triagePolicy: insertHospital.triagePolicy ?? null,
+      typicalWaitBand: insertHospital.typicalWaitBand ?? null,
+      isolationWard: insertHospital.isolationWard ?? null,
+      ambulanceSupport: insertHospital.ambulanceSupport ?? null,
+      icuLevel: insertHospital.icuLevel ?? null,
+      nurse24h: insertHospital.nurse24h ?? null,
+      ownerVisitPolicy: insertHospital.ownerVisitPolicy ?? null,
+      eolSupport: insertHospital.eolSupport ?? null,
+      imagingXray: insertHospital.imagingXray ?? null,
+      imagingUS: insertHospital.imagingUS ?? null,
+      imagingCT: insertHospital.imagingCT ?? null,
+      sameDayCT: insertHospital.sameDayCT ?? null,
+      inHouseLab: insertHospital.inHouseLab ?? null,
+      extLabCutoff: insertHospital.extLabCutoff ?? null,
+      bloodBankAccess: insertHospital.bloodBankAccess ?? null,
+      sxEmergencySoft: insertHospital.sxEmergencySoft ?? null,
+      sxEmergencyOrtho: insertHospital.sxEmergencyOrtho ?? null,
+      anaesMonitoring: insertHospital.anaesMonitoring ?? null,
+      specialistAvail: insertHospital.specialistAvail ?? null,
+      speciesAccepted: insertHospital.speciesAccepted ?? null,
+      whatsappTriage: insertHospital.whatsappTriage ?? null,
+      languages: insertHospital.languages ?? null,
+      parking: insertHospital.parking ?? null,
+      wheelchairAccess: insertHospital.wheelchairAccess ?? null,
+      payMethods: insertHospital.payMethods ?? null,
+      admissionDeposit: insertHospital.admissionDeposit ?? null,
+      depositBand: insertHospital.depositBand ?? null,
+      insuranceSupport: insertHospital.insuranceSupport ?? null,
+      recheckWindow: insertHospital.recheckWindow ?? null,
+      refundPolicy: insertHospital.refundPolicy ?? null,
+    };
+    this.hospitals.set(id, hospital);
+    return hospital;
+  }
+
+  async updateHospital(id: string, updateData: Partial<InsertHospital>): Promise<Hospital | undefined> {
+    const hospital = this.hospitals.get(id);
+    if (!hospital) return undefined;
+    const updated = { ...hospital, ...updateData, updatedAt: new Date() };
+    this.hospitals.set(id, updated);
+    return updated;
+  }
+
+  async deleteHospital(id: string): Promise<boolean> {
+    return this.hospitals.delete(id);
+  }
+
+  // Hospital Consult Fees
+  async getConsultFeesByHospitalId(hospitalId: string): Promise<HospitalConsultFee[]> {
+    return Array.from(this.hospitalConsultFees.values()).filter(
+      fee => fee.hospitalId === hospitalId
+    );
+  }
+
+  async createConsultFee(insertFee: InsertHospitalConsultFee): Promise<HospitalConsultFee> {
+    const id = randomUUID();
+    const fee: HospitalConsultFee = {
+      ...insertFee,
+      id,
+      minFee: insertFee.minFee ?? null,
+      maxFee: insertFee.maxFee ?? null,
+      currency: insertFee.currency ?? 'HKD',
+      notes: insertFee.notes ?? null,
+      lastUpdated: insertFee.lastUpdated ?? new Date(),
+    };
+    this.hospitalConsultFees.set(id, fee);
+    return fee;
+  }
+
+  async updateConsultFee(id: string, updateData: Partial<InsertHospitalConsultFee>): Promise<HospitalConsultFee | undefined> {
+    const fee = this.hospitalConsultFees.get(id);
+    if (!fee) return undefined;
+    const updated = { ...fee, ...updateData, lastUpdated: new Date() };
+    this.hospitalConsultFees.set(id, updated);
+    return updated;
+  }
+
+  async deleteConsultFee(id: string): Promise<boolean> {
+    return this.hospitalConsultFees.delete(id);
+  }
+
+  // Hospital Updates
+  async getHospitalUpdatesByHospitalId(hospitalId: string): Promise<HospitalUpdate[]> {
+    return Array.from(this.hospitalUpdates.values()).filter(
+      update => update.hospitalId === hospitalId
+    );
+  }
+
+  async createHospitalUpdate(insertUpdate: InsertHospitalUpdate): Promise<HospitalUpdate> {
+    const id = randomUUID();
+    const update: HospitalUpdate = {
+      ...insertUpdate,
+      id,
+      createdAt: new Date(),
+      submittedById: insertUpdate.submittedById ?? null,
+      fieldName: insertUpdate.fieldName ?? null,
+      oldValue: insertUpdate.oldValue ?? null,
+      newValue: insertUpdate.newValue ?? null,
+      status: insertUpdate.status ?? 'pending',
+      reviewedById: insertUpdate.reviewedById ?? null,
+      reviewedAt: insertUpdate.reviewedAt ?? null,
+      notes: insertUpdate.notes ?? null,
+    };
+    this.hospitalUpdates.set(id, update);
+    return update;
+  }
+
+  async updateHospitalUpdate(id: string, updateData: Partial<InsertHospitalUpdate>): Promise<HospitalUpdate | undefined> {
+    const update = this.hospitalUpdates.get(id);
+    if (!update) return undefined;
+    const updated = { ...update, ...updateData };
+    this.hospitalUpdates.set(id, updated);
+    return updated;
+  }
+
   async exportUserData(userId: string): Promise<{
     user: User | undefined;
     pets: Pet[];
@@ -1377,6 +1539,88 @@ class DatabaseStorage implements IStorage {
     const result = await db.update(translations)
       .set(updateData)
       .where(eq(translations.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // Hospitals
+  async getHospital(id: string): Promise<Hospital | undefined> {
+    const result = await db.select().from(hospitals).where(eq(hospitals.id, id));
+    return result[0];
+  }
+
+  async getHospitalBySlug(slug: string): Promise<Hospital | undefined> {
+    const result = await db.select().from(hospitals).where(eq(hospitals.slug, slug));
+    return result[0];
+  }
+
+  async getHospitalsByRegion(regionId: string): Promise<Hospital[]> {
+    return await db.select().from(hospitals).where(eq(hospitals.regionId, regionId));
+  }
+
+  async getAllHospitals(): Promise<Hospital[]> {
+    return await db.select().from(hospitals);
+  }
+
+  async createHospital(insertHospital: InsertHospital): Promise<Hospital> {
+    const result = await db.insert(hospitals).values(insertHospital).returning();
+    return result[0];
+  }
+
+  async updateHospital(id: string, updateData: Partial<InsertHospital>): Promise<Hospital | undefined> {
+    const result = await db.update(hospitals)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(hospitals.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteHospital(id: string): Promise<boolean> {
+    const result = await db.delete(hospitals)
+      .where(eq(hospitals.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  // Hospital Consult Fees
+  async getConsultFeesByHospitalId(hospitalId: string): Promise<HospitalConsultFee[]> {
+    return await db.select().from(hospitalConsultFees).where(eq(hospitalConsultFees.hospitalId, hospitalId));
+  }
+
+  async createConsultFee(insertFee: InsertHospitalConsultFee): Promise<HospitalConsultFee> {
+    const result = await db.insert(hospitalConsultFees).values(insertFee).returning();
+    return result[0];
+  }
+
+  async updateConsultFee(id: string, updateData: Partial<InsertHospitalConsultFee>): Promise<HospitalConsultFee | undefined> {
+    const result = await db.update(hospitalConsultFees)
+      .set({ ...updateData, lastUpdated: new Date() })
+      .where(eq(hospitalConsultFees.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteConsultFee(id: string): Promise<boolean> {
+    const result = await db.delete(hospitalConsultFees)
+      .where(eq(hospitalConsultFees.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  // Hospital Updates
+  async getHospitalUpdatesByHospitalId(hospitalId: string): Promise<HospitalUpdate[]> {
+    return await db.select().from(hospitalUpdates).where(eq(hospitalUpdates.hospitalId, hospitalId));
+  }
+
+  async createHospitalUpdate(insertUpdate: InsertHospitalUpdate): Promise<HospitalUpdate> {
+    const result = await db.insert(hospitalUpdates).values(insertUpdate).returning();
+    return result[0];
+  }
+
+  async updateHospitalUpdate(id: string, updateData: Partial<InsertHospitalUpdate>): Promise<HospitalUpdate | undefined> {
+    const result = await db.update(hospitalUpdates)
+      .set(updateData)
+      .where(eq(hospitalUpdates.id, id))
       .returning();
     return result[0];
   }

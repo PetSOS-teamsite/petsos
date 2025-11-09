@@ -1035,6 +1035,256 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== HOSPITAL ROUTES =====
+  
+  // Get all hospitals
+  app.get("/api/hospitals", async (req, res) => {
+    try {
+      const hospitals = await storage.getAllHospitals();
+      res.json(hospitals);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get hospitals by region
+  app.get("/api/hospitals/region/:regionId", async (req, res) => {
+    try {
+      const hospitals = await storage.getHospitalsByRegion(req.params.regionId);
+      res.json(hospitals);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get hospital by slug
+  app.get("/api/hospitals/slug/:slug", async (req, res) => {
+    try {
+      const hospital = await storage.getHospitalBySlug(req.params.slug);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      res.json(hospital);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get hospital by ID
+  app.get("/api/hospitals/:id", async (req, res) => {
+    try {
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      res.json(hospital);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create hospital (admin only)
+  app.post("/api/hospitals", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { insertHospitalSchema } = await import("@shared/schema");
+      const hospitalData = insertHospitalSchema.parse(req.body);
+      const hospital = await storage.createHospital(hospitalData);
+      
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: hospital.id,
+        action: 'create',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json(hospital);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update hospital (admin only)
+  app.patch("/api/hospitals/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { insertHospitalSchema } = await import("@shared/schema");
+      const hospital = await storage.getHospital(req.params.id);
+      
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      const updateData = insertHospitalSchema.partial().parse(req.body);
+      const updatedHospital = await storage.updateHospital(req.params.id, updateData);
+
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: hospital.id,
+        action: 'update',
+        changes: updateData,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json(updatedHospital);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete hospital (admin only)
+  app.delete("/api/hospitals/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const success = await storage.deleteHospital(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: req.params.id,
+        action: 'delete',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get consult fees for a hospital
+  app.get("/api/hospitals/:hospitalId/fees", async (req, res) => {
+    try {
+      const fees = await storage.getConsultFeesByHospitalId(req.params.hospitalId);
+      res.json(fees);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create consult fee (admin only)
+  app.post("/api/hospitals/:hospitalId/fees", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { insertHospitalConsultFeeSchema } = await import("@shared/schema");
+      const feeData = insertHospitalConsultFeeSchema.parse({
+        ...req.body,
+        hospitalId: req.params.hospitalId
+      });
+      const fee = await storage.createConsultFee(feeData);
+      res.json(fee);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update consult fee (admin only)
+  app.patch("/api/hospitals/fees/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { insertHospitalConsultFeeSchema } = await import("@shared/schema");
+      const updateData = insertHospitalConsultFeeSchema.partial().parse(req.body);
+      const updatedFee = await storage.updateConsultFee(req.params.id, updateData);
+      
+      if (!updatedFee) {
+        return res.status(404).json({ message: "Consult fee not found" });
+      }
+      
+      res.json(updatedFee);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete consult fee (admin only)
+  app.delete("/api/hospitals/fees/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const success = await storage.deleteConsultFee(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Consult fee not found" });
+      }
+      res.json({ success });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get hospital updates (for review/moderation)
+  app.get("/api/hospitals/:hospitalId/updates", isAuthenticated, async (req, res) => {
+    try {
+      const updates = await storage.getHospitalUpdatesByHospitalId(req.params.hospitalId);
+      res.json(updates);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Submit hospital update/correction (authenticated users)
+  app.post("/api/hospitals/:hospitalId/report", isAuthenticated, async (req, res) => {
+    try {
+      const sessionUser = req.user as any;
+      const userId = sessionUser.id;
+      
+      const { insertHospitalUpdateSchema } = await import("@shared/schema");
+      const updateData = insertHospitalUpdateSchema.parse({
+        ...req.body,
+        hospitalId: req.params.hospitalId,
+        submittedById: userId
+      });
+      
+      const update = await storage.createHospitalUpdate(updateData);
+      res.json(update);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update hospital update status (admin only - for review)
+  app.patch("/api/hospitals/updates/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const sessionUser = req.user as any;
+      const userId = sessionUser.id;
+      
+      const { insertHospitalUpdateSchema } = await import("@shared/schema");
+      const updateData = insertHospitalUpdateSchema.partial().extend({
+        reviewedById: z.string().optional(),
+        reviewedAt: z.date().optional(),
+      }).parse({
+        ...req.body,
+        reviewedById: userId,
+        reviewedAt: new Date()
+      });
+      
+      const updatedUpdate = await storage.updateHospitalUpdate(req.params.id, updateData);
+      
+      if (!updatedUpdate) {
+        return res.status(404).json({ message: "Hospital update not found" });
+      }
+      
+      res.json(updatedUpdate);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // ===== EMERGENCY REQUEST ROUTES =====
 
   // Create emergency request
