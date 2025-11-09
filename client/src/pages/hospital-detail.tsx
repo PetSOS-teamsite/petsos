@@ -87,6 +87,7 @@ export default function HospitalDetailPage() {
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    setShowBackToTop(false); // Hide button immediately
   };
 
   const reportMutation = useMutation({
