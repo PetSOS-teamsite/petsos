@@ -36,7 +36,8 @@ export default function HospitalsPage() {
 
   // Track page view
   useEffect(() => {
-    analytics.track('hospital_list_page_view', {
+    analytics.event('hospital_list_page_view', {
+      event_category: 'Hospital',
       language: language,
     });
   }, [language]);
@@ -56,7 +57,8 @@ export default function HospitalsPage() {
 
   const handleCall = (hospital: Hospital) => {
     if (hospital.phone) {
-      analytics.track('hospital_cta_click', {
+      analytics.event('hospital_cta_click', {
+        event_category: 'Hospital',
         type: 'call',
         hospital_id: hospital.id,
         hospital_slug: hospital.slug,
@@ -67,7 +69,8 @@ export default function HospitalsPage() {
 
   const handleWhatsApp = (hospital: Hospital) => {
     if (hospital.whatsapp) {
-      analytics.track('hospital_cta_click', {
+      analytics.event('hospital_cta_click', {
+        event_category: 'Hospital',
         type: 'whatsapp',
         hospital_id: hospital.id,
         hospital_slug: hospital.slug,
@@ -78,7 +81,8 @@ export default function HospitalsPage() {
   };
 
   const handleMaps = (hospital: Hospital) => {
-    analytics.track('hospital_cta_click', {
+    analytics.event('hospital_cta_click', {
+      event_category: 'Hospital',
       type: 'maps',
       hospital_id: hospital.id,
       hospital_slug: hospital.slug,
