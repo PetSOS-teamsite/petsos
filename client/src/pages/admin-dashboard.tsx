@@ -176,6 +176,12 @@ export default function AdminDashboardPage() {
                   Clinics
                 </Button>
               </Link>
+              <Link href="/admin/hospitals">
+                <Button variant="outline" size="sm" data-testid="button-admin-hospitals">
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Hospitals
+                </Button>
+              </Link>
               <Link href="/admin/diagnostics">
                 <Button variant="outline" size="sm" data-testid="button-admin-diagnostics">
                   <Stethoscope className="h-4 w-4 mr-2" />

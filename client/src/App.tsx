@@ -27,6 +27,7 @@ import DistrictsIndexPage from "@/pages/districts-index";
 import ResourcesPage from "@/pages/resources";
 import FAQPage from "@/pages/faq";
 import AdminClinicsPage from "@/pages/admin-clinics";
+import AdminHospitalsPage from "@/pages/admin-hospitals";
 import AdminConfigPage from "@/pages/admin-config";
 import AdminDashboardPage from "@/pages/admin-dashboard";
 import AdminAnalyticsPage from "@/pages/admin-analytics";
@@ -102,6 +103,9 @@ function Router() {
       </Route>
       <Route path="/admin/clinics">
         {isAuthenticated && isAdmin ? <AdminClinicsPage /> : <AdminLoginPage />}
+      </Route>
+      <Route path="/admin/hospitals">
+        {isAuthenticated && isAdmin ? <AdminHospitalsPage /> : <AdminLoginPage />}
       </Route>
       <Route path="/admin/users">
         {isAuthenticated && isAdmin ? <AdminUsersPage /> : <AdminLoginPage />}
