@@ -324,6 +324,8 @@ export const hospitals = pgTable("hospitals", {
   whatsapp: text("whatsapp"),
   websiteUrl: text("website_url"),
   open247: boolean("open_247").notNull().default(true),
+  isAvailable: boolean("is_available").notNull().default(true), // Admin can disable hospital
+  isPartner: boolean("is_partner").notNull().default(false), // Official PetSOS partner hospital
   liveStatus: text("live_status"), // normal | busy | critical_only
   photos: jsonb("photos"), // Array of photo URLs
   lastVerifiedAt: timestamp("last_verified_at"),
