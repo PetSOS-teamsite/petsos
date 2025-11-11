@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, Filter, X, Activity } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, X, Activity, Image as ImageIcon, Upload, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -25,11 +25,18 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -40,14 +47,70 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { useForm } from "react-hook-form";
+import { useForm, useController, Control, FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertHospitalSchema, type Hospital, type Region } from "@shared/schema";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+
+// Helper functions for comma-separated arrays
+const parseCommaList = (text: string): string[] | null => {
+  const values = text.split(",").map(v => v.trim()).filter(v => v);
+  return values.length > 0 ? values : null;
+};
+
+const joinCommaList = (arr: string[] | null | undefined): string => {
+  return (arr || []).join(", ");
+};
+
+// Component for comma-separated array input
+function CommaArrayField({ 
+  control,
+  name,
+  label,
+  placeholder,
+  description,
+  testId 
+}: {
+  control: Control<any>;
+  name: FieldPath<any>;
+  label: string;
+  placeholder: string;
+  description: string;
+  testId: string;
+}) {
+  const { field } = useController({ control, name });
+  const [textValue, setTextValue] = useState(joinCommaList(field.value as string[]));
+
+  // Resync text when field.value changes (e.g., on form reset)
+  useEffect(() => {
+    setTextValue(joinCommaList(field.value as string[]));
+  }, [field.value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newText = e.target.value;
+    setTextValue(newText);
+    field.onChange(parseCommaList(newText));
+  };
+
+  return (
+    <FormItem>
+      <FormLabel>{label}</FormLabel>
+      <FormControl>
+        <Input
+          value={textValue}
+          onChange={handleChange}
+          placeholder={placeholder}
+          data-testid={testId}
+        />
+      </FormControl>
+      <FormDescription>{description}</FormDescription>
+      <FormMessage />
+    </FormItem>
+  );
+}
 
 const hospitalFormSchema = insertHospitalSchema.extend({
   nameEn: z.string().min(1, "Hospital name (English) is required"),
@@ -59,6 +122,852 @@ const hospitalFormSchema = insertHospitalSchema.extend({
 });
 
 type HospitalFormData = z.infer<typeof hospitalFormSchema>;
+
+function HospitalForm({ form, onSubmit, submitLabel }: { 
+  form: ReturnType<typeof useForm<HospitalFormData>>;
+  onSubmit: (data: HospitalFormData) => void;
+  submitLabel: string;
+}) {
+  const { data: regions } = useQuery<Region[]>({
+    queryKey: ["/api/regions"],
+  });
+
+  const [newPhotoUrl, setNewPhotoUrl] = useState("");
+
+  const photos = form.watch("photos") as string[] | null;
+
+  const addPhoto = () => {
+    if (newPhotoUrl.trim()) {
+      const currentPhotos = (photos || []) as string[];
+      form.setValue("photos", [...currentPhotos, newPhotoUrl.trim()] as any);
+      setNewPhotoUrl("");
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    const currentPhotos = (photos || []) as string[];
+    form.setValue("photos", currentPhotos.filter((_, i) => i !== index) as any);
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="basic">Basic Info</TabsTrigger>
+            <TabsTrigger value="photos">Photos</TabsTrigger>
+            <TabsTrigger value="facilities">Facilities</TabsTrigger>
+            <TabsTrigger value="medical">Medical Services</TabsTrigger>
+            <TabsTrigger value="operational">Operational</TabsTrigger>
+          </TabsList>
+
+          {/* Basic Info Tab */}
+          <TabsContent value="basic" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="nameEn"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hospital Name (English) *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Central Animal Hospital" data-testid="input-name-en" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="nameZh"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hospital Name (Chinese) *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="中環動物醫院" data-testid="input-name-zh" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL Slug *</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="central-animal-hospital" data-testid="input-slug" />
+                  </FormControl>
+                  <FormDescription>Lowercase letters, numbers, and hyphens only</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="addressEn"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address (English) *</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder="123 Queen's Road Central" rows={3} data-testid="input-address-en" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="addressZh"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address (Chinese) *</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder="皇后大道中123號" rows={3} data-testid="input-address-zh" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="regionId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Region *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-region">
+                          <SelectValue placeholder="Select region" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {regions?.map((region) => (
+                          <SelectItem key={region.id} value={region.id}>
+                            {region.nameEn} ({region.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="+852 1234 5678" data-testid="input-phone" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="whatsapp"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>WhatsApp</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="+852 1234 5678" data-testid="input-whatsapp" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="websiteUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Website URL</FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value || ""} placeholder="https://hospital.com" data-testid="input-website" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="latitude"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Latitude</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="22.2820" data-testid="input-latitude" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="longitude"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Longitude</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="114.1585" data-testid="input-longitude" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="open247"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Open 24/7</FormLabel>
+                    <FormDescription>Is this hospital open 24 hours a day, 7 days a week?</FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      data-testid="switch-open247"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="liveStatus"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Current Status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="busy">Busy</SelectItem>
+                      <SelectItem value="critical_only">Critical Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <CommaArrayField
+              control={form.control}
+              name="speciesAccepted"
+              label="Species Accepted"
+              placeholder="e.g., Dog, Cat, Rabbit, Bird"
+              description="Comma-separated list of species accepted"
+              testId="input-species-accepted"
+            />
+          </TabsContent>
+
+          {/* Photos Tab */}
+          <TabsContent value="photos" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Hospital Photos</CardTitle>
+                <CardDescription>Add photos of the hospital to help pet owners</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter photo URL (e.g., https://example.com/photo.jpg)"
+                    value={newPhotoUrl}
+                    onChange={(e) => setNewPhotoUrl(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPhoto())}
+                    data-testid="input-photo-url"
+                  />
+                  <Button type="button" onClick={addPhoto} data-testid="button-add-photo">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Add
+                  </Button>
+                </div>
+
+                {photos && photos.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-4">
+                    {photos.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={url}
+                          alt={`Hospital photo ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(index)}
+                          data-testid={`button-remove-photo-${index}`}
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                        <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                          Photo {index + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+                    <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No photos added yet</p>
+                    <p className="text-sm">Add photo URLs above to display them here</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Facilities Tab */}
+          <TabsContent value="facilities" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="parking"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Parking Available</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="wheelchairAccess"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Wheelchair Accessible</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="isolationWard"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Isolation Ward</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="ambulanceSupport"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Ambulance Support</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="eolSupport"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">End-of-Life Support</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="whatsappTriage"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">WhatsApp Triage</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="icuLevel"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ICU Level</FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value || ""} placeholder="e.g., Level 2 ICU" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </TabsContent>
+
+          {/* Medical Services Tab */}
+          <TabsContent value="medical" className="space-y-4">
+            <h3 className="text-lg font-semibold">Imaging Services</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="imagingXray"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">X-Ray</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="imagingUS"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Ultrasound</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="imagingCT"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">CT Scan</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sameDayCT"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Same-Day CT</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <h3 className="text-lg font-semibold mt-6">Laboratory & Testing</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="inHouseLab"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">In-House Laboratory</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="extLabCutoff"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>External Lab Cutoff Time</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="e.g., 6:00 PM" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="bloodBankAccess"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Blood Bank Access</FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value || ""} placeholder="e.g., On-site blood bank" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <h3 className="text-lg font-semibold mt-6">Surgery Capabilities</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="sxEmergencySoft"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Emergency Soft Tissue Surgery</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sxEmergencyOrtho"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Emergency Orthopedic Surgery</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="anaesMonitoring"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Anesthesia Monitoring</FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value || ""} placeholder="e.g., Advanced monitoring equipment" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="specialistAvail"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Specialist Availability</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} value={field.value || ""} placeholder="List available specialists" rows={3} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </TabsContent>
+
+          {/* Operational Tab */}
+          <TabsContent value="operational" className="space-y-4">
+            <FormField
+              control={form.control}
+              name="onSiteVet247"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">On-Site Vet 24/7</FormLabel>
+                    <FormDescription>Is a veterinarian on-site 24 hours?</FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value || false}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="nurse24h"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">24-Hour Nursing</FormLabel>
+                    <FormDescription>Are nurses available 24 hours?</FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value || false}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="triagePolicy"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Triage Policy</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} value={field.value || ""} placeholder="Describe triage process" rows={3} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="typicalWaitBand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Typical Wait Time</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select wait time" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="<30min">&lt; 30 minutes</SelectItem>
+                      <SelectItem value="30-60min">30-60 minutes</SelectItem>
+                      <SelectItem value="1-2hr">1-2 hours</SelectItem>
+                      <SelectItem value=">2hr">&gt; 2 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="ownerVisitPolicy"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Owner Visiting Policy</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} value={field.value || ""} placeholder="Describe visiting hours and policies" rows={3} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="recheckWindow"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Recheck Window</FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value || ""} placeholder="e.g., 48 hours" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <h3 className="text-lg font-semibold mt-6">Client Support</h3>
+            
+            <CommaArrayField
+              control={form.control}
+              name="languages"
+              label="Languages Spoken"
+              placeholder="e.g., English, Cantonese, Mandarin, Japanese"
+              description="Comma-separated list of languages spoken by staff"
+              testId="input-languages"
+            />
+
+            <h3 className="text-lg font-semibold mt-6">Payment & Insurance</h3>
+            
+            <FormField
+              control={form.control}
+              name="admissionDeposit"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Requires Admission Deposit</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value || false}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="depositBand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Deposit Range</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select deposit range" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="<5k">&lt; HK$5,000</SelectItem>
+                      <SelectItem value="5-10k">HK$5,000 - 10,000</SelectItem>
+                      <SelectItem value="10-20k">HK$10,000 - 20,000</SelectItem>
+                      <SelectItem value=">20k">&gt; HK$20,000</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="refundPolicy"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Refund Policy</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} value={field.value || ""} placeholder="Describe refund policy" rows={3} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <CommaArrayField
+              control={form.control}
+              name="payMethods"
+              label="Payment Methods Accepted"
+              placeholder="e.g., Cash, Credit Card, PayMe, FPS, Octopus"
+              description="Comma-separated list of accepted payment methods"
+              testId="input-pay-methods"
+            />
+
+            <CommaArrayField
+              control={form.control}
+              name="insuranceSupport"
+              label="Insurance Providers Supported"
+              placeholder="e.g., Blue Cross, OneDegree, Petclaim, Pawpular"
+              description="Comma-separated list of insurance providers supported"
+              testId="input-insurance-support"
+            />
+          </TabsContent>
+        </Tabs>
+
+        <DialogFooter>
+          <Button type="submit" data-testid="button-submit">{submitLabel}</Button>
+        </DialogFooter>
+      </form>
+    </Form>
+  );
+}
 
 export default function AdminHospitalsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -83,7 +992,7 @@ export default function AdminHospitalsPage() {
     total: hospitals?.length ?? 0,
     verified: (hospitals?.filter(h => h.lastVerifiedAt) ?? []).length,
     open247: (hospitals?.filter(h => h.open247) ?? []).length,
-    missingGPS: (hospitals?.filter(h => !h.latitude || !h.longitude) ?? []).length,
+    withPhotos: (hospitals?.filter(h => h.photos && (h.photos as any[]).length > 0) ?? []).length,
   };
 
   const filteredHospitals = hospitals?.filter(hospital => {
@@ -126,6 +1035,7 @@ export default function AdminHospitalsPage() {
       open247: true,
       latitude: null,
       longitude: null,
+      photos: null,
       liveStatus: null,
       onSiteVet247: null,
       triagePolicy: null,
@@ -154,25 +1064,15 @@ export default function AdminHospitalsPage() {
       depositBand: null,
       recheckWindow: null,
       refundPolicy: null,
+      speciesAccepted: null,
+      languages: null,
+      payMethods: null,
+      insuranceSupport: null,
     },
   });
 
   const editForm = useForm<HospitalFormData>({
     resolver: zodResolver(hospitalFormSchema),
-    defaultValues: {
-      nameEn: "",
-      nameZh: "",
-      addressEn: "",
-      addressZh: "",
-      slug: "",
-      regionId: "",
-      phone: null,
-      whatsapp: null,
-      websiteUrl: null,
-      open247: true,
-      latitude: null,
-      longitude: null,
-    },
   });
 
   const openAddDialog = () => {
@@ -195,6 +1095,7 @@ export default function AdminHospitalsPage() {
       open247: hospital.open247,
       latitude: hospital.latitude ? String(hospital.latitude) : null,
       longitude: hospital.longitude ? String(hospital.longitude) : null,
+      photos: hospital.photos || null,
       liveStatus: hospital.liveStatus || null,
       onSiteVet247: hospital.onSiteVet247 || null,
       triagePolicy: hospital.triagePolicy || null,
@@ -223,6 +1124,10 @@ export default function AdminHospitalsPage() {
       depositBand: hospital.depositBand || null,
       recheckWindow: hospital.recheckWindow || null,
       refundPolicy: hospital.refundPolicy || null,
+      speciesAccepted: hospital.speciesAccepted || null,
+      languages: hospital.languages || null,
+      payMethods: hospital.payMethods || null,
+      insuranceSupport: hospital.insuranceSupport || null,
     });
     setIsEditDialogOpen(true);
   };
@@ -328,20 +1233,12 @@ export default function AdminHospitalsPage() {
               Admin: Hospital Management
             </h1>
           </div>
-          <p className="text-muted-foreground">Manage 24-hour animal hospital profiles</p>
+          <p className="text-muted-foreground">Manage 24-hour animal hospital profiles with photos and facilities</p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/admin">
-            <Button variant="outline" size="sm">
-              <Activity className="h-4 w-4 mr-2" />
-              Dashboard
-            </Button>
-          </Link>
-          <Button onClick={openAddDialog} data-testid="button-add-hospital">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Hospital
-          </Button>
-        </div>
+        <Button onClick={openAddDialog} data-testid="button-add-hospital">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Hospital
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -378,11 +1275,11 @@ export default function AdminHospitalsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Missing GPS</CardTitle>
-            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <CardTitle className="text-sm font-medium">With Photos</CardTitle>
+            <ImageIcon className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.missingGPS}</div>
+            <div className="text-2xl font-bold">{stats.withPhotos}</div>
           </CardContent>
         </Card>
       </div>
@@ -431,19 +1328,30 @@ export default function AdminHospitalsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Hospitals</CardTitle>
-          <p className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</p>
+          <p className="text-sm text-muted-foreground">Page {currentPage} of {totalPages || 1}</p>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {paginatedHospitals.map((hospital) => {
               const region = regions?.find(r => r.id === hospital.regionId);
+              const photos = hospital.photos as string[] | null;
               return (
                 <div
                   key={hospital.id}
                   className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
                   data-testid={`hospital-card-${hospital.id}`}
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex gap-4">
+                    {photos && photos.length > 0 && (
+                      <img
+                        src={photos[0]}
+                        alt={hospital.nameEn}
+                        className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="text-lg font-semibold">{hospital.nameEn}</h3>
@@ -459,11 +1367,16 @@ export default function AdminHospitalsPage() {
                             Verified
                           </Badge>
                         )}
+                        {photos && photos.length > 0 && (
+                          <Badge variant="outline">
+                            <ImageIcon className="h-3 w-3 mr-1" />
+                            {photos.length} {photos.length === 1 ? 'photo' : 'photos'}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground mb-1">{hospital.nameZh}</p>
                       <p className="text-sm mb-1">{hospital.addressEn}</p>
-                      <p className="text-sm text-muted-foreground mb-2">{hospital.addressZh}</p>
-                      <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-4 text-sm mt-2">
                         {hospital.phone && (
                           <span className="text-muted-foreground">
                             📞 {hospital.phone}
@@ -475,12 +1388,9 @@ export default function AdminHospitalsPage() {
                             {Number(hospital.latitude).toFixed(4)}, {Number(hospital.longitude).toFixed(4)}
                           </span>
                         )}
-                        {(!hospital.latitude || !hospital.longitude) && (
-                          <Badge variant="destructive">Missing GPS</Badge>
-                        )}
                       </div>
                     </div>
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -539,397 +1449,23 @@ export default function AdminHospitalsPage() {
 
       {/* Add Hospital Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Hospital</DialogTitle>
-            <DialogDescription>Enter the hospital details below</DialogDescription>
+            <DialogDescription>Enter the hospital details including photos and facilities</DialogDescription>
           </DialogHeader>
-          <Form {...addForm}>
-            <form onSubmit={addForm.handleSubmit(handleAddHospital)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={addForm.control}
-                  name="nameEn"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hospital Name (English) *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          placeholder="Central Animal Hospital"
-                          onChange={(e) => {
-                            field.onChange(e);
-                            if (!addForm.getValues("slug")) {
-                              addForm.setValue("slug", generateSlug(e.target.value));
-                            }
-                          }}
-                          data-testid="input-name-en"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="nameZh"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hospital Name (Chinese) *</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="中環動物醫院" data-testid="input-name-zh" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={addForm.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL Slug *</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="central-animal-hospital" data-testid="input-slug" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={addForm.control}
-                  name="addressEn"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address (English) *</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} placeholder="123 Queen's Road Central" data-testid="input-address-en" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="addressZh"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address (Chinese) *</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} placeholder="皇后大道中123號" data-testid="input-address-zh" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <FormField
-                  control={addForm.control}
-                  name="regionId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Region *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-region">
-                            <SelectValue placeholder="Select region" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {regions?.map((region) => (
-                            <SelectItem key={region.id} value={region.id}>
-                              {region.nameEn} ({region.code})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} placeholder="+852 1234 5678" data-testid="input-phone" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="whatsapp"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>WhatsApp</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} placeholder="+852 1234 5678" data-testid="input-whatsapp" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={addForm.control}
-                  name="latitude"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Latitude</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} placeholder="22.2820" data-testid="input-latitude" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="longitude"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Longitude</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} placeholder="114.1585" data-testid="input-longitude" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={addForm.control}
-                name="open247"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Open 24/7</FormLabel>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        data-testid="switch-open247"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" data-testid="button-submit">Add Hospital</Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <HospitalForm form={addForm} onSubmit={handleAddHospital} submitLabel="Add Hospital" />
         </DialogContent>
       </Dialog>
 
       {/* Edit Hospital Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Hospital</DialogTitle>
             <DialogDescription>Update the hospital details</DialogDescription>
           </DialogHeader>
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(handleEditHospital)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={editForm.control}
-                  name="nameEn"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hospital Name (English) *</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Central Animal Hospital" data-testid="input-edit-name-en" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="nameZh"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hospital Name (Chinese) *</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="中環動物醫院" data-testid="input-edit-name-zh" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={editForm.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL Slug *</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="central-animal-hospital" data-testid="input-edit-slug" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={editForm.control}
-                  name="addressEn"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address (English) *</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} placeholder="123 Queen's Road Central" data-testid="input-edit-address-en" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="addressZh"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address (Chinese) *</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} placeholder="皇后大道中123號" data-testid="input-edit-address-zh" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <FormField
-                  control={editForm.control}
-                  name="regionId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Region *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-edit-region">
-                            <SelectValue placeholder="Select region" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {regions?.map((region) => (
-                            <SelectItem key={region.id} value={region.id}>
-                              {region.nameEn} ({region.code})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} placeholder="+852 1234 5678" data-testid="input-edit-phone" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="whatsapp"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>WhatsApp</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} placeholder="+852 1234 5678" data-testid="input-edit-whatsapp" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={editForm.control}
-                  name="latitude"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Latitude</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} placeholder="22.2820" data-testid="input-edit-latitude" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="longitude"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Longitude</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} placeholder="114.1585" data-testid="input-edit-longitude" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={editForm.control}
-                name="open247"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Open 24/7</FormLabel>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        data-testid="switch-edit-open247"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" data-testid="button-save">Save Changes</Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <HospitalForm form={editForm} onSubmit={handleEditHospital} submitLabel="Save Changes" />
         </DialogContent>
       </Dialog>
 
