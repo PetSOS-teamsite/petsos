@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Clock, Navigation, ExternalLink } from "lucide-react";
+import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Clock, Navigation, ExternalLink, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { analytics } from "@/lib/analytics";
 import { SEO } from "@/components/SEO";
 import { StructuredData, createVeterinaryDirectorySchema, createBreadcrumbSchema } from "@/components/StructuredData";
+import type { Hospital } from "@shared/schema";
 
 type Clinic = {
   id: string;
@@ -41,6 +42,12 @@ type Region = {
   nameZh: string;
 };
 
+// Unified type for displaying both clinics and hospitals
+type DisplayClinic = Clinic & {
+  isHospital?: boolean;
+  hospitalSlug?: string;
+};
+
 export default function ClinicsPage() {
   const { t, language } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,6 +63,45 @@ export default function ClinicsPage() {
   const { data: clinics, isLoading: clinicsLoading } = useQuery<Clinic[]>({
     queryKey: ["/api/clinics"],
   });
+
+  const { data: hospitals, isLoading: hospitalsLoading } = useQuery<Hospital[]>({
+    queryKey: ["/api/hospitals"],
+  });
+
+  // Combine clinics and hospitals into a unified list
+  const allProviders = useMemo<DisplayClinic[]>(() => {
+    const clinicList: DisplayClinic[] = clinics?.map(clinic => ({
+      ...clinic,
+      isHospital: false,
+    })) || [];
+
+    const hospitalList: DisplayClinic[] = hospitals
+      ?.filter(hospital => {
+        // Only include hospitals that are available (not disabled by admin)
+        return hospital.isAvailable === true;
+      })
+      .map(hospital => ({
+        id: hospital.id,
+        name: hospital.nameEn,
+        nameZh: hospital.nameZh,
+        address: hospital.addressEn,
+        addressZh: hospital.addressZh,
+        phone: hospital.phone || "", // Default to empty string if null
+        whatsapp: hospital.whatsapp || null,
+        email: null, // Hospitals don't have email field
+        regionId: hospital.regionId,
+        is24Hour: hospital.open247 || false, // Use actual open247 field
+        latitude: hospital.latitude ? parseFloat(hospital.latitude) : null,
+        longitude: hospital.longitude ? parseFloat(hospital.longitude) : null,
+        status: "active", // Hospitals that pass filter are active
+        services: [], // Hospitals don't use the services array field
+        isSupportHospital: hospital.isPartner || false, // Use new isPartner field
+        isHospital: true,
+        hospitalSlug: hospital.slug,
+      })) || [];
+
+    return [...clinicList, ...hospitalList];
+  }, [clinics, hospitals]);
 
   // Get user's GPS location on mount
   useEffect(() => {
@@ -91,7 +137,7 @@ export default function ClinicsPage() {
     return R * c;
   };
 
-  const filteredClinics = clinics?.filter((clinic) => {
+  const filteredClinics = allProviders?.filter((clinic) => {
     const matchesSearch =
       !searchQuery ||
       clinic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -149,14 +195,20 @@ export default function ClinicsPage() {
     window.open(mapsUrl, "_blank");
   };
 
-  const handleCardClick = (clinic: Clinic, e: React.MouseEvent) => {
+  const handleCardClick = (clinic: DisplayClinic, e: React.MouseEvent) => {
     // Prevent navigation if clicking on buttons
     const target = e.target as HTMLElement;
     if (target.closest('button')) {
       return;
     }
     
-    // Open Google Maps to show clinic with reviews and business info
+    // If it's a hospital, navigate to hospital detail page
+    if (clinic.isHospital && clinic.hospitalSlug) {
+      window.location.href = `/hospitals/${clinic.hospitalSlug}`;
+      return;
+    }
+    
+    // Otherwise, open Google Maps to show clinic with reviews and business info
     const query = `${clinic.name}, ${clinic.address}`;
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
     window.open(mapsUrl, "_blank");
@@ -321,7 +373,7 @@ export default function ClinicsPage() {
 
         {/* Clinic List */}
         <div className="max-w-4xl mx-auto space-y-3">
-          {clinicsLoading ? (
+          {(clinicsLoading || hospitalsLoading) ? (
             <>
               {[1, 2, 3].map((i) => (
                 <Card key={i}>
@@ -346,12 +398,22 @@ export default function ClinicsPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      {/* Partner Badge */}
-                      {clinic.isSupportHospital && (
-                        <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 mb-2 font-bold" data-testid={`badge-partner-${clinic.id}`}>
-                          ⭐ PetSOS Partner
-                        </Badge>
-                      )}
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {/* Partner Badge */}
+                        {clinic.isSupportHospital && (
+                          <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 font-bold" data-testid={`badge-partner-${clinic.id}`}>
+                            ⭐ PetSOS Partner
+                          </Badge>
+                        )}
+                        
+                        {/* Hospital Badge */}
+                        {clinic.isHospital && (
+                          <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 font-bold" data-testid={`badge-hospital-${clinic.id}`}>
+                            <Building2 className="h-3 w-3 mr-1" />
+                            {language === 'zh-HK' ? '24小時動物醫院' : '24-Hour Hospital'}
+                          </Badge>
+                        )}
+                      </div>
                       
                       {/* Clinic Name - Compact */}
                       <CardTitle className="text-lg mb-1 leading-tight">

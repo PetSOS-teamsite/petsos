@@ -354,6 +354,46 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
 
             <FormField
               control={form.control}
+              name="isAvailable"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Available</FormLabel>
+                    <FormDescription>Is this hospital currently accepting patients? (Disable to hide from public listings)</FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      data-testid="switch-is-available"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="isPartner"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">PetSOS Partner</FormLabel>
+                    <FormDescription>Official PetSOS partner hospital (gets priority in listings and special badge)</FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      data-testid="switch-is-partner"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="liveStatus"
               render={({ field }) => (
                 <FormItem>
@@ -1033,6 +1073,8 @@ export default function AdminHospitalsPage() {
       whatsapp: null,
       websiteUrl: null,
       open247: true,
+      isAvailable: true,
+      isPartner: false,
       latitude: null,
       longitude: null,
       photos: null,
@@ -1093,6 +1135,8 @@ export default function AdminHospitalsPage() {
       whatsapp: hospital.whatsapp || null,
       websiteUrl: hospital.websiteUrl || null,
       open247: hospital.open247,
+      isAvailable: hospital.isAvailable,
+      isPartner: hospital.isPartner,
       latitude: hospital.latitude ? String(hospital.latitude) : null,
       longitude: hospital.longitude ? String(hospital.longitude) : null,
       photos: hospital.photos || null,
