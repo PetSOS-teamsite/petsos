@@ -57,6 +57,14 @@ Preferred communication style: Simple, everyday language.
 ### Feature Specifications
 - **User & Pet Management**: CRUD operations for profiles and pets, bilingual breed selection.
 - **Clinic Management**: Directory, staff dashboard, admin dashboard.
+- **Hospital Management**: Comprehensive admin interface for managing 24-hour animal hospitals with enhanced profiles:
+  - **Tabbed Form Interface**: 5-tab organization (Basic Info, Photos, Facilities, Medical Services, Operational Details)
+  - **Photo Management**: Add/remove multiple hospital photo URLs with thumbnail display
+  - **Facilities**: Parking availability, wheelchair accessibility, isolation ward, ambulance service, end-of-life care, 24/7 ICU availability
+  - **Medical Services**: Imaging (X-ray, ultrasound, CT, MRI), laboratory services, surgery capabilities, anesthesia level, ICU level, specialist services
+  - **Operational Details**: Triage policy, average wait times, visiting hours, deposit requirements, client support features
+  - **Array Field Support**: Custom CommaArrayField component using useController for proper handling of comma-separated arrays (species accepted, languages spoken, payment methods, insurance providers)
+  - **Form Architecture**: Reusable component pattern with parseCommaList/joinCommaList helpers, useEffect-based resync on form.reset, no React Hooks violations
 - **Emergency Request Flow**: Multi-step form (symptoms & pet → location → contact info with optional voice recording), supports authenticated and anonymous users. Authenticated users still see Step 3 (contact information) but their name and phone number are automatically pre-filled from their profile; users can edit pre-filled values if needed (e.g., using a different phone for the emergency). Auto-fill only applies if users haven't manually edited the fields during the current session.
 - **Voice Recording**: AI-powered symptom analysis from voice transcripts (OpenAI), bilingual support (EN/ZH-HK), automatic fallback to manual text entry.
 - **Emergency Request Editing**: Post-submission editing of contact info, symptoms, location with real-time broadcast message updates, Zod validation, audit trail, GPS location support, and bilingual UI.
