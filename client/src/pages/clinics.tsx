@@ -147,7 +147,8 @@ export default function ClinicsPage() {
 
     const matchesRegion = selectedRegion === "all" || clinic.regionId === selectedRegion;
     
-    const matches24Hour = !show24HourOnly || clinic.is24Hour;
+    // Only filter by 24-hour status if the toggle is enabled
+    const matches24Hour = !show24HourOnly || clinic.is24Hour === true;
 
     return matchesSearch && matchesRegion && matches24Hour && clinic.status === "active";
   })
@@ -410,7 +411,10 @@ export default function ClinicsPage() {
                         {clinic.isHospital && (
                           <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 font-bold" data-testid={`badge-hospital-${clinic.id}`}>
                             <Building2 className="h-3 w-3 mr-1" />
-                            {language === 'zh-HK' ? '24小時動物醫院' : '24-Hour Hospital'}
+                            {clinic.is24Hour 
+                              ? (language === 'zh-HK' ? '24小時動物醫院' : '24-Hour Hospital')
+                              : (language === 'zh-HK' ? '動物醫院' : 'Animal Hospital')
+                            }
                           </Badge>
                         )}
                       </div>
