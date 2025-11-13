@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,40 +10,49 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { usePageTracking } from "@/hooks/useAnalytics";
 import { initSentry } from "@/lib/sentry";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import HomePage from "@/pages/home";
 import LandingPage from "@/pages/landing";
+import LoginPage from "@/pages/login";
+import NotFound from "@/pages/not-found";
 
 // Cache-busting: Force new bundle hash for Cloudflare bypass
 const BUILD_VERSION = "2025-11-03-14-40-production";
-import LoginPage from "@/pages/login";
-import EmergencyPage from "@/pages/emergency";
-import ClinicResultsPage from "@/pages/clinic-results";
-import MessageStatusPage from "@/pages/message-status";
-import ProfilePage from "@/pages/profile";
-import PetsPage from "@/pages/pets";
-import ClinicsPage from "@/pages/clinics";
-import DistrictPage from "@/pages/district";
-import DistrictsIndexPage from "@/pages/districts-index";
-import ResourcesPage from "@/pages/resources";
-import FAQPage from "@/pages/faq";
-import AdminClinicsPage from "@/pages/admin-clinics";
-import AdminHospitalsPage from "@/pages/admin-hospitals";
-import AdminConfigPage from "@/pages/admin-config";
-import AdminDashboardPage from "@/pages/admin-dashboard";
-import AdminAnalyticsPage from "@/pages/admin-analytics";
-import AdminUsersPage from "@/pages/admin-users";
-import AdminPetsPage from "@/pages/admin-pets";
-import AdminDiagnosticsPage from "@/pages/admin-diagnostics";
-import AdminLoginPage from "@/pages/admin-login";
-import ClinicDashboardPage from "@/pages/clinic-dashboard";
-import PrivacyPolicyPage from "@/pages/privacy-policy";
-import TermsOfServicePage from "@/pages/terms-of-service";
-import HospitalsPage from "@/pages/hospitals";
-import HospitalDetailPage from "@/pages/hospital-detail";
-import NotFound from "@/pages/not-found";
 
-// Initialize Sentry as early as possible
-initSentry();
+// Lazy-loaded pages - only load when needed
+const EmergencyPage = lazy(() => import("@/pages/emergency"));
+const ClinicResultsPage = lazy(() => import("@/pages/clinic-results"));
+const MessageStatusPage = lazy(() => import("@/pages/message-status"));
+const ProfilePage = lazy(() => import("@/pages/profile"));
+const PetsPage = lazy(() => import("@/pages/pets"));
+const ClinicsPage = lazy(() => import("@/pages/clinics"));
+const DistrictPage = lazy(() => import("@/pages/district"));
+const DistrictsIndexPage = lazy(() => import("@/pages/districts-index"));
+const ResourcesPage = lazy(() => import("@/pages/resources"));
+const FAQPage = lazy(() => import("@/pages/faq"));
+const HospitalsPage = lazy(() => import("@/pages/hospitals"));
+const HospitalDetailPage = lazy(() => import("@/pages/hospital-detail"));
+const PrivacyPolicyPage = lazy(() => import("@/pages/privacy-policy"));
+const TermsOfServicePage = lazy(() => import("@/pages/terms-of-service"));
+
+// Admin pages - lazy loaded (heavy bundle)
+const AdminClinicsPage = lazy(() => import("@/pages/admin-clinics"));
+const AdminHospitalsPage = lazy(() => import("@/pages/admin-hospitals"));
+const AdminConfigPage = lazy(() => import("@/pages/admin-config"));
+const AdminDashboardPage = lazy(() => import("@/pages/admin-dashboard"));
+const AdminAnalyticsPage = lazy(() => import("@/pages/admin-analytics"));
+const AdminUsersPage = lazy(() => import("@/pages/admin-users"));
+const AdminPetsPage = lazy(() => import("@/pages/admin-pets"));
+const AdminDiagnosticsPage = lazy(() => import("@/pages/admin-diagnostics"));
+const AdminLoginPage = lazy(() => import("@/pages/admin-login"));
+const ClinicDashboardPage = lazy(() => import("@/pages/clinic-dashboard"));
+
+// Loading fallback component
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+    </div>
+  );
+}
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -128,6 +137,9 @@ function Router() {
 function App() {
   useEffect(() => {
     document.title = "PetSOS";
+    
+    // Defer Sentry initialization to post-mount to avoid blocking FCP
+    initSentry();
   }, []);
 
   return (
@@ -136,7 +148,9 @@ function App() {
         <LanguageProvider>
           <TooltipProvider>
             <Toaster />
-            <Router />
+            <Suspense fallback={<PageLoader />}>
+              <Router />
+            </Suspense>
             <CookieConsent />
           </TooltipProvider>
         </LanguageProvider>
