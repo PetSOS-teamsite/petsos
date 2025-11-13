@@ -42,7 +42,10 @@ Preferred communication style: Simple, everyday language.
   - **Marketing Analytics**: Comprehensive tracking of district landing pages, resources center, and FAQ interactions to measure content effectiveness and user engagement patterns
 - **SEO Optimization (2025)**: Comprehensive bilingual SEO with performance-first approach:
   - **Core Web Vitals Monitoring**: Real-time tracking of LCP, INP, CLS, FCP, TTFB via web-vitals library integrated with Google Analytics
-  - **Performance Optimizations**: Single Google Font (Inter) with font-display: swap and preload, WebP images (62.5% smaller OG image: 72KB→27KB), fetchpriority="high" on critical assets, DNS prefetch for external resources
+  - **Performance Optimizations**: 
+    - **Code Splitting**: React.lazy() with Suspense for route-level code splitting - only critical pages (Landing, Login, NotFound) load eagerly; all other pages (admin, emergency, clinics, etc.) load on-demand, dramatically reducing initial bundle size and improving FCP
+    - **Deferred Initialization**: Sentry and analytics initialization deferred to post-mount (useEffect) to avoid blocking first paint
+    - Single Google Font (Inter) with font-display: swap and preload, WebP images (62.5% smaller OG image: 72KB→27KB), fetchpriority="high" on critical assets, DNS prefetch for external resources
   - **Structured Data**: 8 schema types (Organization with geo-coordinates, WebSite, EmergencyService, VeterinaryDirectory, FAQ, HowTo, BreadcrumbList, LocalBusiness, AggregateRating), all schemas use WebP images
   - **Local SEO**: Hong Kong geo-targeting (22.3193, 114.1694), district-specific keywords (Central, Tsim Sha Tsui, Mong Kok + Chinese), enhanced Organization schema with address and contact points
   - **Technical SEO**: Canonical URLs site-wide, sitemap.xml with cache-busting, robots.txt, dynamic meta tags (Open Graph, Twitter Cards), HTML lang attribute switching, mobile-first optimization
