@@ -37,6 +37,7 @@ Preferred communication style: Simple, everyday language.
 - **Emergency Broadcasts**: Enhanced content includes full pet profile information, support hospital program prioritization, existing patient recognition.
 - **Geolocation**: PostGIS for server-side geospatial queries (ST_DWithin, ST_Distance), geography column with GIST spatial index, auto-user location detection, manual override.
 - **Messaging Architecture**: WhatsApp Business API as primary, email fallback, queue-based processing, template-based messaging (full, new, basic templates dynamically selected based on pet registration and language).
+  - **Workflow Configuration**: Development workflows require explicit secret declaration in `.replit` file: `secrets = ["WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"]` added to workflow tasks. Production deployments automatically sync workspace secrets.
 - **Analytics & Monitoring**: Google Analytics 4 (GA4) with GDPR-compliant cookie consent, Sentry for backend and frontend error tracking and performance monitoring.
   - **Custom Event Tracking**: District page views, district card clicks, resources page interactions (emergency tips, critical signs, clinic guide), FAQ accordion expansions, language switching, all tracked with district/region/language parameters for detailed engagement analysis
   - **Marketing Analytics**: Comprehensive tracking of district landing pages, resources center, and FAQ interactions to measure content effectiveness and user engagement patterns
