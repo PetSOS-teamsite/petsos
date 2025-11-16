@@ -1821,15 +1821,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
       const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || 'https://graph.facebook.com/v17.0';
 
+      // Debug logging
+      console.log('[WhatsApp Test] DEBUG - Checking credentials...');
+      console.log('[WhatsApp Test] Has Access Token:', !!WHATSAPP_ACCESS_TOKEN);
+      console.log('[WhatsApp Test] Has Phone Number ID:', !!WHATSAPP_PHONE_NUMBER_ID);
+      console.log('[WhatsApp Test] Token length:', WHATSAPP_ACCESS_TOKEN?.length || 0);
+      console.log('[WhatsApp Test] Phone ID:', WHATSAPP_PHONE_NUMBER_ID || 'NOT SET');
+      console.log('[WhatsApp Test] All env keys with WHATSAPP:', Object.keys(process.env).filter(k => k.includes('WHATSAPP')));
+
       // Check if credentials exist
       if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+        console.error('[WhatsApp Test] ERROR - Credentials missing!');
         return res.status(400).json({
           success: false,
           error: "WhatsApp credentials not configured",
           details: {
             hasAccessToken: !!WHATSAPP_ACCESS_TOKEN,
             hasPhoneNumberId: !!WHATSAPP_PHONE_NUMBER_ID,
-            apiUrl: WHATSAPP_API_URL
+            apiUrl: WHATSAPP_API_URL,
+            tokenLength: WHATSAPP_ACCESS_TOKEN?.length || 0,
+            phoneNumberId: WHATSAPP_PHONE_NUMBER_ID || null
           }
         });
       }
