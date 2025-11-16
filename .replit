@@ -91,5 +91,5 @@ author = 41898245
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
-secrets = ["EAAbpnGQ94csBPie7k9jyZBYOEZCGxq82nglBPjjWgY9gDKWNhEndNLul9AOsljc8bVJzXLnyZChsJuN82ZCnTMHQ76UAvttLZAb85WsXq3VvuPZCvZCtmIifqxGPtKZCNxFUgch37jy9GwfkQyg6nCGotYwQa29j5yBvaZAOlNK5RyMceblf8jbjx6LW7HP5eKziKUhfs3qRxy2C1UuJhuVN2x3QjlEwHW7dTn3zH99LC", "777215108816984"]
+secrets = ["WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"]
 
