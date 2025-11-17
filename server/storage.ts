@@ -117,6 +117,7 @@ export interface IStorage {
   getHospitalBySlug(slug: string): Promise<Hospital | undefined>;
   getHospitalsByRegion(region: string): Promise<Hospital[]>;
   getAllHospitals(): Promise<Hospital[]>;
+  getNearbyHospitals(latitude: number, longitude: number, radiusMeters: number): Promise<(Hospital & { distance: number })[]>;
   createHospital(hospital: InsertHospital): Promise<Hospital>;
   updateHospital(id: string, hospital: Partial<InsertHospital>): Promise<Hospital | undefined>;
   deleteHospital(id: string): Promise<boolean>;
@@ -680,7 +681,7 @@ export class MemStorage implements IStorage {
   async getEmergencyRequestsByClinicId(clinicId: string): Promise<any[]> {
     const requestIds = new Set(
       Array.from(this.messages.values())
-        .filter(msg => msg.clinicId === clinicId)
+        .filter(msg => msg.hospitalId === clinicId)
         .map(msg => msg.emergencyRequestId)
     );
     
@@ -903,6 +904,37 @@ export class MemStorage implements IStorage {
     return Array.from(this.hospitals.values());
   }
 
+  async getNearbyHospitals(latitude: number, longitude: number, radiusMeters: number): Promise<(Hospital & { distance: number })[]> {
+    // Haversine formula for distance calculation (for in-memory storage)
+    const toRad = (deg: number) => deg * Math.PI / 180;
+    const R = 6371000; // Earth's radius in meters
+    
+    const results = Array.from(this.hospitals.values())
+      .filter(hospital => 
+        hospital.isAvailable && 
+        hospital.latitude !== null && 
+        hospital.longitude !== null
+      )
+      .map(hospital => {
+        const lat1 = toRad(latitude);
+        const lat2 = toRad(Number(hospital.latitude));
+        const dLat = toRad(Number(hospital.latitude) - latitude);
+        const dLon = toRad(Number(hospital.longitude) - longitude);
+        
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1) * Math.cos(lat2) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c;
+        
+        return { ...hospital, distance };
+      })
+      .filter(result => result.distance <= radiusMeters)
+      .sort((a, b) => a.distance - b.distance);
+    
+    return results;
+  }
+
   async createHospital(insertHospital: InsertHospital): Promise<Hospital> {
     const id = randomUUID();
     const now = new Date();
@@ -918,6 +950,8 @@ export class MemStorage implements IStorage {
       whatsapp: insertHospital.whatsapp ?? null,
       websiteUrl: insertHospital.websiteUrl ?? null,
       open247: insertHospital.open247 ?? true,
+      isAvailable: insertHospital.isAvailable ?? true,
+      isPartner: insertHospital.isPartner ?? false,
       liveStatus: insertHospital.liveStatus ?? null,
       photos: insertHospital.photos ?? null,
       lastVerifiedAt: insertHospital.lastVerifiedAt ?? null,
@@ -1424,7 +1458,7 @@ class DatabaseStorage implements IStorage {
       .innerJoin(messages, eq(messages.emergencyRequestId, emergencyRequests.id))
       .leftJoin(pets, eq(pets.id, emergencyRequests.petId))
       .leftJoin(users, eq(users.id, emergencyRequests.userId))
-      .where(eq(messages.clinicId, clinicId))
+      .where(eq(messages.hospitalId, clinicId))
       .orderBy(emergencyRequests.createdAt);
 
     return results.map(({ request, pet, user }) => ({
@@ -1560,6 +1594,36 @@ class DatabaseStorage implements IStorage {
 
   async getAllHospitals(): Promise<Hospital[]> {
     return await db.select().from(hospitals);
+  }
+
+  async getNearbyHospitals(latitude: number, longitude: number, radiusMeters: number): Promise<(Hospital & { distance: number })[]> {
+    // Use PostGIS ST_DWithin for efficient spatial query
+    const results = await db
+      .select({
+        hospital: hospitals,
+        distance: sql<number>`ST_Distance(
+          ${hospitals.location}::geography,
+          ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
+        )`.as('distance')
+      })
+      .from(hospitals)
+      .where(
+        and(
+          eq(hospitals.isAvailable, true),
+          sql`${hospitals.location} IS NOT NULL`,
+          sql`ST_DWithin(
+            ${hospitals.location}::geography,
+            ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography,
+            ${radiusMeters}
+          )`
+        )
+      )
+      .orderBy(sql`distance`);
+
+    return results.map(r => ({
+      ...r.hospital,
+      distance: r.distance
+    }));
   }
 
   async createHospital(insertHospital: InsertHospital): Promise<Hospital> {
