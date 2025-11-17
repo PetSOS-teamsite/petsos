@@ -413,7 +413,7 @@ export class MemStorage implements IStorage {
       age: insertPet.age ?? null,
       weight: insertPet.weight ?? null,
       medicalNotes: insertPet.medicalNotes ?? null,
-      lastVisitClinicId: insertPet.lastVisitClinicId ?? null,
+      lastVisitHospitalId: insertPet.lastVisitHospitalId ?? null,
       lastVisitDate: insertPet.lastVisitDate ?? null
     };
     this.pets.set(id, pet);
