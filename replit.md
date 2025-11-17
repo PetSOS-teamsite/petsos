@@ -1,6 +1,12 @@
 ## Overview
 PetSOS is an emergency veterinary care coordination platform designed to quickly connect pet owners with 24-hour veterinary clinics. It enables one-tap broadcasting of emergency cases to nearby clinics and offers direct communication channels (Call/WhatsApp). The platform supports user and pet profiles, multi-region operations with global scalability, and comprehensive privacy compliance, aiming to streamline emergency pet care coordination and improve pet welfare during crises.
 
+## Recent Changes (January 2025)
+- **Hospital Database**: Populated with 20 verified 24-hour veterinary hospitals across Hong Kong (8 Hong Kong Island, 7 Kowloon, 5 New Territories) - only TRUE 24/7 hospitals with on-site vets included
+- **Data Sources**: Hospital contact information verified from official websites (VSH, North Point, AMAH, Concordia, VEC, Pet Space Group), Hong Kong government vet clinic registry, and multiple authoritative sources (OneDegree, LocaliZ, Creature Comforts)
+- **Seed Script**: `scripts/seed-hospitals.ts` updated with accurate addresses, phone numbers, facilities, and services for all hospitals
+- **Data Verification**: Only hospitals confirmed to operate 24/7 with on-site veterinarians are included; many Pet Space clinics operate 9am-7pm and are excluded
+
 ## Production Deployment (petsos.site)
 The production deployment at petsos.site uses white-labeled authentication without Replit branding:
 - **Authentication Methods**: Google OAuth, Email/Password, Phone/Password
