@@ -27,7 +27,7 @@ let testNumberIndex = 0;
 
 interface SendMessageOptions {
   emergencyRequestId: string;
-  clinicId: string;
+  hospitalId: string;
   recipient: string;
   messageType: 'whatsapp' | 'email' | 'line';
   content: string;
@@ -272,12 +272,12 @@ export class MessagingService {
    * Send a message with automatic fallback
    */
   async sendMessage(options: SendMessageOptions): Promise<Message> {
-    const { emergencyRequestId, clinicId, recipient, messageType, content } = options;
+    const { emergencyRequestId, hospitalId, recipient, messageType, content } = options;
 
     // Create message record
     const message = await storage.createMessage({
       emergencyRequestId,
-      clinicId,
+      hospitalId,
       recipient,
       messageType,
       content,
@@ -338,10 +338,10 @@ export class MessagingService {
         // If WhatsApp fails, try email fallback
         if (!success) {
           console.log('WhatsApp failed, trying email fallback...');
-          const clinic = await storage.getClinic(message.clinicId);
-          if (clinic?.email) {
+          const hospital = await storage.getHospital(message.hospitalId);
+          if (hospital?.email) {
             const emailSuccess = await this.sendEmail(
-              clinic.email,
+              hospital.email,
               'Emergency Pet Request',
               message.content.replace(/\[Template: [^\]]+\]\s*/, '') // Remove template prefix for email
             );
@@ -350,7 +350,7 @@ export class MessagingService {
               // Update message to reflect email fallback
               await storage.updateMessage(messageId, {
                 messageType: 'email',
-                recipient: clinic.email,
+                recipient: hospital.email,
                 status: 'sent',
                 sentAt: new Date(),
               });
@@ -460,16 +460,16 @@ export class MessagingService {
     let fallbackText = '';
 
     // Check if pet has visit history (registered pet with medical history)
-    if (pet && pet.lastVisitClinicId) {
+    if (pet && pet.lastVisitHospitalId) {
       templateName = `emergency_pet_alert_full${langSuffix}`;
       
-      // Fetch last visited clinic name
-      const lastClinic = await storage.getClinic(pet.lastVisitClinicId);
-      const lastClinicName = lastClinic ? (isZhHk && lastClinic.nameZh ? lastClinic.nameZh : lastClinic.name) : (isZhHk ? '不詳' : 'Unknown');
+      // Fetch last visited hospital name
+      const lastHospital = await storage.getHospital(pet.lastVisitHospitalId);
+      const lastHospitalName = lastHospital ? (isZhHk && lastHospital.nameZh ? lastHospital.nameZh : lastHospital.name) : (isZhHk ? '不詳' : 'Unknown');
       
       // Build 11 variables for full template
       variables = [
-        lastClinicName, // {{1}} Last visited clinic
+        lastHospitalName, // {{1}} Last visited hospital
         pet.name || (isZhHk ? '未命名' : 'Unnamed'), // {{2}} Pet name
         emergencyRequest.petSpecies || (isZhHk ? '不詳' : 'Unknown'), // {{3}} Species
         emergencyRequest.petBreed || (isZhHk ? '不詳' : 'Unknown'), // {{4}} Breed
@@ -541,16 +541,16 @@ export class MessagingService {
   }
 
   /**
-   * Broadcast emergency to multiple clinics
+   * Broadcast emergency to multiple hospitals
    */
   async broadcastEmergency(
     emergencyRequestId: string,
-    clinicIds: string[],
+    hospitalIds: string[],
     message: string
   ): Promise<Message[]> {
     const messages: Message[] = [];
 
-    // Build template message once for all clinics
+    // Build template message once for all hospitals
     const templateData = await this.buildTemplateMessage(emergencyRequestId);
     if (!templateData) {
       console.error('[Broadcast] Failed to build template message');
@@ -559,10 +559,10 @@ export class MessagingService {
 
     const { templateName, variables, fallbackText } = templateData;
 
-    for (const clinicId of clinicIds) {
-      const clinic = await storage.getClinic(clinicId);
-      if (!clinic) {
-        console.warn(`Clinic not found: ${clinicId}`);
+    for (const hospitalId of hospitalIds) {
+      const hospital = await storage.getHospital(hospitalId);
+      if (!hospital) {
+        console.warn(`Hospital not found: ${hospitalId}`);
         continue;
       }
 
@@ -572,26 +572,26 @@ export class MessagingService {
       let recipient: string;
       let contentToStore: string;
 
-      if (clinic.lineUserId) {
+      if (hospital.lineUserId) {
         messageType = 'line';
-        recipient = clinic.lineUserId;
+        recipient = hospital.lineUserId;
         contentToStore = fallbackText; // LINE uses fallback text (clean format)
-      } else if (clinic.whatsapp) {
+      } else if (hospital.whatsapp) {
         messageType = 'whatsapp';
-        recipient = clinic.whatsapp;
+        recipient = hospital.whatsapp;
         contentToStore = `[Template: ${templateName}] ${fallbackText}`;
-      } else if (clinic.email) {
+      } else if (hospital.email) {
         messageType = 'email';
-        recipient = clinic.email;
+        recipient = hospital.email;
         contentToStore = fallbackText; // Email uses fallback text
       } else {
-        console.warn(`No valid contact method (LINE, WhatsApp or Email) for clinic ${clinicId}`);
+        console.warn(`No valid contact method (LINE, WhatsApp or Email) for hospital ${hospitalId}`);
         
         // Create failed message record for tracking
         await storage.createMessage({
           emergencyRequestId,
-          clinicId,
-          recipient: clinic.phone || 'unknown',
+          hospitalId,
+          recipient: hospital.phone || 'unknown',
           messageType: 'whatsapp',
           content: fallbackText,
           status: 'failed',
@@ -605,7 +605,7 @@ export class MessagingService {
       // Create message record with template info embedded in content
       const msg = await storage.createMessage({
         emergencyRequestId,
-        clinicId,
+        hospitalId,
         recipient,
         messageType,
         content: contentToStore,
