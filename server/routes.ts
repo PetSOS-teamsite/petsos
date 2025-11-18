@@ -768,37 +768,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== CLINIC ROUTES =====
+  // ===== CLINIC ROUTES (COMPATIBILITY LAYER - DEPRECATED) =====
+  // These routes redirect to hospital endpoints for backwards compatibility
+  // TODO: Remove after frontend migration complete and 48h zero usage
   
-  // Get all clinics
+  // Helper function to transform hospital to legacy clinic format
+  const hospitalToClinicFormat = (h: any) => ({
+    id: h.id,
+    slug: h.slug,
+    name: h.nameEn,
+    nameZh: h.nameZh,
+    address: h.addressEn,
+    addressZh: h.addressZh,
+    phone: h.phone || '',
+    whatsapp: h.whatsapp,
+    email: null, // Hospitals don't have email field
+    websiteUrl: h.websiteUrl,
+    regionId: h.regionId,
+    is24Hour: h.open247,
+    latitude: h.latitude ? parseFloat(h.latitude) : null,
+    longitude: h.longitude ? parseFloat(h.longitude) : null,
+    status: h.isAvailable ? 'active' : 'inactive',
+    services: [], // Legacy field, hospitals use detailed service flags
+    isSupportHospital: h.isPartner,
+    isAvailable: h.isAvailable,
+    distance: h.distance, // For nearby queries
+    photos: h.photos || [],
+    liveStatus: h.liveStatus,
+    onSiteVet247: h.onSiteVet247,
+    triagePolicy: h.triagePolicy,
+    icuLevel: h.icuLevel,
+    whatsappTriage: h.whatsappTriage,
+    languages: h.languages,
+    parking: h.parking,
+    wheelchairAccess: h.wheelchairAccess
+  });
+
+  // Get all clinics → hospitals
   app.get("/api/clinics", async (req, res) => {
-    const clinics = await storage.getAllClinics();
+    console.warn('[DEPRECATED] /api/clinics called - use /api/hospitals instead');
+    const hospitals = await storage.getAllHospitals();
+    const clinics = hospitals.map(hospitalToClinicFormat);
     res.json(clinics);
   });
 
-  // Get clinics by region
+  // Get clinics by region → hospitals by region
   app.get("/api/clinics/region/:regionId", async (req, res) => {
-    const clinics = await storage.getClinicsByRegion(req.params.regionId);
-    res.json(clinics);
+    console.warn('[DEPRECATED] /api/clinics/region called - use /api/hospitals/region instead');
+    const hospitals = await storage.getHospitalsByRegion(req.params.regionId);
+    res.json(hospitals.map(hospitalToClinicFormat));
   });
 
-  // Get 24-hour clinics by region
+  // Get 24-hour clinics by region → hospitals by region (all are 24/7)
   app.get("/api/clinics/24hour/:regionId", async (req, res) => {
-    const clinics = await storage.get24HourClinicsByRegion(req.params.regionId);
-    res.json(clinics);
+    console.warn('[DEPRECATED] /api/clinics/24hour called - use /api/hospitals/region instead');
+    const hospitals = await storage.getHospitalsByRegion(req.params.regionId);
+    res.json(hospitals.filter(h => h.open247).map(hospitalToClinicFormat));
   });
 
-  // Get nearby clinics using PostGIS (efficient server-side geo-query)
+  // Get nearby clinics → hospitals
   app.get("/api/clinics/nearby", async (req, res) => {
+    console.warn('[DEPRECATED] /api/clinics/nearby called - use /api/hospitals/nearby instead');
     try {
       const { latitude, longitude, radius } = z.object({
         latitude: z.string().transform(Number),
         longitude: z.string().transform(Number),
-        radius: z.string().transform(Number).default("10000"), // default 10km in meters
+        radius: z.string().transform(Number).default("10000"),
       }).parse(req.query);
 
-      const clinics = await storage.getNearbyClinics(latitude, longitude, radius);
-      res.json(clinics);
+      const hospitals = await storage.getNearbyHospitals(latitude, longitude, radius);
+      res.json(hospitals.map(hospitalToClinicFormat));
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
@@ -807,191 +846,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get clinic by ID
+  // Get clinic by ID → hospital by ID
   app.get("/api/clinics/:id", async (req, res) => {
-    const clinic = await storage.getClinic(req.params.id);
-    if (!clinic) {
+    console.warn('[DEPRECATED] /api/clinics/:id called - use /api/hospitals/:id instead');
+    const hospital = await storage.getHospital(req.params.id);
+    if (!hospital) {
       return res.status(404).json({ message: "Clinic not found" });
     }
-    res.json(clinic);
+    res.json(hospitalToClinicFormat(hospital));
   });
 
-  // Create clinic (admin only)
+  // Admin mutation endpoints - DEPRECATED, use /api/hospitals instead
   app.post("/api/clinics", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const clinicData = insertClinicSchema.parse(req.body);
-      const clinic = await storage.createClinic(clinicData);
-      
-      await storage.createAuditLog({
-        entityType: 'clinic',
-        entityId: clinic.id,
-        action: 'create',
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent')
-      });
-      
-      res.json(clinic);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Update clinic (admin or clinic staff only)
-  app.patch("/api/clinics/:id", isAuthenticated, async (req, res) => {
-    try {
-      const sessionUser = req.user as any;
-      const userId = sessionUser.id;
-      const dbUser = await storage.getUser(userId);
-      
-      if (!dbUser) {
-        return res.status(401).json({ message: "User not found" });
-      }
-
-      const clinic = await storage.getClinic(req.params.id);
-      
-      if (!clinic) {
-        return res.status(404).json({ message: "Clinic not found" });
-      }
-
-      // Check if user is admin or clinic staff for this specific clinic
-      if (dbUser.role !== 'admin' && dbUser.clinicId !== req.params.id) {
-        return res.status(403).json({ message: "Unauthorized" });
-      }
-
-      const updateData = insertClinicSchema.partial().parse(req.body);
-      const updatedClinic = await storage.updateClinic(req.params.id, updateData);
-
-      await storage.createAuditLog({
-        entityType: 'clinic',
-        entityId: clinic.id,
-        action: 'update',
-        changes: updateData,
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent')
-      });
-      
-      res.json(updatedClinic);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Delete clinic (soft delete) (admin only)
-  app.delete("/api/clinics/:id", isAuthenticated, isAdmin, async (req, res) => {
-    const success = await storage.deleteClinic(req.params.id);
-    if (!success) {
-      return res.status(404).json({ message: "Clinic not found" });
-    }
-
-    await storage.createAuditLog({
-      entityType: 'clinic',
-      entityId: req.params.id,
-      action: 'delete',
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent')
+    console.warn('[DEPRECATED] POST /api/clinics called - use POST /api/hospitals instead');
+    res.status(410).json({ 
+      message: "This endpoint is deprecated. Please use POST /api/hospitals instead.",
+      deprecated: true
     });
-    
-    res.json({ success: true });
   });
 
-  // Get clinic staff (admin only)
+  app.patch("/api/clinics/:id", isAuthenticated, async (req, res) => {
+    console.warn('[DEPRECATED] PATCH /api/clinics/:id called - use PATCH /api/hospitals/:id instead');
+    res.status(410).json({ 
+      message: "This endpoint is deprecated. Please use PATCH /api/hospitals/:id instead.",
+      deprecated: true
+    });
+  });
+
+  app.delete("/api/clinics/:id", isAuthenticated, isAdmin, async (req, res) => {
+    console.warn('[DEPRECATED] DELETE /api/clinics/:id called - use DELETE /api/hospitals/:id instead');
+    res.status(410).json({ 
+      message: "This endpoint is deprecated. Please use DELETE /api/hospitals/:id instead.",
+      deprecated: true
+    });
+  });
+
+  // Staff management endpoints - DEPRECATED
   app.get("/api/clinics/:id/staff", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const clinic = await storage.getClinic(req.params.id);
-      if (!clinic) {
-        return res.status(404).json({ message: "Clinic not found" });
-      }
-
-      // Get all users with this clinicId
-      const allUsers = await storage.getAllUsers();
-      const staff = allUsers.filter(user => user.clinicId === req.params.id);
-      
-      res.json(staff.map(sanitizeUser));
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
+    console.warn('[DEPRECATED] GET /api/clinics/:id/staff called - update to use hospital staff management');
+    res.status(410).json({ 
+      message: "This endpoint is deprecated. Clinic staff management should be updated to use hospitals.",
+      deprecated: true
+    });
   });
 
-  // Link user to clinic (admin only)
   app.post("/api/clinics/:id/staff", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const { email } = z.object({
-        email: z.string().email("Valid email is required"),
-      }).parse(req.body);
-
-      const clinic = await storage.getClinic(req.params.id);
-      if (!clinic) {
-        return res.status(404).json({ message: "Clinic not found" });
-      }
-
-      // Find user by email
-      const allUsers = await storage.getAllUsers();
-      const user = allUsers.find(u => u.email === email);
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found with this email" });
-      }
-
-      // Link user to clinic
-      await storage.updateUser(user.id, { clinicId: req.params.id });
-
-      await storage.createAuditLog({
-        entityType: 'clinic',
-        entityId: req.params.id,
-        action: 'link_staff',
-        changes: { userId: user.id, email },
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent')
-      });
-
-      res.json({ success: true, user: sanitizeUser(user) });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      res.status(500).json({ message: "Internal server error" });
-    }
+    console.warn('[DEPRECATED] POST /api/clinics/:id/staff called');
+    res.status(410).json({ 
+      message: "This endpoint is deprecated. Clinic staff management should be updated to use hospitals.",
+      deprecated: true
+    });
   });
 
-  // Unlink user from clinic (admin only)
   app.delete("/api/clinics/:id/staff/:userId", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const clinic = await storage.getClinic(req.params.id);
-      if (!clinic) {
-        return res.status(404).json({ message: "Clinic not found" });
-      }
-
-      const user = await storage.getUser(req.params.userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      if (user.clinicId !== req.params.id) {
-        return res.status(400).json({ message: "User is not linked to this clinic" });
-      }
-
-      // Unlink user from clinic
-      await storage.updateUser(user.id, { clinicId: null });
-
-      await storage.createAuditLog({
-        entityType: 'clinic',
-        entityId: req.params.id,
-        action: 'unlink_staff',
-        changes: { userId: user.id, email: user.email },
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent')
-      });
-
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
+    console.warn('[DEPRECATED] DELETE /api/clinics/:id/staff/:userId called');
+    res.status(410).json({ 
+      message: "This endpoint is deprecated. Clinic staff management should be updated to use hospitals.",
+      deprecated: true
+    });
   });
 
   // Geocode address to GPS coordinates
@@ -1339,19 +1251,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get hospital by slug
-  app.get("/api/hospitals/slug/:slug", async (req, res) => {
-    try {
-      const hospital = await storage.getHospitalBySlug(req.params.slug);
-      if (!hospital) {
-        return res.status(404).json({ message: "Hospital not found" });
-      }
-      res.json(hospital);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
   // Get emergency requests for hospital
   app.get("/api/hospitals/:hospitalId/emergency-requests", isAuthenticated, async (req, res) => {
     try {
@@ -1473,21 +1372,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get emergency requests for clinic
+  // Emergency requests by clinic - DEPRECATED
   app.get("/api/clinics/:clinicId/emergency-requests", isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const clinicId = req.params.clinicId;
-
-      // Check if user is admin or clinic staff for this specific clinic
-      if (user.role !== 'admin' && user.clinicId !== clinicId) {
-        return res.status(403).json({ message: "Unauthorized" });
-      }
-
-      const requests = await storage.getEmergencyRequestsByClinicId(clinicId);
-      res.json(requests);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
+    console.warn('[DEPRECATED] GET /api/clinics/:clinicId/emergency-requests called - use /api/hospitals/:hospitalId/emergency-requests instead');
+    res.status(410).json({ 
+      message: "This endpoint is deprecated. Please use /api/hospitals/:hospitalId/emergency-requests instead.",
+      deprecated: true
+    });
   });
 
   // Update emergency request (allows both authenticated users and anonymous for emergency flexibility)
