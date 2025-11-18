@@ -82,9 +82,9 @@ export default function ClinicsPage() {
   const filteredHospitals = allProviders?.filter((hospital) => {
     const matchesSearch =
       !searchQuery ||
-      hospital.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      hospital.nameEn?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
       hospital.nameZh?.includes(searchQuery) ||
-      hospital.addressEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      hospital.addressEn?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
       hospital.addressZh?.includes(searchQuery);
 
     const matchesRegion = selectedRegion === "all" || hospital.regionId === selectedRegion;
@@ -145,8 +145,10 @@ export default function ClinicsPage() {
       return;
     }
     
-    // Navigate to hospital detail page
-    window.location.href = `/hospitals/${hospital.slug}`;
+    // Navigate to hospital detail page (with null check)
+    if (hospital.slug) {
+      window.location.href = `/hospitals/${hospital.slug}`;
+    }
   };
 
   return (
