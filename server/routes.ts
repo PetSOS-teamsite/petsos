@@ -772,33 +772,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // These routes redirect to hospital endpoints for backwards compatibility
   // TODO: Remove after frontend migration complete and 48h zero usage
   
-  // Helper function to transform hospital to legacy clinic format
+  // Helper function to transform hospital to legacy clinic format  
+  // This provides backward compatibility while frontend migrates from /api/clinics to /api/hospitals
   const hospitalToClinicFormat = (h: any) => ({
+    // Core identification
     id: h.id,
     slug: h.slug,
+    
+    // Names and addresses
     name: h.nameEn,
     nameZh: h.nameZh,
     address: h.addressEn,
     addressZh: h.addressZh,
+    
+    // Contact information
     phone: h.phone || '',
     whatsapp: h.whatsapp,
-    email: null, // Hospitals don't have email field
+    email: null, // Hospitals don't have email field (clinics did)
     websiteUrl: h.websiteUrl,
+    
+    // Location
     regionId: h.regionId,
-    is24Hour: h.open247,
     latitude: h.latitude ? parseFloat(h.latitude) : null,
     longitude: h.longitude ? parseFloat(h.longitude) : null,
+    distance: h.distance, // Present only in nearby queries
+    
+    // Status and availability
+    is24Hour: h.open247,
     status: h.isAvailable ? 'active' : 'inactive',
-    services: [], // Legacy field, hospitals use detailed service flags
-    isSupportHospital: h.isPartner,
     isAvailable: h.isAvailable,
-    distance: h.distance, // For nearby queries
-    photos: h.photos || [],
     liveStatus: h.liveStatus,
+    
+    // Partner and support flags
+    isSupportHospital: h.isPartner,
+    
+    // Legacy field for backward compatibility
+    services: [], // Hospitals use detailed service flags instead
+    
+    // Hospital indicator flags (for frontend migration period)
+    isHospital: true, // Mark as hospital to distinguish from legacy clinics
+    hospitalSlug: h.slug, // Frontend uses this to build /hospitals/:slug links
+    
+    // Media
+    photos: h.photos || [],
+    
+    // Hospital-specific features
     onSiteVet247: h.onSiteVet247,
     triagePolicy: h.triagePolicy,
     icuLevel: h.icuLevel,
     whatsappTriage: h.whatsappTriage,
+    
+    // Amenities
     languages: h.languages,
     parking: h.parking,
     wheelchairAccess: h.wheelchairAccess
