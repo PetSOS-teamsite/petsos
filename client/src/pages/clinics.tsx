@@ -17,35 +17,11 @@ import { SEO } from "@/components/SEO";
 import { StructuredData, createVeterinaryDirectorySchema, createBreadcrumbSchema } from "@/components/StructuredData";
 import type { Hospital } from "@shared/schema";
 
-type Clinic = {
-  id: string;
-  name: string;
-  nameZh: string | null;
-  address: string;
-  addressZh: string | null;
-  phone: string;
-  whatsapp: string | null;
-  email: string | null;
-  regionId: string;
-  is24Hour: boolean;
-  latitude: number | null;
-  longitude: number | null;
-  status: string;
-  services: string[];
-  isSupportHospital?: boolean;
-};
-
 type Region = {
   id: string;
   code: string;
   nameEn: string;
   nameZh: string;
-};
-
-// Unified type for displaying both clinics and hospitals
-type DisplayClinic = Clinic & {
-  isHospital?: boolean;
-  hospitalSlug?: string;
 };
 
 export default function ClinicsPage() {
@@ -60,48 +36,14 @@ export default function ClinicsPage() {
     queryKey: ["/api/regions"],
   });
 
-  const { data: clinics, isLoading: clinicsLoading } = useQuery<Clinic[]>({
-    queryKey: ["/api/clinics"],
-  });
-
   const { data: hospitals, isLoading: hospitalsLoading } = useQuery<Hospital[]>({
     queryKey: ["/api/hospitals"],
   });
 
-  // Combine clinics and hospitals into a unified list
-  const allProviders = useMemo<DisplayClinic[]>(() => {
-    const clinicList: DisplayClinic[] = clinics?.map(clinic => ({
-      ...clinic,
-      isHospital: false,
-    })) || [];
-
-    const hospitalList: DisplayClinic[] = hospitals
-      ?.filter(hospital => {
-        // Only include hospitals that are available (not disabled by admin)
-        return hospital.isAvailable === true;
-      })
-      .map(hospital => ({
-        id: hospital.id,
-        name: hospital.nameEn,
-        nameZh: hospital.nameZh,
-        address: hospital.addressEn,
-        addressZh: hospital.addressZh,
-        phone: hospital.phone || "", // Default to empty string if null
-        whatsapp: hospital.whatsapp || null,
-        email: null, // Hospitals don't have email field
-        regionId: hospital.regionId,
-        is24Hour: hospital.open247 || false, // Use actual open247 field
-        latitude: hospital.latitude ? parseFloat(hospital.latitude) : null,
-        longitude: hospital.longitude ? parseFloat(hospital.longitude) : null,
-        status: "active", // Hospitals that pass filter are active
-        services: [], // Hospitals don't use the services array field
-        isSupportHospital: hospital.isPartner || false, // Use new isPartner field
-        isHospital: true,
-        hospitalSlug: hospital.slug,
-      })) || [];
-
-    return [...clinicList, ...hospitalList];
-  }, [clinics, hospitals]);
+  // Filter only available hospitals
+  const allProviders = useMemo<Hospital[]>(() => {
+    return hospitals?.filter(hospital => hospital.isAvailable === true) || [];
+  }, [hospitals]);
 
   // Get user's GPS location on mount
   useEffect(() => {
@@ -137,50 +79,50 @@ export default function ClinicsPage() {
     return R * c;
   };
 
-  const filteredClinics = allProviders?.filter((clinic) => {
+  const filteredHospitals = allProviders?.filter((hospital) => {
     const matchesSearch =
       !searchQuery ||
-      clinic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      clinic.nameZh?.includes(searchQuery) ||
-      clinic.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      clinic.addressZh?.includes(searchQuery);
+      hospital.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      hospital.nameZh?.includes(searchQuery) ||
+      hospital.addressEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      hospital.addressZh?.includes(searchQuery);
 
-    const matchesRegion = selectedRegion === "all" || clinic.regionId === selectedRegion;
+    const matchesRegion = selectedRegion === "all" || hospital.regionId === selectedRegion;
     
     // Only filter by 24-hour status if the toggle is enabled
-    const matches24Hour = !show24HourOnly || clinic.is24Hour === true;
+    const matches24Hour = !show24HourOnly || hospital.open247 === true;
 
-    return matchesSearch && matchesRegion && matches24Hour && clinic.status === "active";
+    return matchesSearch && matchesRegion && matches24Hour;
   })
   // Sort by partner status first, then by distance
   ?.sort((a, b) => {
-    // Partner clinics always come first
-    if (a.isSupportHospital && !b.isSupportHospital) return -1;
-    if (!a.isSupportHospital && b.isSupportHospital) return 1;
+    // Partner hospitals always come first
+    if (a.isPartner && !b.isPartner) return -1;
+    if (!a.isPartner && b.isPartner) return 1;
     
     // Within same partner status, sort by distance if location available
     if (!userLocation) return 0;
     
     const distanceA = a.latitude && a.longitude 
-      ? calculateDistance(userLocation.lat, userLocation.lng, a.latitude, a.longitude)
+      ? calculateDistance(userLocation.lat, userLocation.lng, parseFloat(a.latitude), parseFloat(a.longitude))
       : Infinity;
     const distanceB = b.latitude && b.longitude
-      ? calculateDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude)
+      ? calculateDistance(userLocation.lat, userLocation.lng, parseFloat(b.latitude), parseFloat(b.longitude))
       : Infinity;
     
     return distanceA - distanceB;
   });
 
-  // Track clinic search when filters change
+  // Track hospital search when filters change
   useEffect(() => {
-    if (filteredClinics && (searchQuery || selectedRegion !== "all" || show24HourOnly)) {
+    if (filteredHospitals && (searchQuery || selectedRegion !== "all" || show24HourOnly)) {
       analytics.trackClinicSearch({
         region: selectedRegion !== "all" ? selectedRegion : undefined,
         is24Hour: show24HourOnly || undefined,
-        resultsCount: filteredClinics.length,
+        resultsCount: filteredHospitals.length,
       });
     }
-  }, [searchQuery, selectedRegion, show24HourOnly, filteredClinics?.length]);
+  }, [searchQuery, selectedRegion, show24HourOnly, filteredHospitals?.length]);
 
   const handleCall = (phone: string) => {
     window.location.href = `tel:${phone}`;
@@ -196,23 +138,15 @@ export default function ClinicsPage() {
     window.open(mapsUrl, "_blank");
   };
 
-  const handleCardClick = (clinic: DisplayClinic, e: React.MouseEvent) => {
+  const handleCardClick = (hospital: Hospital, e: React.MouseEvent) => {
     // Prevent navigation if clicking on buttons
     const target = e.target as HTMLElement;
     if (target.closest('button')) {
       return;
     }
     
-    // If it's a hospital, navigate to hospital detail page
-    if (clinic.isHospital && clinic.hospitalSlug) {
-      window.location.href = `/hospitals/${clinic.hospitalSlug}`;
-      return;
-    }
-    
-    // Otherwise, open Google Maps to show clinic with reviews and business info
-    const query = `${clinic.name}, ${clinic.address}`;
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-    window.open(mapsUrl, "_blank");
+    // Navigate to hospital detail page
+    window.location.href = `/hospitals/${hospital.slug}`;
   };
 
   return (
@@ -357,7 +291,7 @@ export default function ClinicsPage() {
         </div>
 
         {/* Results Count */}
-        {clinicsLoading ? (
+        {hospitalsLoading ? (
           <div className="max-w-4xl mx-auto mb-4">
             <Skeleton className="h-6 w-40" />
           </div>
@@ -365,16 +299,16 @@ export default function ClinicsPage() {
           <div className="max-w-4xl mx-auto mb-4">
             <p className="text-gray-600 dark:text-gray-400 text-sm" data-testid="text-results-count">
               {language === 'zh-HK' 
-                ? `已找到 ${filteredClinics?.length || 0} 間診所`
-                : `${filteredClinics?.length || 0} ${filteredClinics?.length !== 1 ? 'clinics' : 'clinic'} found`
+                ? `已找到 ${filteredHospitals?.length || 0} 間診所`
+                : `${filteredHospitals?.length || 0} ${filteredHospitals?.length !== 1 ? 'hospitals' : 'hospital'} found`
               }
             </p>
           </div>
         )}
 
-        {/* Clinic List */}
+        {/* Hospital List */}
         <div className="max-w-4xl mx-auto space-y-3">
-          {(clinicsLoading || hospitalsLoading) ? (
+          {hospitalsLoading ? (
             <>
               {[1, 2, 3].map((i) => (
                 <Card key={i}>
@@ -388,67 +322,65 @@ export default function ClinicsPage() {
                 </Card>
               ))}
             </>
-          ) : filteredClinics && filteredClinics.length > 0 ? (
-            filteredClinics.map((clinic) => (
+          ) : filteredHospitals && filteredHospitals.length > 0 ? (
+            filteredHospitals.map((hospital) => (
               <Card
-                key={clinic.id}
+                key={hospital.id}
                 className="group hover:shadow-lg hover:border-l-red-700 transition-all border-l-4 border-l-red-600 cursor-pointer"
-                onClick={(e) => handleCardClick(clinic, e)}
-                data-testid={`card-clinic-${clinic.id}`}
+                onClick={(e) => handleCardClick(hospital, e)}
+                data-testid={`card-clinic-${hospital.id}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap gap-2 mb-2">
                         {/* Partner Badge */}
-                        {clinic.isSupportHospital && (
-                          <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 font-bold" data-testid={`badge-partner-${clinic.id}`}>
+                        {hospital.isPartner && (
+                          <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 font-bold" data-testid={`badge-partner-${hospital.id}`}>
                             ⭐ PetSOS Partner
                           </Badge>
                         )}
                         
                         {/* Hospital Badge */}
-                        {clinic.isHospital && (
-                          <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 font-bold" data-testid={`badge-hospital-${clinic.id}`}>
-                            <Building2 className="h-3 w-3 mr-1" />
-                            {clinic.is24Hour 
-                              ? (language === 'zh-HK' ? '24小時動物醫院' : '24-Hour Hospital')
-                              : (language === 'zh-HK' ? '動物醫院' : 'Animal Hospital')
-                            }
-                          </Badge>
-                        )}
+                        <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 font-bold" data-testid={`badge-hospital-${hospital.id}`}>
+                          <Building2 className="h-3 w-3 mr-1" />
+                          {hospital.open247 
+                            ? (language === 'zh-HK' ? '24小時動物醫院' : '24-Hour Hospital')
+                            : (language === 'zh-HK' ? '動物醫院' : 'Animal Hospital')
+                          }
+                        </Badge>
                       </div>
                       
-                      {/* Clinic Name - Compact */}
+                      {/* Hospital Name - Compact */}
                       <CardTitle className="text-lg mb-1 leading-tight">
-                        <span className="flex items-center gap-1.5 font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors" data-testid={`text-clinic-name-${clinic.id}`}>
-                          {language === 'zh-HK' && clinic.nameZh ? clinic.nameZh : clinic.name}
+                        <span className="flex items-center gap-1.5 font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors" data-testid={`text-clinic-name-${hospital.id}`}>
+                          {language === 'zh-HK' && hospital.nameZh ? hospital.nameZh : hospital.nameEn}
                           <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-red-600 flex-shrink-0" />
                         </span>
-                        {language === 'zh-HK' && clinic.nameZh && (
+                        {language === 'zh-HK' && hospital.nameZh && (
                           <span className="block text-sm font-normal text-gray-500 dark:text-gray-400 mt-0.5">
-                            {clinic.name}
+                            {hospital.nameEn}
                           </span>
                         )}
                       </CardTitle>
                       
                       {/* Distance Badge - Prominent */}
-                      {userLocation && clinic.latitude && clinic.longitude && (
-                        <div className="inline-flex items-center gap-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-xs font-semibold mb-2" data-testid={`text-clinic-distance-${clinic.id}`}>
+                      {userLocation && hospital.latitude && hospital.longitude && (
+                        <div className="inline-flex items-center gap-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-xs font-semibold mb-2" data-testid={`text-clinic-distance-${hospital.id}`}>
                           <MapPin className="h-3 w-3" />
-                          {calculateDistance(userLocation.lat, userLocation.lng, clinic.latitude, clinic.longitude).toFixed(1)} km {language === 'zh-HK' ? '距離' : 'away'}
+                          {calculateDistance(userLocation.lat, userLocation.lng, parseFloat(hospital.latitude), parseFloat(hospital.longitude)).toFixed(1)} km {language === 'zh-HK' ? '距離' : 'away'}
                         </div>
                       )}
                       
                       {/* Address - Single Line Truncated */}
-                      <div className="text-xs text-gray-600 dark:text-gray-400 truncate" data-testid={`text-clinic-address-${clinic.id}`}>
-                        {language === 'zh-HK' && clinic.addressZh ? clinic.addressZh : clinic.address}
+                      <div className="text-xs text-gray-600 dark:text-gray-400 truncate" data-testid={`text-clinic-address-${hospital.id}`}>
+                        {language === 'zh-HK' && hospital.addressZh ? hospital.addressZh : hospital.addressEn}
                       </div>
                     </div>
                     
                     {/* 24-Hour Badge - Prominent with Brand Color */}
-                    {clinic.is24Hour && (
-                      <Badge className="bg-red-600 hover:bg-red-700 shrink-0" data-testid={`badge-24hour-${clinic.id}`}>
+                    {hospital.open247 && (
+                      <Badge className="bg-red-600 hover:bg-red-700 shrink-0" data-testid={`badge-24hour-${hospital.id}`}>
                         <Clock className="h-3 w-3 mr-1" />
                         {language === 'zh-HK' ? '24小時' : '24hrs'}
                       </Badge>
@@ -458,43 +390,45 @@ export default function ClinicsPage() {
                 <CardContent className="pt-0">
                   {/* Action Buttons - Compact Row */}
                   <div className="flex gap-2">
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCall(clinic.phone);
-                      }}
-                      size="sm"
-                      className="flex-1 bg-red-600 hover:bg-red-700"
-                      data-testid={`button-call-${clinic.id}`}
-                    >
-                      <Phone className="h-4 w-4 mr-1" />
-                      {language === 'zh-HK' ? '致電' : 'Call'}
-                    </Button>
-                    {clinic.whatsapp && (
+                    {hospital.phone && (
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleWhatsApp(clinic.whatsapp!);
+                          handleCall(hospital.phone!);
+                        }}
+                        size="sm"
+                        className="flex-1 bg-red-600 hover:bg-red-700"
+                        data-testid={`button-call-${hospital.id}`}
+                      >
+                        <Phone className="h-4 w-4 mr-1" />
+                        {language === 'zh-HK' ? '致電' : 'Call'}
+                      </Button>
+                    )}
+                    {hospital.whatsapp && (
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleWhatsApp(hospital.whatsapp!);
                         }}
                         variant="outline"
                         size="sm"
                         className="flex-1 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        data-testid={`button-whatsapp-${clinic.id}`}
+                        data-testid={`button-whatsapp-${hospital.id}`}
                       >
                         <MessageCircle className="h-4 w-4 mr-1" />
                         WhatsApp
                       </Button>
                     )}
-                    {clinic.latitude && clinic.longitude && (
+                    {hospital.latitude && hospital.longitude && (
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleMaps(clinic.latitude!, clinic.longitude!, clinic.name);
+                          handleMaps(parseFloat(hospital.latitude!), parseFloat(hospital.longitude!), hospital.nameEn);
                         }}
                         variant="outline"
                         size="sm"
                         className="flex-1 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        data-testid={`button-maps-${clinic.id}`}
+                        data-testid={`button-maps-${hospital.id}`}
                       >
                         <Navigation className="h-4 w-4 mr-1" />
                         {language === 'zh-HK' ? '導航' : 'Maps'}
