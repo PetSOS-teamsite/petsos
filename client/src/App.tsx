@@ -70,6 +70,7 @@ function Router() {
   return (
     <Switch>
       {/* Public routes - accessible to everyone */}
+      <Route path="/clinics" component={ClinicsPage} />
       <Route path="/hospitals" component={HospitalsPage} />
       <Route path="/hospitals/:slug" component={HospitalDetailPage} />
       <Route path="/districts" component={DistrictsIndexPage} />
