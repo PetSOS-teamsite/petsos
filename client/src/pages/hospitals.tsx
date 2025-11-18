@@ -304,64 +304,79 @@ export default function HospitalsPage() {
           ) : filteredHospitals && filteredHospitals.length > 0 ? (
             <div className="space-y-4">
               {filteredHospitals.map((hospital) => {
-                // Collect all badges
-                const allBadges = [];
-                if (hospital.open247) {
-                  allBadges.push({ key: '24/7', content: '24/7', variant: 'default', className: 'bg-red-500', testId: `badge-24-7-${hospital.slug}` });
-                }
-                if (hospital.icuLevel) {
-                  allBadges.push({ key: 'icu', content: <><Stethoscope className="h-3 w-3 mr-1" />ICU</>, variant: 'outline', testId: `badge-icu-${hospital.slug}` });
-                }
-                if (hospital.imagingCT) {
-                  allBadges.push({ key: 'ct', content: 'CT', variant: 'outline', testId: `badge-ct-${hospital.slug}` });
-                }
-                if (hospital.parking) {
-                  allBadges.push({ key: 'parking', content: language === 'zh-HK' ? '停車場' : 'Parking', variant: 'outline', testId: `badge-parking-${hospital.slug}` });
-                }
-                if (hospital.wheelchairAccess) {
-                  allBadges.push({ key: 'wheelchair', content: '♿', variant: 'outline', testId: `badge-wheelchair-${hospital.slug}` });
-                }
-                
-                const visibleBadges = allBadges.slice(0, 4);
-                const hiddenBadgesCount = allBadges.length - 4;
+                // Apply red emergency styling only to 24/7 hospitals
+                const isEmergency = hospital.open247;
+                const cardClassName = isEmergency 
+                  ? "hover:shadow-lg transition-shadow border-l-4 border-l-red-500"
+                  : "hover:shadow-lg transition-shadow border-l-4 border-l-gray-200 dark:border-l-gray-700";
 
                 return (
-                <Card key={hospital.id} className="hover:shadow-lg transition-shadow" data-testid={`card-hospital-${hospital.slug}`}>
+                <Card key={hospital.id} className={cardClassName} data-testid={`card-hospital-${hospital.slug}`}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <CardTitle className="text-lg" data-testid={`text-hospital-name-${hospital.slug}`}>
-                            {language === 'zh-HK' ? hospital.nameZh : hospital.nameEn}
-                          </CardTitle>
-                          {hospital.distance !== undefined && (
-                            <div className="flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap" data-testid={`text-distance-${hospital.slug}`}>
-                              <Navigation className="h-3 w-3" />
-                              {hospital.distance.toFixed(1)} km
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        {/* DISTANCE FIRST - Most critical in emergencies */}
+                        {hospital.distance !== undefined && (
+                          <div 
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-lg mb-2 ${
+                              isEmergency 
+                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' 
+                                : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                            }`}
+                            data-testid={`text-distance-${hospital.slug}`}
+                          >
+                            <Navigation className="h-5 w-5" />
+                            {hospital.distance.toFixed(1)} km {language === 'zh-HK' ? '距離' : 'away'}
+                          </div>
+                        )}
+                        
+                        {/* 24/7 EMERGENCY BADGE - Highly visible */}
+                        {hospital.open247 && (
+                          <Badge className="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1 text-sm mb-2 animate-pulse" data-testid={`badge-emergency-247-${hospital.slug}`}>
+                            🚨 {language === 'zh-HK' ? '24小時急症' : '24/7 EMERGENCY'}
+                          </Badge>
+                        )}
+                        
+                        {/* Hospital Name */}
+                        <CardTitle className="text-lg font-bold mb-1" data-testid={`text-hospital-name-${hospital.slug}`}>
+                          {language === 'zh-HK' ? hospital.nameZh : hospital.nameEn}
+                        </CardTitle>
+                        
+                        {/* Address */}
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-3">
                           <MapPin className="h-4 w-4 flex-shrink-0" />
                           <span data-testid={`text-hospital-address-${hospital.slug}`}>
                             {language === 'zh-HK' ? hospital.addressZh : hospital.addressEn}
                           </span>
                         </div>
+                        
+                        {/* Other Service Badges */}
                         <div className="flex flex-wrap gap-2">
-                          {visibleBadges.map((badge: any) => (
-                            <Badge 
-                              key={badge.key} 
-                              variant={badge.variant as any} 
-                              className={badge.className}
-                              data-testid={badge.testId}
-                            >
-                              {badge.content}
+                          {hospital.isPartner && (
+                            <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold" data-testid={`badge-partner-${hospital.slug}`}>
+                              ⭐ {language === 'zh-HK' ? '合作夥伴' : 'Partner'}
                             </Badge>
-                          ))}
-                          {hiddenBadgesCount > 0 && (
-                            <Badge variant="outline" className="text-xs" data-testid={`badge-more-${hospital.slug}`}>
-                              +{hiddenBadgesCount}
+                          )}
+                          {hospital.icuLevel && (
+                            <Badge variant="outline" className="font-medium" data-testid={`badge-icu-${hospital.slug}`}>
+                              <Stethoscope className="h-3 w-3 mr-1" />ICU
                             </Badge>
+                          )}
+                          {hospital.imagingCT && (
+                            <Badge variant="outline" data-testid={`badge-ct-${hospital.slug}`}>CT</Badge>
+                          )}
+                          {hospital.whatsappTriage && (
+                            <Badge variant="outline" className="text-green-600 border-green-600" data-testid={`badge-whatsapp-triage-${hospital.slug}`}>
+                              <MessageCircle className="h-3 w-3 mr-1" />{language === 'zh-HK' ? 'WhatsApp分流' : 'WhatsApp Triage'}
+                            </Badge>
+                          )}
+                          {hospital.parking && (
+                            <Badge variant="outline" data-testid={`badge-parking-${hospital.slug}`}>
+                              {language === 'zh-HK' ? '停車場' : 'Parking'}
+                            </Badge>
+                          )}
+                          {hospital.wheelchairAccess && (
+                            <Badge variant="outline" data-testid={`badge-wheelchair-${hospital.slug}`}>♿</Badge>
                           )}
                         </div>
                       </div>
