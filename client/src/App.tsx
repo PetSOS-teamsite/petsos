@@ -34,7 +34,6 @@ const PrivacyPolicyPage = lazy(() => import("@/pages/privacy-policy"));
 const TermsOfServicePage = lazy(() => import("@/pages/terms-of-service"));
 
 // Admin pages - lazy loaded (heavy bundle)
-const AdminClinicsPage = lazy(() => import("@/pages/admin-clinics"));
 const AdminHospitalsPage = lazy(() => import("@/pages/admin-hospitals"));
 const AdminConfigPage = lazy(() => import("@/pages/admin-config"));
 const AdminDashboardPage = lazy(() => import("@/pages/admin-dashboard"));
