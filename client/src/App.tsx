@@ -71,7 +71,6 @@ function Router() {
   return (
     <Switch>
       {/* Public routes - accessible to everyone */}
-      <Route path="/clinics" component={ClinicsPage} />
       <Route path="/hospitals" component={HospitalsPage} />
       <Route path="/hospitals/:slug" component={HospitalDetailPage} />
       <Route path="/districts" component={DistrictsIndexPage} />
@@ -109,9 +108,6 @@ function Router() {
       </Route>
       <Route path="/admin/analytics">
         {isAuthenticated && isAdmin ? <AdminAnalyticsPage /> : <AdminLoginPage />}
-      </Route>
-      <Route path="/admin/clinics">
-        {isAuthenticated && isAdmin ? <AdminClinicsPage /> : <AdminLoginPage />}
       </Route>
       <Route path="/admin/hospitals">
         {isAuthenticated && isAdmin ? <AdminHospitalsPage /> : <AdminLoginPage />}
