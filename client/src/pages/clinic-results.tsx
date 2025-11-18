@@ -35,23 +35,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-interface Clinic {
+interface Hospital {
   id: string;
-  name: string;
+  nameEn: string;
   nameZh: string | null;
-  address: string;
+  addressEn: string;
   addressZh: string | null;
-  phone: string;
+  phone: string | null;
   whatsapp: string | null;
-  email: string | null;
+  slug: string;
   regionId: string;
-  is24Hour: boolean;
+  open247: boolean;
   isAvailable: boolean;
-  isSupportHospital: boolean;
+  isPartner: boolean;
   latitude: string | null;
   longitude: string | null;
-  status: string;
-  services: string[] | null;
   distance?: number;
 }
 
@@ -125,7 +123,7 @@ function buildPetInfoString(emergencyRequest: any, t: any, targetClinicId?: stri
 function buildStructuredBroadcastMessage(
   emergencyRequest: any,
   t: any,
-  allClinics: Clinic[]
+  allHospitals: Hospital[]
 ): string {
   if (!emergencyRequest) return t('clinic_results.emergency_care_needed', 'Emergency pet care needed');
   
@@ -251,12 +249,12 @@ function buildStructuredBroadcastMessage(
     sections.push(t('clinic_results.location_not_provided', 'Location not provided'));
   }
   
-  // Add information about pet's regular clinic if exists
+  // Add information about pet's regular hospital if exists
   if (emergencyRequest?.pet?.lastVisitClinicId) {
-    const regularClinic = allClinics.find(c => c.id === emergencyRequest.pet.lastVisitClinicId);
-    if (regularClinic) {
+    const regularHospital = allHospitals.find((h: Hospital) => h.id === emergencyRequest.pet.lastVisitClinicId);
+    if (regularHospital) {
       sections.push('');
-      sections.push(`📋 ${t('clinic_results.regular_clinic_note', 'NOTE: This pet is a registered patient at')} ${regularClinic.name}`);
+      sections.push(`📋 ${t('clinic_results.regular_clinic_note', 'NOTE: This pet is a registered patient at')} ${regularHospital.nameEn}`);
       if (emergencyRequest.pet.lastVisitDate) {
         const visitDate = new Date(emergencyRequest.pet.lastVisitDate).toLocaleDateString();
         sections.push(`${t('clinic_results.last_visit', 'Last visit')}: ${visitDate}`);
@@ -308,9 +306,9 @@ export default function ClinicResultsPage() {
     queryKey: ['/api/regions'],
   });
 
-  // Fetch clinics
-  const { data: allClinics = [] } = useQuery<Clinic[]>({
-    queryKey: ['/api/clinics'],
+  // Fetch hospitals
+  const { data: allHospitals = [] } = useQuery<Hospital[]>({
+    queryKey: ['/api/hospitals'],
   });
 
   // Set user location from emergency request
@@ -336,37 +334,37 @@ export default function ClinicResultsPage() {
     return R * c;
   };
 
-  // Filter and sort clinics
-  const filteredClinics = allClinics
-    .filter(clinic => {
-      // Only active clinics
-      if (clinic.status !== 'active') return false;
+  // Filter and sort hospitals
+  const filteredClinics = allHospitals
+    .filter(hospital => {
+      // Only available hospitals
+      if (!hospital.isAvailable) return false;
       
       // Filter by region if selected
       if (selectedRegion !== "all") {
         const region = regions.find(r => r.code === selectedRegion);
-        if (region && clinic.regionId !== region.id) {
+        if (region && hospital.regionId !== region.id) {
           return false;
         }
       }
       
       // Filter by 24-hour service
-      if (only24Hour && !clinic.is24Hour) {
+      if (only24Hour && !hospital.open247) {
         return false;
       }
       
       // Filter by WhatsApp availability
-      if (onlyWhatsApp && !clinic.whatsapp) {
+      if (onlyWhatsApp && !hospital.whatsapp) {
         return false;
       }
       
       // Filter by search query
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const nameMatch = clinic.name.toLowerCase().includes(query);
-        const nameZhMatch = clinic.nameZh?.toLowerCase().includes(query);
-        const addressMatch = clinic.address.toLowerCase().includes(query);
-        const addressZhMatch = clinic.addressZh?.toLowerCase().includes(query);
+        const nameMatch = hospital.nameEn.toLowerCase().includes(query);
+        const nameZhMatch = hospital.nameZh?.toLowerCase().includes(query);
+        const addressMatch = hospital.addressEn.toLowerCase().includes(query);
+        const addressZhMatch = hospital.addressZh?.toLowerCase().includes(query);
         
         if (!nameMatch && !nameZhMatch && !addressMatch && !addressZhMatch) {
           return false;
@@ -375,11 +373,11 @@ export default function ClinicResultsPage() {
       
       return true;
     })
-    .map(clinic => {
-      // Calculate distance if user location and clinic location are available
-      if (userLocation && clinic.latitude && clinic.longitude) {
-        const lat = parseFloat(clinic.latitude);
-        const lng = parseFloat(clinic.longitude);
+    .map(hospital => {
+      // Calculate distance if user location and hospital location are available
+      if (userLocation && hospital.latitude && hospital.longitude) {
+        const lat = parseFloat(hospital.latitude);
+        const lng = parseFloat(hospital.longitude);
         
         // Only calculate distance if we got valid numbers
         if (!isNaN(lat) && !isNaN(lng)) {
@@ -389,27 +387,27 @@ export default function ClinicResultsPage() {
             lat,
             lng
           );
-          return { ...clinic, distance };
+          return { ...hospital, distance };
         }
       }
-      return clinic;
+      return hospital;
     })
-    .filter(clinic => {
+    .filter(hospital => {
       // Filter by distance if selected
       if (distanceFilter !== "all") {
-        // When distance filter is active, exclude clinics without distance data
-        if (clinic.distance === undefined) {
+        // When distance filter is active, exclude hospitals without distance data
+        if (hospital.distance === undefined) {
           return false;
         }
         const maxDistance = parseFloat(distanceFilter);
-        if (clinic.distance > maxDistance) {
+        if (hospital.distance > maxDistance) {
           return false;
         }
       }
       return true;
     })
     .sort((a, b) => {
-      // HIGHEST PRIORITY: Existing patient clinic (where pet has visited before)
+      // HIGHEST PRIORITY: Existing patient hospital (where pet has visited before)
       const petLastVisitClinicId = emergencyRequest?.pet?.lastVisitClinicId;
       const aIsExisting = petLastVisitClinicId === a.id;
       const bIsExisting = petLastVisitClinicId === b.id;
@@ -417,9 +415,9 @@ export default function ClinicResultsPage() {
       if (aIsExisting && !bIsExisting) return -1;
       if (!aIsExisting && bIsExisting) return 1;
       
-      // SECOND PRIORITY: Partner clinics
-      if (a.isSupportHospital && !b.isSupportHospital) return -1;
-      if (!a.isSupportHospital && b.isSupportHospital) return 1;
+      // SECOND PRIORITY: Partner hospitals
+      if (a.isPartner && !b.isPartner) return -1;
+      if (!a.isPartner && b.isPartner) return 1;
       
       // THIRD PRIORITY: Clinics with known distance
       const distA = a.distance !== undefined ? a.distance : Infinity;
@@ -429,9 +427,9 @@ export default function ClinicResultsPage() {
         return distA - distB;
       }
       
-      // FOURTH PRIORITY: 24-hour clinics
-      if (a.is24Hour && !b.is24Hour) return -1;
-      if (!a.is24Hour && b.is24Hour) return 1;
+      // FOURTH PRIORITY: 24-hour hospitals
+      if (a.open247 && !b.open247) return -1;
+      if (!a.open247 && b.open247) return 1;
       
       return 0;
     });
@@ -481,8 +479,8 @@ export default function ClinicResultsPage() {
 
   const selectAllClinics = () => {
     const allEligible = filteredClinics
-      .filter(c => c.whatsapp || c.email)
-      .map(c => c.id);
+      .filter((h: Hospital) => h.whatsapp)
+      .map((h: Hospital) => h.id);
     setSelectedClinics(new Set(allEligible));
   };
 
@@ -492,13 +490,13 @@ export default function ClinicResultsPage() {
 
   // Quick stats
   const clinicsWithin5km = filteredClinics.filter(c => c.distance !== undefined && c.distance <= 5).length;
-  const clinicsWith24Hour = filteredClinics.filter(c => c.is24Hour).length;
+  const clinicsWith24Hour = filteredClinics.filter((h: Hospital) => h.open247).length;
   const clinicsWithWhatsApp = filteredClinics.filter(c => c.whatsapp).length;
   
   // Check if GPS-based filtering is possible
   const hasUserGPS = !!(userLocation?.lat && userLocation?.lng);
-  const clinicsWithGPS = allClinics.filter(c => c.latitude && c.longitude).length;
-  const canUseDistanceFilter = hasUserGPS && clinicsWithGPS > 0;
+  const hospitalsWithGPS = allHospitals.filter((h: Hospital) => h.latitude && h.longitude).length;
+  const canUseDistanceFilter = hasUserGPS && hospitalsWithGPS > 0;
 
   // Reset distance filter if GPS becomes unavailable
   useEffect(() => {
@@ -513,11 +511,11 @@ export default function ClinicResultsPage() {
       const clinicIds = selectedClinics.size > 0 
         ? Array.from(selectedClinics)
         : filteredClinics
-            .filter(c => c.whatsapp || c.email)
-            .map(c => c.id);
+            .filter((h: Hospital) => h.whatsapp)
+            .map((h: Hospital) => h.id);
       
       // Build structured message with clear sections and formatted phone
-      const message = buildStructuredBroadcastMessage(emergencyRequest, t, allClinics);
+      const message = buildStructuredBroadcastMessage(emergencyRequest, t, allHospitals);
       
       const response = await apiRequest(
         'POST',
@@ -565,28 +563,27 @@ export default function ClinicResultsPage() {
 
   const broadcastTargetCount = selectedClinics.size > 0 
     ? selectedClinics.size 
-    : filteredClinics.filter(c => c.whatsapp || c.email).length;
+    : filteredClinics.filter((h: Hospital) => h.whatsapp).length;
 
-  // Count support hospitals (only active ones)
-  const supportHospitals24h = allClinics.filter(c => 
-    c.status === 'active' &&
-    c.isSupportHospital && 
-    c.is24Hour && 
-    c.isAvailable && 
-    (c.whatsapp || c.email)
+  // Count support hospitals (only available ones)
+  const supportHospitals24h = allHospitals.filter((h: Hospital) => 
+    h.isAvailable &&
+    h.isPartner && 
+    h.open247 && 
+    h.whatsapp
   );
 
   // Quick broadcast to all 24-hour support hospitals
   const quickBroadcastMutation = useMutation({
     mutationFn: async () => {
-      const clinicIds = supportHospitals24h.map(c => c.id);
+      const clinicIds = supportHospitals24h.map((h: Hospital) => h.id);
       
       if (clinicIds.length === 0) {
         throw new Error('No 24-hour support hospitals available');
       }
       
       // Build structured message with clear sections and formatted phone
-      const message = buildStructuredBroadcastMessage(emergencyRequest, t, allClinics);
+      const message = buildStructuredBroadcastMessage(emergencyRequest, t, allHospitals);
       
       const response = await apiRequest(
         'POST',
@@ -1032,16 +1029,16 @@ export default function ClinicResultsPage() {
               </CardContent>
             </Card>
           ) : (
-            filteredClinics.map((clinic, index) => {
-              const isSelected = selectedClinics.has(clinic.id);
-              const canBroadcast = !!(clinic.whatsapp || clinic.email);
-              const isExistingPatient = emergencyRequest?.pet?.lastVisitClinicId === clinic.id;
+            filteredClinics.map((hospital, index) => {
+              const isSelected = selectedClinics.has(hospital.id);
+              const canBroadcast = !!hospital.whatsapp;
+              const isExistingPatient = emergencyRequest?.pet?.lastVisitClinicId === hospital.id;
               
               return (
                 <Card 
-                  key={clinic.id} 
+                  key={hospital.id} 
                   className={`hover:shadow-lg transition-all border-l-4 border-l-red-600 ${isSelected ? 'ring-2 ring-orange-500' : ''} ${isExistingPatient ? 'ring-2 ring-amber-400 dark:ring-amber-500' : ''}`}
-                  data-testid={`card-clinic-${clinic.id}`}
+                  data-testid={`card-clinic-${hospital.id}`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start gap-3">
@@ -1050,8 +1047,8 @@ export default function ClinicResultsPage() {
                         <div className="pt-1">
                           <Checkbox
                             checked={isSelected}
-                            onCheckedChange={() => toggleClinicSelection(clinic.id)}
-                            data-testid={`checkbox-clinic-${clinic.id}`}
+                            onCheckedChange={() => toggleClinicSelection(hospital.id)}
+                            data-testid={`checkbox-clinic-${hospital.id}`}
                           />
                         </div>
                       )}
@@ -1059,44 +1056,44 @@ export default function ClinicResultsPage() {
                       <div className="flex-1 min-w-0">
                         {/* Existing Patient Indicator - Highest Priority */}
                         {isExistingPatient && (
-                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 mb-2 font-bold" data-testid={`badge-existing-patient-${clinic.id}`}>
+                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 mb-2 font-bold" data-testid={`badge-existing-patient-${hospital.id}`}>
                             ⭐ {t('clinic_results.existing_patient_badge', 'EXISTING PATIENT - Medical Records Available')}
                           </Badge>
                         )}
                         
                         {/* Partner Badge */}
-                        {clinic.isSupportHospital && !isExistingPatient && (
-                          <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 mb-2 font-bold" data-testid={`badge-partner-${clinic.id}`}>
+                        {hospital.isPartner && !isExistingPatient && (
+                          <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 mb-2 font-bold" data-testid={`badge-partner-${hospital.id}`}>
                             ⭐ PetSOS Partner
                           </Badge>
                         )}
                         
-                        {/* Clinic Name - Compact */}
+                        {/* Hospital Name - Compact */}
                         <CardTitle className="text-lg mb-1 leading-tight">
-                          {language === 'zh-HK' && clinic.nameZh ? clinic.nameZh : clinic.name}
-                          {language === 'zh-HK' && clinic.nameZh && (
+                          {language === 'zh-HK' && hospital.nameZh ? hospital.nameZh : hospital.nameEn}
+                          {language === 'zh-HK' && hospital.nameZh && (
                             <span className="block text-sm font-normal text-gray-500 dark:text-gray-400 mt-0.5">
-                              {clinic.name}
+                              {hospital.nameEn}
                             </span>
                           )}
                         </CardTitle>
                         
                         {/* Distance Badge - Prominent */}
-                        {clinic.distance !== undefined && (
-                          <div className="inline-flex items-center gap-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-xs font-semibold mb-2" data-testid={`text-clinic-distance-${clinic.id}`}>
+                        {hospital.distance !== undefined && (
+                          <div className="inline-flex items-center gap-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-xs font-semibold mb-2" data-testid={`text-clinic-distance-${hospital.id}`}>
                             <MapPin className="h-3 w-3" />
-                            {clinic.distance.toFixed(1)} km {language === 'zh-HK' ? '距離' : 'away'}
+                            {hospital.distance.toFixed(1)} km {language === 'zh-HK' ? '距離' : 'away'}
                           </div>
                         )}
                         
                         {/* Address - Single Line Truncated */}
-                        <div className="text-xs text-gray-600 dark:text-gray-400 truncate mb-2" data-testid={`text-clinic-address-${clinic.id}`}>
-                          {language === 'zh-HK' && clinic.addressZh ? clinic.addressZh : clinic.address}
+                        <div className="text-xs text-gray-600 dark:text-gray-400 truncate mb-2" data-testid={`text-clinic-address-${hospital.id}`}>
+                          {language === 'zh-HK' && hospital.addressZh ? hospital.addressZh : hospital.addressEn}
                         </div>
                         
                         {/* Additional Badges in Compact Row */}
                         <div className="flex flex-wrap gap-1.5">
-                          {clinic.whatsapp && (
+                          {hospital.whatsapp && (
                             <Badge variant="outline" className="bg-green-50 dark:bg-green-950 text-xs">
                               <MessageCircle className="h-3 w-3 mr-1" />
                               WhatsApp
@@ -1106,8 +1103,8 @@ export default function ClinicResultsPage() {
                       </div>
                       
                       {/* 24-Hour Badge - Prominent with Brand Color */}
-                      {clinic.is24Hour && (
-                        <Badge className="bg-red-600 hover:bg-red-700 shrink-0" data-testid={`badge-24hour-${clinic.id}`}>
+                      {hospital.open247 && (
+                        <Badge className="bg-red-600 hover:bg-red-700 shrink-0" data-testid={`badge-24hour-${hospital.id}`}>
                           <Clock className="h-3 w-3 mr-1" />
                           {language === 'zh-HK' ? '24小時' : '24hrs'}
                         </Badge>
@@ -1118,34 +1115,36 @@ export default function ClinicResultsPage() {
                   <CardContent className="pt-0">
                     {/* Action Buttons - Compact Row */}
                     <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleCall(clinic.phone, clinic.id, clinic.name)}
-                        size="sm"
-                        className="flex-1 bg-red-600 hover:bg-red-700"
-                        data-testid={`button-call-${clinic.id}`}
-                      >
-                        <Phone className="h-4 w-4 mr-1" />
-                        {language === 'zh-HK' ? '致電' : 'Call'}
-                      </Button>
-                      {clinic.whatsapp && (
+                      {hospital.phone && (
                         <Button
-                          onClick={() => handleWhatsApp(clinic.whatsapp!, clinic.id, clinic.name)}
+                          onClick={() => handleCall(hospital.phone!, hospital.id, hospital.nameEn)}
+                          size="sm"
+                          className="flex-1 bg-red-600 hover:bg-red-700"
+                          data-testid={`button-call-${hospital.id}`}
+                        >
+                          <Phone className="h-4 w-4 mr-1" />
+                          {language === 'zh-HK' ? '致電' : 'Call'}
+                        </Button>
+                      )}
+                      {hospital.whatsapp && (
+                        <Button
+                          onClick={() => handleWhatsApp(hospital.whatsapp!, hospital.id, hospital.nameEn)}
                           variant="outline"
                           size="sm"
                           className="flex-1 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          data-testid={`button-whatsapp-${clinic.id}`}
+                          data-testid={`button-whatsapp-${hospital.id}`}
                         >
                           <MessageCircle className="h-4 w-4 mr-1" />
                           WhatsApp
                         </Button>
                       )}
-                      {clinic.latitude && clinic.longitude && (
+                      {hospital.latitude && hospital.longitude && (
                         <Button
-                          onClick={() => handleOpenMaps(clinic.latitude!, clinic.longitude!, clinic.name)}
+                          onClick={() => handleOpenMaps(hospital.latitude!, hospital.longitude!, hospital.nameEn)}
                           variant="outline"
                           size="sm"
                           className="flex-1 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          data-testid={`button-maps-${clinic.id}`}
+                          data-testid={`button-maps-${hospital.id}`}
                         >
                           <Navigation className="h-4 w-4 mr-1" />
                           {language === 'zh-HK' ? '導航' : 'Maps'}
@@ -1199,7 +1198,7 @@ export default function ClinicResultsPage() {
                 <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
                   <strong className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('clinic_results.message_preview', 'Message Preview')}:</strong>
                   <pre className="mt-2 text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-sans">
-                    {buildStructuredBroadcastMessage(emergencyRequest, t, allClinics)}
+                    {buildStructuredBroadcastMessage(emergencyRequest, t, allHospitals)}
                   </pre>
                 </div>
               </div>
