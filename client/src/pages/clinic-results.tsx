@@ -1168,9 +1168,9 @@ export default function ClinicResultsPage() {
 
       {/* Broadcast Confirmation Dialog */}
       <AlertDialog open={showBroadcastDialog} onOpenChange={setShowBroadcastDialog}>
-        <AlertDialogContent className="max-w-2xl" data-testid="dialog-broadcast-confirm">
+        <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle data-testid="text-broadcast-title">
+            <AlertDialogTitle>
               {selectedClinics.size > 0 ? t('clinic_results.broadcast_to_selected', 'Broadcast to Selected Clinics') : t('clinic_results.broadcast_emergency', 'Broadcast Emergency Alert')}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
