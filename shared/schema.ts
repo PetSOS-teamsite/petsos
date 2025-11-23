@@ -220,6 +220,7 @@ export const hospitals = pgTable("hospitals", {
   location: geography("location"), // PostGIS geography point
   phone: text("phone"),
   whatsapp: text("whatsapp"),
+  email: text("email"),
   websiteUrl: text("website_url"),
   open247: boolean("open_247").notNull().default(true),
   isAvailable: boolean("is_available").notNull().default(true), // Admin can disable hospital

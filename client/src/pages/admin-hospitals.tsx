@@ -163,6 +163,9 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
 
           {/* Basic Info Tab */}
           <TabsContent value="basic" className="space-y-4">
+            <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+              <p className="text-sm text-green-800 dark:text-green-300"><strong>Essential Information:</strong> Help pet parents contact you quickly during emergencies. Complete this first, then add photos and services to increase visibility.</p>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -467,8 +470,11 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
             />
           </TabsContent>
 
-          {/* Medical Services Tab */}
+          {/* Medical Services Tab - Optional */}
           <TabsContent value="medical" className="space-y-4">
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+              <p className="text-sm text-blue-800 dark:text-blue-300"><strong>Optional:</strong> Help pet parents find you during emergencies by listing your medical services and capabilities.</p>
+            </div>
             <h3 className="text-lg font-semibold">Imaging Services</h3>
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -660,8 +666,11 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
             />
           </TabsContent>
 
-          {/* Operational Tab */}
+          {/* Operational Tab - Optional */}
           <TabsContent value="operational" className="space-y-4">
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+              <p className="text-sm text-blue-800 dark:text-blue-300"><strong>Optional:</strong> Share operational details like visiting hours, facilities, and support options to build trust with pet owners.</p>
+            </div>
             <FormField
               control={form.control}
               name="onSiteVet247"
