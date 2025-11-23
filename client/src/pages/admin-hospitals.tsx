@@ -155,10 +155,10 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
-            <TabsTrigger value="photos">Photos</TabsTrigger>
-            <TabsTrigger value="facilities">Facilities</TabsTrigger>
-            <TabsTrigger value="medical">Medical Services</TabsTrigger>
-            <TabsTrigger value="operational">Operational</TabsTrigger>
+            <TabsTrigger value="photos" className="opacity-50 cursor-not-allowed">Photos</TabsTrigger>
+            <TabsTrigger value="facilities" className="opacity-50 cursor-not-allowed">Facilities</TabsTrigger>
+            <TabsTrigger value="medical" className="opacity-50 cursor-not-allowed">Medical Services</TabsTrigger>
+            <TabsTrigger value="operational" className="opacity-50 cursor-not-allowed">Operational</TabsTrigger>
           </TabsList>
 
           {/* Basic Info Tab */}
@@ -239,34 +239,10 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
             <div className="grid grid-cols-3 gap-4">
               <FormField
                 control={form.control}
-                name="regionId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Region *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-region">
-                          <SelectValue placeholder="Select region" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {regions?.map((region) => (
-                          <SelectItem key={region.id} value={region.id}>
-                            {region.nameEn} ({region.code})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone</FormLabel>
+                    <FormLabel>Phone *</FormLabel>
                     <FormControl>
                       <Input {...field} value={field.value || ""} placeholder="+852 1234 5678" data-testid="input-phone" />
                     </FormControl>
@@ -279,7 +255,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                 name="whatsapp"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>WhatsApp</FormLabel>
+                    <FormLabel>WhatsApp *</FormLabel>
                     <FormControl>
                       <Input {...field} value={field.value || ""} placeholder="+852 1234 5678" data-testid="input-whatsapp" />
                     </FormControl>
@@ -287,146 +263,24 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   </FormItem>
                 )}
               />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="websiteUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Website URL</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value || ""} placeholder="https://hospital.com" data-testid="input-website" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="latitude"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Latitude</FormLabel>
+                    <FormLabel>Email *</FormLabel>
                     <FormControl>
-                      <Input {...field} value={field.value || ""} placeholder="22.2820" data-testid="input-latitude" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="longitude"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Longitude</FormLabel>
-                    <FormControl>
-                      <Input {...field} value={field.value || ""} placeholder="114.1585" data-testid="input-longitude" />
+                      <Input {...field} value={field.value || ""} placeholder="info@hospital.com" type="email" data-testid="input-email" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="open247"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Open 24/7</FormLabel>
-                    <FormDescription>Is this hospital open 24 hours a day, 7 days a week?</FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      data-testid="switch-open247"
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="isAvailable"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Available</FormLabel>
-                    <FormDescription>Is this hospital currently accepting patients? (Disable to hide from public listings)</FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      data-testid="switch-is-available"
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="isPartner"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">PetSOS Partner</FormLabel>
-                    <FormDescription>Official PetSOS partner hospital (gets priority in listings and special badge)</FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      data-testid="switch-is-partner"
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="liveStatus"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Current Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="busy">Busy</SelectItem>
-                      <SelectItem value="critical_only">Critical Only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <CommaArrayField
-              control={form.control}
-              name="speciesAccepted"
-              label="Species Accepted"
-              placeholder="e.g., Dog, Cat, Rabbit, Bird"
-              description="Comma-separated list of species accepted"
-              testId="input-species-accepted"
-            />
           </TabsContent>
 
-          {/* Photos Tab */}
-          <TabsContent value="photos" className="space-y-4">
+          {/* Photos Tab - Hidden until hospital provides data */}
+          <TabsContent value="photos" className="space-y-4 hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Hospital Photos</CardTitle>
@@ -486,8 +340,8 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
             </Card>
           </TabsContent>
 
-          {/* Facilities Tab */}
-          <TabsContent value="facilities" className="space-y-4">
+          {/* Facilities Tab - Hidden until hospital provides data */}
+          <TabsContent value="facilities" className="space-y-4 hidden">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
