@@ -28,7 +28,7 @@ export default function ClinicsPage() {
   const { t, language } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
-  const [show24HourOnly, setShow24HourOnly] = useState(true); // Default to 24-hour only
+  const [show24HourOnly, setShow24HourOnly] = useState(false); // Show all clinics by default
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
 
