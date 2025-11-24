@@ -98,7 +98,7 @@ function buildPetInfoString(emergencyRequest: any, t: any, targetClinicId?: stri
     }
     
     // Highlight if this pet is an existing patient of the target clinic
-    if (targetClinicId && pet.lastVisitClinicId === targetClinicId) {
+    if (targetClinicId && pet.lastVisitHospitalId === targetClinicId) {
       petInfo += `\n⭐ ${t('clinic_results.existing_patient', 'EXISTING PATIENT - Medical records available')}`;
       if (pet.lastVisitDate) {
         const visitDate = new Date(pet.lastVisitDate).toLocaleDateString();
@@ -250,8 +250,8 @@ function buildStructuredBroadcastMessage(
   }
   
   // Add information about pet's regular hospital if exists
-  if (emergencyRequest?.pet?.lastVisitClinicId) {
-    const regularHospital = allHospitals.find((h: Hospital) => h.id === emergencyRequest.pet.lastVisitClinicId);
+  if (emergencyRequest?.pet?.lastVisitHospitalId) {
+    const regularHospital = allHospitals.find((h: Hospital) => h.id === emergencyRequest.pet.lastVisitHospitalId);
     if (regularHospital) {
       sections.push('');
       sections.push(`📋 ${t('clinic_results.regular_clinic_note', 'NOTE: This pet is a registered patient at')} ${regularHospital.nameEn}`);
@@ -408,7 +408,7 @@ export default function ClinicResultsPage() {
     })
     .sort((a, b) => {
       // HIGHEST PRIORITY: Existing patient hospital (where pet has visited before)
-      const petLastVisitClinicId = emergencyRequest?.pet?.lastVisitClinicId;
+      const petLastVisitClinicId = emergencyRequest?.pet?.lastVisitHospitalId;
       const aIsExisting = petLastVisitClinicId === a.id;
       const bIsExisting = petLastVisitClinicId === b.id;
       
@@ -1032,7 +1032,7 @@ export default function ClinicResultsPage() {
             filteredClinics.map((hospital, index) => {
               const isSelected = selectedClinics.has(hospital.id);
               const canBroadcast = !!hospital.whatsapp;
-              const isExistingPatient = emergencyRequest?.pet?.lastVisitClinicId === hospital.id;
+              const isExistingPatient = emergencyRequest?.pet?.lastVisitHospitalId === hospital.id;
               
               return (
                 <Card 
