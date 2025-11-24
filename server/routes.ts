@@ -788,7 +788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Contact information
     phone: h.phone || '',
     whatsapp: h.whatsapp,
-    email: null, // Hospitals don't have email field (clinics did)
+    email: h.email || null,
     websiteUrl: h.websiteUrl,
     
     // Location

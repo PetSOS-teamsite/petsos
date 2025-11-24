@@ -65,7 +65,7 @@ const createPetSchema = (t: (key: string, fallback: string) => string) => z.obje
   age: z.coerce.number().positive().optional(),
   weight: z.coerce.number().positive().optional(),
   medicalNotes: z.string().optional(),
-  lastVisitClinicId: z.string().optional(),
+  lastVisitHospitalId: z.string().optional(),
   lastVisitDate: z.string().optional(),
 });
 
@@ -111,7 +111,7 @@ export default function PetsPage() {
       age: undefined,
       weight: undefined,
       medicalNotes: "",
-      lastVisitClinicId: undefined,
+      lastVisitHospitalId: undefined,
       lastVisitDate: undefined,
     },
   });
@@ -132,7 +132,7 @@ export default function PetsPage() {
         userId: authUser?.id,
         weight: data.weight !== undefined ? String(data.weight) : undefined,
         lastVisitDate: data.lastVisitDate ? new Date(data.lastVisitDate).toISOString() : undefined,
-        lastVisitClinicId: data.lastVisitClinicId && data.lastVisitClinicId.trim() !== '' ? data.lastVisitClinicId : undefined,
+        lastVisitHospitalId: data.lastVisitHospitalId && data.lastVisitHospitalId.trim() !== '' ? data.lastVisitHospitalId : undefined,
       };
       const response = await apiRequest(
         'POST',
@@ -172,7 +172,7 @@ export default function PetsPage() {
         ...data,
         weight: data.weight !== undefined ? String(data.weight) : undefined,
         lastVisitDate: data.lastVisitDate ? new Date(data.lastVisitDate).toISOString() : undefined,
-        lastVisitClinicId: data.lastVisitClinicId && data.lastVisitClinicId.trim() !== '' ? data.lastVisitClinicId : undefined,
+        lastVisitHospitalId: data.lastVisitHospitalId && data.lastVisitHospitalId.trim() !== '' ? data.lastVisitHospitalId : undefined,
       };
       const response = await apiRequest(
         'PATCH',
@@ -258,7 +258,7 @@ export default function PetsPage() {
       age: pet.age ? Number(pet.age) : undefined,
       weight: pet.weight ? Number(pet.weight) : undefined,
       medicalNotes: pet.medicalNotes || "",
-      lastVisitClinicId: pet.lastVisitClinicId || "",
+      lastVisitHospitalId: pet.lastVisitHospitalId || "",
       lastVisitDate: formattedDate,
     });
     setIsDialogOpen(true);
@@ -471,7 +471,7 @@ export default function PetsPage() {
 
                     <FormField
                       control={form.control}
-                      name="lastVisitClinicId"
+                      name="lastVisitHospitalId"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
                           <FormLabel>{t("pets.last_visit_clinic", "Last Visit Clinic (Optional)")}</FormLabel>
@@ -505,7 +505,7 @@ export default function PetsPage() {
                                         key={clinic.id}
                                         value={clinic.name}
                                         onSelect={() => {
-                                          form.setValue("lastVisitClinicId", clinic.id);
+                                          form.setValue("lastVisitHospitalId", clinic.id);
                                           setClinicSearchOpen(false);
                                         }}
                                         data-testid={`clinic-${clinic.id}`}
