@@ -35,6 +35,7 @@ const TermsOfServicePage = lazy(() => import("@/pages/terms-of-service"));
 
 // Admin pages - lazy loaded (heavy bundle)
 const AdminHospitalsPage = lazy(() => import("@/pages/admin-hospitals"));
+const AdminClinicsPage = lazy(() => import("@/pages/admin-clinics"));
 const AdminConfigPage = lazy(() => import("@/pages/admin-config"));
 const AdminDashboardPage = lazy(() => import("@/pages/admin-dashboard"));
 const AdminAnalyticsPage = lazy(() => import("@/pages/admin-analytics"));
@@ -111,6 +112,9 @@ function Router() {
       </Route>
       <Route path="/admin/hospitals">
         {isAuthenticated && isAdmin ? <AdminHospitalsPage /> : <AdminLoginPage />}
+      </Route>
+      <Route path="/admin/clinics">
+        {isAuthenticated && isAdmin ? <AdminClinicsPage /> : <AdminLoginPage />}
       </Route>
       <Route path="/admin/users">
         {isAuthenticated && isAdmin ? <AdminUsersPage /> : <AdminLoginPage />}
