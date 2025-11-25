@@ -367,11 +367,11 @@ export default function AdminClinicsPage() {
     
     setIsImporting(true);
     try {
-      const response = await apiRequest("POST", "/api/clinics/import", { csvData });
+      const response: any = await apiRequest("POST", "/api/clinics/import", { csvData });
       setImportResults(response);
       toast({ 
         title: "Import Complete", 
-        description: `Created/Updated: ${response.summary.createdOrUpdated}, Errors: ${response.summary.errors}` 
+        description: `Created/Updated: ${response.summary?.createdOrUpdated || 0}, Errors: ${response.summary?.errors || 0}` 
       });
       setCsvData("");
       queryClient.invalidateQueries({ queryKey: ["/api/clinics"] });
@@ -647,7 +647,7 @@ export default function AdminClinicsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Clinic?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {clinicToDelete?.nameEn}? This action cannot be undone.
+              Are you sure you want to delete {clinicToDelete?.name}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
