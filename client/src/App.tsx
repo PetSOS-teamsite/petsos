@@ -30,6 +30,7 @@ const ResourcesPage = lazy(() => import("@/pages/resources"));
 const FAQPage = lazy(() => import("@/pages/faq"));
 const HospitalsPage = lazy(() => import("@/pages/hospitals"));
 const HospitalDetailPage = lazy(() => import("@/pages/hospital-detail"));
+const ClinicOwnerEditPage = lazy(() => import("@/pages/clinic-owner-edit"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/privacy-policy"));
 const TermsOfServicePage = lazy(() => import("@/pages/terms-of-service"));
 
@@ -74,6 +75,7 @@ function Router() {
       <Route path="/clinics" component={ClinicsPage} />
       <Route path="/hospitals" component={HospitalsPage} />
       <Route path="/hospitals/:slug" component={HospitalDetailPage} />
+      <Route path="/clinic/edit/:slug" component={ClinicOwnerEditPage} />
       <Route path="/districts" component={DistrictsIndexPage} />
       <Route path="/district/:district" component={DistrictPage} />
       <Route path="/resources" component={ResourcesPage} />
