@@ -828,12 +828,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     wheelchairAccess: h.wheelchairAccess
   });
 
-  // Get all clinics → hospitals
+  // Get all clinics
   app.get("/api/clinics", async (req, res) => {
-    console.warn('[DEPRECATED] /api/clinics called - use /api/hospitals instead');
-    const hospitals = await storage.getAllHospitals();
-    const clinics = hospitals.map(hospitalToClinicFormat);
-    res.json(clinics);
+    try {
+      const clinics = await storage.getAllClinics();
+      res.json(clinics);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   // Get clinics by region → hospitals by region
