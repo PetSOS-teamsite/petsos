@@ -486,7 +486,7 @@ export default function AdminClinicsPage() {
                         <div className="flex flex-col gap-1.5">
                           <div>
                             <div className="font-semibold text-gray-900 dark:text-white text-sm" data-testid={`text-clinic-name-${clinic.slug}`}>
-                              {clinic.nameEn}
+                              {clinic.name}
                             </div>
                             {clinic.nameZh && (
                               <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -495,7 +495,7 @@ export default function AdminClinicsPage() {
                             )}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight" data-testid={`text-clinic-address-${clinic.slug}`}>
-                            <div>{clinic.addressEn}</div>
+                            <div>{clinic.address}</div>
                             {clinic.addressZh && (
                               <div className="text-gray-400 dark:text-gray-500">{clinic.addressZh}</div>
                             )}
