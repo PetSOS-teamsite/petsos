@@ -56,15 +56,15 @@ import { useToast } from "@/hooks/use-toast";
 import type { Hospital as Clinic, Region } from "@shared/schema";
 
 const clinicFormSchema = z.object({
-  name: z.string().min(1, "Clinic name (English) is required"),
+  nameEn: z.string().min(1, "Clinic name (English) is required"),
   nameZh: z.string().min(1, "Clinic name (Chinese) is required"),
-  address: z.string().min(1, "Address (English) is required"),
+  addressEn: z.string().min(1, "Address (English) is required"),
   addressZh: z.string().min(1, "Address (Chinese) is required"),
   phone: z.string().min(1, "Phone is required"),
   whatsapp: z.string().optional(),
   email: z.string().optional(),
   regionId: z.string().min(1, "Region is required"),
-  is24Hour: z.boolean().default(false),
+  open247: z.boolean().default(false),
 });
 
 type ClinicFormData = z.infer<typeof clinicFormSchema>;
@@ -88,7 +88,7 @@ function ClinicForm({ form, onSubmit, submitLabel }: {
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="name"
+            name="nameEn"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Clinic Name (English) *</FormLabel>
@@ -117,7 +117,7 @@ function ClinicForm({ form, onSubmit, submitLabel }: {
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="address"
+            name="addressEn"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Address (English) *</FormLabel>
@@ -212,7 +212,7 @@ function ClinicForm({ form, onSubmit, submitLabel }: {
 
         <FormField
           control={form.control}
-          name="is24Hour"
+          name="open247"
           render={({ field }) => (
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
@@ -254,15 +254,15 @@ export default function AdminClinicsPage() {
   const form = useForm<ClinicFormData>({
     resolver: zodResolver(clinicFormSchema),
     defaultValues: {
-      name: "",
+      nameEn: "",
       nameZh: "",
-      address: "",
+      addressEn: "",
       addressZh: "",
       phone: "",
       whatsapp: "",
       email: "",
       regionId: "",
-      is24Hour: false,
+      open247: false,
     },
   });
 
@@ -311,15 +311,15 @@ export default function AdminClinicsPage() {
   const handleEditClick = (clinic: Clinic) => {
     setEditingClinic(clinic);
     form.reset({
-      name: clinic.nameEn || "",
+      nameEn: clinic.nameEn || "",
       nameZh: clinic.nameZh || "",
-      address: clinic.addressEn || "",
+      addressEn: clinic.addressEn || "",
       addressZh: clinic.addressZh || "",
       phone: clinic.phone || "",
       whatsapp: clinic.whatsapp || "",
       email: clinic.email || "",
       regionId: clinic.regionId || "",
-      is24Hour: clinic.open247 || false,
+      open247: clinic.open247 || false,
     });
   };
 
