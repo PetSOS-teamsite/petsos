@@ -304,6 +304,7 @@ export class MemStorage implements IStorage {
         location: null,
         status: 'active',
         services: ['emergency', '24hour'],
+        ownerVerificationCode: null,
         createdAt: new Date(),
         updatedAt: new Date()
       }
