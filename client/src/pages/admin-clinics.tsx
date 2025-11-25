@@ -479,13 +479,13 @@ export default function AdminClinicsPage() {
                   {filteredClinics.map((clinic) => (
                     <tr 
                       key={clinic.id} 
-                      data-testid={`row-clinic-${clinic.slug}`}
+                      data-testid={`row-clinic-${clinic.id}`}
                       className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition"
                     >
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1.5">
                           <div>
-                            <div className="font-semibold text-gray-900 dark:text-white text-sm" data-testid={`text-clinic-name-${clinic.slug}`}>
+                            <div className="font-semibold text-gray-900 dark:text-white text-sm" data-testid={`text-clinic-name-${clinic.id}`}>
                               {clinic.name}
                             </div>
                             {clinic.nameZh && (
@@ -494,7 +494,7 @@ export default function AdminClinicsPage() {
                               </div>
                             )}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight" data-testid={`text-clinic-address-${clinic.slug}`}>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight" data-testid={`text-clinic-address-${clinic.id}`}>
                             <div>{clinic.address}</div>
                             {clinic.addressZh && (
                               <div className="text-gray-400 dark:text-gray-500">{clinic.addressZh}</div>
@@ -502,19 +502,19 @@ export default function AdminClinicsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap" data-testid={`text-clinic-phone-${clinic.slug}`}>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap" data-testid={`text-clinic-phone-${clinic.id}`}>
                         {clinic.phone || '—'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap" data-testid={`text-clinic-whatsapp-${clinic.slug}`}>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap" data-testid={`text-clinic-whatsapp-${clinic.id}`}>
                         {clinic.whatsapp || '—'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {clinic.open247 ? (
-                          <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium" data-testid={`badge-24h-${clinic.slug}`}>
+                        {clinic.is24Hour ? (
+                          <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium" data-testid={`badge-24h-${clinic.id}`}>
                             24-Hour
                           </Badge>
                         ) : (
-                          <Badge className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs" data-testid={`badge-standard-${clinic.slug}`}>
+                          <Badge className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs" data-testid={`badge-standard-${clinic.id}`}>
                             Standard
                           </Badge>
                         )}
@@ -526,7 +526,7 @@ export default function AdminClinicsPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => window.location.href = `tel:${clinic.phone}`}
-                              data-testid={`button-call-${clinic.slug}`}
+                              data-testid={`button-call-${clinic.id}`}
                               className="h-8 w-8 p-0"
                               title="Call"
                             >
@@ -541,7 +541,7 @@ export default function AdminClinicsPage() {
                                 const cleanNumber = (clinic.whatsapp || '').replace(/[^\d]/g, '');
                                 window.open(`https://wa.me/${cleanNumber}`, '_blank');
                               }}
-                              data-testid={`button-whatsapp-${clinic.slug}`}
+                              data-testid={`button-whatsapp-${clinic.id}`}
                               className="h-8 w-8 p-0 text-green-600 dark:text-green-400 hover:text-green-700"
                               title="WhatsApp"
                             >
@@ -552,7 +552,7 @@ export default function AdminClinicsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditClick(clinic)}
-                            data-testid={`button-edit-${clinic.slug}`}
+                            data-testid={`button-edit-${clinic.id}`}
                             className="h-8 w-8 p-0"
                             title="Edit"
                           >
@@ -562,11 +562,11 @@ export default function AdminClinicsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              const link = `${window.location.origin}/clinic/edit/${clinic.slug}`;
+                              const link = `${window.location.origin}/clinic/edit/${clinic.id}`;
                               navigator.clipboard.writeText(link);
-                              toast({ title: "Link copied", description: clinic.nameEn });
+                              toast({ title: "Link copied", description: clinic.name });
                             }}
-                            data-testid={`button-copy-link-${clinic.slug}`}
+                            data-testid={`button-copy-link-${clinic.id}`}
                             className="h-8 w-8 p-0"
                             title="Copy Share Link"
                           >
@@ -579,7 +579,7 @@ export default function AdminClinicsPage() {
                               setClinicToDelete(clinic);
                               setIsDeleteDialogOpen(true);
                             }}
-                            data-testid={`button-delete-${clinic.slug}`}
+                            data-testid={`button-delete-${clinic.id}`}
                             className="h-8 w-8 p-0 text-red-600 dark:text-red-400 hover:text-red-700"
                             title="Delete"
                           >
