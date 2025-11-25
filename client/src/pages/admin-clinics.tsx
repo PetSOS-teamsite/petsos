@@ -54,18 +54,18 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/dateFormat";
-import type { Hospital as Clinic, Region } from "@shared/schema";
+import type { Clinic, Region } from "@shared/schema";
 
 const clinicFormSchema = z.object({
-  nameEn: z.string().min(1, "Clinic name (English) is required"),
+  name: z.string().min(1, "Clinic name (English) is required"),
   nameZh: z.string().min(1, "Clinic name (Chinese) is required"),
-  addressEn: z.string().min(1, "Address (English) is required"),
+  address: z.string().min(1, "Address (English) is required"),
   addressZh: z.string().min(1, "Address (Chinese) is required"),
   phone: z.string().min(1, "Phone is required"),
   whatsapp: z.string().optional(),
   email: z.string().optional(),
   regionId: z.string().min(1, "Region is required"),
-  open247: z.boolean().default(false),
+  is24Hour: z.boolean().default(false),
 });
 
 type ClinicFormData = z.infer<typeof clinicFormSchema>;
@@ -89,7 +89,7 @@ function ClinicForm({ form, onSubmit, submitLabel }: {
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="nameEn"
+            name="name"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Clinic Name (English) *</FormLabel>
@@ -118,7 +118,7 @@ function ClinicForm({ form, onSubmit, submitLabel }: {
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="addressEn"
+            name="address"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Address (English) *</FormLabel>
@@ -213,7 +213,7 @@ function ClinicForm({ form, onSubmit, submitLabel }: {
 
         <FormField
           control={form.control}
-          name="open247"
+          name="is24Hour"
           render={({ field }) => (
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
@@ -259,15 +259,15 @@ export default function AdminClinicsPage() {
   const form = useForm<ClinicFormData>({
     resolver: zodResolver(clinicFormSchema),
     defaultValues: {
-      nameEn: "",
+      name: "",
       nameZh: "",
-      addressEn: "",
+      address: "",
       addressZh: "",
       phone: "",
       whatsapp: "",
       email: "",
       regionId: "",
-      open247: false,
+      is24Hour: false,
     },
   });
 
@@ -322,9 +322,9 @@ export default function AdminClinicsPage() {
   const filteredClinics = clinics?.filter((clinic) => {
     const matchesSearch =
       !searchQuery ||
-      clinic.nameEn?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      clinic.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       clinic.nameZh?.includes(searchQuery) ||
-      clinic.addressEn?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      clinic.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       clinic.addressZh?.includes(searchQuery);
     return matchesSearch;
   });
@@ -332,29 +332,29 @@ export default function AdminClinicsPage() {
   const handleEditClick = (clinic: Clinic) => {
     setEditingClinic(clinic);
     form.reset({
-      nameEn: clinic.nameEn || "",
+      name: clinic.name || "",
       nameZh: clinic.nameZh || "",
-      addressEn: clinic.addressEn || "",
+      address: clinic.address || "",
       addressZh: clinic.addressZh || "",
       phone: clinic.phone || "",
       whatsapp: clinic.whatsapp || "",
       email: clinic.email || "",
       regionId: clinic.regionId || "",
-      open247: clinic.open247 || false,
+      is24Hour: clinic.is24Hour || false,
     });
   };
 
   const handleCreateClick = () => {
     form.reset({
-      nameEn: "",
+      name: "",
       nameZh: "",
-      addressEn: "",
+      address: "",
       addressZh: "",
       phone: "",
       whatsapp: "",
       email: "",
       regionId: "",
-      open247: false,
+      is24Hour: false,
     });
     setIsCreateDialogOpen(true);
   };
