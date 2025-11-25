@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, Loader2, Check } from "lucide-react";
+import { ArrowLeft, Loader2, Check, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -27,6 +27,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { formatDate } from "@/lib/dateFormat";
 import type { Hospital as Clinic, Region } from "@shared/schema";
 
 const clinicFormSchema = z.object({
@@ -149,17 +150,25 @@ export default function ClinicOwnerEditPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Link href="/">
-              <Button variant="ghost" size="icon" data-testid="button-back">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Clinic Information</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Update your clinic details</p>
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-3">
+              <Link href="/">
+                <Button variant="ghost" size="icon" data-testid="button-back">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Clinic Information</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Update your clinic details</p>
+              </div>
             </div>
           </div>
+          {clinic?.updatedAt && (
+            <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+              <Clock className="h-4 w-4" />
+              Last updated: {formatDate(clinic.updatedAt)}
+            </div>
+          )}
         </div>
       </div>
 
