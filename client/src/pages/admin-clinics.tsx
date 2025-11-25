@@ -464,113 +464,126 @@ export default function AdminClinicsPage() {
               <p>Loading clinics...</p>
             </div>
           ) : filteredClinics && filteredClinics.length > 0 ? (
-            <div className="space-y-4">
-              {filteredClinics.map((clinic) => (
-                <Card key={clinic.id} data-testid={`card-clinic-${clinic.slug}`}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <CardTitle className="text-lg" data-testid={`text-clinic-name-${clinic.slug}`}>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Clinic Name</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Phone</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">WhatsApp</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Status</th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredClinics.map((clinic) => (
+                    <tr 
+                      key={clinic.id} 
+                      data-testid={`row-clinic-${clinic.slug}`}
+                      className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition"
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          <div className="font-medium text-gray-900 dark:text-white" data-testid={`text-clinic-name-${clinic.slug}`}>
                             {clinic.nameEn}
-                          </CardTitle>
-                          {clinic.open247 && (
-                            <Badge className="bg-green-600 hover:bg-green-700 text-white text-xs" data-testid={`badge-24h-${clinic.slug}`}>
-                              24-Hour
-                            </Badge>
-                          )}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400" data-testid={`text-clinic-address-${clinic.slug}`}>
+                            {clinic.addressEn}
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2" data-testid={`text-clinic-address-${clinic.slug}`}>
-                          {clinic.addressEn}
-                        </p>
-                        <div className="flex flex-wrap gap-4 text-sm">
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400" data-testid={`text-clinic-phone-${clinic.slug}`}>
+                        {clinic.phone || '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400" data-testid={`text-clinic-whatsapp-${clinic.slug}`}>
+                        {clinic.whatsapp || '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        {clinic.open247 ? (
+                          <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium" data-testid={`badge-24h-${clinic.slug}`}>
+                            24-Hour
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs" data-testid={`badge-standard-${clinic.slug}`}>
+                            Standard
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-1">
                           {clinic.phone && (
-                            <div className="flex items-center gap-1" data-testid={`text-clinic-phone-${clinic.slug}`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.location.href = `tel:${clinic.phone}`}
+                              data-testid={`button-call-${clinic.slug}`}
+                              className="h-8 w-8 p-0"
+                              title="Call"
+                            >
                               <Phone className="h-4 w-4" />
-                              {clinic.phone}
-                            </div>
+                            </Button>
                           )}
                           {clinic.whatsapp && (
-                            <div className="flex items-center gap-1 text-green-600" data-testid={`text-clinic-whatsapp-${clinic.slug}`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const cleanNumber = (clinic.whatsapp || '').replace(/[^\d]/g, '');
+                                window.open(`https://wa.me/${cleanNumber}`, '_blank');
+                              }}
+                              data-testid={`button-whatsapp-${clinic.slug}`}
+                              className="h-8 w-8 p-0 text-green-600 dark:text-green-400 hover:text-green-700"
+                              title="WhatsApp"
+                            >
                               <MessageCircle className="h-4 w-4" />
-                              {clinic.whatsapp}
-                            </div>
+                            </Button>
                           )}
-                          {clinic.email && (
-                            <div className="flex items-center gap-1 text-blue-600" data-testid={`text-clinic-email-${clinic.slug}`}>
-                              📧 {clinic.email}
-                            </div>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditClick(clinic)}
+                            data-testid={`button-edit-${clinic.slug}`}
+                            className="h-8 w-8 p-0"
+                            title="Edit"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const link = `${window.location.origin}/clinic/edit/${clinic.slug}`;
+                              navigator.clipboard.writeText(link);
+                              toast({ title: "Link copied", description: clinic.nameEn });
+                            }}
+                            data-testid={`button-copy-link-${clinic.slug}`}
+                            className="h-8 w-8 p-0"
+                            title="Copy Share Link"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setClinicToDelete(clinic);
+                              setIsDeleteDialogOpen(true);
+                            }}
+                            data-testid={`button-delete-${clinic.slug}`}
+                            className="h-8 w-8 p-0 text-red-600 dark:text-red-400 hover:text-red-700"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {clinic.phone && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.location.href = `tel:${clinic.phone}`}
-                          data-testid={`button-call-${clinic.slug}`}
-                        >
-                          <Phone className="h-4 w-4 mr-2" />
-                          Call
-                        </Button>
-                      )}
-                      {clinic.whatsapp && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-950"
-                          onClick={() => {
-                            const cleanNumber = (clinic.whatsapp || '').replace(/[^\d]/g, '');
-                            window.open(`https://wa.me/${cleanNumber}`, '_blank');
-                          }}
-                          data-testid={`button-whatsapp-${clinic.slug}`}
-                        >
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          WhatsApp
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditClick(clinic)}
-                        data-testid={`button-edit-${clinic.slug}`}
-                      >
-                        <Pencil className="h-4 w-4 mr-2" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const link = `${window.location.origin}/clinic/edit/${clinic.slug}`;
-                          navigator.clipboard.writeText(link);
-                          toast({ title: "Link copied to clipboard", description: link });
-                        }}
-                        data-testid={`button-copy-link-${clinic.slug}`}
-                      >
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy Link
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                          setClinicToDelete(clinic);
-                          setIsDeleteDialogOpen(true);
-                        }}
-                        data-testid={`button-delete-${clinic.slug}`}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 px-4">
+                Showing {filteredClinics.length} of {clinics?.length || 0} clinics
+              </div>
             </div>
           ) : (
             <Card>
@@ -639,6 +652,97 @@ export default function AdminClinicsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import CSV Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-import-csv">
+          <DialogHeader>
+            <DialogTitle>Import Clinics from CSV</DialogTitle>
+            <DialogDescription>
+              Upload or paste CSV data to create or update clinic records
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                <strong>CSV Format:</strong> Name of Vet Clinic (English), 獸醫診所名稱 (Chinese), Address, 營業地址, Call Phone Number, WhatsApp Number, 24 hours, District
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Upload CSV File</label>
+              <input
+                type="file"
+                accept=".csv,.xlsx"
+                onChange={handleFileUpload}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-300"
+                data-testid="input-csv-file"
+              />
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">Or paste CSV data</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">CSV Data</label>
+              <textarea
+                value={csvData}
+                onChange={(e) => setCsvData(e.target.value)}
+                placeholder="Paste your CSV data here..."
+                rows={8}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                data-testid="textarea-csv-data"
+              />
+            </div>
+
+            {importResults && (
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                <p className="text-sm text-green-800 dark:text-green-300">
+                  <strong>Import Results:</strong> {importResults.summary.createdOrUpdated} created/updated, {importResults.summary.errors} errors
+                </p>
+                {importResults.errors.length > 0 && (
+                  <div className="mt-2 max-h-32 overflow-y-auto">
+                    <p className="text-xs text-green-700 dark:text-green-400 font-semibold mb-1">Errors:</p>
+                    {importResults.errors.slice(0, 5).map((err: string, idx: number) => (
+                      <p key={idx} className="text-xs text-green-600 dark:text-green-400">{err}</p>
+                    ))}
+                    {importResults.errors.length > 5 && (
+                      <p className="text-xs text-green-600 dark:text-green-400">... and {importResults.errors.length - 5} more errors</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsImportDialogOpen(false);
+                setCsvData("");
+                setImportResults(null);
+              }}
+              data-testid="button-cancel-import"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleImportCSV}
+              disabled={!csvData.trim() || isImporting}
+              data-testid="button-import"
+            >
+              {isImporting ? "Importing..." : "Import Clinics"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
