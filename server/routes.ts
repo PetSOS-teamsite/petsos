@@ -1986,6 +1986,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== OWNER VERIFICATION ENDPOINTS =====
+  
+  // Generate 6-digit verification code for clinic (admin only)
+  app.post("/api/clinics/:id/generate-code", isAuthenticated, isAdmin, async (req: any, res: any) => {
+    try {
+      const clinic = await storage.getClinic(req.params.id);
+      if (!clinic) {
+        return res.status(404).json({ message: "Clinic not found" });
+      }
+
+      const code = Math.floor(Math.random() * 900000 + 100000).toString();
+      const updatedClinic = await storage.updateClinic(req.params.id, { ownerVerificationCode: code });
+
+      await storage.createAuditLog({
+        entityType: 'clinic',
+        entityId: clinic.id,
+        action: 'generate_code',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({ code, clinicId: clinic.id });
+    } catch (error) {
+      console.error("Generate clinic code error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Verify clinic access with code (public - no auth needed)
+  app.post("/api/clinics/:id/verify", async (req: any, res: any) => {
+    try {
+      const { verificationCode } = z.object({
+        verificationCode: z.string().length(6, "Code must be 6 digits")
+      }).parse(req.body);
+
+      const clinic = await storage.getClinic(req.params.id);
+      if (!clinic) {
+        return res.status(404).json({ message: "Clinic not found" });
+      }
+
+      if (clinic.ownerVerificationCode !== verificationCode) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      res.json({ verified: true, clinicId: clinic.id });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Generate 6-digit verification code for hospital (admin only)
+  app.post("/api/hospitals/:id/generate-code", isAuthenticated, isAdmin, async (req: any, res: any) => {
+    try {
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      const code = Math.floor(Math.random() * 900000 + 100000).toString();
+      const updatedHospital = await storage.updateHospital(req.params.id, { ownerVerificationCode: code });
+
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: hospital.id,
+        action: 'generate_code',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({ code, hospitalId: hospital.id });
+    } catch (error) {
+      console.error("Generate hospital code error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Verify hospital access with code (public - no auth needed)
+  app.post("/api/hospitals/:id/verify", async (req: any, res: any) => {
+    try {
+      const { verificationCode } = z.object({
+        verificationCode: z.string().length(6, "Code must be 6 digits")
+      }).parse(req.body);
+
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      if (hospital.ownerVerificationCode !== verificationCode) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      res.json({ verified: true, hospitalId: hospital.id });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
