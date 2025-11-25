@@ -235,6 +235,7 @@ export class MemStorage implements IStorage {
         location: null,
         status: 'active',
         services: ['emergency', 'surgery', 'dental'],
+        ownerVerificationCode: null,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -257,6 +258,7 @@ export class MemStorage implements IStorage {
         location: null,
         status: 'active',
         services: ['emergency', 'vaccination'],
+        ownerVerificationCode: null,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -279,6 +281,7 @@ export class MemStorage implements IStorage {
         location: null,
         status: 'active',
         services: ['general', 'grooming'],
+        ownerVerificationCode: null,
         createdAt: new Date(),
         updatedAt: new Date()
       },
