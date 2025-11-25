@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, Loader2, Search, X, Activity, MessageCircle } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, Loader2, Search, X, Activity, MessageCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -266,6 +266,22 @@ export default function AdminClinicsPage() {
     },
   });
 
+  const createClinicMutation = useMutation({
+    mutationFn: async (data: ClinicFormData) => {
+      return apiRequest("POST", `/api/clinics`, data);
+    },
+    onSuccess: () => {
+      toast({ title: "Clinic created successfully" });
+      setIsCreateDialogOpen(false);
+      form.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/clinics"] });
+      refetch();
+    },
+    onError: (error: any) => {
+      toast({ title: "Error creating clinic", description: error.message, variant: "destructive" });
+    },
+  });
+
   const updateClinicMutation = useMutation({
     mutationFn: async (data: ClinicFormData) => {
       if (!editingClinic?.id) throw new Error("No clinic selected");
@@ -323,6 +339,21 @@ export default function AdminClinicsPage() {
     });
   };
 
+  const handleCreateClick = () => {
+    form.reset({
+      nameEn: "",
+      nameZh: "",
+      addressEn: "",
+      addressZh: "",
+      phone: "",
+      whatsapp: "",
+      email: "",
+      regionId: "",
+      open247: false,
+    });
+    setIsCreateDialogOpen(true);
+  };
+
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -369,7 +400,7 @@ export default function AdminClinicsPage() {
                 )}
               </div>
 
-              <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-create-clinic">
+              <Button onClick={handleCreateClick} data-testid="button-create-clinic">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Clinic
               </Button>
@@ -406,7 +437,7 @@ export default function AdminClinicsPage() {
                         <div className="flex flex-wrap gap-4 text-sm">
                           {clinic.phone && (
                             <div className="flex items-center gap-1" data-testid={`text-clinic-phone-${clinic.slug}`}>
-                              <Building2 className="h-4 w-4" />
+                              <Phone className="h-4 w-4" />
                               {clinic.phone}
                             </div>
                           )}
@@ -416,12 +447,43 @@ export default function AdminClinicsPage() {
                               {clinic.whatsapp}
                             </div>
                           )}
+                          {clinic.email && (
+                            <div className="flex items-center gap-1 text-blue-600" data-testid={`text-clinic-email-${clinic.slug}`}>
+                              📧 {clinic.email}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {clinic.phone && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.location.href = `tel:${clinic.phone}`}
+                          data-testid={`button-call-${clinic.slug}`}
+                        >
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call
+                        </Button>
+                      )}
+                      {clinic.whatsapp && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-950"
+                          onClick={() => {
+                            const cleanNumber = (clinic.whatsapp || '').replace(/[^\d]/g, '');
+                            window.open(`https://wa.me/${cleanNumber}`, '_blank');
+                          }}
+                          data-testid={`button-whatsapp-${clinic.slug}`}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          WhatsApp
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
@@ -459,6 +521,23 @@ export default function AdminClinicsPage() {
           )}
         </div>
       </div>
+
+      {/* Create Clinic Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-create-clinic">
+          <DialogHeader>
+            <DialogTitle>Add New Clinic</DialogTitle>
+            <DialogDescription>
+              Create a new veterinary clinic listing
+            </DialogDescription>
+          </DialogHeader>
+          <ClinicForm
+            form={form}
+            onSubmit={(data) => createClinicMutation.mutate(data)}
+            submitLabel={createClinicMutation.isPending ? "Creating..." : "Create Clinic"}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Clinic Dialog */}
       <Dialog open={!!editingClinic} onOpenChange={(open) => !open && setEditingClinic(null)}>
