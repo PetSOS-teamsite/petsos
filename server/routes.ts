@@ -953,6 +953,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import clinics from CSV
+  app.post("/api/clinics/import", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { csvData } = z.object({
+        csvData: z.string(),
+      }).parse(req.body);
+
+      const lines = csvData.split('\n').filter(line => line.trim());
+      if (lines.length < 2) {
+        return res.status(400).json({ message: "CSV must contain headers and at least one row" });
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim());
+      const regions = await storage.getAllRegions();
+      
+      const imported = [];
+      const errors = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        try {
+          const values = lines[i].split(',').map(v => v.trim());
+          const row: any = {};
+          headers.forEach((header, idx) => {
+            row[header] = values[idx] || '';
+          });
+
+          // Map CSV columns to clinic fields
+          const districtEn = row['District'] || row['District (English)'] || '';
+          const regionId = regions.find(r => 
+            r.nameEn?.toLowerCase().includes(districtEn.toLowerCase()) ||
+            r.nameZh?.includes(row['District'] || '')
+          )?.id;
+
+          if (!regionId) {
+            errors.push(`Row ${i}: No matching region found for "${districtEn}"`);
+            continue;
+          }
+
+          const clinicData = {
+            nameEn: row['Name of Vet Clinic (English)'] || row['Clinic Name (English)'] || 'Unnamed',
+            nameZh: row['獸醫診所名稱 (Chinese)'] || row['Clinic Name (Chinese)'] || '未命名',
+            addressEn: row['Address'] || row['Address (English)'] || '',
+            addressZh: row['營業地址'] || row['Address (Chinese)'] || '',
+            phone: row['Call Phone Number'] || row['Phone'] || '',
+            whatsapp: (row['WhatsApp Number'] || row['WhatsApp'] || '').replace(/[^\d+]/g, '') || undefined,
+            email: row['Email'] || undefined,
+            regionId: regionId,
+            open247: (row['24 hours'] || '').toLowerCase() === 'y' || (row['24 hours'] || '').toLowerCase() === 'yes',
+            websiteUrl: row['Website'] || row['Website URL'] || undefined,
+          };
+
+          // Check if clinic with same name and region exists
+          const existing = (await storage.getAllClinics()).find(c => 
+            c.nameEn?.toLowerCase() === clinicData.nameEn.toLowerCase() && 
+            c.regionId === regionId
+          );
+
+          if (existing) {
+            await storage.updateClinic(existing.id, clinicData);
+            imported.push({ action: 'updated', name: clinicData.nameEn, id: existing.id });
+          } else {
+            const created = await storage.createClinic(clinicData);
+            imported.push({ action: 'created', name: clinicData.nameEn, id: created.id });
+          }
+        } catch (error) {
+          errors.push(`Row ${i}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      await storage.createAuditLog({
+        entityType: 'clinic',
+        entityId: 'bulk-import',
+        action: 'import',
+        changes: { imported: imported.length, errors: errors.length },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({ imported, errors, summary: { createdOrUpdated: imported.length, errors: errors.length } });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Staff management endpoints - DEPRECATED
   app.get("/api/clinics/:id/staff", isAuthenticated, isAdmin, async (req, res) => {
     console.warn('[DEPRECATED] GET /api/clinics/:id/staff called - update to use hospital staff management');
