@@ -468,7 +468,7 @@ export default function AdminClinicsPage() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Clinic Name</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white min-w-[300px]">Clinic Name & Address</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Phone</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">WhatsApp</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Status</th>
@@ -483,22 +483,32 @@ export default function AdminClinicsPage() {
                       className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition"
                     >
                       <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          <div className="font-medium text-gray-900 dark:text-white" data-testid={`text-clinic-name-${clinic.slug}`}>
-                            {clinic.nameEn}
+                        <div className="flex flex-col gap-1.5">
+                          <div>
+                            <div className="font-semibold text-gray-900 dark:text-white text-sm" data-testid={`text-clinic-name-${clinic.slug}`}>
+                              {clinic.nameEn}
+                            </div>
+                            {clinic.nameZh && (
+                              <div className="text-xs text-gray-600 dark:text-gray-400">
+                                {clinic.nameZh}
+                              </div>
+                            )}
                           </div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400" data-testid={`text-clinic-address-${clinic.slug}`}>
-                            {clinic.addressEn}
+                          <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight" data-testid={`text-clinic-address-${clinic.slug}`}>
+                            <div>{clinic.addressEn}</div>
+                            {clinic.addressZh && (
+                              <div className="text-gray-400 dark:text-gray-500">{clinic.addressZh}</div>
+                            )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400" data-testid={`text-clinic-phone-${clinic.slug}`}>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap" data-testid={`text-clinic-phone-${clinic.slug}`}>
                         {clinic.phone || '—'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400" data-testid={`text-clinic-whatsapp-${clinic.slug}`}>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap" data-testid={`text-clinic-whatsapp-${clinic.slug}`}>
                         {clinic.whatsapp || '—'}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {clinic.open247 ? (
                           <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium" data-testid={`badge-24h-${clinic.slug}`}>
                             24-Hour
