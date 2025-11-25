@@ -158,6 +158,7 @@ export const clinics = pgTable("clinics", {
   location: geography("location"), // PostGIS geography point for efficient spatial queries
   status: text("status").notNull().default('active'), // active, inactive, deleted
   services: text("services").array(),
+  ownerVerificationCode: text("owner_verification_code"), // 6-digit passcode for clinic owner edit link
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
@@ -262,6 +263,7 @@ export const hospitals = pgTable("hospitals", {
   insuranceSupport: text("insurance_support").array(),
   recheckWindow: text("recheck_window"),
   refundPolicy: text("refund_policy"),
+  ownerVerificationCode: text("owner_verification_code"), // 6-digit passcode for hospital owner edit link
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

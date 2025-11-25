@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, Loader2, Check, Clock } from "lucide-react";
+import { ArrowLeft, Loader2, Check, Clock, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -11,7 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -21,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -29,6 +29,12 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/dateFormat";
 import type { Hospital as Clinic, Region } from "@shared/schema";
+
+const verificationSchema = z.object({
+  verificationCode: z.string().length(6, "Verification code must be 6 digits").regex(/^\d+$/, "Must be 6 digits"),
+});
+
+type VerificationData = z.infer<typeof verificationSchema>;
 
 const clinicFormSchema = z.object({
   nameEn: z.string().min(1, "Clinic name (English) is required"),
@@ -44,9 +50,10 @@ const clinicFormSchema = z.object({
 
 type ClinicFormData = z.infer<typeof clinicFormSchema>;
 
-export default function ClinicOwnerEditPage() {
+export default function ClinicOwnerEditVerifiedPage() {
   const { toast } = useToast();
   const [match, params] = useRoute("/clinic/edit/:slug");
+  const [verified, setVerified] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const clinicSlug = params?.slug as string;
@@ -67,7 +74,12 @@ export default function ClinicOwnerEditPage() {
     queryKey: ["/api/regions"],
   });
 
-  const form = useForm<ClinicFormData>({
+  const verifyForm = useForm<VerificationData>({
+    resolver: zodResolver(verificationSchema),
+    defaultValues: { verificationCode: "" },
+  });
+
+  const clinicForm = useForm<ClinicFormData>({
     resolver: zodResolver(clinicFormSchema),
     defaultValues: {
       nameEn: "",
@@ -82,10 +94,9 @@ export default function ClinicOwnerEditPage() {
     },
   });
 
-  // Load clinic data into form
   useEffect(() => {
     if (clinic) {
-      form.reset({
+      clinicForm.reset({
         nameEn: clinic.nameEn || "",
         nameZh: clinic.nameZh || "",
         addressEn: clinic.addressEn || "",
@@ -98,6 +109,26 @@ export default function ClinicOwnerEditPage() {
       });
     }
   }, [clinic]);
+
+  const verifyMutation = useMutation({
+    mutationFn: async (data: VerificationData) => {
+      if (!clinic?.id) throw new Error("Clinic not found");
+      const response = await fetch(`/api/clinics/${clinic.id}/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verificationCode: data.verificationCode }),
+      });
+      if (!response.ok) throw new Error("Invalid verification code");
+      return response.json();
+    },
+    onSuccess: () => {
+      setVerified(true);
+      toast({ title: "Verified successfully!" });
+    },
+    onError: () => {
+      toast({ title: "Invalid verification code", variant: "destructive" });
+    },
+  });
 
   const updateMutation = useMutation({
     mutationFn: async (data: ClinicFormData) => {
@@ -146,6 +177,52 @@ export default function ClinicOwnerEditPage() {
     );
   }
 
+  if (!verified) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4 py-12 max-w-md">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Verify Access
+              </CardTitle>
+              <CardDescription>Enter the 6-digit verification code to edit clinic information</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...verifyForm}>
+                <form onSubmit={verifyForm.handleSubmit((data) => verifyMutation.mutate(data))} className="space-y-4">
+                  <FormField
+                    control={verifyForm.control}
+                    name="verificationCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Verification Code</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="text"
+                            placeholder="000000"
+                            maxLength={6}
+                            className="text-center text-2xl tracking-widest"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={verifyMutation.isPending}>
+                    {verifyMutation.isPending ? "Verifying..." : "Verify"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
@@ -153,7 +230,7 @@ export default function ClinicOwnerEditPage() {
           <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-3">
               <Link href="/">
-                <Button variant="ghost" size="icon" data-testid="button-back">
+                <Button variant="ghost" size="icon">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
               </Link>
@@ -173,36 +250,35 @@ export default function ClinicOwnerEditPage() {
       </div>
 
       <div className="container mx-auto px-4 py-6 max-w-2xl">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit((data) => updateMutation.mutate(data))} className="space-y-6">
+        <Form {...clinicForm}>
+          <form onSubmit={clinicForm.handleSubmit((data) => updateMutation.mutate(data))} className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Basic Information</CardTitle>
-                <CardDescription>Update your clinic name and address</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
-                    control={form.control}
+                    control={clinicForm.control}
                     name="nameEn"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Clinic Name (English) *</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Central Animal Clinic" />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
-                    control={form.control}
+                    control={clinicForm.control}
                     name="nameZh"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Clinic Name (Chinese) *</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="中環動物診所" />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -212,26 +288,26 @@ export default function ClinicOwnerEditPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
-                    control={form.control}
+                    control={clinicForm.control}
                     name="addressEn"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Address (English) *</FormLabel>
                         <FormControl>
-                          <Textarea {...field} placeholder="123 Queen's Road Central" rows={2} />
+                          <Textarea {...field} rows={2} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
-                    control={form.control}
+                    control={clinicForm.control}
                     name="addressZh"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Address (Chinese) *</FormLabel>
                         <FormControl>
-                          <Textarea {...field} placeholder="皇后大道中123號" rows={2} />
+                          <Textarea {...field} rows={2} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -240,7 +316,7 @@ export default function ClinicOwnerEditPage() {
                 </div>
 
                 <FormField
-                  control={form.control}
+                  control={clinicForm.control}
                   name="regionId"
                   render={({ field }) => (
                     <FormItem>
@@ -248,7 +324,7 @@ export default function ClinicOwnerEditPage() {
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select region" />
+                            <SelectValue />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -269,44 +345,43 @@ export default function ClinicOwnerEditPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Contact Information</CardTitle>
-                <CardDescription>How customers can reach you</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
                   <FormField
-                    control={form.control}
+                    control={clinicForm.control}
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Phone *</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="+852 1234 5678" />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
-                    control={form.control}
+                    control={clinicForm.control}
                     name="whatsapp"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>WhatsApp</FormLabel>
                         <FormControl>
-                          <Input {...field} value={field.value || ""} placeholder="+852 1234 5678" />
+                          <Input {...field} value={field.value || ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
-                    control={form.control}
+                    control={clinicForm.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input {...field} value={field.value || ""} placeholder="info@clinic.com" type="email" />
+                          <Input {...field} value={field.value || ""} type="email" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -319,23 +394,18 @@ export default function ClinicOwnerEditPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Operations</CardTitle>
-                <CardDescription>Set your operating hours</CardDescription>
               </CardHeader>
               <CardContent>
                 <FormField
-                  control={form.control}
+                  control={clinicForm.control}
                   name="open247"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
                         <FormLabel className="text-base">24-Hour Operation</FormLabel>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Enable if your clinic operates 24/7</p>
                       </div>
                       <FormControl>
-                        <Switch
-                          checked={field.value || false}
-                          onCheckedChange={field.onChange}
-                        />
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
                     </FormItem>
                   )}
@@ -343,28 +413,21 @@ export default function ClinicOwnerEditPage() {
               </CardContent>
             </Card>
 
-            <div className="flex gap-2">
-              <Button
-                type="submit"
-                disabled={updateMutation.isPending}
-                className="flex-1"
-                size="lg"
-              >
-                {updateMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : saved ? (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Saved!
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
-              </Button>
-            </div>
+            <Button type="submit" disabled={updateMutation.isPending} className="w-full" size="lg">
+              {updateMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : saved ? (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Saved!
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </form>
         </Form>
       </div>
