@@ -495,6 +495,19 @@ export default function AdminClinicsPage() {
                         Edit
                       </Button>
                       <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const link = `${window.location.origin}/clinic/edit/${clinic.slug}`;
+                          navigator.clipboard.writeText(link);
+                          toast({ title: "Link copied to clipboard", description: link });
+                        }}
+                        data-testid={`button-copy-link-${clinic.slug}`}
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Link
+                      </Button>
+                      <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => {
