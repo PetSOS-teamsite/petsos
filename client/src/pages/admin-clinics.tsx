@@ -247,6 +247,10 @@ export default function AdminClinicsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [clinicToDelete, setClinicToDelete] = useState<Clinic | null>(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [csvData, setCsvData] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResults, setImportResults] = useState<any>(null);
 
   const { data: clinics, isLoading: clinicsLoading, refetch } = useQuery<Clinic[]>({
     queryKey: ["/api/clinics"],
@@ -355,6 +359,42 @@ export default function AdminClinicsPage() {
     setIsCreateDialogOpen(true);
   };
 
+  const handleImportCSV = async () => {
+    if (!csvData.trim()) {
+      toast({ title: "Error", description: "Please paste CSV data", variant: "destructive" });
+      return;
+    }
+    
+    setIsImporting(true);
+    try {
+      const response = await apiRequest("POST", "/api/clinics/import", { csvData });
+      setImportResults(response);
+      toast({ 
+        title: "Import Complete", 
+        description: `Created/Updated: ${response.summary.createdOrUpdated}, Errors: ${response.summary.errors}` 
+      });
+      setCsvData("");
+      queryClient.invalidateQueries({ queryKey: ["/api/clinics"] });
+      refetch();
+      setTimeout(() => setIsImportDialogOpen(false), 1000);
+    } catch (error: any) {
+      toast({ title: "Import Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setCsvData(event.target?.result as string);
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -401,6 +441,14 @@ export default function AdminClinicsPage() {
                 )}
               </div>
 
+              <Button 
+                variant="outline" 
+                onClick={() => setIsImportDialogOpen(true)}
+                data-testid="button-import-csv"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Import CSV
+              </Button>
               <Button onClick={handleCreateClick} data-testid="button-create-clinic">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Clinic
