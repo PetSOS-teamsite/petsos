@@ -251,6 +251,8 @@ export default function AdminClinicsPage() {
   const [csvData, setCsvData] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const [importResults, setImportResults] = useState<any>(null);
+  const [clinicForCode, setClinicForCode] = useState<Clinic | null>(null);
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
 
   const { data: clinics, isLoading: clinicsLoading, refetch } = useQuery<Clinic[]>({
     queryKey: ["/api/clinics"],
@@ -316,6 +318,20 @@ export default function AdminClinicsPage() {
     },
     onError: (error: any) => {
       toast({ title: "Error deleting clinic", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const generateCodeMutation = useMutation({
+    mutationFn: async (clinicId: string) => {
+      const response = await apiRequest("POST", `/api/clinics/${clinicId}/generate-code`, {});
+      return response.code;
+    },
+    onSuccess: (code: string) => {
+      setGeneratedCode(code);
+      toast({ title: "Code generated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error generating code", description: error.message, variant: "destructive" });
     },
   });
 
@@ -562,6 +578,21 @@ export default function AdminClinicsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
+                              setClinicForCode(clinic);
+                              setGeneratedCode(null);
+                              generateCodeMutation.mutate(clinic.id);
+                            }}
+                            data-testid={`button-generate-code-${clinic.id}`}
+                            className="h-8 w-8 p-0"
+                            title="Generate Access Code"
+                            disabled={generateCodeMutation.isPending}
+                          >
+                            {generateCodeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckIcon className="h-4 w-4" />}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
                               const link = `${window.location.origin}/clinic/edit/${clinic.id}`;
                               navigator.clipboard.writeText(link);
                               toast({ title: "Link copied", description: clinic.name });
@@ -662,6 +693,86 @@ export default function AdminClinicsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Generated Code Dialog */}
+      <Dialog open={!!clinicForCode && !!generatedCode} onOpenChange={(open) => {
+        if (!open) {
+          setClinicForCode(null);
+          setGeneratedCode(null);
+        }
+      }}>
+        <DialogContent data-testid="dialog-generated-code">
+          <DialogHeader>
+            <DialogTitle>Access Code Generated</DialogTitle>
+            <DialogDescription>
+              Share this 6-digit code with {clinicForCode?.name} clinic owners to let them edit their clinic information
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/30 border-2 border-red-300 dark:border-red-700 rounded-lg text-center">
+              <p className="text-xs text-red-600 dark:text-red-400 mb-2">VERIFICATION CODE</p>
+              <p className="text-5xl font-bold text-red-600 dark:text-red-400 tracking-widest font-mono" data-testid="text-generated-code">
+                {generatedCode}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                <strong>Share link:</strong>
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={`${window.location.origin}/clinic/edit/${clinicForCode?.id}`}
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-900 text-sm text-gray-600 dark:text-gray-400"
+                  data-testid="input-share-link"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/clinic/edit/${clinicForCode?.id}`);
+                    toast({ title: "Link copied" });
+                  }}
+                  data-testid="button-copy-link-dialog"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+              <p className="text-xs text-blue-800 dark:text-blue-300">
+                <strong>How to share:</strong> Send both the link and the 6-digit code to the clinic owner. They'll need both to access the edit form.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setClinicForCode(null);
+                setGeneratedCode(null);
+              }}
+              data-testid="button-close-code-dialog"
+            >
+              Close
+            </Button>
+            <Button
+              onClick={() => {
+                const message = `PetSOS Clinic Edit Access\n\nClinic: ${clinicForCode?.name}\nAccess Code: ${generatedCode}\n\nLink: ${window.location.origin}/clinic/edit/${clinicForCode?.id}`;
+                navigator.clipboard.writeText(message);
+                toast({ title: "Access info copied", description: "Ready to send to clinic owner" });
+              }}
+              data-testid="button-copy-all"
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copy All Info
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Import CSV Dialog */}
       <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
