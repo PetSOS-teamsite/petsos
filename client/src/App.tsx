@@ -77,7 +77,7 @@ function Router() {
       <Route path="/clinics" component={ClinicsPage} />
       <Route path="/hospitals" component={HospitalsPage} />
       <Route path="/hospitals/:slug" component={HospitalDetailPage} />
-      <Route path="/clinic/edit/:slug" component={ClinicOwnerEditVerifiedPage} />
+      <Route path="/clinic/edit/:id" component={ClinicOwnerEditVerifiedPage} />
       <Route path="/hospital/edit/:slug" component={HospitalOwnerEditVerifiedPage} />
       <Route path="/districts" component={DistrictsIndexPage} />
       <Route path="/district/:district" component={DistrictPage} />

@@ -28,7 +28,7 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/dateFormat";
-import type { Hospital as Clinic, Region } from "@shared/schema";
+import type { Clinic, Region } from "@shared/schema";
 
 const verificationSchema = z.object({
   verificationCode: z.string().length(6, "Verification code must be 6 digits").regex(/^\d+$/, "Must be 6 digits"),
@@ -37,37 +37,36 @@ const verificationSchema = z.object({
 type VerificationData = z.infer<typeof verificationSchema>;
 
 const clinicFormSchema = z.object({
-  nameEn: z.string().min(1, "Clinic name (English) is required"),
+  name: z.string().min(1, "Clinic name (English) is required"),
   nameZh: z.string().min(1, "Clinic name (Chinese) is required"),
-  addressEn: z.string().min(1, "Address (English) is required"),
+  address: z.string().min(1, "Address (English) is required"),
   addressZh: z.string().min(1, "Address (Chinese) is required"),
   phone: z.string().min(1, "Phone is required"),
   whatsapp: z.string().optional(),
   email: z.string().optional(),
   regionId: z.string().min(1, "Region is required"),
-  open247: z.boolean().default(false),
+  is24Hour: z.boolean().default(false),
 });
 
 type ClinicFormData = z.infer<typeof clinicFormSchema>;
 
 export default function ClinicOwnerEditVerifiedPage() {
   const { toast } = useToast();
-  const [match, params] = useRoute("/clinic/edit/:slug");
+  const [match, params] = useRoute("/clinic/edit/:id");
   const [verified, setVerified] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const clinicSlug = params?.slug as string;
+  const clinicId = params?.id as string;
 
   const { data: clinic, isLoading: clinicLoading } = useQuery<Clinic | null>({
-    queryKey: ["/api/clinics", clinicSlug],
+    queryKey: ["/api/clinics", clinicId],
     queryFn: async () => {
-      if (!clinicSlug) return null;
-      const response = await fetch(`/api/clinics?slug=${clinicSlug}`);
+      if (!clinicId) return null;
+      const response = await fetch(`/api/clinics/${clinicId}`);
       if (!response.ok) return null;
-      const clinics = await response.json();
-      return clinics.find((c: Clinic) => c.slug === clinicSlug) || null;
+      return response.json();
     },
-    enabled: !!clinicSlug,
+    enabled: !!clinicId,
   });
 
   const { data: regions } = useQuery<Region[]>({
