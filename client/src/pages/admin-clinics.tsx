@@ -488,6 +488,7 @@ export default function AdminClinicsPage() {
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Phone</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">WhatsApp</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Status</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Verification Code</th>
                     <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">Actions</th>
                   </tr>
                 </thead>
@@ -533,6 +534,15 @@ export default function AdminClinicsPage() {
                           <Badge className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs" data-testid={`badge-standard-${clinic.id}`}>
                             Standard
                           </Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {clinic.ownerVerificationCode ? (
+                          <Badge className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-mono font-bold tracking-wide" data-testid={`badge-code-${clinic.id}`}>
+                            {clinic.ownerVerificationCode}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
