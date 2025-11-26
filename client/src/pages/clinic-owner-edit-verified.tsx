@@ -81,33 +81,33 @@ export default function ClinicOwnerEditVerifiedPage() {
   const clinicForm = useForm<ClinicFormData>({
     resolver: zodResolver(clinicFormSchema),
     defaultValues: {
-      nameEn: "",
+      name: "",
       nameZh: "",
-      addressEn: "",
+      address: "",
       addressZh: "",
       phone: "",
       whatsapp: "",
       email: "",
       regionId: "",
-      open247: false,
+      is24Hour: false,
     },
   });
 
   useEffect(() => {
     if (clinic) {
       clinicForm.reset({
-        nameEn: clinic.nameEn || "",
+        name: clinic.name || "",
         nameZh: clinic.nameZh || "",
-        addressEn: clinic.addressEn || "",
+        address: clinic.address || "",
         addressZh: clinic.addressZh || "",
         phone: clinic.phone || "",
         whatsapp: clinic.whatsapp || "",
         email: clinic.email || "",
         regionId: clinic.regionId || "",
-        open247: clinic.open247 || false,
+        is24Hour: clinic.is24Hour || false,
       });
     }
-  }, [clinic]);
+  }, [clinic, clinicForm]);
 
   const verifyMutation = useMutation({
     mutationFn: async (data: VerificationData) => {
@@ -259,7 +259,7 @@ export default function ClinicOwnerEditVerifiedPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={clinicForm.control}
-                    name="nameEn"
+                    name="name"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Clinic Name (English) *</FormLabel>
@@ -288,7 +288,7 @@ export default function ClinicOwnerEditVerifiedPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={clinicForm.control}
-                    name="addressEn"
+                    name="address"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Address (English) *</FormLabel>
@@ -397,7 +397,7 @@ export default function ClinicOwnerEditVerifiedPage() {
               <CardContent>
                 <FormField
                   control={clinicForm.control}
-                  name="open247"
+                  name="is24Hour"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
