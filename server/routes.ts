@@ -872,14 +872,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get clinic by ID → hospital by ID
+  // Get clinic by ID
   app.get("/api/clinics/:id", async (req, res) => {
-    console.warn('[DEPRECATED] /api/clinics/:id called - use /api/hospitals/:id instead');
-    const hospital = await storage.getHospital(req.params.id);
-    if (!hospital) {
+    const clinic = await storage.getClinic(req.params.id);
+    if (!clinic) {
       return res.status(404).json({ message: "Clinic not found" });
     }
-    res.json(hospitalToClinicFormat(hospital));
+    res.json(clinic);
   });
 
   // Clinic CRUD endpoints (admin only)
