@@ -1248,9 +1248,10 @@ class DatabaseStorage implements IStorage {
 
   async getRegionsByCountry(countryCode: string): Promise<Region[]> {
     try {
+      // Try to filter by countryCode first, fallback if column doesn't exist
       return await db.select().from(regions).where(eq(regions.countryCode, countryCode));
     } catch (error) {
-      console.warn('getRegionsByCountry query failed:', error instanceof Error ? error.message : error);
+      console.warn('getRegionsByCountry query failed (countryCode column may not exist):', error instanceof Error ? error.message : error);
       return [];
     }
   }
@@ -1332,12 +1333,18 @@ class DatabaseStorage implements IStorage {
 
   async getPetBreedsByCountry(countryCode: string): Promise<PetBreed[]> {
     try {
+      // Try to filter by countryCode, fallback if column doesn't exist
       return await db.select().from(petBreeds).where(
         and(eq(petBreeds.countryCode, countryCode), eq(petBreeds.active, true))
       );
     } catch (error) {
-      console.warn('getPetBreedsByCountry query failed:', error instanceof Error ? error.message : error);
-      return [];
+      console.warn('getPetBreedsByCountry query failed (countryCode column may not exist):', error instanceof Error ? error.message : error);
+      // Return all active breeds as fallback
+      try {
+        return await db.select().from(petBreeds).where(eq(petBreeds.active, true));
+      } catch {
+        return [];
+      }
     }
   }
 

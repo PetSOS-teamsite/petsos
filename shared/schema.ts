@@ -99,6 +99,7 @@ export type Country = typeof countries.$inferSelect;
 export const regions = pgTable("regions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   countryId: varchar("country_id").notNull().references(() => countries.id),
+  countryCode: text("country_code"), // Support both countryId (FK) and countryCode (string code)
   code: text("code").notNull(),
   nameEn: text("name_en").notNull(),
   nameZh: text("name_zh"),
@@ -125,6 +126,8 @@ export const petBreeds = pgTable("pet_breeds", {
   breedEn: text("breed_en"), // alias for nameEn
   nameZh: text("name_zh"),
   breedZh: text("breed_zh"), // alias for nameZh
+  countryCode: text("country_code"), // HK, SG, etc. - filters breeds by country
+  isCommon: boolean("is_common").default(false), // whether this is a common breed
   commonNames: text("common_names").array(), // HK colloquial names
   active: boolean("active").notNull().default(true),
 });
