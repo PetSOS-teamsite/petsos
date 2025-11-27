@@ -1595,51 +1595,76 @@ class DatabaseStorage implements IStorage {
 
   // Hospitals
   async getHospital(id: string): Promise<Hospital | undefined> {
-    const result = await db.select().from(hospitals).where(eq(hospitals.id, id));
-    return result[0];
+    try {
+      const result = await db.select().from(hospitals).where(eq(hospitals.id, id));
+      return result[0];
+    } catch (error) {
+      console.warn('getHospital query failed:', error instanceof Error ? error.message : error);
+      return undefined;
+    }
   }
 
   async getHospitalBySlug(slug: string): Promise<Hospital | undefined> {
-    const result = await db.select().from(hospitals).where(eq(hospitals.slug, slug));
-    return result[0];
+    try {
+      const result = await db.select().from(hospitals).where(eq(hospitals.slug, slug));
+      return result[0];
+    } catch (error) {
+      console.warn('getHospitalBySlug query failed:', error instanceof Error ? error.message : error);
+      return undefined;
+    }
   }
 
   async getHospitalsByRegion(regionId: string): Promise<Hospital[]> {
-    return await db.select().from(hospitals).where(eq(hospitals.regionId, regionId));
+    try {
+      return await db.select().from(hospitals).where(eq(hospitals.regionId, regionId));
+    } catch (error) {
+      console.warn('getHospitalsByRegion query failed:', error instanceof Error ? error.message : error);
+      return [];
+    }
   }
 
   async getAllHospitals(): Promise<Hospital[]> {
-    return await db.select().from(hospitals);
+    try {
+      return await db.select().from(hospitals);
+    } catch (error) {
+      console.warn('getAllHospitals query failed:', error instanceof Error ? error.message : error);
+      return [];
+    }
   }
 
   async getNearbyHospitals(latitude: number, longitude: number, radiusMeters: number): Promise<(Hospital & { distance: number })[]> {
-    // Use PostGIS ST_DWithin for efficient spatial query
-    const results = await db
-      .select({
-        hospital: hospitals,
-        distance: sql<number>`ST_Distance(
-          ${hospitals.location}::geography,
-          ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
-        )`.as('distance')
-      })
-      .from(hospitals)
-      .where(
-        and(
-          eq(hospitals.isAvailable, true),
-          sql`${hospitals.location} IS NOT NULL`,
-          sql`ST_DWithin(
+    try {
+      // Use PostGIS ST_DWithin for efficient spatial query
+      const results = await db
+        .select({
+          hospital: hospitals,
+          distance: sql<number>`ST_Distance(
             ${hospitals.location}::geography,
-            ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography,
-            ${radiusMeters}
-          )`
+            ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
+          )`.as('distance')
+        })
+        .from(hospitals)
+        .where(
+          and(
+            eq(hospitals.isAvailable, true),
+            sql`${hospitals.location} IS NOT NULL`,
+            sql`ST_DWithin(
+              ${hospitals.location}::geography,
+              ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography,
+              ${radiusMeters}
+            )`
+          )
         )
-      )
-      .orderBy(sql`distance`);
+        .orderBy(sql`distance`);
 
-    return results.map(r => ({
-      ...r.hospital,
-      distance: r.distance
-    }));
+      return results.map(r => ({
+        ...r.hospital,
+        distance: r.distance
+      }));
+    } catch (error) {
+      console.warn('getNearbyHospitals query failed:', error instanceof Error ? error.message : error);
+      return [];
+    }
   }
 
   async createHospital(insertHospital: InsertHospital): Promise<Hospital> {
