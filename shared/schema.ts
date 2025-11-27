@@ -367,6 +367,12 @@ export const privacyConsents = pgTable("privacy_consents", {
   consentedAt: timestamp("consented_at").notNull().defaultNow(),
 });
 
+export const insertPrivacyConsentSchema = createInsertSchema(privacyConsents).omit({
+  id: true,
+  consentedAt: true,
+});
+
+export type InsertPrivacyConsent = z.infer<typeof insertPrivacyConsentSchema>;
 export type PrivacyConsent = typeof privacyConsents.$inferSelect;
 
 // Translations table
@@ -377,6 +383,11 @@ export const translations = pgTable("translations", {
   zhHk: text("zh_hk").notNull(),
 });
 
+export const insertTranslationSchema = createInsertSchema(translations).omit({
+  id: true,
+});
+
+export type InsertTranslation = z.infer<typeof insertTranslationSchema>;
 export type Translation = typeof translations.$inferSelect;
 
 // Hospital Consult Fees table
