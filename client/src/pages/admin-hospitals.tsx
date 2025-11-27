@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, X, Activity, Image as ImageIcon, Upload, XCircle } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, X, Activity, Image as ImageIcon, Upload, XCircle, Copy, ExternalLink, Check as CheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -54,6 +54,7 @@ import { insertHospitalSchema, type Hospital, type Region } from "@shared/schema
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { formatDate } from "@/lib/dateFormat";
 
 // Helper functions for comma-separated arrays
 const parseCommaList = (text: string): string[] | null => {
@@ -155,10 +156,10 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
-            <TabsTrigger value="photos" className="opacity-50 cursor-not-allowed">Photos</TabsTrigger>
-            <TabsTrigger value="facilities" className="opacity-50 cursor-not-allowed">Facilities</TabsTrigger>
-            <TabsTrigger value="medical" className="opacity-50 cursor-not-allowed">Medical Services</TabsTrigger>
-            <TabsTrigger value="operational" className="opacity-50 cursor-not-allowed">Operational</TabsTrigger>
+            <TabsTrigger value="photos">Photos</TabsTrigger>
+            <TabsTrigger value="facilities">Facilities</TabsTrigger>
+            <TabsTrigger value="medical">Medical Services</TabsTrigger>
+            <TabsTrigger value="operational">Operational</TabsTrigger>
           </TabsList>
 
           {/* Basic Info Tab */}
@@ -876,7 +877,10 @@ export default function AdminHospitalsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isCodeDialogOpen, setIsCodeDialogOpen] = useState(false);
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
+  const [hospitalForCode, setHospitalForCode] = useState<Hospital | null>(null);
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRegion, setFilterRegion] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -1114,6 +1118,20 @@ export default function AdminHospitalsPage() {
       .trim();
   };
 
+  const generateCodeMutation = useMutation({
+    mutationFn: async (hospitalId: string) => {
+      const response: any = await apiRequest("POST", `/api/hospitals/${hospitalId}/generate-code`, {});
+      return response.code;
+    },
+    onSuccess: (code: string) => {
+      setGeneratedCode(code);
+      toast({ title: "Code generated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error generating code", description: error.message, variant: "destructive" });
+    },
+  });
+
   if (hospitalsLoading || regionsLoading) {
     return (
       <div className="container mx-auto p-6 max-w-7xl">
@@ -1301,6 +1319,21 @@ export default function AdminHospitalsPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => {
+                          setHospitalForCode(hospital);
+                          setGeneratedCode(null);
+                          generateCodeMutation.mutate(hospital.id);
+                          setIsCodeDialogOpen(true);
+                        }}
+                        data-testid={`button-generate-code-${hospital.id}`}
+                        title="Generate Access Code"
+                        disabled={generateCodeMutation.isPending}
+                      >
+                        {generateCodeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckIcon className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => openEditDialog(hospital)}
                         data-testid={`button-edit-${hospital.id}`}
                       >
@@ -1398,6 +1431,61 @@ export default function AdminHospitalsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Generated Code Dialog */}
+      <Dialog open={isCodeDialogOpen} onOpenChange={setIsCodeDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Generated Code</DialogTitle>
+            <DialogDescription>
+              Share this code with the hospital owner to access their edit link
+            </DialogDescription>
+          </DialogHeader>
+          {generatedCode && hospitalForCode && (
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Access Code:</p>
+                <p className="text-3xl font-mono font-bold text-red-600 dark:text-red-400 text-center tracking-widest">
+                  {generatedCode}
+                </p>
+              </div>
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Edit Link:</p>
+                <p className="text-sm font-mono break-all text-blue-600 dark:text-blue-400">
+                  {`${window.location.origin}/hospital/edit/${hospitalForCode.id}?code=${generatedCode}`}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedCode);
+                    toast({ title: "Code copied to clipboard" });
+                  }}
+                  className="flex-1"
+                  data-testid="button-copy-code"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy Code
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const link = `${window.location.origin}/hospital/edit/${hospitalForCode.id}?code=${generatedCode}`;
+                    navigator.clipboard.writeText(link);
+                    toast({ title: "Link copied to clipboard" });
+                  }}
+                  className="flex-1"
+                  data-testid="button-copy-link"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Copy Link
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

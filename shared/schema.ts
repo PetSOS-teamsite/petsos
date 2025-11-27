@@ -1,7 +1,13 @@
 import { pgTable, varchar, text, timestamp, integer, boolean, decimal, jsonb, index, sql, uniqueIndex } from 'drizzle-orm/pg-core';
-import { sql as sqlFn } from 'drizzle-orm';
+import { customType } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
+
+const geography = customType<{ data: string }>({
+  dataType() {
+    return 'geography';
+  },
+});
 
 // Sessions table
 export const sessions = pgTable("sessions", {
@@ -402,5 +408,5 @@ export const insertHospitalUpdateSchema = createInsertSchema(hospitalUpdates).om
   createdAt: true,
 });
 
-export type InsertHospitalUpdate = z.infer<typeof hospitalUpdates.$inferSelect;
+export type InsertHospitalUpdate = z.infer<typeof insertHospitalUpdateSchema>;
 export type HospitalUpdate = typeof hospitalUpdates.$inferSelect;
