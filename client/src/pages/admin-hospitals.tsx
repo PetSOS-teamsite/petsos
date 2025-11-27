@@ -344,8 +344,8 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
             </Card>
           </TabsContent>
 
-          {/* Facilities Tab - Hidden until hospital provides data */}
-          <TabsContent value="facilities" className="space-y-4 hidden">
+          {/* Facilities Tab */}
+          <TabsContent value="facilities" className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -426,6 +426,24 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">End-of-Life Support</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="oxygenTank"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Oxygen Tank</FormLabel>
                     </div>
                     <FormControl>
                       <Switch
@@ -951,6 +969,7 @@ export default function AdminHospitalsPage() {
       typicalWaitBand: null,
       isolationWard: null,
       ambulanceSupport: null,
+      oxygenTank: null,
       icuLevel: null,
       nurse24h: null,
       ownerVisitPolicy: null,
@@ -1013,6 +1032,7 @@ export default function AdminHospitalsPage() {
       typicalWaitBand: hospital.typicalWaitBand || null,
       isolationWard: hospital.isolationWard || null,
       ambulanceSupport: hospital.ambulanceSupport || null,
+      oxygenTank: hospital.oxygenTank || null,
       icuLevel: hospital.icuLevel || null,
       nurse24h: hospital.nurse24h || null,
       ownerVisitPolicy: hospital.ownerVisitPolicy || null,

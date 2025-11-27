@@ -60,7 +60,7 @@ function PageLoader() {
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const hasClinicAccess = user?.clinicId;
+  const hasClinicAccess = user?.role === 'clinic_staff' || user?.role === 'hospital_staff';
   const [location] = useLocation();
   
   // Track page views
