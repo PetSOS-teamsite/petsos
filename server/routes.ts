@@ -993,30 +993,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           const clinicData = {
-            nameEn: row['Name of Vet Clinic (English)'] || row['Clinic Name (English)'] || 'Unnamed',
+            name: row['Name of Vet Clinic (English)'] || row['Clinic Name (English)'] || 'Unnamed',
             nameZh: row['獸醫診所名稱 (Chinese)'] || row['Clinic Name (Chinese)'] || '未命名',
-            addressEn: row['Address'] || row['Address (English)'] || '',
+            address: row['Address'] || row['Address (English)'] || '',
             addressZh: row['營業地址'] || row['Address (Chinese)'] || '',
             phone: row['Call Phone Number'] || row['Phone'] || '',
             whatsapp: (row['WhatsApp Number'] || row['WhatsApp'] || '').replace(/[^\d+]/g, '') || undefined,
             email: row['Email'] || undefined,
             regionId: regionId,
-            open247: (row['24 hours'] || '').toLowerCase() === 'y' || (row['24 hours'] || '').toLowerCase() === 'yes',
+            is24Hour: (row['24 hours'] || '').toLowerCase() === 'y' || (row['24 hours'] || '').toLowerCase() === 'yes',
             websiteUrl: row['Website'] || row['Website URL'] || undefined,
           };
 
           // Check if clinic with same name and region exists
           const existing = (await storage.getAllClinics()).find(c => 
-            c.nameEn?.toLowerCase() === clinicData.nameEn.toLowerCase() && 
+            c.name?.toLowerCase() === clinicData.name.toLowerCase() && 
             c.regionId === regionId
           );
 
           if (existing) {
             await storage.updateClinic(existing.id, clinicData);
-            imported.push({ action: 'updated', name: clinicData.nameEn, id: existing.id });
+            imported.push({ action: 'updated', name: clinicData.name, id: existing.id });
           } else {
             const created = await storage.createClinic(clinicData);
-            imported.push({ action: 'created', name: clinicData.nameEn, id: created.id });
+            imported.push({ action: 'created', name: clinicData.name, id: created.id });
           }
         } catch (error) {
           errors.push(`Row ${i}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -1435,17 +1435,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create emergency request
   app.post("/api/emergency-requests", async (req, res) => {
     try {
-      // Extend schema to coerce petAge from string to number for form compatibility
+      // Extend schema to ensure petAge is a string
       const emergencyRequestSchemaWithCoercion = insertEmergencyRequestSchema.extend({
-        petAge: z.preprocess(
-          (val) => {
-            if (val === null || val === undefined || val === '') return null;
-            const num = Number(val);
-            if (isNaN(num)) return val; // Return original to trigger validation error
-            return num;
-          },
-          z.union([z.number().int().nonnegative(), z.null()]).optional()
-        ),
+        petAge: z.union([z.string(), z.null()]).optional(),
       });
       
       // Validate and parse request body with proper schema
@@ -1916,11 +1908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden - You can only create consents for yourself" });
       }
       
-      const consent = await storage.createPrivacyConsent({
-        ...consentData,
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent')
-      });
+      const consent = await storage.createPrivacyConsent(consentData);
       
       await storage.createAuditLog({
         entityType: 'privacy_consent',

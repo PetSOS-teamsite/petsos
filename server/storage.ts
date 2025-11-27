@@ -461,7 +461,6 @@ export class MemStorage implements IStorage {
     const region: Region = { 
       ...insertRegion, 
       id,
-      coordinates: insertRegion.coordinates ?? null,
       countryCode: insertRegion.countryCode ?? 'HK',
       active: insertRegion.active ?? true
     };
@@ -505,8 +504,7 @@ export class MemStorage implements IStorage {
       id,
       active: insertCountry.active ?? true,
       nameZh: insertCountry.nameZh ?? null,
-      flag: insertCountry.flag ?? null,
-      createdAt: new Date()
+      flag: insertCountry.flag ?? null
     };
     this.countries.set(id, country);
     return country;
@@ -559,8 +557,7 @@ export class MemStorage implements IStorage {
       breedZh: insertBreed.breedZh ?? null,
       countryCode: insertBreed.countryCode ?? null,
       isCommon: insertBreed.isCommon ?? false,
-      active: insertBreed.active ?? true,
-      createdAt: new Date()
+      active: insertBreed.active ?? true
     };
     this.petBreeds.set(id, breed);
     return breed;
@@ -860,13 +857,13 @@ export class MemStorage implements IStorage {
   // Translations
   async getTranslationsByLanguage(language: string): Promise<Translation[]> {
     return Array.from(this.translations.values()).filter(
-      t => t.language === language
+      t => (language === 'en' && !!t.en) || (language === 'zh-HK' && !!t.zhHk)
     );
   }
 
   async getTranslation(key: string, language: string): Promise<Translation | undefined> {
     return Array.from(this.translations.values()).find(
-      t => t.key === key && t.language === language
+      t => t.key === key
     );
   }
 
@@ -875,9 +872,7 @@ export class MemStorage implements IStorage {
     const translation: Translation = { 
       ...insertTranslation, 
       id, 
-      value: insertTranslation.value ?? null,
-      namespace: insertTranslation.namespace ?? 'common',
-      updated_at: new Date()
+      value: insertTranslation.value ?? null
     };
     this.translations.set(id, translation);
     return translation;
@@ -886,7 +881,7 @@ export class MemStorage implements IStorage {
   async updateTranslation(id: string, updateData: Partial<InsertTranslation>): Promise<Translation | undefined> {
     const translation = this.translations.get(id);
     if (!translation) return undefined;
-    const updated = { ...translation, ...updateData, updated_at: new Date() };
+    const updated = { ...translation, ...updateData };
     this.translations.set(id, updated);
     return updated;
   }
@@ -1439,7 +1434,7 @@ class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
+  async upsertUser(userData: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(userData)
@@ -1725,7 +1720,10 @@ class DatabaseStorage implements IStorage {
   }
 
   async createHospital(insertHospital: InsertHospital): Promise<Hospital> {
-    const result = await db.insert(hospitals).values(insertHospital).returning();
+    const result = await db.insert(hospitals).values({
+      ...insertHospital,
+      ownerVerificationCode: insertHospital.ownerVerificationCode ?? null
+    }).returning();
     return result[0];
   }
 
