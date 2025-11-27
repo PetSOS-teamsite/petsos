@@ -132,11 +132,17 @@ export default function HospitalOwnerEditVerifiedPage() {
   const updateMutation = useMutation({
     mutationFn: async (data: HospitalFormData) => {
       if (!hospital?.id) throw new Error("Hospital not found");
-      return apiRequest("PATCH", `/api/hospitals/${hospital.id}`, data);
+      // Get the verification code from verifyForm
+      const code = verifyForm.getValues("verificationCode");
+      return apiRequest("PATCH", `/api/hospitals/${hospital.id}/update-owner`, { 
+        ...data, 
+        verificationCode: code 
+      });
     },
     onSuccess: () => {
       setSaved(true);
       toast({ title: "Hospital information saved successfully!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/hospitals", hospitalSlug] });
       queryClient.invalidateQueries({ queryKey: ["/api/hospitals"] });
       setTimeout(() => setSaved(false), 3000);
     },

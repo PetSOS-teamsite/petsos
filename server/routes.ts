@@ -2178,6 +2178,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update hospital as owner (verified with code)
+  app.patch("/api/hospitals/:id/update-owner", async (req: any, res: any) => {
+    try {
+      const { verificationCode, ...updateData } = z.object({
+        verificationCode: z.string().length(6, "Code must be 6 digits"),
+        nameEn: z.string().optional(),
+        nameZh: z.string().optional(),
+        addressEn: z.string().optional(),
+        addressZh: z.string().optional(),
+        phone: z.string().optional(),
+        whatsapp: z.string().optional(),
+        email: z.string().optional(),
+        regionId: z.string().optional(),
+        open247: z.boolean().optional(),
+      }).parse(req.body);
+
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      // Verify ownership with code
+      if (hospital.ownerVerificationCode !== verificationCode) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      // Update hospital with owner-provided data
+      const updatedHospital = await storage.updateHospital(req.params.id, updateData);
+
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: hospital.id,
+        action: 'update',
+        changes: updateData,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json(updatedHospital);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
