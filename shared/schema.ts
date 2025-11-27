@@ -85,6 +85,11 @@ export const countries = pgTable("countries", {
   region: text("region"), // asia, americas, etc.
 });
 
+export const insertCountrySchema = createInsertSchema(countries).omit({
+  id: true,
+});
+
+export type InsertCountry = z.infer<typeof insertCountrySchema>;
 export type Country = typeof countries.$inferSelect;
 
 // Regions table (districts, states)
@@ -98,6 +103,11 @@ export const regions = pgTable("regions", {
   index("idx_region_country").on(table.countryId),
 ]);
 
+export const insertRegionSchema = createInsertSchema(regions).omit({
+  id: true,
+});
+
+export type InsertRegion = z.infer<typeof insertRegionSchema>;
 export type Region = typeof regions.$inferSelect;
 
 // Pet Breeds table
@@ -109,6 +119,11 @@ export const petBreeds = pgTable("pet_breeds", {
   commonNames: text("common_names").array(), // HK colloquial names
 });
 
+export const insertPetBreedSchema = createInsertSchema(petBreeds).omit({
+  id: true,
+});
+
+export type InsertPetBreed = z.infer<typeof insertPetBreedSchema>;
 export type PetBreed = typeof petBreeds.$inferSelect;
 
 // Clinics table
