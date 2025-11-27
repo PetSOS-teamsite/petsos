@@ -1,44 +1,40 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, integer, jsonb, decimal, index, uniqueIndex, customType } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import { pgTable, varchar, text, timestamp, integer, boolean, decimal, jsonb, index, sql, uniqueIndex } from 'drizzle-orm/pg-core';
+import { sql as sqlFn } from 'drizzle-orm';
+import { createInsertSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
-// Custom geography type for PostGIS
-const geography = customType<{ data: string }>({
-  dataType() {
-    return "geography(Point, 4326)";
-  },
+// Sessions table
+export const sessions = pgTable("sessions", {
+  sid: varchar("sid").primaryKey(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire").notNull(),
 });
 
-// Session storage table (required for Replit Auth)
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)],
-);
-
-// Users table
+// Users table - unified auth system
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
-  name: varchar("name"), // Simplified: single name field instead of firstName/lastName
-  profileImageUrl: varchar("profile_image_url"),
-  // Legacy fields (optional for backward compatibility)
-  username: text("username"),
-  password: text("password"),
-  passwordHash: text("password_hash"), // For email/password auth
-  phone: text("phone"),
-  languagePreference: text("language_preference").notNull().default('en'),
-  regionPreference: text("region_preference"),
-  role: text("role").notNull().default('user'), // user, admin, clinic_staff
-  clinicId: varchar("clinic_id").references(() => clinics.id, { onDelete: 'set null' }),
+  email: text("email").unique(),
+  passwordHash: text("password_hash"),
+  phone: text("phone").unique(),
+  googleId: text("google_id").unique(),
+  openidSub: text("openid_sub").unique(),
+  
+  role: text("role").notNull().default('user'), // user, clinic_staff, hospital_staff, admin
+  
+  name: text("name"),
+  avatar: text("avatar"),
+  language: text("language").default('en'), // en, zh-HK
+  region: text("region"), // HK district or region identifier
+  
+  verified: boolean("verified").notNull().default(false),
+  verificationCode: text("verification_code"),
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("idx_user_email").on(table.email),
+  index("idx_user_phone").on(table.phone),
+]);
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -46,15 +42,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
-export const upsertUserSchema = z.object({
-  id: z.string(),
-  email: z.string().nullable(),
-  name: z.string().nullable(),
-  profileImageUrl: z.string().nullable(),
-});
-
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // Pets table
@@ -62,13 +50,14 @@ export const pets = pgTable("pets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
-  species: text("species").notNull(),
+  type: text("type").notNull(), // dog, cat, exotic, etc.
   breed: text("breed"),
-  age: integer("age"),
-  weight: decimal("weight"),
-  medicalNotes: text("medical_notes"),
-  lastVisitHospitalId: varchar("last_visit_hospital_id").references(() => hospitals.id, { onDelete: 'set null' }),
-  lastVisitDate: timestamp("last_visit_date"),
+  breedId: varchar("breed_id").references(() => petBreeds.id),
+  age: text("age"), // estimated age
+  weight: text("weight"), // in kg
+  color: text("color"),
+  medicalHistory: text("medical_history"),
+  microchipId: text("microchip_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -83,59 +72,36 @@ export type Pet = typeof pets.$inferSelect;
 // Countries table
 export const countries = pgTable("countries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: text("code").notNull().unique(), // ISO country code (HK, CN, US, etc.)
+  code: text("code").notNull().unique(), // HK, SG, US
   nameEn: text("name_en").notNull(),
   nameZh: text("name_zh"),
-  phonePrefix: text("phone_prefix").notNull(), // +852, +86, +1, etc.
-  flag: text("flag"), // Emoji flag or icon
-  active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  region: text("region"), // asia, americas, etc.
 });
 
-export const insertCountrySchema = createInsertSchema(countries).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type InsertCountry = z.infer<typeof insertCountrySchema>;
 export type Country = typeof countries.$inferSelect;
 
-// Regions table
+// Regions table (districts, states)
 export const regions = pgTable("regions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: text("code").notNull().unique(), // HKI, KLN, NTI
+  countryId: varchar("country_id").notNull().references(() => countries.id),
+  code: text("code").notNull(),
   nameEn: text("name_en").notNull(),
-  nameZh: text("name_zh").notNull(),
-  coordinates: jsonb("coordinates"), // GeoJSON polygon for auto-detect
-  countryCode: text("country_code").notNull().references(() => countries.code).default('HK'),
-  active: boolean("active").notNull().default(true),
-});
+  nameZh: text("name_zh"),
+}, (table) => [
+  index("idx_region_country").on(table.countryId),
+]);
 
-export const insertRegionSchema = createInsertSchema(regions).omit({
-  id: true,
-});
-
-export type InsertRegion = z.infer<typeof insertRegionSchema>;
 export type Region = typeof regions.$inferSelect;
 
 // Pet Breeds table
 export const petBreeds = pgTable("pet_breeds", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  species: text("species").notNull(), // dog, cat, bird, etc.
-  breedEn: text("breed_en").notNull(),
-  breedZh: text("breed_zh"),
-  countryCode: text("country_code").references(() => countries.code), // Optional: breed specific to country
-  isCommon: boolean("is_common").notNull().default(true), // Flag common breeds for easier selection
-  active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  type: text("type").notNull(), // dog, cat, exotic
+  nameEn: text("name_en").notNull(),
+  nameZh: text("name_zh"),
+  commonNames: text("common_names").array(), // HK colloquial names
 });
 
-export const insertPetBreedSchema = createInsertSchema(petBreeds).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type InsertPetBreed = z.infer<typeof insertPetBreedSchema>;
 export type PetBreed = typeof petBreeds.$inferSelect;
 
 // Clinics table
@@ -160,16 +126,12 @@ export const clinics = pgTable("clinics", {
   services: text("services").array(),
   ownerVerificationCode: text("owner_verification_code"), // 6-digit passcode for clinic owner edit link
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-}, (table) => [
-  index("idx_clinic_location").using("gist", table.location), // Spatial index for fast geo-queries
-]);
+});
 
 export const insertClinicSchema = createInsertSchema(clinics).omit({
   id: true,
-  location: true, // Auto-populated by trigger from lat/lng
+  location: true,
   createdAt: true,
-  updatedAt: true,
 });
 
 export type InsertClinic = z.infer<typeof insertClinicSchema>;
@@ -178,20 +140,15 @@ export type Clinic = typeof clinics.$inferSelect;
 // Emergency Requests table
 export const emergencyRequests = pgTable("emergency_requests", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }), // Optional - supports anonymous requests
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'set null' }),
   petId: varchar("pet_id").references(() => pets.id, { onDelete: 'set null' }),
-  symptom: text("symptom").notNull(),
-  // Pet details for users without pet profiles
-  petSpecies: text("pet_species"),
-  petBreed: text("pet_breed"),
-  petAge: integer("pet_age"),
-  // Voice recording fields
-  voiceTranscript: text("voice_transcript"), // Transcribed text from voice recording
-  aiAnalyzedSymptoms: text("ai_analyzed_symptoms"), // AI-analyzed symptom summary
-  isVoiceRecording: boolean("is_voice_recording").notNull().default(false), // Flag indicating voice input
-  locationLatitude: decimal("location_latitude"),
-  locationLongitude: decimal("location_longitude"),
-  manualLocation: text("manual_location"),
+  petName: text("pet_name"), // snapshot for anonymous requests
+  symptoms: text("symptoms").array(),
+  severity: text("severity").notNull(), // low, medium, high, critical
+  latitude: decimal("latitude").notNull(),
+  longitude: decimal("longitude").notNull(),
+  location: geography("location"),
+  locationName: text("location_name"),
   contactName: text("contact_name").notNull(),
   contactPhone: text("contact_phone").notNull(),
   status: text("status").notNull().default('pending'), // pending, in_progress, completed, cancelled
@@ -307,6 +264,38 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 
+// Quarterly Offers table - Partner hospitals can broadcast offers to pet parents
+export const quarterlyOffers = pgTable("quarterly_offers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  hospitalId: varchar("hospital_id").notNull().references(() => hospitals.id, { onDelete: 'cascade' }),
+  titleEn: text("title_en").notNull(),
+  titleZh: text("title_zh").notNull(),
+  descriptionEn: text("description_en").notNull(),
+  descriptionZh: text("description_zh").notNull(),
+  offerCode: text("offer_code"), // Discount/promo code if applicable
+  expiryDate: timestamp("expiry_date").notNull(),
+  status: text("status").notNull().default('pending'), // pending | approved | active | expired | rejected
+  approvedById: varchar("approved_by_id").references(() => users.id, { onDelete: 'set null' }),
+  approvedAt: timestamp("approved_at"),
+  rejectionReason: text("rejection_reason"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_offers_hospital").on(table.hospitalId),
+  index("idx_offers_status").on(table.status),
+]);
+
+export const insertQuarterlyOfferSchema = createInsertSchema(quarterlyOffers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  approvedById: true,
+  approvedAt: true,
+});
+
+export type InsertQuarterlyOffer = z.infer<typeof insertQuarterlyOfferSchema>;
+export type QuarterlyOffer = typeof quarterlyOffers.$inferSelect;
+
 // Feature Flags table
 export const featureFlags = pgTable("feature_flags", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -330,7 +319,7 @@ export const auditLogs = pgTable("audit_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   entityType: text("entity_type").notNull(),
   entityId: text("entity_id").notNull(),
-  action: text("action").notNull(), // create, update, delete
+  action: text("action").notNull(), // create, update, delete, generate_code, broadcast_offer
   userId: varchar("user_id").references(() => users.id, { onDelete: 'set null' }),
   changes: jsonb("changes"),
   ipAddress: text("ip_address"),
@@ -350,38 +339,21 @@ export type AuditLog = typeof auditLogs.$inferSelect;
 export const privacyConsents = pgTable("privacy_consents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  consentType: text("consent_type").notNull(), // data_collection, marketing, location
-  granted: boolean("granted").notNull(),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  expiresAt: timestamp("expires_at"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  consentType: text("consent_type").notNull(), // marketing, analytics, data_sharing
+  accepted: boolean("accepted").notNull(),
+  consentedAt: timestamp("consented_at").notNull().defaultNow(),
 });
 
-export const insertPrivacyConsentSchema = createInsertSchema(privacyConsents).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type InsertPrivacyConsent = z.infer<typeof insertPrivacyConsentSchema>;
 export type PrivacyConsent = typeof privacyConsents.$inferSelect;
 
-// i18n Translations table
+// Translations table
 export const translations = pgTable("translations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  key: text("key").notNull(),
-  language: text("language").notNull(), // en, zh-HK
-  value: text("value").notNull(),
-  namespace: text("namespace").notNull().default('common'),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  key: text("key").notNull().unique(), // e.g., "common.emergency_alert"
+  en: text("en").notNull(),
+  zhHk: text("zh_hk").notNull(),
 });
 
-export const insertTranslationSchema = createInsertSchema(translations).omit({
-  id: true,
-  updatedAt: true,
-});
-
-export type InsertTranslation = z.infer<typeof insertTranslationSchema>;
 export type Translation = typeof translations.$inferSelect;
 
 // Hospital Consult Fees table
@@ -397,7 +369,6 @@ export const hospitalConsultFees = pgTable("hospital_consult_fees", {
   lastUpdated: timestamp("last_updated").notNull().defaultNow(),
 }, (table) => [
   index("idx_consult_fees_hospital").on(table.hospitalId),
-  // Unique constraint to prevent duplicate fee entries
   uniqueIndex("idx_consult_fees_unique").on(table.hospitalId, table.feeType, table.species),
 ]);
 
@@ -431,5 +402,5 @@ export const insertHospitalUpdateSchema = createInsertSchema(hospitalUpdates).om
   createdAt: true,
 });
 
-export type InsertHospitalUpdate = z.infer<typeof insertHospitalUpdateSchema>;
+export type InsertHospitalUpdate = z.infer<typeof hospitalUpdates.$inferSelect;
 export type HospitalUpdate = typeof hospitalUpdates.$inferSelect;

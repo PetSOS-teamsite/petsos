@@ -323,7 +323,7 @@ export default function AdminClinicsPage() {
 
   const generateCodeMutation = useMutation({
     mutationFn: async (clinicId: string) => {
-      const response = await apiRequest("POST", `/api/clinics/${clinicId}/generate-code`, {});
+      const response: any = await apiRequest("POST", `/api/clinics/${clinicId}/generate-code`, {});
       return response.code;
     },
     onSuccess: (code: string) => {
