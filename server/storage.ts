@@ -375,8 +375,8 @@ export class MemStorage implements IStorage {
   }
 
   async upsertUser(userData: InsertUser): Promise<User> {
-    const existing = this.users.get(userData.id || randomUUID());
-    const id = userData.id || randomUUID();
+    const id = randomUUID();
+    const existing = this.users.get(id);
     const user: User = {
       ...existing,
       ...userData,
@@ -396,6 +396,9 @@ export class MemStorage implements IStorage {
       clinicId: existing?.clinicId ?? userData.clinicId ?? null,
       createdAt: existing?.createdAt ?? new Date(),
       updatedAt: new Date(),
+      name: existing?.name ?? userData.name ?? null,
+      profileImageUrl: existing?.profileImageUrl ?? userData.profileImageUrl ?? null,
+      email: existing?.email ?? userData.email ?? null,
     };
     this.users.set(id, user);
     return user;
@@ -420,12 +423,17 @@ export class MemStorage implements IStorage {
       ...insertPet, 
       id, 
       createdAt: new Date(),
+      type: insertPet.type ?? null,
       breed: insertPet.breed ?? null,
+      breedId: insertPet.breedId ?? null,
       age: insertPet.age ?? null,
       weight: insertPet.weight ?? null,
       medicalNotes: insertPet.medicalNotes ?? null,
       lastVisitHospitalId: insertPet.lastVisitHospitalId ?? null,
-      lastVisitDate: insertPet.lastVisitDate ?? null
+      lastVisitDate: insertPet.lastVisitDate ?? null,
+      color: insertPet.color ?? null,
+      medicalHistory: insertPet.medicalHistory ?? null,
+      microchipId: insertPet.microchipId ?? null
     };
     this.pets.set(id, pet);
     return pet;
@@ -461,8 +469,11 @@ export class MemStorage implements IStorage {
     const region: Region = { 
       ...insertRegion, 
       id,
+      nameZh: insertRegion.nameZh ?? null,
+      phonePrefix: insertRegion.phonePrefix ?? null,
+      flag: insertRegion.flag ?? null,
       countryCode: insertRegion.countryCode ?? 'HK',
-      active: insertRegion.active ?? true
+      active: insertRegion.active ?? null
     };
     this.regions.set(id, region);
     return region;
@@ -502,7 +513,9 @@ export class MemStorage implements IStorage {
     const country: Country = { 
       ...insertCountry, 
       id,
-      active: insertCountry.active ?? true,
+      region: insertCountry.region ?? null,
+      active: insertCountry.active ?? null,
+      phonePrefix: insertCountry.phonePrefix ?? null,
       nameZh: insertCountry.nameZh ?? null,
       flag: insertCountry.flag ?? null
     };
@@ -645,7 +658,8 @@ export class MemStorage implements IStorage {
       is24Hour: insertClinic.is24Hour ?? false,
       isAvailable: insertClinic.isAvailable ?? true,
       isSupportHospital: insertClinic.isSupportHospital ?? false,
-      services: insertClinic.services ?? null
+      services: insertClinic.services ?? null,
+      ownerVerificationCode: insertClinic.ownerVerificationCode ?? null
     };
     this.clinics.set(id, clinic);
     return clinic;
@@ -716,6 +730,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       userId: insertRequest.userId ?? null,
       petId: insertRequest.petId ?? null,
+      symptom: insertRequest.symptom ?? null,
       petSpecies: insertRequest.petSpecies ?? null,
       petBreed: insertRequest.petBreed ?? null,
       petAge: insertRequest.petAge ?? null,
@@ -725,7 +740,7 @@ export class MemStorage implements IStorage {
       status: insertRequest.status ?? 'pending',
       regionId: insertRequest.regionId ?? null,
       voiceTranscript: insertRequest.voiceTranscript ?? null,
-      isVoiceRecording: insertRequest.isVoiceRecording ?? false,
+      isVoiceRecording: insertRequest.isVoiceRecording ?? null,
       aiAnalyzedSymptoms: insertRequest.aiAnalyzedSymptoms ?? null
     };
     this.emergencyRequests.set(id, request);
@@ -970,6 +985,8 @@ export class MemStorage implements IStorage {
       ownerVisitPolicy: insertHospital.ownerVisitPolicy ?? null,
       eolSupport: insertHospital.eolSupport ?? null,
       imagingXray: insertHospital.imagingXray ?? null,
+      ownerVerificationCode: insertHospital.ownerVerificationCode ?? null,
+      verified: insertHospital.verified ?? false,
       imagingUS: insertHospital.imagingUS ?? null,
       imagingCT: insertHospital.imagingCT ?? null,
       sameDayCT: insertHospital.sameDayCT ?? null,
@@ -1205,7 +1222,7 @@ class DatabaseStorage implements IStorage {
 
   async updateClinic(id: string, updateData: Partial<InsertClinic>): Promise<Clinic | undefined> {
     const result = await db.update(clinics)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(clinics.id, id))
       .returning();
     return result[0];
@@ -1213,7 +1230,7 @@ class DatabaseStorage implements IStorage {
 
   async deleteClinic(id: string): Promise<boolean> {
     const result = await db.update(clinics)
-      .set({ status: 'inactive', updatedAt: new Date() })
+      .set({ status: 'inactive' })
       .where(eq(clinics.id, id))
       .returning();
     return result.length > 0;
