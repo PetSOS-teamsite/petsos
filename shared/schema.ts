@@ -1,5 +1,6 @@
 import { pgTable, varchar, text, timestamp, integer, boolean, decimal, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
-import { customType, sql } from 'drizzle-orm/pg-core';
+import { customType } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -204,6 +205,7 @@ export const hospitals = pgTable("hospitals", {
   nurse24h: boolean("nurse_24h"),
   ownerVisitPolicy: text("owner_visit_policy"),
   eolSupport: boolean("eol_support"),
+  oxygenTank: boolean("oxygen_tank"),
   imagingXray: boolean("imaging_xray"),
   imagingUS: boolean("imaging_us"),
   imagingCT: boolean("imaging_ct"),
