@@ -84,7 +84,7 @@ export const countries = pgTable("countries", {
   nameEn: text("name_en").notNull(),
   nameZh: text("name_zh"),
   region: text("region"), // asia, americas, etc.
-  active: boolean("active").notNull().default(true),
+  active: boolean("active"),
   phonePrefix: text("phone_prefix"),
   flag: text("flag"),
 });
@@ -104,7 +104,7 @@ export const regions = pgTable("regions", {
   code: text("code").notNull(),
   nameEn: text("name_en").notNull(),
   nameZh: text("name_zh"),
-  active: boolean("active").notNull().default(true),
+  active: boolean("active"),
   phonePrefix: text("phone_prefix"),
   flag: text("flag"),
 }, (table) => [
@@ -121,15 +121,11 @@ export type Region = typeof regions.$inferSelect;
 // Pet Breeds table
 export const petBreeds = pgTable("pet_breeds", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  type: text("type").notNull(), // dog, cat, exotic
-  species: text("species"), // alias for type
-  nameEn: text("name_en").notNull(),
-  breedEn: text("breed_en"), // alias for nameEn
-  nameZh: text("name_zh"),
-  breedZh: text("breed_zh"), // alias for nameZh
+  species: text("species").notNull(), // dog, cat, exotic
+  breedEn: text("breed_en").notNull(),
+  breedZh: text("breed_zh"),
   countryCode: text("country_code"), // HK, SG, etc. - filters breeds by country
   isCommon: boolean("is_common").default(false), // whether this is a common breed
-  commonNames: text("common_names").array(), // HK colloquial names
   active: boolean("active").notNull().default(true),
 });
 
