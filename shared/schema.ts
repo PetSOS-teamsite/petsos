@@ -33,9 +33,6 @@ export const users = pgTable("users", {
   language: text("language").default('en'), // en, zh-HK
   region: text("region"), // HK district or region identifier
   
-  verified: boolean("verified").notNull().default(false),
-  verificationCode: text("verification_code"),
-  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [

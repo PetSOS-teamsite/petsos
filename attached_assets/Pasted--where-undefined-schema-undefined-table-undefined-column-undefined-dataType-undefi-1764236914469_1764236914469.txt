@@ -1,0 +1,183 @@
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+Node.js v22.16.0
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+8:56:43 AM [express] serving on port 10000
+     ==> Deploying...
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+8:59:58 AM [express] serving on port 10000
+     ==> Your service is live 🎉
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> 
+     ==> Available at your primary URL https://petsos.site + 2 more domains
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> Deploying...
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+9:04:39 AM [express] serving on port 10000
+     ==> Your service is live 🎉
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> 
+     ==> Available at your primary URL https://petsos.site + 2 more domains
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+9:06:31 AM [express] GET /api/auth/user 401 in 1ms :: {"message":"Not authenticated"}
+file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345
+o?t(o):n(u)},"cb"),s=new r(function(o,u){n=o,t=u}).catch(o=>{throw Error.captureStackTrace(
+                                                                         ^
+error: column "en" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.getTranslationsByLanguage (file:///opt/render/project/src/dist/index.js:721:12)
+    at async file:///opt/render/project/src/dist/index.js:3550:27 {
+  length: 102,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '30',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+Node.js v22.16.0
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+9:06:40 AM [express] serving on port 10000
+     ==> Deploying...
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+9:08:06 AM [express] serving on port 10000
+     ==> Your service is live 🎉
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> 
+     ==> Available at your primary URL https://petsos.site + 2 more domains
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+9:09:05 AM [express] GET /api/auth/google 302 in 1190ms
+9:09:44 AM [express] GET /api/auth/user 401 in 1312ms :: {"message":"Not authenticated"}
+Translation table not ready or missing columns: column "en" does not exist
+9:09:46 AM [express] GET /api/translations/en 200 in 502ms :: []
+9:09:47 AM [express] GET /api/auth/google 302 in 327ms
+9:10:33 AM [express] GET /api/auth/google/callback 500 in 2135ms :: {"message":"column \"verified\" …
+     ==> Deploying...
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+9:15:19 AM [express] serving on port 10000
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> 
+     ==> Available at your primary URL https://petsos.site + 2 more domains
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> Detected service running on port 10000
+     ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+9:22:21 AM [express] GET /api/auth/user 401 in 330ms :: {"message":"Not authenticated"}
+Translation table not ready or missing columns: column "en" does not exist
+9:22:22 AM [express] GET /api/translations/en 304 in 499ms :: []
+Translation table not ready or missing columns: column "en" does not exist
+9:22:23 AM [express] GET /api/translations/en 304 in 984ms :: []
+9:22:24 AM [express] GET /api/auth/google 302 in 330ms
+9:22:29 AM [express] GET /api/auth/google/callback 500 in 1107ms :: {"message":"column \"verified\" …
+     ==> Deploying...
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+9:24:13 AM [express] serving on port 10000
+     ==> Your service is live 🎉
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> 
+     ==> Available at your primary URL https://petsos.site + 2 more domains
+     ==> 
+     ==> ///////////////////////////////////////////////////////////
+     ==> Detected service running on port 10000
+     ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+9:29:24 AM [express] GET /api/auth/google/callback 500 in 1387ms :: {"message":"Bad Request"}
+9:30:10 AM [express] GET /api/auth/google/callback 500 in 1338ms :: {"message":"Bad Request"}
+9:46:05 AM [express] GET /api/auth/google/callback 500 in 1400ms :: {"message":"Bad Request"}
