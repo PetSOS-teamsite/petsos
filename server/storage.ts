@@ -30,7 +30,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  upsertUser(user: InsertUser): Promise<User>;
 
   // Pets
   getPet(id: string): Promise<Pet | undefined>;
@@ -211,13 +211,7 @@ export class MemStorage implements IStorage {
     };
     this.users.set(testUser.id, testUser);
     
-    // Seed test data for regions
-    const regions: Region[] = [
-      { id: 'hki-region', code: 'HKI', nameEn: 'Hong Kong Island', nameZh: '香港島', countryCode: 'HK', countryId: 'hk', active: true, phonePrefix: null, flag: null },
-      { id: 'kln-region', code: 'KLN', nameEn: 'Kowloon', nameZh: '九龍', countryCode: 'HK', countryId: 'hk', active: true, phonePrefix: null, flag: null },
-      { id: 'nti-region', code: 'NTI', nameEn: 'New Territories', nameZh: '新界', countryCode: 'HK', countryId: 'hk', active: true, phonePrefix: null, flag: null },
-    ];
-    regions.forEach(region => this.regions.set(region.id, region));
+    // Seed test data for regions (not used - data comes from production DB)
     
     // Seed test data for clinics
     const clinics: Clinic[] = [
@@ -345,6 +339,10 @@ export class MemStorage implements IStorage {
     const user: User = { 
       ...insertUser, 
       id, 
+      googleId: insertUser.googleId ?? null,
+      openidSub: insertUser.openidSub ?? null,
+      avatar: insertUser.avatar ?? null,
+      language: insertUser.language ?? 'en',
       createdAt: new Date(),
       updatedAt: new Date(),
       languagePreference: insertUser.languagePreference ?? 'en',
@@ -357,6 +355,7 @@ export class MemStorage implements IStorage {
       password: insertUser.password ?? null,
       passwordHash: insertUser.passwordHash ?? null,
       phone: insertUser.phone ?? null,
+      region: insertUser.region ?? null,
       clinicId: insertUser.clinicId ?? null,
     };
     this.users.set(id, user);
@@ -375,23 +374,30 @@ export class MemStorage implements IStorage {
     return this.users.delete(id);
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const existing = this.users.get(userData.id);
+  async upsertUser(userData: InsertUser): Promise<User> {
+    const existing = this.users.get(userData.id || randomUUID());
+    const id = userData.id || randomUUID();
     const user: User = {
       ...existing,
       ...userData,
-      username: existing?.username ?? null,
-      password: existing?.password ?? null,
-      passwordHash: existing?.passwordHash ?? null,
-      phone: existing?.phone ?? null,
-      languagePreference: existing?.languagePreference ?? 'en',
-      regionPreference: existing?.regionPreference ?? null,
-      role: existing?.role ?? 'user',
-      clinicId: existing?.clinicId ?? null,
+      id,
+      googleId: existing?.googleId ?? userData.googleId ?? null,
+      openidSub: existing?.openidSub ?? userData.openidSub ?? null,
+      avatar: existing?.avatar ?? userData.avatar ?? null,
+      language: existing?.language ?? userData.language ?? 'en',
+      username: existing?.username ?? userData.username ?? null,
+      password: existing?.password ?? userData.password ?? null,
+      passwordHash: existing?.passwordHash ?? userData.passwordHash ?? null,
+      phone: existing?.phone ?? userData.phone ?? null,
+      region: existing?.region ?? userData.region ?? null,
+      languagePreference: existing?.languagePreference ?? userData.languagePreference ?? 'en',
+      regionPreference: existing?.regionPreference ?? userData.regionPreference ?? null,
+      role: existing?.role ?? userData.role ?? 'user',
+      clinicId: existing?.clinicId ?? userData.clinicId ?? null,
       createdAt: existing?.createdAt ?? new Date(),
       updatedAt: new Date(),
     };
-    this.users.set(userData.id, user);
+    this.users.set(id, user);
     return user;
   }
 
@@ -626,12 +632,10 @@ export class MemStorage implements IStorage {
 
   async createClinic(insertClinic: InsertClinic): Promise<Clinic> {
     const id = randomUUID();
-    const now = new Date();
     const clinic: Clinic = { 
       ...insertClinic, 
       id, 
-      createdAt: now, 
-      updatedAt: now,
+      createdAt: new Date(),
       nameZh: insertClinic.nameZh ?? null,
       addressZh: insertClinic.addressZh ?? null,
       whatsapp: insertClinic.whatsapp ?? null,
@@ -639,7 +643,7 @@ export class MemStorage implements IStorage {
       lineUserId: insertClinic.lineUserId ?? null,
       latitude: insertClinic.latitude ?? null,
       longitude: insertClinic.longitude ?? null,
-      location: null, // PostGIS geography field (not used in MemStorage)
+      location: null,
       status: insertClinic.status ?? 'active',
       is24Hour: insertClinic.is24Hour ?? false,
       isAvailable: insertClinic.isAvailable ?? true,
@@ -846,10 +850,8 @@ export class MemStorage implements IStorage {
     const consent: PrivacyConsent = { 
       ...insertConsent, 
       id, 
-      createdAt: new Date(),
-      ipAddress: insertConsent.ipAddress ?? null,
-      userAgent: insertConsent.userAgent ?? null,
-      expiresAt: insertConsent.expiresAt ?? null
+      consentedAt: new Date(),
+      accepted: insertConsent.accepted ?? false
     };
     this.privacyConsents.set(id, consent);
     return consent;
@@ -873,8 +875,9 @@ export class MemStorage implements IStorage {
     const translation: Translation = { 
       ...insertTranslation, 
       id, 
-      updatedAt: new Date(),
-      namespace: insertTranslation.namespace ?? 'common'
+      value: insertTranslation.value ?? null,
+      namespace: insertTranslation.namespace ?? 'common',
+      updated_at: new Date()
     };
     this.translations.set(id, translation);
     return translation;
@@ -883,7 +886,7 @@ export class MemStorage implements IStorage {
   async updateTranslation(id: string, updateData: Partial<InsertTranslation>): Promise<Translation | undefined> {
     const translation = this.translations.get(id);
     if (!translation) return undefined;
-    const updated = { ...translation, ...updateData, updatedAt: new Date() };
+    const updated = { ...translation, ...updateData, updated_at: new Date() };
     this.translations.set(id, updated);
     return updated;
   }
@@ -948,6 +951,7 @@ export class MemStorage implements IStorage {
       id,
       createdAt: now,
       updatedAt: now,
+      email: insertHospital.email ?? null,
       latitude: insertHospital.latitude ?? null,
       longitude: insertHospital.longitude ?? null,
       location: null,
