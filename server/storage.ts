@@ -1247,25 +1247,50 @@ class DatabaseStorage implements IStorage {
   }
 
   async getRegionsByCountry(countryCode: string): Promise<Region[]> {
-    return await db.select().from(regions).where(eq(regions.countryCode, countryCode));
+    try {
+      return await db.select().from(regions).where(eq(regions.countryCode, countryCode));
+    } catch (error) {
+      console.warn('getRegionsByCountry query failed:', error instanceof Error ? error.message : error);
+      return [];
+    }
   }
 
   async getCountry(id: string): Promise<Country | undefined> {
-    const result = await db.select().from(countries).where(eq(countries.id, id));
-    return result[0];
+    try {
+      const result = await db.select().from(countries).where(eq(countries.id, id));
+      return result[0];
+    } catch (error) {
+      console.warn('getCountry query failed:', error instanceof Error ? error.message : error);
+      return undefined;
+    }
   }
 
   async getCountryByCode(code: string): Promise<Country | undefined> {
-    const result = await db.select().from(countries).where(eq(countries.code, code));
-    return result[0];
+    try {
+      const result = await db.select().from(countries).where(eq(countries.code, code));
+      return result[0];
+    } catch (error) {
+      console.warn('getCountryByCode query failed:', error instanceof Error ? error.message : error);
+      return undefined;
+    }
   }
 
   async getAllCountries(): Promise<Country[]> {
-    return await db.select().from(countries);
+    try {
+      return await db.select().from(countries);
+    } catch (error) {
+      console.warn('getAllCountries query failed:', error instanceof Error ? error.message : error);
+      return [];
+    }
   }
 
   async getActiveCountries(): Promise<Country[]> {
-    return await db.select().from(countries).where(eq(countries.active, true));
+    try {
+      return await db.select().from(countries).where(eq(countries.active, true));
+    } catch (error) {
+      console.warn('getActiveCountries query failed:', error instanceof Error ? error.message : error);
+      return [];
+    }
   }
 
   async createCountry(insertCountry: InsertCountry): Promise<Country> {
@@ -1295,27 +1320,47 @@ class DatabaseStorage implements IStorage {
   }
 
   async getPetBreedsBySpecies(species: string): Promise<PetBreed[]> {
-    return await db.select().from(petBreeds).where(
-      and(eq(petBreeds.species, species), eq(petBreeds.active, true))
-    );
+    try {
+      return await db.select().from(petBreeds).where(
+        and(eq(petBreeds.species, species), eq(petBreeds.active, true))
+      );
+    } catch (error) {
+      console.warn('getPetBreedsBySpecies query failed:', error instanceof Error ? error.message : error);
+      return [];
+    }
   }
 
   async getPetBreedsByCountry(countryCode: string): Promise<PetBreed[]> {
-    return await db.select().from(petBreeds).where(
-      and(eq(petBreeds.countryCode, countryCode), eq(petBreeds.active, true))
-    );
+    try {
+      return await db.select().from(petBreeds).where(
+        and(eq(petBreeds.countryCode, countryCode), eq(petBreeds.active, true))
+      );
+    } catch (error) {
+      console.warn('getPetBreedsByCountry query failed:', error instanceof Error ? error.message : error);
+      return [];
+    }
   }
 
   async getCommonPetBreeds(species?: string): Promise<PetBreed[]> {
-    const conditions = [eq(petBreeds.isCommon, true), eq(petBreeds.active, true)];
-    if (species) {
-      conditions.push(eq(petBreeds.species, species));
+    try {
+      const conditions = [eq(petBreeds.isCommon, true), eq(petBreeds.active, true)];
+      if (species) {
+        conditions.push(eq(petBreeds.species, species));
+      }
+      return await db.select().from(petBreeds).where(and(...conditions));
+    } catch (error) {
+      console.warn('getCommonPetBreeds query failed:', error instanceof Error ? error.message : error);
+      return [];
     }
-    return await db.select().from(petBreeds).where(and(...conditions));
   }
 
   async getAllPetBreeds(): Promise<PetBreed[]> {
-    return await db.select().from(petBreeds).where(eq(petBreeds.active, true));
+    try {
+      return await db.select().from(petBreeds).where(eq(petBreeds.active, true));
+    } catch (error) {
+      console.warn('getAllPetBreeds query failed:', error instanceof Error ? error.message : error);
+      return [];
+    }
   }
 
   async createPetBreed(insertBreed: InsertPetBreed): Promise<PetBreed> {
