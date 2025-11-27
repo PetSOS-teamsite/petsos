@@ -1,0 +1,55 @@
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+8:46:15 AM [express] serving on port 10000
+8:50:57 AM [express] GET /api/auth/user 401 in 328ms :: {"message":"Not authenticated"}
+file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345
+o?t(o):n(u)},"cb"),s=new r(function(o,u){n=o,t=u}).catch(o=>{throw Error.captureStackTrace(
+                                                                         ^
+error: column "en" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.getTranslationsByLanguage (file:///opt/render/project/src/dist/index.js:707:12)
+    at async file:///opt/render/project/src/dist/index.js:3536:27 {
+  length: 102,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '21',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+Node.js v22.16.0
+==> Running 'npm start'
+> rest-express@1.0.0 start
+
+
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+8:51:07 AM [express] serving on port 10000

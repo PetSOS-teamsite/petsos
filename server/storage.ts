@@ -1559,13 +1559,25 @@ class DatabaseStorage implements IStorage {
 
   async getTranslationsByLanguage(language: string): Promise<Translation[]> {
     // Returns all translations - client can select en or zhHk field based on language
-    return await db.select().from(translations);
+    try {
+      return await db.select().from(translations);
+    } catch (error) {
+      // Handle missing table or columns gracefully
+      console.warn('Translation table not ready or missing columns:', error instanceof Error ? error.message : error);
+      return [];
+    }
   }
 
   async getTranslation(key: string, language: string): Promise<Translation | undefined> {
     // Get translation by key - client can select en or zhHk field based on language
-    const result = await db.select().from(translations).where(eq(translations.key, key));
-    return result[0];
+    try {
+      const result = await db.select().from(translations).where(eq(translations.key, key));
+      return result[0];
+    } catch (error) {
+      // Handle missing table or columns gracefully
+      console.warn('Translation query failed:', error instanceof Error ? error.message : error);
+      return undefined;
+    }
   }
 
   async createTranslation(insertTranslation: InsertTranslation): Promise<Translation> {

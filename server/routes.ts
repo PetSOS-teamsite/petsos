@@ -1848,8 +1848,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get translations by language
   app.get("/api/translations/:language", async (req, res) => {
-    const translations = await storage.getTranslationsByLanguage(req.params.language);
-    res.json(translations);
+    try {
+      const translations = await storage.getTranslationsByLanguage(req.params.language);
+      res.json(translations);
+    } catch (error) {
+      res.status(500).json({ message: "Translation service unavailable", translations: [] });
+    }
   });
 
   // Create/update translation (admin only)
