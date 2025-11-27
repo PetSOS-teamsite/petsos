@@ -54,15 +54,19 @@ export const pets = pgTable("pets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
-  type: text("type").notNull(), // dog, cat, exotic, etc.
+  species: text("species").notNull(), // dog, cat, exotic, etc.
   breed: text("breed"),
   breedId: varchar("breed_id").references(() => petBreeds.id),
-  age: text("age"), // estimated age
+  age: integer("age"), // age in years/months
   weight: text("weight"), // in kg
+  medicalNotes: text("medical_notes"), // primary medical notes field
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastVisitHospitalId: varchar("last_visit_hospital_id").references(() => hospitals.id, { onDelete: 'set null' }),
+  lastVisitDate: timestamp("last_visit_date"),
+  type: text("type"), // alternate field for species
   color: text("color"),
   medicalHistory: text("medical_history"),
   microchipId: text("microchip_id"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const insertPetSchema = createInsertSchema(pets).omit({
@@ -230,7 +234,6 @@ export const hospitals = pgTable("hospitals", {
   nurse24h: boolean("nurse_24h"),
   ownerVisitPolicy: text("owner_visit_policy"),
   eolSupport: boolean("eol_support"),
-  oxygenTank: boolean("oxygen_tank"),
   imagingXray: boolean("imaging_xray"),
   imagingUS: boolean("imaging_us"),
   imagingCT: boolean("imaging_ct"),
@@ -254,6 +257,7 @@ export const hospitals = pgTable("hospitals", {
   recheckWindow: text("recheck_window"),
   refundPolicy: text("refund_policy"),
   ownerVerificationCode: text("owner_verification_code"), // 6-digit passcode for hospital owner edit link
+  verified: boolean("verified").notNull().default(false),
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
