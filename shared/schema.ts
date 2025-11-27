@@ -287,38 +287,6 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 
-// Quarterly Offers table - Partner hospitals can broadcast offers to pet parents
-export const quarterlyOffers = pgTable("quarterly_offers", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  hospitalId: varchar("hospital_id").notNull().references(() => hospitals.id, { onDelete: 'cascade' }),
-  titleEn: text("title_en").notNull(),
-  titleZh: text("title_zh").notNull(),
-  descriptionEn: text("description_en").notNull(),
-  descriptionZh: text("description_zh").notNull(),
-  offerCode: text("offer_code"), // Discount/promo code if applicable
-  expiryDate: timestamp("expiry_date").notNull(),
-  status: text("status").notNull().default('pending'), // pending | approved | active | expired | rejected
-  approvedById: varchar("approved_by_id").references(() => users.id, { onDelete: 'set null' }),
-  approvedAt: timestamp("approved_at"),
-  rejectionReason: text("rejection_reason"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-}, (table) => [
-  index("idx_offers_hospital").on(table.hospitalId),
-  index("idx_offers_status").on(table.status),
-]);
-
-export const insertQuarterlyOfferSchema = createInsertSchema(quarterlyOffers).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  approvedById: true,
-  approvedAt: true,
-});
-
-export type InsertQuarterlyOffer = z.infer<typeof insertQuarterlyOfferSchema>;
-export type QuarterlyOffer = typeof quarterlyOffers.$inferSelect;
-
 // Feature Flags table
 export const featureFlags = pgTable("feature_flags", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
