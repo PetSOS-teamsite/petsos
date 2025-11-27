@@ -15,7 +15,7 @@ import LoginPage from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
 // Cache-busting: Force new bundle hash for Cloudflare bypass
-const BUILD_VERSION = "2025-11-03-14-40-production";
+const BUILD_VERSION = "2025-11-27-18-00-production";
 
 // Lazy-loaded pages - only load when needed
 const EmergencyPage = lazy(() => import("@/pages/emergency"));
