@@ -20,18 +20,24 @@ export const sessions = pgTable("sessions", {
 // Users table - unified auth system
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: text("email").unique(),
+  username: text("username"),
+  password: text("password"),
+  email: varchar("email").unique(),
+  phone: text("phone"),
   passwordHash: text("password_hash"),
-  phone: text("phone").unique(),
   googleId: text("google_id").unique(),
   openidSub: text("openid_sub").unique(),
   
   role: text("role").notNull().default('user'), // user, clinic_staff, hospital_staff, admin
   
-  name: text("name"),
+  name: varchar("name"),
   avatar: text("avatar"),
+  profileImageUrl: varchar("profile_image_url"),
   language: text("language").default('en'), // en, zh-HK
+  languagePreference: text("language_preference"),
   region: text("region"), // HK district or region identifier
+  regionPreference: text("region_preference"),
+  clinicId: varchar("clinic_id").references(() => clinics.id, { onDelete: 'set null' }),
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -174,18 +180,21 @@ export const emergencyRequests = pgTable("emergency_requests", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id, { onDelete: 'set null' }),
   petId: varchar("pet_id").references(() => pets.id, { onDelete: 'set null' }),
-  petName: text("pet_name"), // snapshot for anonymous requests
-  symptoms: text("symptoms").array(),
-  severity: text("severity").notNull(), // low, medium, high, critical
-  latitude: decimal("latitude").notNull(),
-  longitude: decimal("longitude").notNull(),
-  location: geography("location"),
-  locationName: text("location_name"),
+  symptom: text("symptom"), // single symptom field
+  locationLatitude: decimal("location_latitude"),
+  locationLongitude: decimal("location_longitude"),
+  manualLocation: text("manual_location"),
   contactName: text("contact_name").notNull(),
   contactPhone: text("contact_phone").notNull(),
   status: text("status").notNull().default('pending'), // pending, in_progress, completed, cancelled
   regionId: varchar("region_id").references(() => regions.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  petSpecies: text("pet_species"),
+  petBreed: text("pet_breed"),
+  petAge: text("pet_age"),
+  voiceTranscript: text("voice_transcript"),
+  aiAnalyzedSymptoms: text("ai_analyzed_symptoms"),
+  isVoiceRecording: boolean("is_voice_recording"),
 });
 
 export const insertEmergencyRequestSchema = createInsertSchema(emergencyRequests).omit({
