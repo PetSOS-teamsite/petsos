@@ -1558,13 +1558,13 @@ class DatabaseStorage implements IStorage {
   }
 
   async getTranslationsByLanguage(language: string): Promise<Translation[]> {
-    return await db.select().from(translations).where(eq(translations.language, language));
+    // Returns all translations - client can select en or zhHk field based on language
+    return await db.select().from(translations);
   }
 
   async getTranslation(key: string, language: string): Promise<Translation | undefined> {
-    const result = await db.select().from(translations).where(
-      and(eq(translations.key, key), eq(translations.language, language))
-    );
+    // Get translation by key - client can select en or zhHk field based on language
+    const result = await db.select().from(translations).where(eq(translations.key, key));
     return result[0];
   }
 

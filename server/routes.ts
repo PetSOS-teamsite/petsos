@@ -1858,7 +1858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const translationData = insertTranslationSchema.parse(req.body);
       
       // Check if translation already exists
-      const existing = await storage.getTranslation(translationData.key, translationData.language);
+      const existing = await storage.getTranslation(translationData.key, 'en');
       
       let translation;
       if (existing) {
