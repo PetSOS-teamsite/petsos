@@ -1,5 +1,5 @@
 import { 
-  type User, type InsertUser, type UpsertUser,
+  type User, type InsertUser,
   type Pet, type InsertPet,
   type Country, type InsertCountry,
   type Region, type InsertRegion,
@@ -193,11 +193,16 @@ export class MemStorage implements IStorage {
       username: 'testuser',
       password: 'hashedpassword',
       passwordHash: null,
+      googleId: null,
+      openidSub: null,
       email: 'user@example.com',
       name: null,
+      avatar: null,
       profileImageUrl: null,
       phone: '+852 9123 4567',
+      language: 'en',
       languagePreference: 'en',
+      region: null,
       regionPreference: null,
       role: 'user',
       clinicId: null,
@@ -208,9 +213,9 @@ export class MemStorage implements IStorage {
     
     // Seed test data for regions
     const regions: Region[] = [
-      { id: 'hki-region', code: 'HKI', nameEn: 'Hong Kong Island', nameZh: '香港島', countryCode: 'HK', coordinates: { latitude: 22.2783, longitude: 114.1747 }, active: true },
-      { id: 'kln-region', code: 'KLN', nameEn: 'Kowloon', nameZh: '九龍', countryCode: 'HK', coordinates: { latitude: 22.3193, longitude: 114.1694 }, active: true },
-      { id: 'nti-region', code: 'NTI', nameEn: 'New Territories', nameZh: '新界', countryCode: 'HK', coordinates: { latitude: 22.4453, longitude: 114.1683 }, active: true },
+      { id: 'hki-region', code: 'HKI', nameEn: 'Hong Kong Island', nameZh: '香港島', countryCode: 'HK', countryId: 'hk', active: true, phonePrefix: null, flag: null },
+      { id: 'kln-region', code: 'KLN', nameEn: 'Kowloon', nameZh: '九龍', countryCode: 'HK', countryId: 'hk', active: true, phonePrefix: null, flag: null },
+      { id: 'nti-region', code: 'NTI', nameEn: 'New Territories', nameZh: '新界', countryCode: 'HK', countryId: 'hk', active: true, phonePrefix: null, flag: null },
     ];
     regions.forEach(region => this.regions.set(region.id, region));
     
@@ -236,8 +241,7 @@ export class MemStorage implements IStorage {
         status: 'active',
         services: ['emergency', 'surgery', 'dental'],
         ownerVerificationCode: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: new Date()
       },
       {
         id: 'clinic-2',
@@ -259,8 +263,7 @@ export class MemStorage implements IStorage {
         status: 'active',
         services: ['emergency', 'vaccination'],
         ownerVerificationCode: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: new Date()
       },
       {
         id: 'clinic-3',
@@ -282,8 +285,7 @@ export class MemStorage implements IStorage {
         status: 'active',
         services: ['general', 'grooming'],
         ownerVerificationCode: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: new Date()
       },
       {
         id: 'clinic-4',
@@ -305,8 +307,7 @@ export class MemStorage implements IStorage {
         status: 'active',
         services: ['emergency', '24hour'],
         ownerVerificationCode: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: new Date()
       }
     ];
     clinics.forEach(clinic => this.clinics.set(clinic.id, clinic));
