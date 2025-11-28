@@ -1357,59 +1357,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== HOSPITAL ROUTES =====
-  
-  // Get all hospitals
-  app.get("/api/hospitals", async (req, res) => {
-    try {
-      const hospitals = await storage.getAllHospitals();
-      res.json(hospitals);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get hospitals by region
-  app.get("/api/hospitals/region/:regionId", async (req, res) => {
-    try {
-      const hospitals = await storage.getHospitalsByRegion(req.params.regionId);
-      res.json(hospitals);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get nearby hospitals using PostGIS (efficient server-side geo-query)
-  app.get("/api/hospitals/nearby", async (req, res) => {
-    try {
-      const { latitude, longitude, radius } = z.object({
-        latitude: z.string().transform(Number),
-        longitude: z.string().transform(Number),
-        radius: z.string().transform(Number).default("10000"), // default 10km in meters
-      }).parse(req.query);
-
-      const hospitals = await storage.getNearbyHospitals(latitude, longitude, radius);
-      res.json(hospitals);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get hospital by ID
-  app.get("/api/hospitals/:id", async (req, res) => {
-    try {
-      const hospital = await storage.getHospital(req.params.id);
-      if (!hospital) {
-        return res.status(404).json({ message: "Hospital not found" });
-      }
-      res.json(hospital);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
 
   // Get emergency requests for hospital
   app.get("/api/hospitals/:hospitalId/emergency-requests", isAuthenticated, async (req, res) => {
