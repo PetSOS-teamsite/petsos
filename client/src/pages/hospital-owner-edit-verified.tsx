@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, Loader2, Check, Clock, Lock, Building2, Stethoscope, Users, DollarSign, Phone } from "lucide-react";
+import { ArrowLeft, Loader2, Check, Clock, Lock, Building2, Stethoscope, Users, DollarSign, Phone, Image as ImageIcon, Upload, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,6 +80,8 @@ const hospitalFormSchema = z.object({
   admissionDeposit: z.boolean().optional(),
   depositBand: z.string().optional(),
   refundPolicy: z.string().optional(),
+  // Photos
+  photos: z.any().optional(),
 });
 
 type HospitalFormData = z.infer<typeof hospitalFormSchema>;
@@ -89,6 +91,7 @@ export default function HospitalOwnerEditVerifiedPage() {
   const [match, params] = useRoute("/hospital/edit/:slug");
   const [verified, setVerified] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [newPhotoUrl, setNewPhotoUrl] = useState("");
 
   const hospitalSlug = params?.slug as string;
 
@@ -152,8 +155,25 @@ export default function HospitalOwnerEditVerifiedPage() {
       admissionDeposit: false,
       depositBand: "",
       refundPolicy: "",
+      photos: null,
     },
   });
+
+  // Photo management functions
+  const photos = hospitalForm.watch("photos") as string[] | null;
+  
+  const addPhoto = () => {
+    if (newPhotoUrl.trim()) {
+      const currentPhotos = (photos || []) as string[];
+      hospitalForm.setValue("photos", [...currentPhotos, newPhotoUrl.trim()] as any);
+      setNewPhotoUrl("");
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    const currentPhotos = (photos || []) as string[];
+    hospitalForm.setValue("photos", currentPhotos.filter((_, i) => i !== index) as any);
+  };
 
   useEffect(() => {
     if (hospital) {
@@ -195,6 +215,7 @@ export default function HospitalOwnerEditVerifiedPage() {
         admissionDeposit: hospital.admissionDeposit ?? false,
         depositBand: hospital.depositBand || "",
         refundPolicy: hospital.refundPolicy || "",
+        photos: hospital.photos || null,
       });
     }
   }, [hospital]);
@@ -998,6 +1019,68 @@ export default function HospitalOwnerEditVerifiedPage() {
                     </FormItem>
                   )}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Photos */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5" />
+                  Hospital Photos
+                </CardTitle>
+                <CardDescription>Add photos of your hospital to help pet owners</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter photo URL (e.g., https://example.com/photo.jpg)"
+                    value={newPhotoUrl}
+                    onChange={(e) => setNewPhotoUrl(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPhoto())}
+                    data-testid="input-photo-url"
+                  />
+                  <Button type="button" onClick={addPhoto} data-testid="button-add-photo">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Add
+                  </Button>
+                </div>
+
+                {photos && photos.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {photos.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={url}
+                          alt={`Hospital photo ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(index)}
+                          data-testid={`button-remove-photo-${index}`}
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                        <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                          Photo {index + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+                    <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No photos added yet</p>
+                    <p className="text-sm">Add photo URLs above to display them here</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

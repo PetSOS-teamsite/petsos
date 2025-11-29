@@ -2218,6 +2218,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         admissionDeposit: z.boolean().optional(),
         depositBand: z.string().optional(),
         refundPolicy: z.string().optional(),
+        // Photos
+        photos: z.any().optional(),
       }).parse(req.body);
 
       const hospital = await storage.getHospital(req.params.id);
