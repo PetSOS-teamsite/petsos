@@ -469,13 +469,13 @@ export class MemStorage implements IStorage {
     const region: Region = { 
       id,
       countryId: insertRegion.countryId,
-      countryCode: insertRegion.countryCode ?? null,
+      countryCode: (insertRegion.countryCode ?? null) as string | null,
       code: insertRegion.code,
       nameEn: insertRegion.nameEn,
-      nameZh: insertRegion.nameZh ?? null,
-      active: insertRegion.active ?? null,
-      phonePrefix: insertRegion.phonePrefix ?? null,
-      flag: insertRegion.flag ?? null
+      nameZh: (insertRegion.nameZh ?? null) as string | null,
+      active: (insertRegion.active ?? null) as boolean | null,
+      phonePrefix: (insertRegion.phonePrefix ?? null) as string | null,
+      flag: (insertRegion.flag ?? null) as string | null
     };
     this.regions.set(id, region);
     return region;
@@ -892,9 +892,11 @@ export class MemStorage implements IStorage {
   async createTranslation(insertTranslation: InsertTranslation): Promise<Translation> {
     const id = randomUUID();
     const translation: Translation = { 
-      ...insertTranslation, 
-      id, 
-      value: insertTranslation.value ?? null
+      id,
+      key: insertTranslation.key,
+      value: insertTranslation.value ?? null,
+      en: (insertTranslation.en ?? null) as string | null,
+      zhHk: (insertTranslation.zhHk ?? null) as string | null
     };
     this.translations.set(id, translation);
     return translation;
@@ -1234,7 +1236,7 @@ class DatabaseStorage implements IStorage {
 
   async updateClinic(id: string, updateData: Partial<InsertClinic>): Promise<Clinic | undefined> {
     const result = await db.update(clinics)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(clinics.id, id))
       .returning();
     return result[0];
@@ -1242,7 +1244,7 @@ class DatabaseStorage implements IStorage {
 
   async deleteClinic(id: string): Promise<boolean> {
     const result = await db.update(clinics)
-      .set({ status: 'inactive', updatedAt: new Date() })
+      .set({ status: 'inactive' })
       .where(eq(clinics.id, id))
       .returning();
     return result.length > 0;
