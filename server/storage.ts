@@ -1247,7 +1247,7 @@ class DatabaseStorage implements IStorage {
 
   async deleteClinic(id: string): Promise<boolean> {
     const result = await db.update(clinics)
-      .set({ status: 'inactive', updatedAt: new Date() })
+      .set({ status: 'inactive' })
       .where(eq(clinics.id, id))
       .returning();
     return result.length > 0;
