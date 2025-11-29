@@ -172,10 +172,10 @@ function CountriesTab() {
       form.reset({
         code: country.code,
         nameEn: country.nameEn,
-        nameZh: country.nameZh || "",
-        phonePrefix: country.phonePrefix,
-        flag: country.flag || "",
-        active: country.active,
+        nameZh: (country.nameZh ?? "") as string,
+        phonePrefix: (country.phonePrefix ?? "") as string,
+        flag: (country.flag ?? "") as string,
+        active: country.active ?? false,
       });
     } else {
       setEditingCountry(null);
