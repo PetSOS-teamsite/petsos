@@ -468,14 +468,12 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const region: Region = { 
       id,
-      countryId: insertRegion.countryId,
-      countryCode: (insertRegion.countryCode ?? null) as string | null,
       code: insertRegion.code,
       nameEn: insertRegion.nameEn,
-      nameZh: (insertRegion.nameZh ?? null) as string | null,
-      active: (insertRegion.active ?? null) as boolean | null,
-      phonePrefix: (insertRegion.phonePrefix ?? null) as string | null,
-      flag: (insertRegion.flag ?? null) as string | null
+      nameZh: (insertRegion.nameZh ?? "") as string,
+      countryCode: (insertRegion.countryCode ?? "HK") as string,
+      active: (insertRegion.active ?? true) as boolean,
+      coordinates: insertRegion.coordinates ?? null
     };
     this.regions.set(id, region);
     return region;
