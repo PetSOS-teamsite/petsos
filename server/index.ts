@@ -5,6 +5,7 @@ import { initSentry, setupSentryMiddleware, setupSentryErrorHandler, captureExce
 import { config } from "./config";
 import fs from "fs";
 import path from "path";
+// Schema refresh trigger: 2025-11-29
 
 const app = express();
 

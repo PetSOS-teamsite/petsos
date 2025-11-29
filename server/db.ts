@@ -3,6 +3,7 @@ import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 import * as schema from "@shared/schema";
 
+// Force schema reload for new medical equipment fields - 2025-11-29
 neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
