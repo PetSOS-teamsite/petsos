@@ -105,8 +105,8 @@ export type Country = typeof countries.$inferSelect;
 // Regions table (districts, states)
 export const regions = pgTable("regions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  countryId: varchar("country_id").references(() => countries.id),
-  countryCode: text("country_code"), // Primary identifier - use countryCode instead of countryId
+  countryId: varchar("country_id").notNull().references(() => countries.id),
+  countryCode: text("country_code"), // Support both countryId (FK) and countryCode (string code)
   code: text("code").notNull(),
   nameEn: text("name_en").notNull(),
   nameZh: text("name_zh"),
@@ -114,7 +114,7 @@ export const regions = pgTable("regions", {
   phonePrefix: text("phone_prefix"),
   flag: text("flag"),
 }, (table) => [
-  index("idx_region_country").on(table.countryCode),
+  index("idx_region_country").on(table.countryId),
 ]);
 
 export const insertRegionSchema = createInsertSchema(regions).omit({
@@ -367,8 +367,8 @@ export const translations = pgTable("translations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   key: text("key").notNull().unique(), // e.g., "common.emergency_alert"
   value: text("value"),
-  en: text("en"),
-  zhHk: text("zh_hk"),
+  en: text("en").notNull(),
+  zhHk: text("zh_hk").notNull(),
 });
 
 export const insertTranslationSchema = createInsertSchema(translations).omit({
