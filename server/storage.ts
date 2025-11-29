@@ -375,26 +375,26 @@ export class MemStorage implements IStorage {
   }
 
   async upsertUser(userData: InsertUser): Promise<User> {
-    const existing = this.users.get(userData.id || randomUUID());
-    const id = userData.id || randomUUID();
+    const id = randomUUID();
     const user: User = {
-      ...existing,
-      ...userData,
       id,
-      googleId: existing?.googleId ?? userData.googleId ?? null,
-      openidSub: existing?.openidSub ?? userData.openidSub ?? null,
-      avatar: existing?.avatar ?? userData.avatar ?? null,
-      language: existing?.language ?? userData.language ?? 'en',
-      username: existing?.username ?? userData.username ?? null,
-      password: existing?.password ?? userData.password ?? null,
-      passwordHash: existing?.passwordHash ?? userData.passwordHash ?? null,
-      phone: existing?.phone ?? userData.phone ?? null,
-      region: existing?.region ?? userData.region ?? null,
-      languagePreference: existing?.languagePreference ?? userData.languagePreference ?? 'en',
-      regionPreference: existing?.regionPreference ?? userData.regionPreference ?? null,
-      role: existing?.role ?? userData.role ?? 'user',
-      clinicId: existing?.clinicId ?? userData.clinicId ?? null,
-      createdAt: existing?.createdAt ?? new Date(),
+      name: userData.name ?? null,
+      username: userData.username ?? null,
+      password: userData.password ?? null,
+      email: userData.email ?? null,
+      phone: userData.phone ?? null,
+      passwordHash: userData.passwordHash ?? null,
+      googleId: userData.googleId ?? null,
+      openidSub: userData.openidSub ?? null,
+      role: userData.role ?? 'user',
+      avatar: userData.avatar ?? null,
+      profileImageUrl: userData.profileImageUrl ?? null,
+      language: userData.language ?? 'en',
+      languagePreference: userData.languagePreference ?? 'en',
+      region: userData.region ?? null,
+      regionPreference: userData.regionPreference ?? null,
+      clinicId: userData.clinicId ?? null,
+      createdAt: new Date(),
       updatedAt: new Date(),
     };
     this.users.set(id, user);
@@ -668,8 +668,7 @@ export class MemStorage implements IStorage {
       isAvailable: insertClinic.isAvailable ?? true,
       isSupportHospital: insertClinic.isSupportHospital ?? false,
       services: insertClinic.services ?? null,
-      ownerVerificationCode: insertClinic.ownerVerificationCode ?? null,
-      websiteUrl: insertClinic.websiteUrl ?? null
+      ownerVerificationCode: insertClinic.ownerVerificationCode ?? null
     };
     this.clinics.set(id, clinic);
     return clinic;
@@ -1240,7 +1239,7 @@ class DatabaseStorage implements IStorage {
 
   async updateClinic(id: string, updateData: Partial<InsertClinic>): Promise<Clinic | undefined> {
     const result = await db.update(clinics)
-      .set(updateData)
+      .set({ ...updateData })
       .where(eq(clinics.id, id))
       .returning();
     return result[0];
