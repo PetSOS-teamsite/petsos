@@ -155,17 +155,17 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="basic">Basic Info</TabsTrigger>
-            <TabsTrigger value="photos">Photos</TabsTrigger>
-            <TabsTrigger value="facilities">Facilities</TabsTrigger>
-            <TabsTrigger value="medical">Medical Services</TabsTrigger>
-            <TabsTrigger value="operational">Operational</TabsTrigger>
+            <TabsTrigger value="basic">基本資訊</TabsTrigger>
+            <TabsTrigger value="photos">照片</TabsTrigger>
+            <TabsTrigger value="facilities">設施</TabsTrigger>
+            <TabsTrigger value="medical">醫療服務</TabsTrigger>
+            <TabsTrigger value="operational">運營詳情</TabsTrigger>
           </TabsList>
 
           {/* Basic Info Tab */}
           <TabsContent value="basic" className="space-y-4">
             <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-              <p className="text-sm text-green-800 dark:text-green-300"><strong>Essential Information:</strong> Help pet parents contact you quickly during emergencies. Complete this first, then add photos and services to increase visibility.</p>
+              <p className="text-sm text-green-800 dark:text-green-300"><strong>基本資訊 / Essential Information:</strong> 協助寵物家長在緊急情況下快速聯繫您。請先完成此部分，然後添加照片和服務以增加可見度。/ Help pet parents contact you quickly during emergencies. Complete this first, then add photos and services to increase visibility.</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -173,7 +173,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                 name="nameEn"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Hospital Name (English) *</FormLabel>
+                    <FormLabel>醫院名稱 (英文) * / Hospital Name (English) *</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Central Animal Hospital" data-testid="input-name-en" />
                     </FormControl>
@@ -186,7 +186,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                 name="nameZh"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Hospital Name (Chinese) *</FormLabel>
+                    <FormLabel>醫院名稱 (繁體中文) * / Hospital Name (Traditional Chinese) *</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="中環動物醫院" data-testid="input-name-zh" />
                     </FormControl>
@@ -201,11 +201,11 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
               name="slug"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>URL Slug *</FormLabel>
+                  <FormLabel>URL Slug * / 網址簡稱 *</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="central-animal-hospital" data-testid="input-slug" />
                   </FormControl>
-                  <FormDescription>Lowercase letters, numbers, and hyphens only</FormDescription>
+                  <FormDescription>Lowercase letters, numbers, and hyphens only / 只允許小寫字母、數字和連字符</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -217,7 +217,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                 name="addressEn"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address (English) *</FormLabel>
+                    <FormLabel>地址 (英文) * / Address (English) *</FormLabel>
                     <FormControl>
                       <Textarea {...field} placeholder="123 Queen's Road Central" rows={3} data-testid="input-address-en" />
                     </FormControl>
@@ -230,7 +230,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                 name="addressZh"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address (Chinese) *</FormLabel>
+                    <FormLabel>地址 (繁體中文) * / Address (Traditional Chinese) *</FormLabel>
                     <FormControl>
                       <Textarea {...field} placeholder="皇后大道中123號" rows={3} data-testid="input-address-zh" />
                     </FormControl>
@@ -246,7 +246,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone *</FormLabel>
+                    <FormLabel>電話 * / Phone *</FormLabel>
                     <FormControl>
                       <Input {...field} value={field.value || ""} placeholder="+852 1234 5678" data-testid="input-phone" />
                     </FormControl>
@@ -272,7 +272,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email *</FormLabel>
+                    <FormLabel>電郵 / Email *</FormLabel>
                     <FormControl>
                       <Input {...field} value={field.value || ""} placeholder="info@hospital.com" type="email" data-testid="input-email" />
                     </FormControl>
@@ -287,13 +287,13 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
           <TabsContent value="photos" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Hospital Photos</CardTitle>
-                <CardDescription>Add photos of the hospital to help pet owners</CardDescription>
+                <CardTitle>醫院照片 / Hospital Photos</CardTitle>
+                <CardDescription>添加醫院照片以幫助寵物家長了解您的設施 / Add photos of the hospital to help pet owners</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Enter photo URL (e.g., https://example.com/photo.jpg)"
+                    placeholder="輸入照片網址 / Enter photo URL (e.g., https://example.com/photo.jpg)"
                     value={newPhotoUrl}
                     onChange={(e) => setNewPhotoUrl(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPhoto())}
@@ -354,7 +354,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
             <div className="space-y-3 border rounded-lg p-4 bg-red-50 dark:bg-red-900/10">
               <h3 className="font-bold text-red-900 dark:text-red-300 flex items-center gap-2">
                 <Activity className="h-4 w-4" />
-                Emergency & Critical Care
+                緊急和重症護理 / Emergency & Critical Care
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <FormField
@@ -362,7 +362,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="onSiteVet247"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">On-Site Vet 24/7</FormLabel>
+                      <FormLabel className="text-sm">獸醫 24/7 駐廠 / On-Site Vet 24/7</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -374,7 +374,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="nurse24h"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">24-Hour Nursing</FormLabel>
+                      <FormLabel className="text-sm">24小時護理 / 24-Hour Nursing</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -386,7 +386,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="isolationWard"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Isolation Ward</FormLabel>
+                      <FormLabel className="text-sm">隔離病房 / Isolation Ward</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -398,7 +398,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="ambulanceSupport"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Ambulance Support</FormLabel>
+                      <FormLabel className="text-sm">救護車服務 / Ambulance Support</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -508,14 +508,14 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
 
             {/* Equipment & Supplies */}
             <div className="space-y-3 border rounded-lg p-4 bg-indigo-50 dark:bg-indigo-900/10">
-              <h3 className="font-bold text-indigo-900 dark:text-indigo-300">Equipment & Supplies</h3>
+              <h3 className="font-bold text-indigo-900 dark:text-indigo-300">設備和物資 / Equipment & Supplies</h3>
               <div className="grid grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
                   name="oxygenTank"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Oxygen Tank / Supply</FormLabel>
+                      <FormLabel className="text-sm">氧氣筒 / Oxygen Tank / Supply</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -527,7 +527,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="ventilators"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Ventilators</FormLabel>
+                      <FormLabel className="text-sm">呼吸機 / Ventilators</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -539,7 +539,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="bloodWarmer"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Blood Warmer</FormLabel>
+                      <FormLabel className="text-sm">血液加溫器 / Blood Warmer</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -551,7 +551,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="crashCart"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Emergency Crash Cart</FormLabel>
+                      <FormLabel className="text-sm">急救車 / Emergency Crash Cart</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -563,7 +563,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="defibrillator"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Defibrillator (AED)</FormLabel>
+                      <FormLabel className="text-sm">自動除顫器 / Defibrillator (AED)</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -575,7 +575,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="ultrasoundDoppler"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Ultrasound Doppler</FormLabel>
+                      <FormLabel className="text-sm">超聲多普勒 / Ultrasound Doppler</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
