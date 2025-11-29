@@ -638,6 +638,108 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
               />
             </div>
 
+            <h3 className="text-lg font-semibold mt-6">Life Support Equipment</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="oxygenTherapy"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Oxygen Therapy / Tanks</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="ventilator"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Ventilator / Respirator</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="bloodTransfusion"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Blood Transfusion</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="imagingMRI"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">MRI Imaging</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="endoscopy"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Endoscopy</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="dialysis"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Dialysis / Renal Support</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="defibrillator"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Defibrillator / AED</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="anaesMonitoring"
@@ -1028,6 +1130,13 @@ export default function AdminHospitalsPage() {
       sxEmergencyOrtho: hospital.sxEmergencyOrtho || null,
       anaesMonitoring: hospital.anaesMonitoring || null,
       specialistAvail: hospital.specialistAvail || null,
+      oxygenTherapy: hospital.oxygenTherapy || null,
+      ventilator: hospital.ventilator || null,
+      bloodTransfusion: hospital.bloodTransfusion || null,
+      imagingMRI: hospital.imagingMRI || null,
+      endoscopy: hospital.endoscopy || null,
+      dialysis: hospital.dialysis || null,
+      defibrillator: hospital.defibrillator || null,
       whatsappTriage: hospital.whatsappTriage || null,
       parking: hospital.parking || null,
       wheelchairAccess: hospital.wheelchairAccess || null,

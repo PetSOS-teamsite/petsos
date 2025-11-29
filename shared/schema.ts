@@ -250,6 +250,14 @@ export const hospitals = pgTable("hospitals", {
   sxEmergencyOrtho: boolean("sx_emergency_ortho"),
   anaesMonitoring: text("anaes_monitoring"),
   specialistAvail: text("specialist_avail"),
+  // Additional Medical Equipment
+  oxygenTherapy: boolean("oxygen_therapy"), // Oxygen tanks/support
+  ventilator: boolean("ventilator"), // Ventilator/respirator
+  bloodTransfusion: boolean("blood_transfusion"), // Blood transfusion capability
+  imagingMRI: boolean("imaging_mri"), // MRI imaging
+  endoscopy: boolean("endoscopy"), // Endoscopy services
+  dialysis: boolean("dialysis"), // Dialysis/renal support
+  defibrillator: boolean("defibrillator"), // Defibrillator/AED
   speciesAccepted: text("species_accepted").array(),
   whatsappTriage: boolean("whatsapp_triage"),
   languages: text("languages").array(),
