@@ -895,8 +895,8 @@ export class MemStorage implements IStorage {
       id,
       key: insertTranslation.key,
       value: insertTranslation.value ?? null,
-      en: (insertTranslation.en ?? null) as string | null,
-      zhHk: (insertTranslation.zhHk ?? null) as string | null
+      en: (insertTranslation.en ?? "") as string,
+      zhHk: (insertTranslation.zhHk ?? "") as string
     };
     this.translations.set(id, translation);
     return translation;

@@ -35,7 +35,7 @@ export async function seedDatabase() {
       const hkRegion = await db
         .insert(regions)
         .values({
-          countryId,
+          countryId: countryId as string,
           code: "HK",
           nameEn: "Hong Kong",
           nameZh: "香港",
