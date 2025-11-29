@@ -1126,6 +1126,7 @@ export default function AdminHospitalsPage() {
     },
     onSuccess: (code: string) => {
       setGeneratedCode(code);
+      setIsCodeDialogOpen(true);
       toast({ title: "Code generated successfully" });
     },
     onError: (error: any) => {
@@ -1324,7 +1325,6 @@ export default function AdminHospitalsPage() {
                           setHospitalForCode(hospital);
                           setGeneratedCode(null);
                           generateCodeMutation.mutate(hospital.id);
-                          setIsCodeDialogOpen(true);
                         }}
                         data-testid={`button-generate-code-${hospital.id}`}
                         title={hospital.slug ? "Generate Access Code" : "Add URL slug first to enable access codes"}
