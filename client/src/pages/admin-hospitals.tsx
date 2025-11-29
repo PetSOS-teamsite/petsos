@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, X, Activity, Image as ImageIcon, Upload, XCircle, Copy, ExternalLink, Check as CheckIcon } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, X, Activity, Image as ImageIcon, Upload, XCircle, Copy, ExternalLink, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -1326,10 +1326,10 @@ export default function AdminHospitalsPage() {
                           setIsCodeDialogOpen(true);
                         }}
                         data-testid={`button-generate-code-${hospital.id}`}
-                        title="Generate Access Code"
-                        disabled={generateCodeMutation.isPending}
+                        title={hospital.slug ? "Generate Access Code" : "Add URL slug first to enable access codes"}
+                        disabled={generateCodeMutation.isPending || !hospital.slug}
                       >
-                        {generateCodeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckIcon className="h-4 w-4" />}
+                        {generateCodeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
                       </Button>
                       <Button
                         variant="outline"
@@ -1452,7 +1452,7 @@ export default function AdminHospitalsPage() {
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Edit Link:</p>
                 <p className="text-sm font-mono break-all text-blue-600 dark:text-blue-400">
-                  {`${window.location.origin}/hospital/edit/${hospitalForCode.id}?code=${generatedCode}`}
+                  {`${window.location.origin}/hospital/edit/${hospitalForCode.slug}`}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -1471,7 +1471,7 @@ export default function AdminHospitalsPage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    const link = `${window.location.origin}/hospital/edit/${hospitalForCode.id}?code=${generatedCode}`;
+                    const link = `${window.location.origin}/hospital/edit/${hospitalForCode.slug}`;
                     navigator.clipboard.writeText(link);
                     toast({ title: "Link copied to clipboard" });
                   }}
