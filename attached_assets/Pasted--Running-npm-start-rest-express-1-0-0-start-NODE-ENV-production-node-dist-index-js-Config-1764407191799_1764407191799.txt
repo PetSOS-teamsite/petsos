@@ -1,0 +1,54 @@
+==> Running 'npm start'
+
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+9:01:59 AM [express] serving on port 10000
+9:05:03 AM [express] GET /api/auth/user 304 in 483ms :: {"id":"41898245","username":null,"email":"an…
+file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345
+o?t(o):n(u)},"cb"),s=new r(function(o,u){n=o,t=u}).catch(o=>{throw Error.captureStackTrace(
+                                                                         ^
+error: column "country_id" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.getAllRegions (file:///opt/render/project/src/dist/index.js:496:12)
+    at async file:///opt/render/project/src/dist/index.js:2578:22 {
+  length: 177,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: 'Perhaps you meant to reference the column "regions.country_code".',
+  position: '14',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3729',
+  routine: 'errorMissingColumn'
+}
+Node.js v22.16.0
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+Sentry DSN not provided - error tracking disabled
+9:05:17 AM [express] serving on port 10000

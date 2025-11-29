@@ -1254,7 +1254,12 @@ class DatabaseStorage implements IStorage {
   }
 
   async getAllRegions(): Promise<Region[]> {
-    return await db.select().from(regions);
+    try {
+      return await db.select().from(regions);
+    } catch (error) {
+      console.warn('getAllRegions query failed:', error instanceof Error ? error.message : error);
+      return [];
+    }
   }
 
   async getRegion(id: string): Promise<Region | undefined> {
