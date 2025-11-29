@@ -172,10 +172,10 @@ function CountriesTab() {
       form.reset({
         code: country.code,
         nameEn: country.nameEn,
-        nameZh: (country.nameZh ?? "") as string,
-        phonePrefix: (country.phonePrefix ?? "") as string,
-        flag: (country.flag ?? "") as string,
-        active: country.active ?? false,
+        nameZh: country.nameZh || "",
+        phonePrefix: country.phonePrefix,
+        flag: country.flag || "",
+        active: country.active,
       });
     } else {
       setEditingCountry(null);
@@ -257,7 +257,7 @@ function CountriesTab() {
                     <FormItem>
                       <FormLabel>Name (Chinese)</FormLabel>
                       <FormControl>
-                        <Input placeholder="香港" {...field} value={field.value ?? ""} data-testid="input-country-name-zh" />
+                        <Input placeholder="香港" {...field} data-testid="input-country-name-zh" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -283,7 +283,7 @@ function CountriesTab() {
                     <FormItem>
                       <FormLabel>Flag Emoji</FormLabel>
                       <FormControl>
-                        <Input placeholder="🇭🇰" {...field} value={field.value ?? ""} data-testid="input-country-flag" />
+                        <Input placeholder="🇭🇰" {...field} data-testid="input-country-flag" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -497,9 +497,9 @@ function RegionsTab() {
       form.reset({
         code: region.code,
         nameEn: region.nameEn,
-        nameZh: (region.nameZh ?? "") as string,
-        countryCode: (region.countryCode ?? "") as string,
-        active: region.active ?? false,
+        nameZh: region.nameZh,
+        countryCode: region.countryCode,
+        active: region.active,
       });
     } else {
       setEditingRegion(null);
@@ -768,10 +768,10 @@ function PetBreedsTab() {
       form.reset({
         species: breed.species,
         breedEn: breed.breedEn,
-        breedZh: (breed.breedZh ?? "") as string,
-        countryCode: breed.countryCode ?? null,
-        isCommon: breed.isCommon ?? false,
-        active: breed.active ?? true,
+        breedZh: breed.breedZh || "",
+        countryCode: breed.countryCode,
+        isCommon: breed.isCommon,
+        active: breed.active,
       });
     } else {
       setEditingBreed(null);
@@ -867,7 +867,7 @@ function PetBreedsTab() {
                     <FormItem>
                       <FormLabel>Breed Name (Chinese)</FormLabel>
                       <FormControl>
-                        <Input placeholder="金毛尋回犬" {...field} value={field.value ?? ""} data-testid="input-breed-name-zh" />
+                        <Input placeholder="金毛尋回犬" {...field} data-testid="input-breed-name-zh" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

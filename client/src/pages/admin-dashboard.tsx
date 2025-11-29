@@ -134,7 +134,7 @@ export default function AdminDashboardPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/">
+              <Link href="/">
                 <Button variant="ghost" size="icon" data-testid="button-back">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
@@ -158,37 +158,37 @@ export default function AdminDashboardPage() {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
-              <Link to="/admin/users">
+              <Link href="/admin/users">
                 <Button variant="outline" size="sm" data-testid="button-admin-users">
                   <Users className="h-4 w-4 mr-2" />
                   Users
                 </Button>
               </Link>
-              <Link to="/admin/pets">
+              <Link href="/admin/pets">
                 <Button variant="outline" size="sm" data-testid="button-admin-pets">
                   <Heart className="h-4 w-4 mr-2" />
                   Pets
                 </Button>
               </Link>
-              <Link to="/admin/clinics">
+              <Link href="/admin/clinics">
                 <Button variant="outline" size="sm" data-testid="button-admin-clinics">
                   <Building2 className="h-4 w-4 mr-2" />
                   Clinics
                 </Button>
               </Link>
-              <Link to="/admin/hospitals">
+              <Link href="/admin/hospitals">
                 <Button variant="outline" size="sm" data-testid="button-admin-hospitals">
                   <Building2 className="h-4 w-4 mr-2" />
                   Hospitals
                 </Button>
               </Link>
-              <Link to="/admin/diagnostics">
+              <Link href="/admin/diagnostics">
                 <Button variant="outline" size="sm" data-testid="button-admin-diagnostics">
                   <Stethoscope className="h-4 w-4 mr-2" />
                   Diagnostics
                 </Button>
               </Link>
-              <Link to="/admin/config">
+              <Link href="/admin/config">
                 <Button variant="outline" size="sm" data-testid="button-admin-config">
                   <Settings className="h-4 w-4 mr-2" />
                   Config

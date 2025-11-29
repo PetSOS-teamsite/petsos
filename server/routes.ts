@@ -28,16 +28,8 @@ import {
 } from "@shared/schema";
 import path from "path";
 import { config } from "./config";
-import { seedDatabase } from "./seed";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Seed database with initial data on startup
-  try {
-    await seedDatabase();
-  } catch (error) {
-    console.warn("Database seeding failed or already seeded:", error instanceof Error ? error.message : error);
-  }
-
   // Set up Replit Auth
   await setupAuth(app);
   

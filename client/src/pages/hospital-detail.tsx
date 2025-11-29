@@ -357,21 +357,6 @@ export default function HospitalDetailPage() {
                     ♿ {language === 'zh-HK' ? '無障礙通道' : 'Wheelchair Access'}
                   </Badge>
                 )}
-                {hospital.oxygenBox && (
-                  <Badge variant="outline" data-testid="badge-oxygen-quick">
-                    {language === 'zh-HK' ? '氧氣箱' : 'Oxygen Box'}
-                  </Badge>
-                )}
-                {hospital.bloodBankCat && (
-                  <Badge variant="outline" data-testid="badge-blood-cat-quick">
-                    {language === 'zh-HK' ? '血液庫' : 'Blood Bank'}
-                  </Badge>
-                )}
-                {hospital.transferSupport && (
-                  <Badge variant="outline" data-testid="badge-transfer">
-                    {language === 'zh-HK' ? '轉院服務' : 'Transfer Support'}
-                  </Badge>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -582,52 +567,6 @@ export default function HospitalDetailPage() {
                           {language === 'zh-HK' ? '臨終護理' : 'End-of-Life Support'}
                         </dt>
                         <dd className="mt-1">{hospital.eolSupport ? (language === 'zh-HK' ? '提供' : 'Available') : (language === 'zh-HK' ? '不提供' : 'Not Available')}</dd>
-                      </div>
-                    )}
-                  </dl>
-                </AccordionContent>
-              </AccordionItem>
-            )}
-
-            {/* Equipment & Services */}
-            {(hospital.oxygenBox || hospital.crashCart || hospital.defibrillator || hospital.ultrasoundDoppler || hospital.bloodBankCat || hospital.bloodBankDog || hospital.transferSupport) && (
-              <AccordionItem value="equipment" className="border rounded-lg px-4 bg-white dark:bg-gray-800">
-                <AccordionTrigger className="hover:no-underline" data-testid="accordion-equipment">
-                  <div className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-indigo-500" />
-                    <span className="font-semibold">
-                      {language === 'zh-HK' ? '設備與服務' : 'Equipment & Services'}
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-4 pb-2">
-                  <dl className="space-y-3">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                        {language === 'zh-HK' ? '緊急設備' : 'Emergency Equipment'}
-                      </dt>
-                      <dd className="flex flex-wrap gap-2">
-                        {hospital.oxygenBox && <Badge variant="outline" data-testid="badge-oxygen">{language === 'zh-HK' ? '氧氣箱' : 'Oxygen Supply'}</Badge>}
-                        {hospital.crashCart && <Badge variant="outline" data-testid="badge-crash-cart">{language === 'zh-HK' ? '急救車' : 'Crash Cart'}</Badge>}
-                        {hospital.defibrillator && <Badge variant="outline" data-testid="badge-defibrillator">{language === 'zh-HK' ? '除顫器' : 'Defibrillator'}</Badge>}
-                        {hospital.ultrasoundDoppler && <Badge variant="outline" data-testid="badge-doppler">{language === 'zh-HK' ? '超聲多普勒' : 'Ultrasound Doppler'}</Badge>}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                        {language === 'zh-HK' ? '血液庫' : 'Blood Bank'}
-                      </dt>
-                      <dd className="flex flex-wrap gap-2">
-                        {hospital.bloodBankCat && <Badge variant="outline" className="bg-orange-50 dark:bg-orange-900/20" data-testid="badge-blood-cat">{language === 'zh-HK' ? '貓血液' : 'Cat'}</Badge>}
-                        {hospital.bloodBankDog && <Badge variant="outline" className="bg-orange-50 dark:bg-orange-900/20" data-testid="badge-blood-dog">{language === 'zh-HK' ? '狗血液' : 'Dog'}</Badge>}
-                      </dd>
-                    </div>
-                    {hospital.transferSupport !== null && (
-                      <div>
-                        <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                          {language === 'zh-HK' ? '轉院支援服務' : 'Transfer Support Service'}
-                        </dt>
-                        <dd className="mt-1">{hospital.transferSupport ? (language === 'zh-HK' ? '提供' : 'Available') : (language === 'zh-HK' ? '不提供' : 'Not Available')}</dd>
                       </div>
                     )}
                   </dl>

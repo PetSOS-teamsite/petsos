@@ -105,14 +105,16 @@ export type Country = typeof countries.$inferSelect;
 // Regions table (districts, states)
 export const regions = pgTable("regions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  countryId: varchar("country_id").notNull().references(() => countries.id),
+  countryCode: text("country_code"), // Support both countryId (FK) and countryCode (string code)
   code: text("code").notNull(),
   nameEn: text("name_en").notNull(),
-  nameZh: text("name_zh").notNull(),
-  countryCode: text("country_code").notNull().default("HK").references(() => countries.code),
-  active: boolean("active").notNull().default(true),
-  coordinates: jsonb("coordinates"),
+  nameZh: text("name_zh"),
+  active: boolean("active"),
+  phonePrefix: text("phone_prefix"),
+  flag: text("flag"),
 }, (table) => [
-  index("idx_region_country").on(table.countryCode),
+  index("idx_region_country").on(table.countryId),
 ]);
 
 export const insertRegionSchema = createInsertSchema(regions).omit({
@@ -244,13 +246,6 @@ export const hospitals = pgTable("hospitals", {
   inHouseLab: boolean("in_house_lab"),
   extLabCutoff: text("ext_lab_cutoff"),
   bloodBankAccess: text("blood_bank_access"),
-  oxygenBox: boolean("oxygen_box"),
-  crashCart: boolean("crash_cart"),
-  defibrillator: boolean("defibrillator"),
-  ultrasoundDoppler: boolean("ultrasound_doppler"),
-  bloodBankCat: boolean("blood_bank_cat"),
-  bloodBankDog: boolean("blood_bank_dog"),
-  transferSupport: boolean("transfer_support"),
   sxEmergencySoft: boolean("sx_emergency_soft"),
   sxEmergencyOrtho: boolean("sx_emergency_ortho"),
   anaesMonitoring: text("anaes_monitoring"),
