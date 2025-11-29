@@ -512,34 +512,10 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
               <div className="grid grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
-                  name="oxygenTank"
+                  name="oxygenBox"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">氧氣筒 / Oxygen Tank / Supply</FormLabel>
-                      <FormControl>
-                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="ventilators"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">呼吸機 / Ventilators</FormLabel>
-                      <FormControl>
-                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="bloodWarmer"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">血液加溫器 / Blood Warmer</FormLabel>
+                      <FormLabel className="text-sm">氧氣箱 / Oxygen Supply System</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -576,6 +552,49 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
                       <FormLabel className="text-sm">超聲多普勒 / Ultrasound Doppler</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="bloodBankCat"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">血液庫 - 貓 / Blood Bank - Cat</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="bloodBankDog"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">血液庫 - 狗 / Blood Bank - Dog</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Transfer & Support Services */}
+            <div className="space-y-3 border rounded-lg p-4 bg-rose-50 dark:bg-rose-900/10">
+              <h3 className="font-bold text-rose-900 dark:text-rose-300">轉院服務 / Transfer Services</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="transferSupport"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">轉院支援服務 / Transfer Support Service</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
