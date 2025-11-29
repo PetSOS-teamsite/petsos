@@ -506,6 +506,85 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
               </div>
             </div>
 
+            {/* Equipment & Supplies */}
+            <div className="space-y-3 border rounded-lg p-4 bg-indigo-50 dark:bg-indigo-900/10">
+              <h3 className="font-bold text-indigo-900 dark:text-indigo-300">Equipment & Supplies</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="oxygenTank"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Oxygen Tank / Supply</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="ventilators"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Ventilators</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="bloodWarmer"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Blood Warmer</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="crashCart"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Emergency Crash Cart</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="defibrillator"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Defibrillator (AED)</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="ultrasoundDoppler"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Ultrasound Doppler</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
             {/* Owner & Pet Support */}
             <div className="space-y-3 border rounded-lg p-4 bg-amber-50 dark:bg-amber-900/10">
               <h3 className="font-bold text-amber-900 dark:text-amber-300">Owner & Pet Support</h3>
