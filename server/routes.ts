@@ -2225,54 +2225,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update hospital as owner (verified with code)
   app.patch("/api/hospitals/:id/update-owner", async (req: any, res: any) => {
     try {
-      const { verificationCode, ...updateData } = z.object({
+      // First validate the verification code
+      const { verificationCode } = z.object({
         verificationCode: z.string().length(6, "Code must be 6 digits"),
-        // Basic Information
-        nameEn: z.string().optional(),
-        nameZh: z.string().optional(),
-        addressEn: z.string().optional(),
-        addressZh: z.string().optional(),
-        phone: z.string().optional(),
-        whatsapp: z.string().optional(),
-        email: z.string().optional(),
-        websiteUrl: z.string().optional(),
-        regionId: z.string().optional(),
-        // Facilities
-        parking: z.boolean().optional(),
-        wheelchairAccess: z.boolean().optional(),
-        isolationWard: z.boolean().optional(),
-        ambulanceSupport: z.boolean().optional(),
-        eolSupport: z.boolean().optional(),
-        whatsappTriage: z.boolean().optional(),
-        // Medical Services
-        icuLevel: z.string().optional(),
-        imagingXray: z.boolean().optional(),
-        imagingUS: z.boolean().optional(),
-        imagingCT: z.boolean().optional(),
-        sameDayCT: z.boolean().optional(),
-        inHouseLab: z.boolean().optional(),
-        extLabCutoff: z.string().optional(),
-        bloodBankAccess: z.string().optional(),
-        sxEmergencySoft: z.boolean().optional(),
-        sxEmergencyOrtho: z.boolean().optional(),
-        anaesMonitoring: z.string().optional(),
-        specialistAvail: z.string().optional(),
-        // Staffing
-        onSiteVet247: z.boolean().optional(),
-        nurse24h: z.boolean().optional(),
-        open247: z.boolean().optional(),
-        // Operations
-        triagePolicy: z.string().optional(),
-        typicalWaitBand: z.string().optional(),
-        ownerVisitPolicy: z.string().optional(),
-        recheckWindow: z.string().optional(),
-        // Financial
-        admissionDeposit: z.boolean().optional(),
-        depositBand: z.string().optional(),
-        refundPolicy: z.string().optional(),
-        // Photos - accept array of strings (URLs) or null
-        photos: z.union([z.array(z.string()), z.null()]).optional(),
       }).parse(req.body);
+
+      // Then use the same schema as admin endpoint for field validation
+      const { insertHospitalSchema } = await import("@shared/schema");
+      const { verificationCode: _, ...bodyWithoutCode } = req.body;
+      const updateData = insertHospitalSchema.partial().parse(bodyWithoutCode);
 
       const hospital = await storage.getHospital(req.params.id);
       if (!hospital) {
@@ -2284,7 +2245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid verification code" });
       }
 
-      // Update hospital with owner-provided data
+      // Update hospital with owner-provided data (uses same storage function as admin)
       const updatedHospital = await storage.updateHospital(req.params.id, updateData);
 
       await storage.createAuditLog({
