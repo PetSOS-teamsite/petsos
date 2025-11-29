@@ -1656,7 +1656,7 @@ export default function AdminHospitalsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const editLink = `${window.location.origin}/hospital/edit/${hospital.id}${hospital.ownerVerificationCode ? `?code=${hospital.ownerVerificationCode}` : ''}`;
+                            const editLink = `${window.location.origin}/hospital/edit/${hospital.slug}${hospital.ownerVerificationCode ? `?code=${hospital.ownerVerificationCode}` : ''}`;
                             navigator.clipboard.writeText(editLink);
                             toast({ title: "Edit link copied to clipboard" });
                           }}
