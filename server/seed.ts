@@ -3,6 +3,7 @@ import {
   regions,
   hospitals,
   clinics,
+  countries,
 } from "@shared/schema";
 
 export async function seedDatabase() {
@@ -13,12 +14,28 @@ export async function seedDatabase() {
     const existingRegions = await db.select().from(regions).limit(1);
     
     if (existingRegions.length === 0) {
+      console.log("🌍 Seeding countries...");
+      const hkCountry = await db
+        .insert(countries)
+        .values({
+          code: "HK",
+          nameEn: "Hong Kong",
+          nameZh: "香港",
+          region: "asia",
+          active: true,
+          phonePrefix: "+852",
+          flag: "🇭🇰",
+        })
+        .returning();
+
+      const countryId = hkCountry[0]?.id || "country-hk";
+      console.log("✅ Country seeded:", hkCountry[0]?.nameEn);
+
       console.log("📍 Seeding regions...");
       const hkRegion = await db
         .insert(regions)
         .values({
-          id: "hk-region-1",
-          countryId: "country-1",
+          countryId,
           code: "HK",
           nameEn: "Hong Kong",
           nameZh: "香港",
