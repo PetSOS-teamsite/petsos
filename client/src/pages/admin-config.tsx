@@ -257,7 +257,7 @@ function CountriesTab() {
                     <FormItem>
                       <FormLabel>Name (Chinese)</FormLabel>
                       <FormControl>
-                        <Input placeholder="香港" {...field} data-testid="input-country-name-zh" />
+                        <Input placeholder="香港" {...field} value={field.value ?? ""} data-testid="input-country-name-zh" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -283,7 +283,7 @@ function CountriesTab() {
                     <FormItem>
                       <FormLabel>Flag Emoji</FormLabel>
                       <FormControl>
-                        <Input placeholder="🇭🇰" {...field} data-testid="input-country-flag" />
+                        <Input placeholder="🇭🇰" {...field} value={field.value ?? ""} data-testid="input-country-flag" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -867,7 +867,7 @@ function PetBreedsTab() {
                     <FormItem>
                       <FormLabel>Breed Name (Chinese)</FormLabel>
                       <FormControl>
-                        <Input placeholder="金毛尋回犬" {...field} data-testid="input-breed-name-zh" />
+                        <Input placeholder="金毛尋回犬" {...field} value={field.value ?? ""} data-testid="input-breed-name-zh" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
