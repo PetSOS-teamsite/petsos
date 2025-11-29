@@ -1,0 +1,1 @@
+function u(r){if(!r)return"Never";const e=new Date(r),n=new Date,t=n.getTime()-e.getTime(),o=Math.floor(t/6e4),a=Math.floor(t/36e5),i=Math.floor(t/864e5);return o<1?"Just now":o<60?`${o}m ago`:a<24?`${a}h ago`:i<7?`${i}d ago`:e.toLocaleDateString("en-US",{month:"short",day:"numeric",year:e.getFullYear()!==n.getFullYear()?"numeric":void 0})}export{u as f};

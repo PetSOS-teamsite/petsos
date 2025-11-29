@@ -283,8 +283,8 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
             </div>
           </TabsContent>
 
-          {/* Photos Tab - Hidden until hospital provides data */}
-          <TabsContent value="photos" className="space-y-4 hidden">
+          {/* Photos Tab */}
+          <TabsContent value="photos" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Hospital Photos</CardTitle>
