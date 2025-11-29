@@ -2119,6 +2119,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update clinic as owner (verified with code)
+  app.patch("/api/clinics/:id/update-owner", async (req: any, res: any) => {
+    try {
+      const { verificationCode, ...updateData } = z.object({
+        verificationCode: z.string().length(6, "Code must be 6 digits"),
+        // Basic Information
+        name: z.string().optional(),
+        nameZh: z.string().optional(),
+        address: z.string().optional(),
+        addressZh: z.string().optional(),
+        phone: z.string().optional(),
+        whatsapp: z.string().optional(),
+        email: z.string().optional(),
+        regionId: z.string().optional(),
+        // Operations
+        is24Hour: z.boolean().optional(),
+        isAvailable: z.boolean().optional(),
+        // Services
+        services: z.array(z.string()).optional(),
+      }).parse(req.body);
+
+      const clinic = await storage.getClinic(req.params.id);
+      if (!clinic) {
+        return res.status(404).json({ message: "Clinic not found" });
+      }
+
+      // Verify ownership with code
+      if (clinic.ownerVerificationCode !== verificationCode) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      // Update clinic with owner-provided data (uses same storage function as admin)
+      const updatedClinic = await storage.updateClinic(req.params.id, updateData);
+
+      await storage.createAuditLog({
+        entityType: 'clinic',
+        entityId: clinic.id,
+        action: 'update',
+        changes: updateData,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json(updatedClinic);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Generate 6-digit verification code for hospital (admin only)
   app.post("/api/hospitals/:id/generate-code", isAuthenticated, isAdmin, async (req: any, res: any) => {
     try {

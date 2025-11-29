@@ -132,7 +132,12 @@ export default function ClinicOwnerEditVerifiedPage() {
   const updateMutation = useMutation({
     mutationFn: async (data: ClinicFormData) => {
       if (!clinic?.id) throw new Error("Clinic not found");
-      return apiRequest("PATCH", `/api/clinics/${clinic.id}`, data);
+      // Get the verification code from verifyForm
+      const code = verifyForm.getValues("verificationCode");
+      return apiRequest("PATCH", `/api/clinics/${clinic.id}/update-owner`, { 
+        ...data, 
+        verificationCode: code 
+      });
     },
     onSuccess: () => {
       setSaved(true);
@@ -239,10 +244,10 @@ export default function ClinicOwnerEditVerifiedPage() {
               </div>
             </div>
           </div>
-          {clinic?.updatedAt && (
+          {clinic?.createdAt && (
             <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
               <Clock className="h-4 w-4" />
-              Last updated: {formatDate(clinic.updatedAt)}
+              Created: {formatDate(clinic.createdAt)}
             </div>
           )}
         </div>
