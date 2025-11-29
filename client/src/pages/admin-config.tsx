@@ -497,9 +497,9 @@ function RegionsTab() {
       form.reset({
         code: region.code,
         nameEn: region.nameEn,
-        nameZh: region.nameZh,
-        countryCode: region.countryCode,
-        active: region.active,
+        nameZh: (region.nameZh ?? "") as string,
+        countryCode: (region.countryCode ?? "") as string,
+        active: region.active ?? false,
       });
     } else {
       setEditingRegion(null);
@@ -768,10 +768,10 @@ function PetBreedsTab() {
       form.reset({
         species: breed.species,
         breedEn: breed.breedEn,
-        breedZh: breed.breedZh || "",
-        countryCode: breed.countryCode,
-        isCommon: breed.isCommon,
-        active: breed.active,
+        breedZh: (breed.breedZh ?? "") as string,
+        countryCode: breed.countryCode ?? null,
+        isCommon: breed.isCommon ?? false,
+        active: breed.active ?? true,
       });
     } else {
       setEditingBreed(null);
