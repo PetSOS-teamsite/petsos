@@ -1302,6 +1302,11 @@ export default function AdminHospitalsPage() {
                       </div>
                       <p className="text-sm text-muted-foreground mb-1">{hospital.nameZh}</p>
                       <p className="text-sm mb-1">{hospital.addressEn}</p>
+                      {hospital.ownerVerificationCode && (
+                        <div className="text-xs bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded px-2 py-1 mb-2 w-fit">
+                          <span className="font-mono font-bold text-amber-700 dark:text-amber-300">Code: {hospital.ownerVerificationCode}</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-4 text-sm mt-2">
                         {hospital.phone && (
                           <span className="text-muted-foreground">
@@ -1316,38 +1321,53 @@ export default function AdminHospitalsPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setHospitalForCode(hospital);
-                          setGeneratedCode(null);
-                          generateCodeMutation.mutate(hospital.id);
-                          setIsCodeDialogOpen(true);
-                        }}
-                        data-testid={`button-generate-code-${hospital.id}`}
-                        title="Generate Access Code"
-                        disabled={generateCodeMutation.isPending}
-                      >
-                        {generateCodeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckIcon className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDialog(hospital)}
-                        data-testid={`button-edit-${hospital.id}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openDeleteDialog(hospital)}
-                        data-testid={`button-delete-${hospital.id}`}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setHospitalForCode(hospital);
+                            setGeneratedCode(null);
+                            generateCodeMutation.mutate(hospital.id);
+                            setIsCodeDialogOpen(true);
+                          }}
+                          data-testid={`button-generate-code-${hospital.id}`}
+                          title="Generate Access Code"
+                          disabled={generateCodeMutation.isPending}
+                        >
+                          {generateCodeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckIcon className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const editLink = `${window.location.origin}/hospital/edit/${hospital.id}${hospital.ownerVerificationCode ? `?code=${hospital.ownerVerificationCode}` : ''}`;
+                            navigator.clipboard.writeText(editLink);
+                            toast({ title: "Edit link copied to clipboard" });
+                          }}
+                          data-testid={`button-copy-link-${hospital.id}`}
+                          title="Copy Edit Link"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditDialog(hospital)}
+                          data-testid={`button-edit-${hospital.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDeleteDialog(hospital)}
+                          data-testid={`button-delete-${hospital.id}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1468,6 +1488,19 @@ export default function AdminHospitalsPage() {
                 >
                   <Copy className="h-4 w-4 mr-2" />
                   Copy Code
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const editLink = `${window.location.origin}/hospital/edit/${hospitalForCode?.id}?code=${generatedCode}`;
+                    navigator.clipboard.writeText(editLink);
+                    toast({ title: "Edit link copied to clipboard" });
+                  }}
+                  className="flex-1"
+                  data-testid="button-copy-link"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy Link
                 </Button>
                 <Button
                   variant="outline"
