@@ -410,14 +410,14 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
 
             {/* Diagnostic Imaging */}
             <div className="space-y-3 border rounded-lg p-4 bg-blue-50 dark:bg-blue-900/10">
-              <h3 className="font-bold text-blue-900 dark:text-blue-300">Diagnostic Imaging</h3>
+              <h3 className="font-bold text-blue-900 dark:text-blue-300">診斷影像 / Diagnostic Imaging</h3>
               <div className="grid grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
                   name="imagingXray"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Digital X-Ray</FormLabel>
+                      <FormLabel className="text-sm">X光 / Digital X-Ray</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -429,7 +429,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="imagingUS"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Ultrasound</FormLabel>
+                      <FormLabel className="text-sm">超聲波 / Ultrasound</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -441,7 +441,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="imagingCT"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">CT Scanner</FormLabel>
+                      <FormLabel className="text-sm">CT掃描儀 / CT Scanner</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -453,7 +453,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="sameDayCT"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Same-Day CT Available</FormLabel>
+                      <FormLabel className="text-sm">當日CT / Same-Day CT Available</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -465,14 +465,14 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
 
             {/* Surgical Capabilities */}
             <div className="space-y-3 border rounded-lg p-4 bg-green-50 dark:bg-green-900/10">
-              <h3 className="font-bold text-green-900 dark:text-green-300">Surgical Capabilities</h3>
+              <h3 className="font-bold text-green-900 dark:text-green-300">手術能力 / Surgical Capabilities</h3>
               <div className="grid grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
                   name="sxEmergencySoft"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Soft Tissue Surgery</FormLabel>
+                      <FormLabel className="text-sm">軟組織手術 / Soft Tissue Surgery</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -484,7 +484,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="sxEmergencyOrtho"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Orthopedic Surgery</FormLabel>
+                      <FormLabel className="text-sm">骨科手術 / Orthopedic Surgery</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -496,7 +496,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="inHouseLab"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">In-House Laboratory</FormLabel>
+                      <FormLabel className="text-sm">院內實驗室 / In-House Laboratory</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -587,14 +587,14 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
 
             {/* Owner & Pet Support */}
             <div className="space-y-3 border rounded-lg p-4 bg-amber-50 dark:bg-amber-900/10">
-              <h3 className="font-bold text-amber-900 dark:text-amber-300">Owner & Pet Support</h3>
+              <h3 className="font-bold text-amber-900 dark:text-amber-300">寵物主人和寵物支援 / Owner & Pet Support</h3>
               <div className="grid grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
                   name="parking"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Parking Available</FormLabel>
+                      <FormLabel className="text-sm">停車位 / Parking Available</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -606,7 +606,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="wheelchairAccess"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">Wheelchair Accessible</FormLabel>
+                      <FormLabel className="text-sm">輪椅無障礙 / Wheelchair Accessible</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -618,7 +618,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="eolSupport"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">End-of-Life Support</FormLabel>
+                      <FormLabel className="text-sm">寧養支援 / End-of-Life Support</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
@@ -630,7 +630,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                   name="whatsappTriage"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
-                      <FormLabel className="text-sm">WhatsApp Triage</FormLabel>
+                      <FormLabel className="text-sm">WhatsApp分類 / WhatsApp Triage</FormLabel>
                       <FormControl>
                         <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                       </FormControl>
