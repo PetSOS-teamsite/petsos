@@ -674,7 +674,7 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">Blood Transfusion</FormLabel>
+                      <FormLabel className="text-base">Blood Bank (transfusion support)</FormLabel>
                     </div>
                     <FormControl>
                       <Switch checked={field.value || false} onCheckedChange={field.onChange} />
@@ -1046,7 +1046,7 @@ export default function AdminHospitalsPage() {
       isPartner: false,
       latitude: null,
       longitude: null,
-      photos: null,
+      photos: [],
       liveStatus: null,
       onSiteVet247: null,
       triagePolicy: null,
@@ -1108,7 +1108,7 @@ export default function AdminHospitalsPage() {
       isPartner: hospital.isPartner,
       latitude: hospital.latitude ? String(hospital.latitude) : null,
       longitude: hospital.longitude ? String(hospital.longitude) : null,
-      photos: hospital.photos || null,
+      photos: hospital.photos || [],
       liveStatus: hospital.liveStatus || null,
       onSiteVet247: hospital.onSiteVet247 || null,
       triagePolicy: hospital.triagePolicy || null,

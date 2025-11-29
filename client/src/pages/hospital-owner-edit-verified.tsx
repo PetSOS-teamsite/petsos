@@ -170,7 +170,7 @@ export default function HospitalOwnerEditVerifiedPage() {
       admissionDeposit: false,
       depositBand: "",
       refundPolicy: "",
-      photos: null,
+      photos: [],
     },
   });
 
@@ -237,7 +237,7 @@ export default function HospitalOwnerEditVerifiedPage() {
         admissionDeposit: hospital.admissionDeposit ?? false,
         depositBand: hospital.depositBand || "",
         refundPolicy: hospital.refundPolicy || "",
-        photos: hospital.photos || null,
+        photos: hospital.photos || [],
       });
     }
   }, [hospital]);
@@ -804,7 +804,7 @@ export default function HospitalOwnerEditVerifiedPage() {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel className="text-base">Blood Transfusion</FormLabel>
+                          <FormLabel className="text-base">Blood Bank (transfusion support)</FormLabel>
                         </div>
                         <FormControl>
                           <Switch checked={field.value || false} onCheckedChange={field.onChange} data-testid="switch-blood-transfusion" />

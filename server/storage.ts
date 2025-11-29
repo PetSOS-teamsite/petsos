@@ -1025,6 +1025,13 @@ export class MemStorage implements IStorage {
       insuranceSupport: insertHospital.insuranceSupport ?? null,
       recheckWindow: insertHospital.recheckWindow ?? null,
       refundPolicy: insertHospital.refundPolicy ?? null,
+      oxygenTherapy: insertHospital.oxygenTherapy ?? null,
+      ventilator: insertHospital.ventilator ?? null,
+      bloodTransfusion: insertHospital.bloodTransfusion ?? null,
+      imagingMRI: insertHospital.imagingMRI ?? null,
+      endoscopy: insertHospital.endoscopy ?? null,
+      dialysis: insertHospital.dialysis ?? null,
+      defibrillator: insertHospital.defibrillator ?? null,
     };
     this.hospitals.set(id, hospital);
     return hospital;
