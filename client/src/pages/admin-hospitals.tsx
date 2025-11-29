@@ -1120,8 +1120,9 @@ export default function AdminHospitalsPage() {
 
   const generateCodeMutation = useMutation({
     mutationFn: async (hospitalId: string) => {
-      const response: any = await apiRequest("POST", `/api/hospitals/${hospitalId}/generate-code`, {});
-      return response.code;
+      const response = await apiRequest("POST", `/api/hospitals/${hospitalId}/generate-code`, {});
+      const data = await response.json();
+      return data.code;
     },
     onSuccess: (code: string) => {
       setGeneratedCode(code);
