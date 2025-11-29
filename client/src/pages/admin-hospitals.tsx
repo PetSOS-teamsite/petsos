@@ -283,8 +283,8 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
             </div>
           </TabsContent>
 
-          {/* Photos Tab - Hidden until hospital provides data */}
-          <TabsContent value="photos" className="space-y-4 hidden">
+          {/* Photos Tab */}
+          <TabsContent value="photos" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Hospital Photos</CardTitle>
@@ -345,8 +345,224 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
           </TabsContent>
 
           {/* Facilities Tab */}
-          <TabsContent value="facilities" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <TabsContent value="facilities" className="space-y-6">
+            <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-md">
+              <p className="text-sm text-purple-800 dark:text-purple-300"><strong>Core Facilities & Services:</strong> Check the features that best describe your hospital to help pet owners find the right care.</p>
+            </div>
+            
+            {/* Emergency & Critical Care */}
+            <div className="space-y-3 border rounded-lg p-4 bg-red-50 dark:bg-red-900/10">
+              <h3 className="font-bold text-red-900 dark:text-red-300 flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Emergency & Critical Care
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="onSiteVet247"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">On-Site Vet 24/7</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="nurse24h"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">24-Hour Nursing</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="isolationWard"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Isolation Ward</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="ambulanceSupport"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Ambulance Support</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Diagnostic Imaging */}
+            <div className="space-y-3 border rounded-lg p-4 bg-blue-50 dark:bg-blue-900/10">
+              <h3 className="font-bold text-blue-900 dark:text-blue-300">Diagnostic Imaging</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="imagingXray"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Digital X-Ray</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="imagingUS"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Ultrasound</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="imagingCT"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">CT Scanner</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="sameDayCT"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Same-Day CT Available</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Surgical Capabilities */}
+            <div className="space-y-3 border rounded-lg p-4 bg-green-50 dark:bg-green-900/10">
+              <h3 className="font-bold text-green-900 dark:text-green-300">Surgical Capabilities</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="sxEmergencySoft"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Soft Tissue Surgery</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="sxEmergencyOrtho"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Orthopedic Surgery</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="inHouseLab"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">In-House Laboratory</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Owner & Pet Support */}
+            <div className="space-y-3 border rounded-lg p-4 bg-amber-50 dark:bg-amber-900/10">
+              <h3 className="font-bold text-amber-900 dark:text-amber-300">Owner & Pet Support</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="parking"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Parking Available</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="wheelchairAccess"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">Wheelchair Accessible</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="eolSupport"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">End-of-Life Support</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="whatsappTriage"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-white dark:bg-slate-950">
+                      <FormLabel className="text-sm">WhatsApp Triage</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Old facilities grid - keeping for backup but will be replaced above */}
+            <div className="grid grid-cols-2 gap-4 hidden">
               <FormField
                 control={form.control}
                 name="parking"
