@@ -35,14 +35,11 @@ export async function seedDatabase() {
       const hkRegion = await db
         .insert(regions)
         .values({
-          countryId: countryId as string,
           code: "HK",
           nameEn: "Hong Kong",
           nameZh: "香港",
           countryCode: "HK",
           active: true,
-          phonePrefix: "+852",
-          flag: "🇭🇰",
         })
         .returning();
       

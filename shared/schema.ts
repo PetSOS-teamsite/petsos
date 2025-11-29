@@ -105,16 +105,14 @@ export type Country = typeof countries.$inferSelect;
 // Regions table (districts, states)
 export const regions = pgTable("regions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  countryId: varchar("country_id").notNull().references(() => countries.id),
-  countryCode: text("country_code"), // Support both countryId (FK) and countryCode (string code)
   code: text("code").notNull(),
   nameEn: text("name_en").notNull(),
-  nameZh: text("name_zh"),
-  active: boolean("active"),
-  phonePrefix: text("phone_prefix"),
-  flag: text("flag"),
+  nameZh: text("name_zh").notNull(),
+  countryCode: text("country_code").notNull().default("HK").references(() => countries.code),
+  active: boolean("active").notNull().default(true),
+  coordinates: jsonb("coordinates"),
 }, (table) => [
-  index("idx_region_country").on(table.countryId),
+  index("idx_region_country").on(table.countryCode),
 ]);
 
 export const insertRegionSchema = createInsertSchema(regions).omit({
