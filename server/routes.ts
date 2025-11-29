@@ -2175,6 +2175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { verificationCode, ...updateData } = z.object({
         verificationCode: z.string().length(6, "Code must be 6 digits"),
+        // Basic Information
         nameEn: z.string().optional(),
         nameZh: z.string().optional(),
         addressEn: z.string().optional(),
@@ -2182,8 +2183,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone: z.string().optional(),
         whatsapp: z.string().optional(),
         email: z.string().optional(),
+        websiteUrl: z.string().optional(),
         regionId: z.string().optional(),
+        // Facilities
+        parking: z.boolean().optional(),
+        wheelchairAccess: z.boolean().optional(),
+        isolationWard: z.boolean().optional(),
+        ambulanceSupport: z.boolean().optional(),
+        eolSupport: z.boolean().optional(),
+        whatsappTriage: z.boolean().optional(),
+        // Medical Services
+        icuLevel: z.string().optional(),
+        imagingXray: z.boolean().optional(),
+        imagingUS: z.boolean().optional(),
+        imagingCT: z.boolean().optional(),
+        sameDayCT: z.boolean().optional(),
+        inHouseLab: z.boolean().optional(),
+        extLabCutoff: z.string().optional(),
+        bloodBankAccess: z.string().optional(),
+        sxEmergencySoft: z.boolean().optional(),
+        sxEmergencyOrtho: z.boolean().optional(),
+        anaesMonitoring: z.string().optional(),
+        specialistAvail: z.string().optional(),
+        // Staffing
+        onSiteVet247: z.boolean().optional(),
+        nurse24h: z.boolean().optional(),
         open247: z.boolean().optional(),
+        // Operations
+        triagePolicy: z.string().optional(),
+        typicalWaitBand: z.string().optional(),
+        ownerVisitPolicy: z.string().optional(),
+        recheckWindow: z.string().optional(),
+        // Financial
+        admissionDeposit: z.boolean().optional(),
+        depositBand: z.string().optional(),
+        refundPolicy: z.string().optional(),
       }).parse(req.body);
 
       const hospital = await storage.getHospital(req.params.id);
