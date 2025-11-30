@@ -57,7 +57,7 @@ export function PhoneInput({
         </SelectTrigger>
         <SelectContent>
           {uniqueCountries.map((country) => (
-            <SelectItem key={country.code} value={country.phonePrefix}>
+            <SelectItem key={country.code} value={country.phonePrefix || ""}>
               {country.flag} {country.phonePrefix}
             </SelectItem>
           ))}
