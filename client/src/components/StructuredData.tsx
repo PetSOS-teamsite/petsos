@@ -10,24 +10,33 @@ export function StructuredData({ data, id }: StructuredDataProps) {
 
   useEffect(() => {
     const scriptId = scriptIdRef.current;
+    const jsonContent = JSON.stringify(data);
     
-    // Remove existing script with same ID to avoid duplicates
-    const existingScript = document.getElementById(scriptId);
+    // Check for existing script with same ID
+    const existingScript = document.getElementById(scriptId) as HTMLScriptElement | null;
+    
     if (existingScript) {
-      existingScript.remove();
+      // Update existing script content instead of removing/re-adding
+      // This prevents DOM manipulation race conditions
+      existingScript.textContent = jsonContent;
+    } else {
+      // Create and append new script only if it doesn't exist
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.textContent = jsonContent;
+      script.id = scriptId;
+      document.head.appendChild(script);
     }
 
-    // Create and append new script
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.text = JSON.stringify(data);
-    script.id = scriptId;
-    document.head.appendChild(script);
-
     return () => {
+      // Safe removal: only remove if the script is still in the DOM and is a child of head
       const scriptToRemove = document.getElementById(scriptId);
-      if (scriptToRemove) {
-        scriptToRemove.remove();
+      if (scriptToRemove && scriptToRemove.parentNode === document.head) {
+        try {
+          document.head.removeChild(scriptToRemove);
+        } catch (e) {
+          // Silently ignore if already removed by another effect
+        }
       }
     };
   }, [data, id]);
