@@ -55,6 +55,7 @@ import type { Pet, Clinic, User } from "@shared/schema";
 import { PET_SPECIES, getBreedOptions } from "@shared/pet-data";
 import { cn } from "@/lib/utils";
 import { BreedCombobox } from "@/components/BreedCombobox";
+import { MedicalRecordsSection } from "@/components/MedicalRecordsSection";
 import { analytics } from "@/lib/analytics";
 
 // Schema factory to access translation function
@@ -643,6 +644,7 @@ export default function PetsPage() {
                           </div>
                         )}
                       </div>
+                      <MedicalRecordsSection petId={pet.id} petName={pet.name} />
                     </CardContent>
                   </Card>
                 ))}
