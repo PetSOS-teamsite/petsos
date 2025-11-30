@@ -57,10 +57,7 @@ function PageLoader() {
   );
 }
 
-function Router() {
-  const { isAuthenticated, isLoading, user } = useAuth();
-  const isAdmin = user?.role === 'admin';
-  const hasClinicAccess = user?.role === 'clinic_staff' || user?.role === 'hospital_staff';
+function PublicRouter() {
   const [location] = useLocation();
   
   // Track page views
@@ -73,7 +70,7 @@ function Router() {
 
   return (
     <Switch>
-      {/* Public routes - accessible to everyone */}
+      {/* Public routes - render immediately without waiting for auth */}
       <Route path="/clinics" component={ClinicsPage} />
       <Route path="/hospitals" component={HospitalsPage} />
       <Route path="/hospitals/:slug" component={HospitalDetailPage} />
@@ -94,49 +91,92 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/signup" component={LoginPage} />
       
-      {/* Protected routes - require authentication */}
-      <Route path="/profile">
-        {isAuthenticated ? <ProfilePage /> : <LoginPage />}
-      </Route>
-      <Route path="/pets">
-        {isAuthenticated ? <PetsPage /> : <LandingPage />}
-      </Route>
-      
-      {/* Clinic dashboard - for clinic staff */}
-      <Route path="/clinic/dashboard">
-        {isAuthenticated && hasClinicAccess ? <ClinicDashboardPage /> : <LandingPage />}
-      </Route>
+      {/* Protected routes - handled by ProtectedRouter */}
+      <Route path="/profile" component={ProtectedProfileRoute} />
+      <Route path="/pets" component={ProtectedPetsRoute} />
+      <Route path="/clinic/dashboard" component={ProtectedClinicRoute} />
       
       {/* Admin routes */}
       <Route path="/admin/login" component={AdminLoginPage} />
-      <Route path="/admin">
-        {isAuthenticated && isAdmin ? <AdminDashboardPage /> : <AdminLoginPage />}
-      </Route>
-      <Route path="/admin/analytics">
-        {isAuthenticated && isAdmin ? <AdminAnalyticsPage /> : <AdminLoginPage />}
-      </Route>
-      <Route path="/admin/hospitals">
-        {isAuthenticated && isAdmin ? <AdminHospitalsPage /> : <AdminLoginPage />}
-      </Route>
-      <Route path="/admin/clinics">
-        {isAuthenticated && isAdmin ? <AdminClinicsPage /> : <AdminLoginPage />}
-      </Route>
-      <Route path="/admin/users">
-        {isAuthenticated && isAdmin ? <AdminUsersPage /> : <AdminLoginPage />}
-      </Route>
-      <Route path="/admin/pets">
-        {isAuthenticated && isAdmin ? <AdminPetsPage /> : <AdminLoginPage />}
-      </Route>
-      <Route path="/admin/config">
-        {isAuthenticated && isAdmin ? <AdminConfigPage /> : <AdminLoginPage />}
-      </Route>
-      <Route path="/admin/diagnostics">
-        {isAuthenticated && isAdmin ? <AdminDiagnosticsPage /> : <AdminLoginPage />}
-      </Route>
+      <Route path="/admin" component={ProtectedAdminRoute} />
+      <Route path="/admin/analytics" component={ProtectedAdminAnalyticsRoute} />
+      <Route path="/admin/hospitals" component={ProtectedAdminHospitalsRoute} />
+      <Route path="/admin/clinics" component={ProtectedAdminClinicsRoute} />
+      <Route path="/admin/users" component={ProtectedAdminUsersRoute} />
+      <Route path="/admin/pets" component={ProtectedAdminPetsRoute} />
+      <Route path="/admin/config" component={ProtectedAdminConfigRoute} />
+      <Route path="/admin/diagnostics" component={ProtectedAdminDiagnosticsRoute} />
       
       <Route component={NotFound} />
     </Switch>
   );
+}
+
+function ProtectedProfileRoute() {
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated ? <ProfilePage /> : <LoginPage />;
+}
+
+function ProtectedPetsRoute() {
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated ? <PetsPage /> : <LandingPage />;
+}
+
+function ProtectedClinicRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  const hasClinicAccess = user?.role === 'clinic_staff' || user?.role === 'hospital_staff';
+  return isAuthenticated && hasClinicAccess ? <ClinicDashboardPage /> : <LandingPage />;
+}
+
+function ProtectedAdminRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated && user?.role === 'admin' ? <AdminDashboardPage /> : <AdminLoginPage />;
+}
+
+function ProtectedAdminAnalyticsRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated && user?.role === 'admin' ? <AdminAnalyticsPage /> : <AdminLoginPage />;
+}
+
+function ProtectedAdminHospitalsRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated && user?.role === 'admin' ? <AdminHospitalsPage /> : <AdminLoginPage />;
+}
+
+function ProtectedAdminClinicsRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated && user?.role === 'admin' ? <AdminClinicsPage /> : <AdminLoginPage />;
+}
+
+function ProtectedAdminUsersRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated && user?.role === 'admin' ? <AdminUsersPage /> : <AdminLoginPage />;
+}
+
+function ProtectedAdminPetsRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated && user?.role === 'admin' ? <AdminPetsPage /> : <AdminLoginPage />;
+}
+
+function ProtectedAdminConfigRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated && user?.role === 'admin' ? <AdminConfigPage /> : <AdminLoginPage />;
+}
+
+function ProtectedAdminDiagnosticsRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated && user?.role === 'admin' ? <AdminDiagnosticsPage /> : <AdminLoginPage />;
 }
 
 function App() {
@@ -154,7 +194,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <Suspense fallback={<PageLoader />}>
-              <Router />
+              <PublicRouter />
             </Suspense>
             <CookieConsent />
           </TooltipProvider>
