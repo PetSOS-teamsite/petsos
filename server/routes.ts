@@ -1433,21 +1433,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== EMERGENCY REQUEST ROUTES =====
 
   // Create emergency request
-  app.post("/api/emergency-requests", async (req, res) => {
+  app.post("/api/emergency-requests", async (req: any, res) => {
     try {
       // Extend schema to ensure petAge is a string
       const emergencyRequestSchemaWithCoercion = insertEmergencyRequestSchema.extend({
         petAge: z.union([z.string(), z.null()]).optional(),
       });
       
+      // Get logged-in user's ID if authenticated
+      // Check both req.user (passport) and req.session.passport.user (session)
+      let loggedInUserId = null;
+      if (req.user) {
+        loggedInUserId = (req.user as any).id;
+      } else if (req.session?.passport?.user) {
+        // Fallback: get user ID directly from session
+        loggedInUserId = req.session.passport.user;
+      }
+      console.log('[Emergency Request] req.user:', req.user ? 'exists' : 'null');
+      console.log('[Emergency Request] session.passport.user:', req.session?.passport?.user);
+      console.log('[Emergency Request] loggedInUserId:', loggedInUserId);
+      
       // Validate and parse request body with proper schema
       const validatedData = emergencyRequestSchemaWithCoercion.parse({
-        userId: req.body.userId ?? null,
+        userId: req.body.userId ?? loggedInUserId ?? null,
         petId: req.body.petId ?? null,
         symptom: req.body.symptom,
         petSpecies: req.body.petSpecies ?? null,
         petBreed: req.body.petBreed ?? null,
-        petAge: req.body.petAge ?? null,
+        petAge: req.body.petAge != null ? String(req.body.petAge) : null,
         locationLatitude: req.body.locationLatitude ? String(req.body.locationLatitude) : null,
         locationLongitude: req.body.locationLongitude ? String(req.body.locationLongitude) : null,
         manualLocation: req.body.manualLocation ?? null,
@@ -1457,6 +1470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         regionId: req.body.regionId ?? null,
         voiceTranscript: req.body.voiceTranscript ?? null,
         aiAnalyzedSymptoms: req.body.aiAnalyzedSymptoms ?? null,
+        isVoiceRecording: req.body.isVoiceRecording ?? null,
       });
       
       const emergencyRequest = await storage.createEmergencyRequest(validatedData);
@@ -1603,24 +1617,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check authorization: allow if authenticated user owns the request, is admin, or if anonymous emergency
-      if (req.user) {
-        // User is authenticated - verify ownership or admin role
-        const requestingUserId = (req.user as any).id;
-        const requestingUser = await storage.getUser(requestingUserId);
-        
-        if (!requestingUser) {
-          return res.status(401).json({ message: "Unauthorized" });
-        }
-        
-        if (emergencyRequest.userId !== requestingUserId && requestingUser.role !== 'admin') {
-          return res.status(403).json({ message: "Forbidden - You can only broadcast your own emergency requests" });
-        }
-      } else {
-        // Anonymous user - only allow if emergency request was created anonymously
-        if (emergencyRequest.userId) {
+      // Anonymous emergencies (userId: null) can be broadcast by anyone for emergency situations
+      if (emergencyRequest.userId) {
+        // This emergency belongs to a registered user - verify ownership or admin role
+        if (req.user) {
+          const requestingUserId = (req.user as any).id;
+          const requestingUser = await storage.getUser(requestingUserId);
+          
+          if (!requestingUser) {
+            return res.status(401).json({ message: "Unauthorized" });
+          }
+          
+          if (emergencyRequest.userId !== requestingUserId && requestingUser.role !== 'admin') {
+            return res.status(403).json({ message: "Forbidden - You can only broadcast your own emergency requests" });
+          }
+        } else {
+          // Anonymous user trying to broadcast a registered user's emergency
           return res.status(403).json({ message: "Forbidden - This emergency belongs to a registered user" });
         }
       }
+      // If emergencyRequest.userId is null (anonymous), allow anyone to broadcast
 
       const messages = await messagingService.broadcastEmergency(
         req.params.id,

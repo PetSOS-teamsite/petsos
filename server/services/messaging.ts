@@ -465,7 +465,7 @@ export class MessagingService {
       
       // Fetch last visited hospital name
       const lastHospital = await storage.getHospital(pet.lastVisitHospitalId);
-      const lastHospitalName = lastHospital ? (isZhHk && lastHospital.nameZh ? lastHospital.nameZh : lastHospital.name) : (isZhHk ? '不詳' : 'Unknown');
+      const lastHospitalName = lastHospital ? (isZhHk && lastHospital.nameZh ? lastHospital.nameZh : lastHospital.nameEn) : (isZhHk ? '不詳' : 'Unknown');
       
       // Build 11 variables for full template
       variables = [
@@ -567,16 +567,12 @@ export class MessagingService {
       }
 
       // Determine message type and recipient based on available contact methods
-      // Priority: LINE > WhatsApp > Email
+      // Priority: WhatsApp > Email (hospitals don't have LINE integration)
       let messageType: 'whatsapp' | 'email' | 'line';
       let recipient: string;
       let contentToStore: string;
 
-      if (hospital.lineUserId) {
-        messageType = 'line';
-        recipient = hospital.lineUserId;
-        contentToStore = fallbackText; // LINE uses fallback text (clean format)
-      } else if (hospital.whatsapp) {
+      if (hospital.whatsapp) {
         messageType = 'whatsapp';
         recipient = hospital.whatsapp;
         contentToStore = `[Template: ${templateName}] ${fallbackText}`;
@@ -585,7 +581,7 @@ export class MessagingService {
         recipient = hospital.email;
         contentToStore = fallbackText; // Email uses fallback text
       } else {
-        console.warn(`No valid contact method (LINE, WhatsApp or Email) for hospital ${hospitalId}`);
+        console.warn(`No valid contact method (WhatsApp or Email) for hospital ${hospitalId}`);
         
         // Create failed message record for tracking
         await storage.createMessage({
@@ -595,7 +591,7 @@ export class MessagingService {
           messageType: 'whatsapp',
           content: fallbackText,
           status: 'failed',
-          errorMessage: 'No valid LINE, WhatsApp or Email contact available',
+          errorMessage: 'No valid WhatsApp or Email contact available',
           failedAt: new Date(),
         });
         
