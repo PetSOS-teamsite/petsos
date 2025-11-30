@@ -117,7 +117,7 @@ export default function AdminUsersPage() {
       email: user.email || "",
       phone: user.phone || "",
       role: user.role,
-      languagePreference: user.languagePreference,
+      languagePreference: user.languagePreference || "en",
     });
     setIsEditDialogOpen(true);
   };
