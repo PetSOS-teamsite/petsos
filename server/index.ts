@@ -53,10 +53,11 @@ const BUILD_VERSION = process.env.RENDER_GIT_COMMIT || Date.now().toString();
 app.use((req, res, next) => {
   const reqPath = req.path;
   
-  // Check if file has content hash (Vite adds hashes like: main.abc123.js)
-  const hasContentHash = /\.[a-f0-9]{8,}\.(js|css|woff2?|ttf|eot)$/i.test(reqPath);
+  // Check if file is in /assets/ directory (Vite's hashed output, e.g., /assets/index-7C31a2f4.js)
+  // Vite uses mixed-case alphanumeric hashes, so we check for the /assets/ path pattern
+  const isHashedAsset = reqPath.startsWith('/assets/') && /[-\.][A-Za-z0-9]{8,}\.(js|css|woff2?|ttf|eot)$/i.test(reqPath);
   
-  if (hasContentHash) {
+  if (isHashedAsset) {
     // Hashed assets can be cached for 1 year (immutable)
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   } else if (reqPath === '/' || reqPath.endsWith('.html')) {
