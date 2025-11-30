@@ -449,6 +449,41 @@ export class MessagingService {
       user = await storage.getUser(emergencyRequest.userId);
     }
 
+    // Fetch medical records and consent if user has consented to sharing
+    let medicalRecordsSummary = '';
+    if (emergencyRequest.petId && emergencyRequest.userId) {
+      // Check if user has consented to emergency sharing
+      const consents = await storage.getMedicalSharingConsentsByPetId(emergencyRequest.petId);
+      const emergencyConsent = consents.find(c => c.consentType === 'emergency_broadcast' && c.enabled);
+      
+      if (emergencyConsent) {
+        // Fetch medical records
+        const records = await storage.getMedicalRecordsByPetId(emergencyRequest.petId);
+        if (records && records.length > 0) {
+          const isZh = (user?.languagePreference === 'zh-HK');
+          
+          // Build a summary of medical records
+          const recordTypes = records.map(r => {
+            const typeLabels: Record<string, { en: string; zh: string }> = {
+              'blood_test': { en: 'Blood Test', zh: '血液檢查' },
+              'xray': { en: 'X-Ray', zh: 'X光' },
+              'vaccination': { en: 'Vaccination', zh: '疫苗記錄' },
+              'surgery_report': { en: 'Surgery Report', zh: '手術報告' },
+              'prescription': { en: 'Prescription', zh: '處方' },
+              'other': { en: 'Document', zh: '文件' },
+            };
+            const label = typeLabels[r.documentType] || typeLabels['other'];
+            return isZh ? label.zh : label.en;
+          });
+          
+          const uniqueTypes = Array.from(new Set(recordTypes));
+          medicalRecordsSummary = isZh 
+            ? `\n📋 醫療記錄: ${uniqueTypes.join(', ')} (${records.length}份)`
+            : `\n📋 Medical Records: ${uniqueTypes.join(', ')} (${records.length} file${records.length > 1 ? 's' : ''})`;
+        }
+      }
+    }
+
     // Determine language (user preference > parameter > default)
     const userLanguage = user?.languagePreference || language || 'en';
     const isZhHk = userLanguage === 'zh-HK';
@@ -487,7 +522,8 @@ export class MessagingService {
         `${isZhHk ? '名稱' : 'Name'}: ${variables[1]}\n` +
         `${isZhHk ? '物種' : 'Species'}: ${variables[2]}\n` +
         `${isZhHk ? '緊急症狀' : 'Emergency'}: ${variables[6]}\n` +
-        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[9]} (${variables[10]})`;
+        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[9]} (${variables[10]})` +
+        medicalRecordsSummary;
       
     } else if (pet) {
       // New registered pet (no visit history)
@@ -511,7 +547,8 @@ export class MessagingService {
         `${isZhHk ? '名稱' : 'Name'}: ${variables[0]}\n` +
         `${isZhHk ? '物種' : 'Species'}: ${variables[1]}\n` +
         `${isZhHk ? '緊急症狀' : 'Emergency'}: ${variables[5]}\n` +
-        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[8]} (${variables[9]})`;
+        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[8]} (${variables[9]})` +
+        medicalRecordsSummary;
       
     } else {
       // Anonymous user (basic template)
