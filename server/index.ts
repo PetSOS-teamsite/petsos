@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import compression from "compression";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initSentry, setupSentryMiddleware, setupSentryErrorHandler, captureException } from "./sentry";
@@ -19,6 +20,20 @@ setupSentryMiddleware(app);
 // Required for rate limiting to work correctly in production
 app.set('trust proxy', true);
 
+// Enable gzip compression for all responses (improves load time significantly)
+app.use(compression({
+  level: 6, // Balanced compression level (1-9, 6 is default)
+  threshold: 1024, // Only compress responses larger than 1KB
+  filter: (req, res) => {
+    // Don't compress if client doesn't accept gzip
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    // Use default filter for other cases
+    return compression.filter(req, res);
+  }
+}));
+
 declare module 'http' {
   interface IncomingMessage {
     rawBody: unknown
@@ -34,19 +49,30 @@ app.use(express.urlencoded({ extended: false }));
 // Use Render's git commit hash as version identifier for cache busting
 const BUILD_VERSION = process.env.RENDER_GIT_COMMIT || Date.now().toString();
 
-// Prevent caching to avoid users loading old JS bundles
+// Smart caching strategy for optimal performance
 app.use((req, res, next) => {
-  // Aggressive cache prevention for HTML, JS, and CSS files
-  if (req.path === '/' || req.path.endsWith('.html') || req.path.endsWith('.js') || req.path.endsWith('.css')) {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+  const reqPath = req.path;
+  
+  // Check if file has content hash (Vite adds hashes like: main.abc123.js)
+  const hasContentHash = /\.[a-f0-9]{8,}\.(js|css|woff2?|ttf|eot)$/i.test(reqPath);
+  
+  if (hasContentHash) {
+    // Hashed assets can be cached for 1 year (immutable)
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  } else if (reqPath === '/' || reqPath.endsWith('.html')) {
+    // HTML files should not be cached (to get latest JS/CSS references)
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    // Tell Cloudflare to bypass cache
-    res.setHeader('CDN-Cache-Control', 'no-store');
-    res.setHeader('Cloudflare-CDN-Cache-Control', 'no-store');
-    // Add version header for debugging
     res.setHeader('X-Build-Version', BUILD_VERSION);
+  } else if (reqPath.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/i)) {
+    // Images can be cached for 1 week
+    res.setHeader('Cache-Control', 'public, max-age=604800');
+  } else if (reqPath.match(/\.(js|css)$/i)) {
+    // Non-hashed JS/CSS - short cache with revalidation
+    res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
   }
+  
   next();
 });
 
