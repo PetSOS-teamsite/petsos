@@ -24,8 +24,11 @@ import {
   insertRegionSchema, insertCountrySchema, insertPetBreedSchema,
   insertFeatureFlagSchema,
   insertAuditLogSchema, insertPrivacyConsentSchema,
-  insertTranslationSchema, insertEmergencyRequestSchema
+  insertTranslationSchema, insertEmergencyRequestSchema,
+  insertPetMedicalRecordSchema, insertPetMedicalSharingConsentSchema
 } from "@shared/schema";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { ObjectPermission } from "./objectAcl";
 import path from "path";
 import { config } from "./config";
 
@@ -2279,6 +2282,183 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // ===== MEDICAL RECORDS ROUTES =====
+  
+  // Get upload URL for medical records
+  app.post("/api/medical-records/upload-url", isAuthenticated, async (req: any, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error: any) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ error: error.message || "Failed to get upload URL" });
+    }
+  });
+
+  // Create medical record after upload
+  app.post("/api/medical-records", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const objectStorageService = new ObjectStorageService();
+      
+      // Normalize the file path from upload URL
+      const filePath = objectStorageService.normalizeObjectEntityPath(req.body.filePath);
+      
+      // Set ACL policy - private to owner by default
+      await objectStorageService.trySetObjectEntityAclPolicy(filePath, {
+        owner: userId,
+        visibility: "private",
+      });
+      
+      const recordData = {
+        ...req.body,
+        filePath,
+        userId,
+      };
+      
+      const result = insertPetMedicalRecordSchema.safeParse(recordData);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid record data", details: result.error.errors });
+      }
+      
+      const record = await storage.createMedicalRecord(result.data);
+      res.status(201).json(record);
+    } catch (error: any) {
+      console.error("Error creating medical record:", error);
+      res.status(500).json({ error: error.message || "Failed to create medical record" });
+    }
+  });
+
+  // Get medical records for a pet
+  app.get("/api/pets/:petId/medical-records", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { petId } = req.params;
+      
+      // Verify user owns this pet
+      const pet = await storage.getPet(petId);
+      if (!pet || pet.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const records = await storage.getMedicalRecordsByPetId(petId);
+      res.json(records);
+    } catch (error: any) {
+      console.error("Error fetching medical records:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch medical records" });
+    }
+  });
+
+  // Delete medical record
+  app.delete("/api/medical-records/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { id } = req.params;
+      
+      // Get record and verify ownership
+      const record = await storage.getMedicalRecord(id);
+      if (!record) {
+        return res.status(404).json({ error: "Record not found" });
+      }
+      if (record.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      await storage.deleteMedicalRecord(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting medical record:", error);
+      res.status(500).json({ error: error.message || "Failed to delete medical record" });
+    }
+  });
+
+  // Serve medical record files (protected)
+  app.get("/objects/:objectPath(*)", isAuthenticated, async (req: any, res) => {
+    const userId = (req.user as any).id;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      const canAccess = await objectStorageService.canAccessObjectEntity({
+        objectFile,
+        userId: userId,
+        requestedPermission: ObjectPermission.READ,
+      });
+      if (!canAccess) {
+        return res.sendStatus(401);
+      }
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error serving object:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  // Get medical sharing consents for a pet
+  app.get("/api/pets/:petId/medical-consents", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { petId } = req.params;
+      
+      // Verify user owns this pet
+      const pet = await storage.getPet(petId);
+      if (!pet || pet.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const consents = await storage.getMedicalSharingConsentsByPetId(petId);
+      res.json(consents);
+    } catch (error: any) {
+      console.error("Error fetching medical consents:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch consents" });
+    }
+  });
+
+  // Update medical sharing consent
+  app.put("/api/pets/:petId/medical-consents", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { petId } = req.params;
+      
+      // Verify user owns this pet
+      const pet = await storage.getPet(petId);
+      if (!pet || pet.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const consentData = {
+        petId,
+        userId,
+        consentType: req.body.consentType,
+        enabled: req.body.enabled,
+      };
+      
+      const result = insertPetMedicalSharingConsentSchema.safeParse(consentData);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid consent data", details: result.error.errors });
+      }
+      
+      const consent = await storage.upsertMedicalSharingConsent(result.data);
+      
+      // Log consent change
+      await storage.createAuditLog({
+        entityType: 'pet_medical_consent',
+        entityId: petId,
+        action: 'update',
+        userId,
+        changes: { consentType: req.body.consentType, enabled: req.body.enabled },
+      });
+      
+      res.json(consent);
+    } catch (error: any) {
+      console.error("Error updating medical consent:", error);
+      res.status(500).json({ error: error.message || "Failed to update consent" });
     }
   });
 

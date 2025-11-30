@@ -14,7 +14,9 @@ import {
   type Hospital, type InsertHospital,
   type HospitalConsultFee, type InsertHospitalConsultFee,
   type HospitalUpdate, type InsertHospitalUpdate,
-  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates
+  type PetMedicalRecord, type InsertPetMedicalRecord,
+  type PetMedicalSharingConsent, type InsertPetMedicalSharingConsent,
+  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -133,6 +135,19 @@ export interface IStorage {
   createHospitalUpdate(update: InsertHospitalUpdate): Promise<HospitalUpdate>;
   updateHospitalUpdate(id: string, update: Partial<InsertHospitalUpdate>): Promise<HospitalUpdate | undefined>;
 
+  // Pet Medical Records
+  getMedicalRecordsByPetId(petId: string): Promise<PetMedicalRecord[]>;
+  getMedicalRecord(id: string): Promise<PetMedicalRecord | undefined>;
+  createMedicalRecord(record: InsertPetMedicalRecord): Promise<PetMedicalRecord>;
+  updateMedicalRecord(id: string, record: Partial<InsertPetMedicalRecord>): Promise<PetMedicalRecord | undefined>;
+  deleteMedicalRecord(id: string): Promise<boolean>;
+  
+  // Pet Medical Sharing Consents
+  getMedicalSharingConsent(petId: string, userId: string, consentType: string): Promise<PetMedicalSharingConsent | undefined>;
+  getMedicalSharingConsentsByPetId(petId: string): Promise<PetMedicalSharingConsent[]>;
+  getMedicalSharingConsentsByUserId(userId: string): Promise<PetMedicalSharingConsent[]>;
+  upsertMedicalSharingConsent(consent: InsertPetMedicalSharingConsent): Promise<PetMedicalSharingConsent>;
+
   // GDPR/PDPO Compliance
   exportUserData(userId: string): Promise<{
     user: User | undefined;
@@ -169,6 +184,8 @@ export class MemStorage implements IStorage {
   private hospitals: Map<string, Hospital>;
   private hospitalConsultFees: Map<string, HospitalConsultFee>;
   private hospitalUpdates: Map<string, HospitalUpdate>;
+  private petMedicalRecordsMap: Map<string, PetMedicalRecord>;
+  private petMedicalSharingConsentsMap: Map<string, PetMedicalSharingConsent>;
 
   constructor() {
     this.users = new Map();
@@ -186,6 +203,8 @@ export class MemStorage implements IStorage {
     this.hospitals = new Map();
     this.hospitalConsultFees = new Map();
     this.hospitalUpdates = new Map();
+    this.petMedicalRecordsMap = new Map();
+    this.petMedicalSharingConsentsMap = new Map();
     
     // Seed test user
     const testUser: User = {
@@ -1190,6 +1209,44 @@ export class MemStorage implements IStorage {
       }
     };
   }
+
+  // Pet Medical Records - stub implementations
+  async getMedicalRecordsByPetId(petId: string): Promise<PetMedicalRecord[]> {
+    throw new Error("MemStorage does not support medical records - use DatabaseStorage");
+  }
+
+  async getMedicalRecord(id: string): Promise<PetMedicalRecord | undefined> {
+    throw new Error("MemStorage does not support medical records - use DatabaseStorage");
+  }
+
+  async createMedicalRecord(record: InsertPetMedicalRecord): Promise<PetMedicalRecord> {
+    throw new Error("MemStorage does not support medical records - use DatabaseStorage");
+  }
+
+  async updateMedicalRecord(id: string, record: Partial<InsertPetMedicalRecord>): Promise<PetMedicalRecord | undefined> {
+    throw new Error("MemStorage does not support medical records - use DatabaseStorage");
+  }
+
+  async deleteMedicalRecord(id: string): Promise<boolean> {
+    throw new Error("MemStorage does not support medical records - use DatabaseStorage");
+  }
+
+  // Pet Medical Sharing Consents - stub implementations
+  async getMedicalSharingConsent(petId: string, userId: string, consentType: string): Promise<PetMedicalSharingConsent | undefined> {
+    throw new Error("MemStorage does not support medical sharing consents - use DatabaseStorage");
+  }
+
+  async getMedicalSharingConsentsByPetId(petId: string): Promise<PetMedicalSharingConsent[]> {
+    throw new Error("MemStorage does not support medical sharing consents - use DatabaseStorage");
+  }
+
+  async getMedicalSharingConsentsByUserId(userId: string): Promise<PetMedicalSharingConsent[]> {
+    throw new Error("MemStorage does not support medical sharing consents - use DatabaseStorage");
+  }
+
+  async upsertMedicalSharingConsent(consent: InsertPetMedicalSharingConsent): Promise<PetMedicalSharingConsent> {
+    throw new Error("MemStorage does not support medical sharing consents - use DatabaseStorage");
+  }
 }
 
 // Database storage implementation using PostgreSQL
@@ -1921,6 +1978,63 @@ class DatabaseStorage implements IStorage {
         user: deletedUser.length > 0
       }
     };
+  }
+
+  // Pet Medical Records
+  async getMedicalRecordsByPetId(petId: string): Promise<PetMedicalRecord[]> {
+    return await db.select().from(petMedicalRecords).where(eq(petMedicalRecords.petId, petId));
+  }
+
+  async getMedicalRecord(id: string): Promise<PetMedicalRecord | undefined> {
+    const result = await db.select().from(petMedicalRecords).where(eq(petMedicalRecords.id, id));
+    return result[0];
+  }
+
+  async createMedicalRecord(record: InsertPetMedicalRecord): Promise<PetMedicalRecord> {
+    const result = await db.insert(petMedicalRecords).values(record).returning();
+    return result[0];
+  }
+
+  async updateMedicalRecord(id: string, record: Partial<InsertPetMedicalRecord>): Promise<PetMedicalRecord | undefined> {
+    const result = await db.update(petMedicalRecords).set(record).where(eq(petMedicalRecords.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteMedicalRecord(id: string): Promise<boolean> {
+    const result = await db.delete(petMedicalRecords).where(eq(petMedicalRecords.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Pet Medical Sharing Consents
+  async getMedicalSharingConsent(petId: string, userId: string, consentType: string): Promise<PetMedicalSharingConsent | undefined> {
+    const result = await db.select().from(petMedicalSharingConsents)
+      .where(and(
+        eq(petMedicalSharingConsents.petId, petId),
+        eq(petMedicalSharingConsents.userId, userId),
+        eq(petMedicalSharingConsents.consentType, consentType)
+      ));
+    return result[0];
+  }
+
+  async getMedicalSharingConsentsByPetId(petId: string): Promise<PetMedicalSharingConsent[]> {
+    return await db.select().from(petMedicalSharingConsents).where(eq(petMedicalSharingConsents.petId, petId));
+  }
+
+  async getMedicalSharingConsentsByUserId(userId: string): Promise<PetMedicalSharingConsent[]> {
+    return await db.select().from(petMedicalSharingConsents).where(eq(petMedicalSharingConsents.userId, userId));
+  }
+
+  async upsertMedicalSharingConsent(consent: InsertPetMedicalSharingConsent): Promise<PetMedicalSharingConsent> {
+    const existing = await this.getMedicalSharingConsent(consent.petId, consent.userId, consent.consentType);
+    if (existing) {
+      const result = await db.update(petMedicalSharingConsents)
+        .set({ enabled: consent.enabled, updatedAt: new Date() })
+        .where(eq(petMedicalSharingConsents.id, existing.id))
+        .returning();
+      return result[0];
+    }
+    const result = await db.insert(petMedicalSharingConsents).values(consent).returning();
+    return result[0];
   }
 }
 
