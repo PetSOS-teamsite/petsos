@@ -140,14 +140,20 @@ function HospitalForm({ form, onSubmit, submitLabel }: {
   const addPhoto = () => {
     if (newPhotoUrl.trim()) {
       const currentPhotos = (photos || []) as string[];
-      form.setValue("photos", [...currentPhotos, newPhotoUrl.trim()] as any);
+      form.setValue("photos", [...currentPhotos, newPhotoUrl.trim()] as any, { 
+        shouldDirty: true, 
+        shouldTouch: true 
+      });
       setNewPhotoUrl("");
     }
   };
 
   const removePhoto = (index: number) => {
     const currentPhotos = (photos || []) as string[];
-    form.setValue("photos", currentPhotos.filter((_, i) => i !== index) as any);
+    form.setValue("photos", currentPhotos.filter((_, i) => i !== index) as any, { 
+      shouldDirty: true, 
+      shouldTouch: true 
+    });
   };
 
   return (
