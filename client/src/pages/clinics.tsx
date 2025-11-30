@@ -155,16 +155,16 @@ export default function ClinicsPage() {
     <>
       <SEO
         title={language === 'zh-HK'
-          ? "24小時獸醫診所目錄 - PetSOS | GPS距離顯示"
-          : "24-Hour Veterinary Clinics Directory - PetSOS | GPS Distance Tracking"
+          ? "24小時動物醫院目錄 - PetSOS | GPS距離顯示"
+          : "24-Hour Animal Hospital Directory - PetSOS | GPS Distance Tracking"
         }
         description={language === 'zh-HK'
-          ? "搜尋香港24小時動物醫院。GPS自動顯示距離，按最近診所排序。覆蓋港島、九龍、新界所有地區。一鍵致電或WhatsApp聯絡，毛孩緊急情況最快找到協助。"
-          : "Search 24-hour animal hospitals in Hong Kong. GPS-powered distance tracking, sorted by nearest clinics. Coverage across Hong Kong Island, Kowloon, and New Territories. One-tap call or WhatsApp contact for fast emergency help."
+          ? "搜尋香港24小時動物醫院。GPS自動顯示距離，按最近醫院排序。覆蓋港島、九龍、新界所有地區。一鍵致電或WhatsApp聯絡，毛孩緊急情況最快找到協助。"
+          : "Search 24-hour animal hospitals in Hong Kong. GPS-powered distance tracking, sorted by nearest hospitals. Coverage across Hong Kong Island, Kowloon, and New Territories. One-tap call or WhatsApp contact for fast emergency help."
         }
         keywords={language === 'zh-HK'
-          ? "24小時獸醫, 動物醫院目錄, GPS尋找診所, 最近獸醫, 香港島, 九龍, 新界, WhatsApp聯絡"
-          : "24-hour vet directory, animal hospital finder, GPS clinic search, nearest vet, Hong Kong Island, Kowloon, New Territories, WhatsApp contact"
+          ? "24小時獸醫, 動物醫院目錄, GPS尋找醫院, 最近獸醫, 香港島, 九龍, 新界, WhatsApp聯絡"
+          : "24-hour vet directory, animal hospital finder, GPS hospital search, nearest vet, Hong Kong Island, Kowloon, New Territories, WhatsApp contact"
         }
         canonical="https://petsos.site/clinics"
         language={language}
@@ -173,7 +173,7 @@ export default function ClinicsPage() {
       <StructuredData 
         data={createBreadcrumbSchema([
           { name: language === 'zh-HK' ? "主頁" : "Home", url: "https://petsos.site/" },
-          { name: language === 'zh-HK' ? "診所目錄" : "Clinics", url: "https://petsos.site/clinics" }
+          { name: language === 'zh-HK' ? "24小時動物醫院" : "24-Hour Animal Hospitals", url: "https://petsos.site/clinics" }
         ])} 
         id="schema-breadcrumb-clinics" 
       />
@@ -189,7 +189,7 @@ export default function ClinicsPage() {
                 </Button>
               </Link>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {t("clinics.title", "Veterinary Clinics")}
+                {language === 'zh-HK' ? '24小時動物醫院' : '24-Hour Animal Hospitals'}
               </h1>
             </div>
             <LanguageSwitcher />
@@ -205,7 +205,7 @@ export default function ClinicsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               type="text"
-              placeholder={t("clinics.search", "Search clinics by name or address...")}
+              placeholder={language === 'zh-HK' ? '搜尋動物醫院名稱或地址...' : 'Search hospitals by name or address...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-12 text-base"
@@ -257,7 +257,7 @@ export default function ClinicsPage() {
               className="flex items-center gap-2 cursor-pointer text-sm font-medium text-red-900 dark:text-red-100"
             >
               <Clock className="h-4 w-4 text-red-600 dark:text-red-400" />
-              {language === 'zh-HK' ? '只顯示24小時診所' : 'Show 24-Hour Clinics Only'}
+              {language === 'zh-HK' ? '只顯示24小時醫院' : 'Show 24-Hour Hospitals Only'}
             </Label>
           </div>
 
@@ -276,7 +276,7 @@ export default function ClinicsPage() {
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
                 <p className="text-sm text-red-900 dark:text-red-100 font-medium">
-                  {language === 'zh-HK' ? '📍 已按距離排序 - 最近的診所優先顯示' : '📍 Sorted by distance - Nearest clinics first'}
+                  {language === 'zh-HK' ? '📍 已按距離排序 - 最近的醫院優先顯示' : '📍 Sorted by distance - Nearest hospitals first'}
                 </p>
               </div>
             </div>
@@ -301,7 +301,7 @@ export default function ClinicsPage() {
           <div className="max-w-4xl mx-auto mb-4">
             <p className="text-gray-600 dark:text-gray-400 text-sm" data-testid="text-results-count">
               {language === 'zh-HK' 
-                ? `已找到 ${filteredHospitals?.length || 0} 間診所`
+                ? `已找到 ${filteredHospitals?.length || 0} 間動物醫院`
                 : `${filteredHospitals?.length || 0} ${filteredHospitals?.length !== 1 ? 'hospitals' : 'hospital'} found`
               }
             </p>
@@ -444,10 +444,10 @@ export default function ClinicsPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <p className="text-gray-600 dark:text-gray-400 mb-2" data-testid="text-no-results">
-                  {t("clinics.no_results", "No clinics found matching your criteria")}
+                  {language === 'zh-HK' ? '未找到符合條件的動物醫院' : 'No hospitals found matching your criteria'}
                 </p>
                 <p className="text-gray-500 dark:text-gray-500 text-sm">
-                  {t("clinics.adjust_search", "Try adjusting your search or filters")}
+                  {language === 'zh-HK' ? '請嘗試調整搜尋條件' : 'Try adjusting your search or filters'}
                 </p>
               </CardContent>
             </Card>
