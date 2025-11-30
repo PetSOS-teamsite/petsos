@@ -361,6 +361,56 @@ export default function HospitalDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Contact Information */}
+          {(hospital.email || hospital.websiteUrl) && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="text-lg" data-testid="text-contact-info">
+                  {language === 'zh-HK' ? '聯絡資訊' : 'Contact Information'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="space-y-3">
+                  {hospital.email && (
+                    <div className="flex items-center gap-3">
+                      <dt className="text-sm font-medium text-gray-600 dark:text-gray-400 min-w-[80px]">
+                        {language === 'zh-HK' ? '電郵' : 'Email'}
+                      </dt>
+                      <dd>
+                        <a 
+                          href={`mailto:${hospital.email}`}
+                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                          data-testid="link-email"
+                        >
+                          {hospital.email}
+                        </a>
+                      </dd>
+                    </div>
+                  )}
+                  {hospital.websiteUrl && (
+                    <div className="flex items-center gap-3">
+                      <dt className="text-sm font-medium text-gray-600 dark:text-gray-400 min-w-[80px]">
+                        <Globe className="h-4 w-4 inline mr-1" />
+                        {language === 'zh-HK' ? '網站' : 'Website'}
+                      </dt>
+                      <dd>
+                        <a 
+                          href={hospital.websiteUrl.startsWith('http') ? hospital.websiteUrl : `https://${hospital.websiteUrl}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                          data-testid="link-website"
+                        >
+                          {hospital.websiteUrl.replace(/^https?:\/\//, '')}
+                        </a>
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Consultation Fees */}
           {!feesLoading && consultFees && consultFees.length > 0 && (
             <Card className="mb-6">
@@ -460,6 +510,20 @@ export default function HospitalDetailPage() {
                       <dd className="mt-1">{hospital.whatsappTriage ? (language === 'zh-HK' ? '提供' : 'Available') : (language === 'zh-HK' ? '不提供' : 'Not Available')}</dd>
                     </div>
                   )}
+                  {hospital.ambulanceSupport !== null && (
+                    <div>
+                      <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        {language === 'zh-HK' ? '救護車服務' : 'Ambulance Support'}
+                      </dt>
+                      <dd className="mt-1 flex items-center gap-2">
+                        {hospital.ambulanceSupport ? (
+                          <><CheckCircle className="h-4 w-4 text-green-500" /> {language === 'zh-HK' ? '有' : 'Available'}</>
+                        ) : (
+                          <><AlertCircle className="h-4 w-4 text-yellow-500" /> {language === 'zh-HK' ? '無' : 'Not Available'}</>
+                        )}
+                      </dd>
+                    </div>
+                  )}
                 </dl>
               </AccordionContent>
             </AccordionItem>
@@ -485,6 +549,8 @@ export default function HospitalDetailPage() {
                         {hospital.imagingXray && <Badge variant="outline">{language === 'zh-HK' ? 'X光' : 'X-Ray'}</Badge>}
                         {hospital.imagingUS && <Badge variant="outline">{language === 'zh-HK' ? '超聲波' : 'Ultrasound'}</Badge>}
                         {hospital.imagingCT && <Badge variant="outline">CT {hospital.sameDayCT && `(${language === 'zh-HK' ? '當日' : 'Same Day'})`}</Badge>}
+                        {hospital.imagingMRI && <Badge variant="outline">{language === 'zh-HK' ? 'MRI磁力共振' : 'MRI'}</Badge>}
+                        {hospital.endoscopy && <Badge variant="outline">{language === 'zh-HK' ? '內視鏡' : 'Endoscopy'}</Badge>}
                       </dd>
                     </div>
                     {hospital.inHouseLab !== null && (
@@ -509,6 +575,95 @@ export default function HospitalDetailPage() {
                           {language === 'zh-HK' ? '血庫使用' : 'Blood Bank Access'}
                         </dt>
                         <dd className="mt-1">{hospital.bloodBankAccess}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
+            {/* Life Support Equipment */}
+            {(hospital.oxygenTherapy || hospital.ventilator || hospital.bloodTransfusion || hospital.dialysis || hospital.defibrillator) && (
+              <AccordionItem value="life-support" className="border rounded-lg px-4 bg-white dark:bg-gray-800">
+                <AccordionTrigger className="hover:no-underline" data-testid="accordion-life-support">
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-red-500" />
+                    <span className="font-semibold">
+                      {language === 'zh-HK' ? '生命支援設備' : 'Life Support Equipment'}
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 pb-2">
+                  <div className="flex flex-wrap gap-2">
+                    {hospital.oxygenTherapy && (
+                      <Badge variant="outline" data-testid="badge-oxygen">
+                        {language === 'zh-HK' ? '氧氣治療' : 'Oxygen Therapy'}
+                      </Badge>
+                    )}
+                    {hospital.ventilator && (
+                      <Badge variant="outline" data-testid="badge-ventilator">
+                        {language === 'zh-HK' ? '呼吸機' : 'Ventilator'}
+                      </Badge>
+                    )}
+                    {hospital.bloodTransfusion && (
+                      <Badge variant="outline" data-testid="badge-blood-transfusion">
+                        {language === 'zh-HK' ? '輸血服務' : 'Blood Transfusion'}
+                      </Badge>
+                    )}
+                    {hospital.dialysis && (
+                      <Badge variant="outline" data-testid="badge-dialysis">
+                        {language === 'zh-HK' ? '透析/腎臟支援' : 'Dialysis'}
+                      </Badge>
+                    )}
+                    {hospital.defibrillator && (
+                      <Badge variant="outline" data-testid="badge-defibrillator">
+                        {language === 'zh-HK' ? '除顫器/AED' : 'Defibrillator/AED'}
+                      </Badge>
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
+            {/* Surgery Capabilities */}
+            {(hospital.sxEmergencySoft || hospital.sxEmergencyOrtho || hospital.anaesMonitoring) && (
+              <AccordionItem value="surgery" className="border rounded-lg px-4 bg-white dark:bg-gray-800">
+                <AccordionTrigger className="hover:no-underline" data-testid="accordion-surgery">
+                  <div className="flex items-center gap-2">
+                    <Stethoscope className="h-5 w-5 text-orange-500" />
+                    <span className="font-semibold">
+                      {language === 'zh-HK' ? '手術能力' : 'Surgery Capabilities'}
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 pb-2">
+                  <dl className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {hospital.sxEmergencySoft && (
+                        <Badge variant="outline" data-testid="badge-surgery-soft">
+                          {language === 'zh-HK' ? '緊急軟組織手術' : 'Emergency Soft Tissue Surgery'}
+                        </Badge>
+                      )}
+                      {hospital.sxEmergencyOrtho && (
+                        <Badge variant="outline" data-testid="badge-surgery-ortho">
+                          {language === 'zh-HK' ? '緊急骨科手術' : 'Emergency Orthopedic Surgery'}
+                        </Badge>
+                      )}
+                    </div>
+                    {hospital.anaesMonitoring && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                          {language === 'zh-HK' ? '麻醉監測' : 'Anesthesia Monitoring'}
+                        </dt>
+                        <dd className="mt-1">{hospital.anaesMonitoring}</dd>
+                      </div>
+                    )}
+                    {hospital.specialistAvail && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                          {language === 'zh-HK' ? '專科醫生' : 'Specialist Availability'}
+                        </dt>
+                        <dd className="mt-1">{hospital.specialistAvail}</dd>
                       </div>
                     )}
                   </dl>
