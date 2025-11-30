@@ -434,3 +434,51 @@ export const insertHospitalUpdateSchema = createInsertSchema(hospitalUpdates).om
 
 export type InsertHospitalUpdate = z.infer<typeof insertHospitalUpdateSchema>;
 export type HospitalUpdate = typeof hospitalUpdates.$inferSelect;
+
+// Pet Medical Records table - stores medical documents for pets
+export const petMedicalRecords = pgTable("pet_medical_records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  petId: varchar("pet_id").notNull().references(() => pets.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id), // uploader, for ownership
+  documentType: text("document_type").notNull(), // blood_test, xray, vaccination, surgery_report, prescription, other
+  title: text("title").notNull(), // user-provided title like "Blood Test Dec 2024"
+  description: text("description"), // optional notes
+  filePath: text("file_path").notNull(), // object storage path
+  fileSize: integer("file_size").notNull(), // in bytes
+  mimeType: text("mime_type").notNull(), // application/pdf, image/jpeg, etc.
+  isConfidential: boolean("is_confidential").notNull().default(false), // if true, requires explicit sharing consent
+  uploadedAt: timestamp("uploaded_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"), // optional, for time-limited documents
+}, (table) => [
+  index("idx_pet_medical_records_pet").on(table.petId),
+  index("idx_pet_medical_records_user").on(table.userId),
+]);
+
+export const insertPetMedicalRecordSchema = createInsertSchema(petMedicalRecords).omit({
+  id: true,
+  uploadedAt: true,
+});
+
+export type InsertPetMedicalRecord = z.infer<typeof insertPetMedicalRecordSchema>;
+export type PetMedicalRecord = typeof petMedicalRecords.$inferSelect;
+
+// Pet Medical Sharing Consent table - manages consent for sharing medical records
+export const petMedicalSharingConsents = pgTable("pet_medical_sharing_consents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  petId: varchar("pet_id").notNull().references(() => pets.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  consentType: text("consent_type").notNull(), // emergency_broadcast, hospital_view
+  enabled: boolean("enabled").notNull().default(false),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_pet_medical_sharing_consent_pet").on(table.petId),
+  index("idx_pet_medical_sharing_consent_user").on(table.userId),
+]);
+
+export const insertPetMedicalSharingConsentSchema = createInsertSchema(petMedicalSharingConsents).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertPetMedicalSharingConsent = z.infer<typeof insertPetMedicalSharingConsentSchema>;
+export type PetMedicalSharingConsent = typeof petMedicalSharingConsents.$inferSelect;
