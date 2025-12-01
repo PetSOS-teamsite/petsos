@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { CookieConsent } from "@/components/CookieConsent";
+import { PushNotificationBanner } from "@/components/PushNotificationBanner";
 import { usePageTracking } from "@/hooks/useAnalytics";
 import { initSentry } from "@/lib/sentry";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -45,6 +46,7 @@ const AdminAnalyticsPage = lazy(() => import("@/pages/admin-analytics"));
 const AdminUsersPage = lazy(() => import("@/pages/admin-users"));
 const AdminPetsPage = lazy(() => import("@/pages/admin-pets"));
 const AdminDiagnosticsPage = lazy(() => import("@/pages/admin-diagnostics"));
+const AdminNotificationsPage = lazy(() => import("@/pages/admin-notifications"));
 const AdminLoginPage = lazy(() => import("@/pages/admin-login"));
 const ClinicDashboardPage = lazy(() => import("@/pages/clinic-dashboard"));
 
@@ -106,6 +108,7 @@ function PublicRouter() {
       <Route path="/admin/pets" component={ProtectedAdminPetsRoute} />
       <Route path="/admin/config" component={ProtectedAdminConfigRoute} />
       <Route path="/admin/diagnostics" component={ProtectedAdminDiagnosticsRoute} />
+      <Route path="/admin/notifications" component={ProtectedAdminNotificationsRoute} />
       
       <Route component={NotFound} />
     </Switch>
@@ -179,6 +182,12 @@ function ProtectedAdminDiagnosticsRoute() {
   return isAuthenticated && user?.role === 'admin' ? <AdminDiagnosticsPage /> : <AdminLoginPage />;
 }
 
+function ProtectedAdminNotificationsRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated && user?.role === 'admin' ? <AdminNotificationsPage /> : <AdminLoginPage />;
+}
+
 function App() {
   useEffect(() => {
     document.title = "PetSOS";
@@ -197,6 +206,7 @@ function App() {
               <PublicRouter />
             </Suspense>
             <CookieConsent />
+            <PushNotificationBanner />
           </TooltipProvider>
         </LanguageProvider>
       </QueryClientProvider>
