@@ -28,7 +28,7 @@ import {
   insertPetMedicalRecordSchema, insertPetMedicalSharingConsentSchema,
   insertPushSubscriptionSchema, insertNotificationBroadcastSchema
 } from "@shared/schema";
-import { oneSignalService } from "./services/onesignal";
+import { fcmService, sendBroadcastNotification as sendFCMBroadcast } from "./services/fcm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import path from "path";
@@ -2557,12 +2557,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Deactivate push subscription
   app.delete("/api/push/unsubscribe", generalLimiter, async (req, res) => {
     try {
-      const { playerId } = req.body;
-      if (!playerId) {
-        return res.status(400).json({ error: "playerId is required" });
+      const { token } = req.body;
+      if (!token) {
+        return res.status(400).json({ error: "token is required" });
       }
       
-      const success = await storage.deactivatePushSubscription(playerId);
+      const success = await storage.deactivatePushSubscription(token);
       if (success) {
         res.json({ success: true, message: "Subscription deactivated" });
       } else {
@@ -2604,20 +2604,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'pending'
       });
       
-      // Send via OneSignal
-      const result = await oneSignalService.sendBroadcastNotification({
+      // Get active FCM tokens for target language
+      const tokens = await storage.getActiveTokens(targetLanguage || undefined);
+      
+      if (tokens.length === 0) {
+        // Update broadcast record - no recipients
+        await storage.updateNotificationBroadcast(broadcast.id, {
+          status: 'sent',
+          recipientCount: 0,
+          providerResponse: { 
+            message: 'No active subscriptions found',
+            url: url || null
+          },
+          sentAt: new Date()
+        });
+        
+        return res.status(200).json({
+          success: true,
+          broadcastId: broadcast.id,
+          recipientCount: 0,
+          message: 'No active subscriptions to notify'
+        });
+      }
+      
+      // Send via FCM
+      const result = await sendFCMBroadcast(tokens, {
         title,
         message,
-        targetLanguage: targetLanguage || undefined,
         url: url || undefined
       });
+      
+      // Deactivate invalid tokens
+      if (result.failedTokens && result.failedTokens.length > 0) {
+        await storage.deactivatePushSubscriptions(result.failedTokens);
+      }
       
       // Update broadcast record with result
       await storage.updateNotificationBroadcast(broadcast.id, {
         status: result.success ? 'sent' : 'failed',
-        recipientCount: result.recipientCount || 0,
-        onesignalResponse: { 
-          onesignalId: result.onesignalId || null,
+        recipientCount: result.successCount || 0,
+        providerResponse: { 
+          successCount: result.successCount || 0,
+          failureCount: result.failureCount || 0,
           url: url || null,
           error: result.error || null
         },
@@ -2634,7 +2662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title,
           message,
           targetLanguage: targetLanguage || 'all',
-          recipientCount: result.recipientCount || 0,
+          recipientCount: result.successCount || 0,
           success: result.success
         }
       });
@@ -2650,8 +2678,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json({
         success: true,
         broadcastId: broadcast.id,
-        recipientCount: result.recipientCount,
-        onesignalId: result.onesignalId
+        recipientCount: result.successCount,
+        failedCount: result.failureCount
       });
     } catch (error: any) {
       console.error("Error sending broadcast notification:", error);
@@ -2669,6 +2697,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching notification history:", error);
       res.status(500).json({ error: error.message || "Failed to fetch history" });
     }
+  });
+
+  // Firebase config endpoint for service worker
+  app.get("/api/config/firebase", (req, res) => {
+    res.json({
+      apiKey: process.env.VITE_FIREBASE_API_KEY || '',
+      authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+      projectId: process.env.VITE_FIREBASE_PROJECT_ID || '',
+      storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+      messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+      appId: process.env.VITE_FIREBASE_APP_ID || '',
+    });
   });
 
   const httpServer = createServer(app);

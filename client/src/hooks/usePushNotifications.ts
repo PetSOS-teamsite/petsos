@@ -1,38 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
+import { getMessaging, getToken, onMessage, type Messaging, type MessagePayload } from 'firebase/messaging';
 import { apiRequest } from '@/lib/queryClient';
-
-declare global {
-  interface Window {
-    OneSignalDeferred?: Array<(OneSignal: OneSignalType) => void>;
-    OneSignal?: OneSignalType;
-  }
-}
-
-interface OneSignalType {
-  init(config: {
-    appId: string;
-    safari_web_id?: string;
-    allowLocalhostAsSecureOrigin?: boolean;
-    serviceWorkerPath?: string;
-    promptOptions?: Record<string, unknown>;
-  }): Promise<void>;
-  Notifications: {
-    permission: boolean;
-    requestPermission(): Promise<void>;
-    addEventListener(event: string, callback: (granted: boolean) => void): void;
-  };
-  User: {
-    PushSubscription: {
-      id: string | null;
-      optedIn: boolean;
-      optIn(): Promise<void>;
-      optOut(): Promise<void>;
-      addEventListener(event: string, callback: (change: { current: { id: string | null; optedIn: boolean } }) => void): void;
-    };
-    addTag(key: string, value: string): Promise<void>;
-    addTags(tags: Record<string, string>): Promise<void>;
-  };
-}
 
 interface UsePushNotificationsReturn {
   isSupported: boolean;
@@ -45,7 +14,51 @@ interface UsePushNotificationsReturn {
   error: string | null;
 }
 
-const ONESIGNAL_APP_ID = import.meta.env.VITE_ONESIGNAL_APP_ID;
+const FIREBASE_CONFIG = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+
+let firebaseApp: FirebaseApp | null = null;
+let messaging: Messaging | null = null;
+
+function initializeFirebaseApp(): { app: FirebaseApp; messaging: Messaging } | null {
+  if (firebaseApp && messaging) {
+    return { app: firebaseApp, messaging };
+  }
+  
+  if (!FIREBASE_CONFIG.apiKey || !FIREBASE_CONFIG.projectId) {
+    console.warn('Firebase configuration not set - push notifications disabled');
+    return null;
+  }
+  
+  try {
+    firebaseApp = getApps().length === 0 ? initializeApp(FIREBASE_CONFIG) : getApp();
+    messaging = getMessaging(firebaseApp);
+    
+    onMessage(messaging, (payload: MessagePayload) => {
+      console.log('Foreground message received:', payload);
+      if (payload.notification) {
+        new Notification(payload.notification.title || 'PetSOS', {
+          body: payload.notification.body,
+          icon: '/icons/icon-192x192.png',
+          badge: '/icons/icon-72x72.png',
+        });
+      }
+    });
+    
+    return { app: firebaseApp, messaging };
+  } catch (error) {
+    console.error('Failed to initialize Firebase:', error);
+    return null;
+  }
+}
 
 export function usePushNotifications(): UsePushNotificationsReturn {
   const [isSupported, setIsSupported] = useState(false);
@@ -54,74 +67,93 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentToken, setCurrentToken] = useState<string | null>(null);
 
   useEffect(() => {
     const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
     setIsSupported(supported);
 
-    if (!supported || !ONESIGNAL_APP_ID) {
+    if (!supported) {
       setIsLoading(false);
       return;
     }
 
-    initOneSignal();
+    if (!FIREBASE_CONFIG.apiKey) {
+      console.log('Firebase not configured - push notifications disabled');
+      setIsLoading(false);
+      return;
+    }
+
+    initFirebase();
   }, []);
 
-  const initOneSignal = async () => {
+  const initFirebase = async () => {
     try {
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      
-      if (!document.querySelector('script[src*="onesignal"]')) {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
-        script.defer = true;
-        document.head.appendChild(script);
+      const firebase = initializeFirebaseApp();
+      if (!firebase) {
+        setIsLoading(false);
+        return;
       }
 
-      window.OneSignalDeferred.push(async (OneSignal) => {
-        try {
-          await OneSignal.init({
-            appId: ONESIGNAL_APP_ID,
-            allowLocalhostAsSecureOrigin: true,
-            serviceWorkerPath: '/onesignal-sw.js',
-          });
-
-          setIsInitialized(true);
-          setPermissionGranted(OneSignal.Notifications.permission);
-          setIsSubscribed(OneSignal.User.PushSubscription.optedIn);
-
-          OneSignal.Notifications.addEventListener('permissionChange', (granted) => {
-            setPermissionGranted(granted);
-          });
-
-          OneSignal.User.PushSubscription.addEventListener('change', (change) => {
-            setIsSubscribed(change.current.optedIn);
-            if (change.current.id && change.current.optedIn) {
-              registerSubscriptionWithBackend(change.current.id);
-            }
-          });
-        } catch (err) {
-          console.error('OneSignal initialization error:', err);
-          setError('Failed to initialize push notifications');
-        } finally {
-          setIsLoading(false);
-        }
-      });
+      setIsInitialized(true);
+      
+      const permission = Notification.permission;
+      setPermissionGranted(permission === 'granted');
+      
+      if (permission === 'granted') {
+        await checkExistingSubscription(firebase.messaging);
+      }
     } catch (err) {
-      console.error('Push notification setup error:', err);
-      setError('Failed to set up push notifications');
+      console.error('Firebase initialization error:', err);
+      setError('Failed to initialize push notifications');
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const registerSubscriptionWithBackend = async (playerId: string) => {
+  const checkExistingSubscription = async (msg: Messaging) => {
+    try {
+      const registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+      
+      if (registration) {
+        const token = await getToken(msg, {
+          vapidKey: VAPID_KEY,
+          serviceWorkerRegistration: registration,
+        });
+        
+        if (token) {
+          setCurrentToken(token);
+          setIsSubscribed(true);
+        }
+      }
+    } catch (err) {
+      console.log('No existing subscription found');
+    }
+  };
+
+  const registerServiceWorker = async () => {
+    if ('serviceWorker' in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        console.log('Service Worker registered:', registration.scope);
+        return registration;
+      } catch (err) {
+        console.error('Service Worker registration failed:', err);
+        throw err;
+      }
+    }
+    throw new Error('Service Worker not supported');
+  };
+
+  const registerSubscriptionWithBackend = async (token: string) => {
     try {
       const language = localStorage.getItem('language') || 'en';
       const platform = detectPlatform();
       const browserInfo = navigator.userAgent;
 
       await apiRequest('POST', '/api/push/subscribe', {
-        playerId,
+        token,
+        provider: 'fcm',
         platform,
         browserInfo,
         language,
@@ -139,7 +171,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   };
 
   const subscribe = useCallback(async () => {
-    if (!isInitialized || !window.OneSignal) {
+    if (!isInitialized || !messaging) {
       setError('Push notifications not initialized');
       return;
     }
@@ -148,25 +180,39 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     setError(null);
 
     try {
-      if (!permissionGranted) {
-        await window.OneSignal.Notifications.requestPermission();
-      }
-      await window.OneSignal.User.PushSubscription.optIn();
+      const permission = await Notification.requestPermission();
+      setPermissionGranted(permission === 'granted');
       
-      const language = localStorage.getItem('language') || 'en';
-      await window.OneSignal.User.addTag('language', language);
+      if (permission !== 'granted') {
+        setError('Notification permission denied');
+        setIsLoading(false);
+        return;
+      }
 
-      setIsSubscribed(true);
+      const registration = await registerServiceWorker();
+      
+      const token = await getToken(messaging, {
+        vapidKey: VAPID_KEY,
+        serviceWorkerRegistration: registration,
+      });
+
+      if (token) {
+        setCurrentToken(token);
+        await registerSubscriptionWithBackend(token);
+        setIsSubscribed(true);
+      } else {
+        setError('Failed to get push notification token');
+      }
     } catch (err) {
       console.error('Subscribe error:', err);
       setError('Failed to subscribe to push notifications');
     } finally {
       setIsLoading(false);
     }
-  }, [isInitialized, permissionGranted]);
+  }, [isInitialized]);
 
   const unsubscribe = useCallback(async () => {
-    if (!isInitialized || !window.OneSignal) {
+    if (!isInitialized) {
       setError('Push notifications not initialized');
       return;
     }
@@ -175,13 +221,16 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     setError(null);
 
     try {
-      const playerId = window.OneSignal.User.PushSubscription.id;
-      await window.OneSignal.User.PushSubscription.optOut();
-      
-      if (playerId) {
-        await apiRequest('DELETE', '/api/push/unsubscribe', { playerId });
+      if (currentToken) {
+        await apiRequest('DELETE', '/api/push/unsubscribe', { token: currentToken });
       }
 
+      const registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+      if (registration) {
+        await registration.unregister();
+      }
+
+      setCurrentToken(null);
       setIsSubscribed(false);
     } catch (err) {
       console.error('Unsubscribe error:', err);
@@ -189,7 +238,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [isInitialized]);
+  }, [isInitialized, currentToken]);
 
   return {
     isSupported,
