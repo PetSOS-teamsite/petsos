@@ -28,8 +28,8 @@ interface EmergencyRequest {
     age: number | null;
     weight: string | null;
     medicalNotes: string | null;
-    allergies: string | null;
-    medications: string | null;
+    medicalHistory: string | null;
+    color: string | null;
     microchipId: string | null;
   };
   medicalRecords?: {
@@ -38,7 +38,7 @@ interface EmergencyRequest {
     documentType: string;
     description: string | null;
     fileUrl: string;
-    createdAt: string;
+    uploadedAt: string;
   }[];
   medicalSharingEnabled?: boolean;
 }
@@ -198,6 +198,12 @@ export default function EmergencyProfilePage() {
                         <p className="font-semibold">{emergencyRequest.pet.weight} kg</p>
                       </div>
                     )}
+                    {emergencyRequest.pet.color && (
+                      <div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{t('common.color', 'Color')}</p>
+                        <p className="font-semibold">{emergencyRequest.pet.color}</p>
+                      </div>
+                    )}
                     {emergencyRequest.pet.microchipId && (
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">{t('common.microchip', 'Microchip')}</p>
@@ -216,22 +222,12 @@ export default function EmergencyProfilePage() {
                     </div>
                   )}
                   
-                  {/* Allergies */}
-                  {emergencyRequest.pet.allergies && (
+                  {/* Medical History */}
+                  {emergencyRequest.pet.medicalHistory && (
                     <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{t('common.allergies', 'Allergies')}</p>
-                      <p className="text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950 p-2 rounded mt-1">
-                        🚫 {emergencyRequest.pet.allergies}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {/* Current Medications */}
-                  {emergencyRequest.pet.medications && (
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{t('common.medications', 'Current Medications')}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{t('common.medical_history', 'Medical History')}</p>
                       <p className="text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 p-2 rounded mt-1">
-                        💊 {emergencyRequest.pet.medications}
+                        📋 {emergencyRequest.pet.medicalHistory}
                       </p>
                     </div>
                   )}
@@ -289,7 +285,7 @@ export default function EmergencyProfilePage() {
                             <Badge variant="secondary" className="text-xs">
                               {getDocumentTypeLabel(record.documentType)}
                             </Badge>
-                            <span>{formatDate(record.createdAt)}</span>
+                            <span>{formatDate(record.uploadedAt)}</span>
                           </div>
                           {record.description && (
                             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{record.description}</p>

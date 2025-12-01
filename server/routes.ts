@@ -1664,8 +1664,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             age: pet.age,
             weight: pet.weight,
             medicalNotes: pet.medicalNotes,
-            allergies: pet.allergies,
-            medications: pet.medications,
+            medicalHistory: pet.medicalHistory,
+            color: pet.color,
             microchipId: pet.microchipId,
           };
 
@@ -1683,8 +1683,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 title: r.title,
                 documentType: r.documentType,
                 description: r.description,
-                fileUrl: r.fileUrl,
-                createdAt: r.createdAt,
+                fileUrl: r.filePath, // filePath contains the object storage URL
+                uploadedAt: r.uploadedAt,
               }));
             }
           }
