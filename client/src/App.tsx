@@ -48,6 +48,7 @@ const AdminUsersPage = lazy(() => import("@/pages/admin-users"));
 const AdminPetsPage = lazy(() => import("@/pages/admin-pets"));
 const AdminDiagnosticsPage = lazy(() => import("@/pages/admin-diagnostics"));
 const AdminNotificationsPage = lazy(() => import("@/pages/admin-notifications"));
+const AdminMessagesPage = lazy(() => import("@/pages/admin-messages"));
 const AdminLoginPage = lazy(() => import("@/pages/admin-login"));
 const ClinicDashboardPage = lazy(() => import("@/pages/clinic-dashboard"));
 
@@ -111,6 +112,7 @@ function PublicRouter() {
       <Route path="/admin/config" component={ProtectedAdminConfigRoute} />
       <Route path="/admin/diagnostics" component={ProtectedAdminDiagnosticsRoute} />
       <Route path="/admin/notifications" component={ProtectedAdminNotificationsRoute} />
+      <Route path="/admin/messages" component={ProtectedAdminMessagesRoute} />
       
       <Route component={NotFound} />
     </Switch>
@@ -188,6 +190,12 @@ function ProtectedAdminNotificationsRoute() {
   const { isAuthenticated, isLoading, user } = useAuth();
   if (isLoading) return <PageLoader />;
   return isAuthenticated && user?.role === 'admin' ? <AdminNotificationsPage /> : <AdminLoginPage />;
+}
+
+function ProtectedAdminMessagesRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated && user?.role === 'admin' ? <AdminMessagesPage /> : <AdminLoginPage />;
 }
 
 function App() {
