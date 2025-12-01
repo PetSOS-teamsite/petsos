@@ -21,7 +21,7 @@ const RETRY_DELAY_MS = 5000;
 
 // Helper to get the application base URL consistently
 function getBaseUrl(): string {
-  // Priority: explicit BASE_URL > Replit deployment domain > dev domain > default
+  // Priority: explicit BASE_URL > Replit deployment domain > dev domain > production default
   if (process.env.BASE_URL) {
     return process.env.BASE_URL;
   }
@@ -32,7 +32,8 @@ function getBaseUrl(): string {
   if (process.env.REPLIT_DEV_DOMAIN) {
     return `https://${process.env.REPLIT_DEV_DOMAIN}`;
   }
-  return 'https://petsos.hk';
+  // Production fallback - matches the canonical domain in index.html
+  return 'https://petsos.site';
 }
 
 // ⚠️ TESTING MODE - REMOVE AFTER TESTING
