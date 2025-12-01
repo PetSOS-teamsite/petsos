@@ -14,23 +14,23 @@ export function setupTestUtils(app: Express) {
     try {
       const { sub, email, name, role } = req.body;
 
-      // Create or update user
-      await storage.upsertUser({
+      // Create or update user and get the actual user object with database ID
+      const user = await storage.upsertUser({
         openidSub: sub,
         email: email || `test-${sub}@test.com`,
         name: name || 'Test User',
         profileImageUrl: null,
       });
 
-      // Set role if specified
+      // Set role if specified - use the actual user.id from database
       if (role === 'admin') {
-        await storage.updateUser(sub, { role: 'admin' });
+        await storage.updateUser(user.id, { role: 'admin' });
       }
 
-      // Create session - Passport expects just the user ID
-      // serializeUser stores user.id, deserializeUser fetches the full user from database
+      // Create session - Passport deserializeUser expects the database user.id
+      // NOT the openidSub - it fetches user by storage.getUser(id)
       (req.session as any).passport = {
-        user: sub  // Just the user ID, not the full OIDC claims object
+        user: user.id  // Use the actual database ID, not the openidSub
       };
 
       await new Promise((resolve, reject) => {
@@ -40,7 +40,7 @@ export function setupTestUtils(app: Express) {
         });
       });
 
-      res.json({ success: true, userId: sub });
+      res.json({ success: true, userId: user.id });
     } catch (error) {
       console.error('Test auth error:', error);
       res.status(500).json({ error: 'Failed to create test session' });
