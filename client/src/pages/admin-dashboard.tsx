@@ -17,7 +17,8 @@ import {
   Calendar,
   Users,
   Heart,
-  Stethoscope
+  Stethoscope,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -186,6 +187,12 @@ export default function AdminDashboardPage() {
                 <Button variant="outline" size="sm" data-testid="button-admin-diagnostics">
                   <Stethoscope className="h-4 w-4 mr-2" />
                   Diagnostics
+                </Button>
+              </Link>
+              <Link href="/admin/notifications">
+                <Button variant="outline" size="sm" data-testid="button-admin-notifications">
+                  <Bell className="h-4 w-4 mr-2" />
+                  Notifications
                 </Button>
               </Link>
               <Link href="/admin/config">
