@@ -19,6 +19,22 @@ const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@petemergency.com';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 5000;
 
+// Helper to get the application base URL consistently
+function getBaseUrl(): string {
+  // Priority: explicit BASE_URL > Replit deployment domain > dev domain > default
+  if (process.env.BASE_URL) {
+    return process.env.BASE_URL;
+  }
+  if (process.env.REPLIT_DOMAINS) {
+    // Use the first domain from comma-separated list
+    return `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`;
+  }
+  if (process.env.REPLIT_DEV_DOMAIN) {
+    return `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  }
+  return 'https://petsos.hk';
+}
+
 // ⚠️ TESTING MODE - REMOVE AFTER TESTING
 // When enabled, all WhatsApp messages will be sent to these test numbers instead of actual clinic numbers
 const TESTING_MODE = false; // Disabled for App Review video recording
@@ -518,8 +534,7 @@ export class MessagingService {
       ];
       
       // Build profile link
-      const baseUrl = process.env.BASE_URL || (process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'https://petsos.hk');
-      const profileLink = `${baseUrl}/emergency-profile/${emergencyRequestId}`;
+      const profileLink = `${getBaseUrl()}/emergency-profile/${emergencyRequestId}`;
       
       fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
         `${isZhHk ? '已登記寵物（有醫療記錄）' : 'REGISTERED PET WITH MEDICAL HISTORY'}\n` +
@@ -549,8 +564,7 @@ export class MessagingService {
       ];
       
       // Build profile link
-      const baseUrl = process.env.BASE_URL || (process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'https://petsos.hk');
-      const profileLink = `${baseUrl}/emergency-profile/${emergencyRequestId}`;
+      const profileLink = `${getBaseUrl()}/emergency-profile/${emergencyRequestId}`;
       
       fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
         `${isZhHk ? '名稱' : 'Name'}: ${variables[0]}\n` +
@@ -576,8 +590,7 @@ export class MessagingService {
       ];
       
       // Build profile link
-      const baseUrl = process.env.BASE_URL || (process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'https://petsos.hk');
-      const profileLink = `${baseUrl}/emergency-profile/${emergencyRequestId}`;
+      const profileLink = `${getBaseUrl()}/emergency-profile/${emergencyRequestId}`;
       
       fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
         `${isZhHk ? '物種' : 'Species'}: ${variables[0]}\n` +
