@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
-import { ObjectUploader } from "./ObjectUploader";
+import { SimpleFileUploader } from "./SimpleFileUploader";
 import { FileText, Upload, Trash2, Download, Shield, AlertCircle } from "lucide-react";
 import type { PetMedicalRecord, PetMedicalSharingConsent } from "@shared/schema";
 
@@ -89,6 +89,8 @@ export function MedicalRecordsSection({ petId, petName }: MedicalRecordsSectionP
       setIsUploadDialogOpen(false);
       setNewRecord({ title: "", documentType: "other", description: "" });
       setUploadedFilePath(null);
+      setUploadedFileSize(0);
+      setUploadedMimeType("");
       toast({
         title: language === 'zh-HK' ? "記錄已上傳" : "Record Uploaded",
         description: language === 'zh-HK' ? "醫療記錄已成功儲存" : "Medical record saved successfully",
@@ -129,22 +131,18 @@ export function MedicalRecordsSection({ petId, petName }: MedicalRecordsSectionP
     },
   });
 
-  const handleGetUploadParameters = async () => {
-    const response = await apiRequest('POST', '/api/medical-records/upload-url');
-    const data = await response.json();
-    return {
-      method: 'PUT' as const,
-      url: data.uploadURL,
-    };
+  const handleUploadComplete = (result: { url: string; size: number; type: string }) => {
+    setUploadedFilePath(result.url);
+    setUploadedFileSize(result.size);
+    setUploadedMimeType(result.type);
   };
 
-  const handleUploadComplete = (result: any) => {
-    if (result.successful && result.successful.length > 0) {
-      const file = result.successful[0];
-      setUploadedFilePath(file.uploadURL);
-      setUploadedFileSize(file.size);
-      setUploadedMimeType(file.type);
-    }
+  const handleUploadError = (error: string) => {
+    toast({
+      title: language === 'zh-HK' ? "上傳失敗" : "Upload Failed",
+      description: error,
+      variant: "destructive",
+    });
   };
 
   const handleSaveRecord = () => {
@@ -270,25 +268,15 @@ export function MedicalRecordsSection({ petId, petName }: MedicalRecordsSectionP
                 <div>
                   <Label>{language === 'zh-HK' ? '文件' : 'File'} *</Label>
                   <div className="mt-2">
-                    <ObjectUploader
-                      maxNumberOfFiles={1}
+                    <SimpleFileUploader
+                      key={isUploadDialogOpen ? 'open' : 'closed'}
+                      onUploadComplete={handleUploadComplete}
+                      onError={handleUploadError}
                       maxFileSize={10485760}
-                      allowedFileTypes={['.pdf', '.jpg', '.jpeg', '.png', 'image/*', 'application/pdf']}
-                      onGetUploadParameters={handleGetUploadParameters}
-                      onComplete={handleUploadComplete}
-                      buttonClassName="w-full"
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      {uploadedFilePath 
-                        ? (language === 'zh-HK' ? '已選擇文件 ✓' : 'File Selected ✓')
-                        : (language === 'zh-HK' ? '選擇文件' : 'Select File')}
-                    </ObjectUploader>
+                      allowedTypes={['image/*', 'application/pdf']}
+                      disabled={createRecordMutation.isPending}
+                    />
                   </div>
-                  {uploadedFilePath && (
-                    <p className="text-xs text-green-600 mt-1">
-                      {language === 'zh-HK' ? `文件大小: ${formatFileSize(uploadedFileSize)}` : `File size: ${formatFileSize(uploadedFileSize)}`}
-                    </p>
-                  )}
                 </div>
                 <div className="flex gap-2 justify-end">
                   <Button
@@ -297,6 +285,8 @@ export function MedicalRecordsSection({ petId, petName }: MedicalRecordsSectionP
                       setIsUploadDialogOpen(false);
                       setNewRecord({ title: "", documentType: "other", description: "" });
                       setUploadedFilePath(null);
+                      setUploadedFileSize(0);
+                      setUploadedMimeType("");
                     }}
                   >
                     {language === 'zh-HK' ? '取消' : 'Cancel'}
