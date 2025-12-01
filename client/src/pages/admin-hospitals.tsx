@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, X, Activity, Image as ImageIcon, Upload, XCircle, Copy, ExternalLink, KeyRound } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, X, Activity, Image as ImageIcon, Upload, XCircle, Copy, ExternalLink, KeyRound, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -1008,6 +1008,7 @@ export default function AdminHospitalsPage() {
     verified: (hospitals?.filter(h => h.lastVerifiedAt) ?? []).length,
     open247: (hospitals?.filter(h => h.open247) ?? []).length,
     withPhotos: (hospitals?.filter(h => h.photos && (h.photos as any[]).length > 0) ?? []).length,
+    partners: (hospitals?.filter(h => h.isPartner) ?? []).length,
   };
 
   const filteredHospitals = hospitals?.filter(hospital => {
@@ -1258,6 +1259,24 @@ export default function AdminHospitalsPage() {
     },
   });
 
+  const togglePartnerMutation = useMutation({
+    mutationFn: async ({ hospitalId, isPartner }: { hospitalId: string; isPartner: boolean }) => {
+      await apiRequest("PATCH", `/api/hospitals/${hospitalId}`, { isPartner });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/hospitals"] });
+      toast({ 
+        title: variables.isPartner ? "Partner Added" : "Partner Removed",
+        description: variables.isPartner 
+          ? "Hospital is now a PetSOS Partner" 
+          : "Hospital is no longer a PetSOS Partner"
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error updating partner status", description: error.message, variant: "destructive" });
+    },
+  });
+
   if (hospitalsLoading || regionsLoading) {
     return (
       <div className="container mx-auto p-6 max-w-7xl">
@@ -1293,7 +1312,7 @@ export default function AdminHospitalsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Hospitals</CardTitle>
@@ -1311,6 +1330,16 @@ export default function AdminHospitalsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.open247}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Partners</CardTitle>
+            <Star className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.partners}</div>
           </CardContent>
         </Card>
 
@@ -1404,12 +1433,18 @@ export default function AdminHospitalsPage() {
                       />
                     )}
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <h3 className="text-lg font-semibold">{hospital.nameEn}</h3>
                         <Badge variant="outline">{region?.code || "N/A"}</Badge>
                         {hospital.open247 && (
                           <Badge variant="default" className="bg-green-600">
                             24hrs
+                          </Badge>
+                        )}
+                        {hospital.isPartner && (
+                          <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                            <Star className="h-3 w-3 mr-1" />
+                            Partner
                           </Badge>
                         )}
                         {hospital.lastVerifiedAt && (
@@ -1442,6 +1477,24 @@ export default function AdminHospitalsPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
+                      <Button
+                        variant={hospital.isPartner ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => togglePartnerMutation.mutate({ 
+                          hospitalId: hospital.id, 
+                          isPartner: !hospital.isPartner 
+                        })}
+                        data-testid={`button-toggle-partner-${hospital.id}`}
+                        title={hospital.isPartner ? "Remove as Partner" : "Make Partner"}
+                        disabled={togglePartnerMutation.isPending}
+                        className={hospital.isPartner ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700" : ""}
+                      >
+                        {togglePartnerMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Star className={`h-4 w-4 ${hospital.isPartner ? "fill-current" : ""}`} />
+                        )}
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
