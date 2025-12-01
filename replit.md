@@ -29,7 +29,7 @@ Preferred communication style: Simple, everyday language.
 - **Messaging Architecture**: WhatsApp Business API as primary, email fallback, queue-based processing, template-based messaging.
 - **Analytics & Monitoring**: Google Analytics 4 (GA4), Sentry for error tracking and performance monitoring.
 - **SEO Optimization**: Comprehensive bilingual SEO with performance-first approach, Core Web Vitals monitoring, code splitting, image optimization, structured data (VeterinaryClinic, LocalBusiness, Breadcrumb schemas), hreflang tags for EN/zh-HK, local SEO, technical SEO, social integration.
-- **Push Notifications**: OneSignal-powered web push notifications for emergency alerts and platform updates. Admin broadcast composer with language targeting, audit logging, and notification history. Client-side permission banner with graceful fallback.
+- **Push Notifications**: Firebase Cloud Messaging (FCM) powered web push notifications for emergency alerts and platform updates. Admin broadcast composer with language targeting, audit logging, and notification history. Client-side permission banner with graceful fallback.
 - **Multi-Environment Configuration**: Centralized configuration for development, staging, and production environments using `.env` files.
 - **Deployment**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment, Infrastructure as Code.
 
@@ -92,5 +92,16 @@ Preferred communication style: Simple, everyday language.
 - **@sentry/react**: Frontend error tracking with React integration and session replay.
 
 ## Push Notifications
-- **OneSignal**: Web push notification service for PWA notifications.
-- **Service Worker**: OneSignal-based service worker for background notification delivery.
+- **Firebase Cloud Messaging (FCM)**: Web push notification service for PWA notifications.
+  - Backend: `firebase-admin` SDK with service account credentials
+  - Frontend: Firebase Web SDK (`firebase/messaging`)
+  - Service Worker: Firebase-based service worker for background notification delivery
+  - Required Environment Variables:
+    - `FIREBASE_SERVICE_ACCOUNT_JSON` (backend, secret): Full Firebase service account JSON
+    - `VITE_FIREBASE_API_KEY` (frontend): Firebase web API key
+    - `VITE_FIREBASE_AUTH_DOMAIN` (frontend): Firebase auth domain
+    - `VITE_FIREBASE_PROJECT_ID` (frontend): Firebase project ID
+    - `VITE_FIREBASE_STORAGE_BUCKET` (frontend): Firebase storage bucket
+    - `VITE_FIREBASE_MESSAGING_SENDER_ID` (frontend): Firebase messaging sender ID
+    - `VITE_FIREBASE_APP_ID` (frontend): Firebase app ID
+    - `VITE_FIREBASE_VAPID_KEY` (frontend): Firebase VAPID key for web push
