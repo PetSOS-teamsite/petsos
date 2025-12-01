@@ -394,6 +394,28 @@ export class MemStorage implements IStorage {
   }
 
   async upsertUser(userData: InsertUser): Promise<User> {
+    // Check if user exists by openidSub or email
+    let existingUser: User | undefined;
+    
+    if (userData.openidSub) {
+      existingUser = Array.from(this.users.values()).find(u => u.openidSub === userData.openidSub);
+    } else if (userData.email) {
+      existingUser = Array.from(this.users.values()).find(u => u.email === userData.email);
+    }
+    
+    if (existingUser) {
+      // Update existing user
+      const updated: User = {
+        ...existingUser,
+        ...userData,
+        id: existingUser.id,
+        updatedAt: new Date(),
+      };
+      this.users.set(existingUser.id, updated);
+      return updated;
+    }
+    
+    // Create new user
     const id = randomUUID();
     const user: User = {
       id,
@@ -1538,17 +1560,41 @@ class DatabaseStorage implements IStorage {
   }
 
   async upsertUser(userData: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
+    // Handle upsert based on openidSub (for OIDC users) or email
+    if (userData.openidSub) {
+      // Try to find existing user by openidSub
+      const existing = await db.select().from(users).where(eq(users.openidSub, userData.openidSub));
+      if (existing.length > 0) {
+        // Update existing user
+        const [user] = await db
+          .update(users)
+          .set({
+            ...userData,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.openidSub, userData.openidSub))
+          .returning();
+        return user;
+      }
+    } else if (userData.email) {
+      // Try to find existing user by email
+      const existing = await db.select().from(users).where(eq(users.email, userData.email));
+      if (existing.length > 0) {
+        // Update existing user
+        const [user] = await db
+          .update(users)
+          .set({
+            ...userData,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.email, userData.email))
+          .returning();
+        return user;
+      }
+    }
+    
+    // Create new user
+    const [user] = await db.insert(users).values(userData).returning();
     return user;
   }
 

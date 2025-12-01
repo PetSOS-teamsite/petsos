@@ -16,7 +16,7 @@ export function setupTestUtils(app: Express) {
 
       // Create or update user
       await storage.upsertUser({
-        id: sub,
+        openidSub: sub,
         email: email || `test-${sub}@test.com`,
         name: name || 'Test User',
         profileImageUrl: null,

@@ -71,7 +71,7 @@ async function upsertUser(
   const name = claims["name"] || (firstName && lastName ? `${firstName} ${lastName}`.trim() : firstName || lastName || null);
   
   await storage.upsertUser({
-    id: claims["sub"],
+    openidSub: claims["sub"],
     email: claims["email"],
     name: name,
     profileImageUrl: claims["profile_image_url"],

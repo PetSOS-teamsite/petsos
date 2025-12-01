@@ -3,13 +3,13 @@ import { analytics } from './analytics';
 
 function sendToAnalytics(metric: Metric) {
   // Send to Google Analytics if available
-  if (analytics && typeof analytics.trackEvent === 'function') {
-    analytics.trackEvent({
-      category: 'Web Vitals',
-      action: metric.name,
-      value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),
-      label: metric.id,
-      nonInteraction: true,
+  if (analytics && typeof analytics.event === 'function') {
+    analytics.event('web_vitals', {
+      event_category: 'Web Vitals',
+      metric_name: metric.name,
+      metric_value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),
+      metric_id: metric.id,
+      non_interaction: true,
     });
   }
 
