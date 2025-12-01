@@ -70,7 +70,16 @@ Preferred communication style: Simple, everyday language.
 - **Wouter**: Client-side routing.
 
 ## Messaging Services
-- **WhatsApp Business API**: Primary notification channel.
+- **WhatsApp Business API**: Primary notification channel with real-time status tracking.
+  - Status tracking via webhooks: sent → delivered → read
+  - Admin dashboard at `/admin/messages` for monitoring message delivery
+  - Retry functionality for failed messages
+  - Webhook endpoint: `/api/webhooks/whatsapp` (both GET for verification and POST for events)
+  - Required Environment Variables:
+    - `WHATSAPP_ACCESS_TOKEN`: Meta Business API access token
+    - `WHATSAPP_PHONE_NUMBER_ID`: WhatsApp Business phone number ID
+    - `WHATSAPP_WEBHOOK_VERIFY_TOKEN`: Webhook verification token (default: 'petsos_webhook_verify')
+  - WhatsApp Coexistence: Allows simultaneous API automation and manual WhatsApp Business App usage
 - **SendGrid**: Email fallback.
 
 ## Geospatial

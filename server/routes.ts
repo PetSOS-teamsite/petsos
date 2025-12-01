@@ -1981,7 +1981,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const emergencyRequest = msg.emergencyRequestId ? await storage.getEmergencyRequest(msg.emergencyRequestId) : null;
           return {
             ...msg,
-            hospitalName: hospital?.name || 'Unknown Hospital',
+            hospitalName: hospital?.nameEn || hospital?.nameZh || 'Unknown Hospital',
             emergencyRequestStatus: emergencyRequest?.status || 'unknown',
             petInfo: emergencyRequest?.pet ? {
               name: emergencyRequest.pet.name,
@@ -2086,8 +2086,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Emergency request not found' });
       }
       
-      // Broadcast to this specific hospital
-      const result = await messagingService.broadcastEmergency(emergencyRequestId, [hospital]);
+      const hospitalName = hospital.nameEn || hospital.nameZh || 'Unknown Hospital';
+      
+      // Build a resend message
+      const resendMessage = `[RESEND] Emergency alert for ${emergencyRequest.petSpecies || 'pet'} - ${emergencyRequest.symptom || 'Emergency'}`;
+      
+      // Broadcast to this specific hospital using the broadcastEmergency with correct parameters
+      const result = await messagingService.broadcastEmergency(emergencyRequestId, [hospitalId], resendMessage);
       
       // Log the resend action
       await storage.createAuditLog({
@@ -2095,14 +2100,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityId: emergencyRequestId,
         action: 'resend',
         userId: (req.user as any).id,
-        changes: { hospitalId, hospitalName: hospital.name },
+        changes: { hospitalId, hospitalName },
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
       });
       
       res.json({ 
         success: true, 
-        message: `Message resent to ${hospital.name}`,
+        message: `Message resent to ${hospitalName}`,
         result 
       });
     } catch (error) {
