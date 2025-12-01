@@ -4,6 +4,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initSentry, setupSentryMiddleware, setupSentryErrorHandler, captureException } from "./sentry";
 import { config } from "./config";
+import { ensureTranslationsExist } from "./seed-translations";
 import fs from "fs";
 import path from "path";
 // Schema refresh trigger: 2025-11-29
@@ -108,6 +109,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Ensure translations exist in the database (auto-seed if empty)
+  await ensureTranslationsExist();
+  
   const server = await registerRoutes(app);
 
   // Setup Sentry error handler AFTER routes but BEFORE other error handlers

@@ -1,6 +1,6 @@
 import { storage } from "./storage";
 
-const translations = [
+export const translationData = [
   // App Title
   { key: "app.title", en: "PetSOS", zh: "PetSOS" },
   { key: "app.disclaimer", en: "⚠️ Disclaimer: PetSOS is a non-profit information tool designed to help pet owners quickly connect with 24-hour animal hospitals in emergencies. The platform does not provide medical advice or guarantee the quality of any clinic's services. Please contact your chosen clinic directly for professional assistance.", zh: "⚠️ 重要提示：PetSOS 為非牟利資訊平台，旨在協助寵物主人於緊急情況下快速連繫 24 小時動物醫院。本平台不提供醫療建議，亦不保證診所服務質素。使用者應自行判斷及聯絡診所以獲取專業協助。" },
@@ -281,47 +281,40 @@ const translations = [
   { key: "pets.success.add", en: "Pet added successfully!", zh: "寵物已新增！" },
   { key: "pets.success.add_desc", en: "Your pet has been added to your profile.", zh: "寵物已加入您的個人資料。" },
   { key: "pets.success.update", en: "Pet updated successfully!", zh: "寵物資料已更新！" },
-  { key: "pets.success.update_desc", en: "Your pet's information has been updated.", zh: "寵物資料已更新。" },
-  { key: "pets.success.delete", en: "Pet removed", zh: "已移除寵物" },
-  { key: "pets.success.delete_desc", en: "Your pet has been removed from your profile.", zh: "寵物已從個人資料中移除。" },
-  { key: "pets.error.add", en: "Failed to add pet", zh: "無法新增寵物" },
-  { key: "pets.error.update", en: "Failed to update pet", zh: "無法更新寵物資料" },
-  { key: "pets.error.delete", en: "Failed to delete pet", zh: "無法刪除寵物" },
-  { key: "pets.validation.name_required", en: "Pet name is required", zh: "請輸入寵物名稱" },
-  { key: "pets.validation.species_required", en: "Species is required", zh: "請選擇種類" },
-  { key: "pets.last_visit_clinic", en: "Last Visit Clinic (Optional)", zh: "最近就診的診所（選填）" },
-  { key: "pets.last_visit_clinic_placeholder", en: "Search clinic...", zh: "搜尋診所..." },
-  { key: "pets.last_visit_date", en: "Last Visit Date (Optional)", zh: "最近就診日期（選填）" },
-  { key: "pets.select_species", en: "Select species", zh: "選擇種類" },
-  { key: "pets.select_breed", en: "Select breed or type custom", zh: "選擇品種或自行輸入" },
-  { key: "pets.custom_breed", en: "Custom breed...", zh: "自訂品種..." },
-  { key: "pets.no_clinic_selected", en: "No clinic selected", zh: "未選擇診所" },
+  { key: "pets.success.update_desc", en: "Your pet's information has been saved.", zh: "寵物資料已儲存。" },
+  { key: "pets.success.delete", en: "Pet removed", zh: "寵物已移除" },
+  { key: "pets.success.delete_desc", en: "Your pet has been removed from your profile.", zh: "寵物已從您的個人資料中移除。" },
+  { key: "pets.error.load", en: "Failed to load pets", zh: "無法載入寵物資料" },
+  { key: "pets.error.add", en: "Failed to add pet", zh: "新增寵物失敗" },
+  { key: "pets.error.update", en: "Failed to update pet", zh: "更新寵物資料失敗" },
+  { key: "pets.error.delete", en: "Failed to remove pet", zh: "移除寵物失敗" },
+  { key: "pets.microchip", en: "Microchip", zh: "晶片" },
+  { key: "pets.gender", en: "Gender", zh: "性別" },
+  { key: "pets.gender.male", en: "Male", zh: "公" },
+  { key: "pets.gender.female", en: "Female", zh: "母" },
+  { key: "pets.neutered", en: "Neutered/Spayed", zh: "已絕育" },
+  { key: "pets.color", en: "Coat Color", zh: "毛色" },
   
-  // Emergency Symptoms (used in SYMPTOMS array)
-  { key: "symptoms.select", en: "Select symptoms (tap all that apply)", zh: "請選擇症狀（可選擇多項）" },
-  { key: "symptoms.breathing", en: "Difficulty breathing / Respiratory distress", zh: "呼吸困難 / 呼吸窘迫" },
-  { key: "symptoms.vomiting", en: "Vomiting / Nausea", zh: "嘔吐 / 作嘔" },
-  { key: "symptoms.seizure", en: "Seizure / Convulsions", zh: "癲癇發作 / 抽搐" },
-  { key: "symptoms.unable_stand", en: "Unable to stand or walk", zh: "無法站立或行走" },
-  { key: "symptoms.bleeding", en: "Bleeding / Hemorrhage", zh: "出血 / 流血不止" },
-  { key: "symptoms.trauma", en: "Trauma / Hit by vehicle", zh: "外傷 / 車禍撞擊" },
-  { key: "symptoms.poisoning", en: "Suspected poisoning / Toxin ingestion", zh: "疑似中毒 / 誤食毒物" },
-  { key: "symptoms.not_eating", en: "Refusing food/water", zh: "拒絕進食/飲水" },
-  { key: "symptoms.choking", en: "Choking / Airway obstruction", zh: "哽塞 / 氣道阻塞" },
-  { key: "symptoms.pain", en: "Severe pain / Distress", zh: "劇烈疼痛 / 不安" },
-  { key: "symptoms.unconscious", en: "Unconscious / Unresponsive", zh: "昏迷 / 無反應" },
-  { key: "symptoms.swollen", en: "Abdominal swelling / Bloating", zh: "腹部腫脹 / 腹脹" },
-  { key: "symptoms.diarrhea", en: "Severe diarrhea", zh: "嚴重腹瀉" },
-  { key: "symptoms.eye_injury", en: "Eye injury / Vision problem", zh: "眼部受傷 / 視力問題" },
-  { key: "symptoms.broken_bone", en: "Fracture / Severe limping", zh: "骨折 / 嚴重跛行" },
-  { key: "symptoms.other", en: "Other symptoms", zh: "其他症狀" },
-  { key: "symptoms.describe", en: "Describe other symptoms (optional)", zh: "描述其他症狀（選填）" },
-  { key: "symptoms.none_selected", en: "Please select at least one symptom", zh: "請至少選擇一個症狀" },
+  // Medical Records
+  { key: "medical_records.title", en: "Medical Records", zh: "病歷紀錄" },
+  { key: "medical_records.desc", en: "Manage your pet's medical documents securely", zh: "安全管理毛孩的病歷文件" },
+  { key: "medical_records.upload", en: "Upload Record", zh: "上載紀錄" },
+  { key: "medical_records.view", en: "View Record", zh: "查看紀錄" },
+  { key: "medical_records.delete", en: "Delete Record", zh: "刪除紀錄" },
+  { key: "medical_records.no_records", en: "No medical records uploaded yet", zh: "尚未上載病歷紀錄" },
+  { key: "medical_records.types.blood_test", en: "Blood Test", zh: "驗血報告" },
+  { key: "medical_records.types.xray", en: "X-Ray", zh: "X光片" },
+  { key: "medical_records.types.vaccination", en: "Vaccination", zh: "疫苗紀錄" },
+  { key: "medical_records.types.surgery", en: "Surgery Report", zh: "手術報告" },
+  { key: "medical_records.types.prescription", en: "Prescription", zh: "處方" },
+  { key: "medical_records.types.other", en: "Other", zh: "其他" },
+  { key: "medical_records.sharing_consent", en: "Share in emergencies", zh: "緊急時分享" },
+  { key: "medical_records.sharing_consent_desc", en: "Allow hospitals to view this record during emergencies", zh: "允許醫院在緊急情況下查看此紀錄" },
   
-  // Common
-  { key: "common.cancel", en: "Cancel", zh: "取消" },
-  { key: "common.home", en: "Home", zh: "主頁" },
-  { key: "common.email", en: "Email", zh: "電郵" },
+  // Common UI Elements
+  { key: "common.loading", en: "Loading...", zh: "載入中..." },
+  { key: "common.error", en: "An error occurred", zh: "發生錯誤" },
+  { key: "common.retry", en: "Retry", zh: "重試" },
   { key: "common.years", en: "years", zh: "歲" },
   { key: "common.sending", en: "Sending...", zh: "發送中..." },
   { key: "button.back", en: "Back", zh: "返回" },
@@ -429,61 +422,113 @@ const translations = [
   { key: "footer.terms", en: "Terms of Service", zh: "服務條款" },
   { key: "footer.contact", en: "Contact", zh: "聯絡我們" },
   { key: "footer.rights", en: "© 2025 PetSOS. All rights reserved.", zh: "© 2025 PetSOS. 版權所有。" },
+  
+  // Hospitals/Clinics 24-hour
+  { key: "hospitals.title", en: "24-Hour Animal Hospitals", zh: "24小時動物醫院" },
+  { key: "hospitals.subtitle", en: "Find emergency veterinary care near you", zh: "尋找附近的緊急獸醫服務" },
+  
+  // FAQ
+  { key: "faq.title", en: "Frequently Asked Questions", zh: "常見問題" },
+  { key: "faq.subtitle", en: "Get help with PetSOS", zh: "PetSOS使用指南" },
+  
+  // Navigation
+  { key: "nav.home", en: "Home", zh: "主頁" },
+  { key: "nav.hospitals", en: "Hospitals", zh: "醫院" },
+  { key: "nav.emergency", en: "Emergency", zh: "緊急求助" },
+  { key: "nav.profile", en: "Profile", zh: "個人資料" },
+  { key: "nav.login", en: "Login", zh: "登入" },
+  { key: "nav.logout", en: "Logout", zh: "登出" },
+  
+  // Auth
+  { key: "auth.login", en: "Log In", zh: "登入" },
+  { key: "auth.signup", en: "Sign Up", zh: "註冊" },
+  { key: "auth.logout", en: "Log Out", zh: "登出" },
+  { key: "auth.google", en: "Continue with Google", zh: "使用Google登入" },
+  { key: "auth.email", en: "Email", zh: "電郵" },
+  { key: "auth.password", en: "Password", zh: "密碼" },
+  { key: "auth.name", en: "Name", zh: "姓名" },
+  { key: "auth.phone", en: "Phone", zh: "電話" },
+  { key: "auth.or", en: "or", zh: "或" },
+  { key: "auth.no_account", en: "Don't have an account?", zh: "還沒有帳戶？" },
+  { key: "auth.has_account", en: "Already have an account?", zh: "已有帳戶？" },
 ];
 
-async function seedTranslations() {
+export async function seedTranslations(): Promise<{ created: number; updated: number }> {
   console.log("🌱 Seeding translations...");
   
   let created = 0;
   let updated = 0;
   
-  for (const translation of translations) {
-    // Seed English translation
-    const existingEn = await storage.getTranslation(translation.key, 'en');
-    if (existingEn) {
-      await storage.updateTranslation(existingEn.id, {
-        key: translation.key,
-        language: 'en',
-        value: translation.en,
-      });
-      updated++;
-    } else {
-      await storage.createTranslation({
-        key: translation.key,
-        language: 'en',
-        value: translation.en,
-      });
-      created++;
-    }
-    
-    // Seed Chinese translation
-    const existingZh = await storage.getTranslation(translation.key, 'zh-HK');
-    if (existingZh) {
-      await storage.updateTranslation(existingZh.id, {
-        key: translation.key,
-        language: 'zh-HK',
-        value: translation.zh,
-      });
-      updated++;
-    } else {
-      await storage.createTranslation({
-        key: translation.key,
-        language: 'zh-HK',
-        value: translation.zh,
-      });
-      created++;
+  for (const translation of translationData) {
+    try {
+      // Seed English translation
+      const existingEn = await storage.getTranslation(translation.key, 'en');
+      if (existingEn) {
+        await storage.updateTranslation(existingEn.id, {
+          key: translation.key,
+          language: 'en',
+          value: translation.en,
+        });
+        updated++;
+      } else {
+        await storage.createTranslation({
+          key: translation.key,
+          language: 'en',
+          value: translation.en,
+        });
+        created++;
+      }
+      
+      // Seed Chinese translation
+      const existingZh = await storage.getTranslation(translation.key, 'zh-HK');
+      if (existingZh) {
+        await storage.updateTranslation(existingZh.id, {
+          key: translation.key,
+          language: 'zh-HK',
+          value: translation.zh,
+        });
+        updated++;
+      } else {
+        await storage.createTranslation({
+          key: translation.key,
+          language: 'zh-HK',
+          value: translation.zh,
+        });
+        created++;
+      }
+    } catch (error) {
+      console.error(`Error seeding translation for key "${translation.key}":`, error);
     }
   }
   
   console.log(`✅ Translation seeding complete!`);
   console.log(`   - Created: ${created} translations`);
   console.log(`   - Updated: ${updated} translations`);
-  console.log(`   - Total keys: ${translations.length}`);
+  console.log(`   - Total keys: ${translationData.length}`);
   
-  process.exit(0);
+  return { created, updated };
 }
 
-seedTranslations().catch(error => {
-  console.error("❌ Error seeding translations:", error);
-  process.exit(1);
-});
+export async function ensureTranslationsExist(): Promise<void> {
+  try {
+    const existingTranslations = await storage.getTranslationsByLanguage('zh-HK');
+    if (existingTranslations.length === 0) {
+      console.log("📝 No translations found, seeding...");
+      await seedTranslations();
+    } else {
+      console.log(`✅ Found ${existingTranslations.length} translations`);
+    }
+  } catch (error) {
+    console.error("Error checking translations:", error);
+  }
+}
+
+// Only run if executed directly (not imported)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seedTranslations()
+    .then(() => process.exit(0))
+    .catch((error) => {
+      console.error("❌ Error seeding translations:", error);
+      process.exit(1);
+    });
+}
