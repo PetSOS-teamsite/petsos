@@ -22,6 +22,7 @@ const BUILD_VERSION = "2025-11-27-18-35-full-schema-sync";
 const EmergencyPage = lazy(() => import("@/pages/emergency"));
 const ClinicResultsPage = lazy(() => import("@/pages/clinic-results"));
 const MessageStatusPage = lazy(() => import("@/pages/message-status"));
+const EmergencyProfilePage = lazy(() => import("@/pages/emergency-profile"));
 const ProfilePage = lazy(() => import("@/pages/profile"));
 const PetsPage = lazy(() => import("@/pages/pets"));
 const ClinicsPage = lazy(() => import("@/pages/clinics"));
@@ -85,6 +86,7 @@ function PublicRouter() {
       <Route path="/emergency" component={EmergencyPage} />
       <Route path="/emergency-results/:requestId" component={ClinicResultsPage} />
       <Route path="/emergency-results/:requestId/messages" component={MessageStatusPage} />
+      <Route path="/emergency-profile/:requestId" component={EmergencyProfilePage} />
       <Route path="/privacy" component={PrivacyPolicyPage} />
       <Route path="/terms" component={TermsOfServicePage} />
       

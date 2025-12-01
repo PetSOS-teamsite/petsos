@@ -517,13 +517,18 @@ export class MessagingService {
         emergencyRequest.contactPhone || (isZhHk ? '不詳' : 'Unknown'), // {{11}} Owner phone
       ];
       
+      // Build profile link
+      const baseUrl = process.env.BASE_URL || (process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'https://petsos.hk');
+      const profileLink = `${baseUrl}/emergency-profile/${emergencyRequestId}`;
+      
       fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
         `${isZhHk ? '已登記寵物（有醫療記錄）' : 'REGISTERED PET WITH MEDICAL HISTORY'}\n` +
         `${isZhHk ? '名稱' : 'Name'}: ${variables[1]}\n` +
         `${isZhHk ? '物種' : 'Species'}: ${variables[2]}\n` +
         `${isZhHk ? '緊急症狀' : 'Emergency'}: ${variables[6]}\n` +
         `${isZhHk ? '聯絡' : 'Contact'}: ${variables[9]} (${variables[10]})` +
-        medicalRecordsSummary;
+        medicalRecordsSummary +
+        `\n\n🔗 ${isZhHk ? '詳細資料' : 'Full Profile'}: ${profileLink}`;
       
     } else if (pet) {
       // New registered pet (no visit history)
@@ -543,12 +548,17 @@ export class MessagingService {
         emergencyRequest.contactPhone || (isZhHk ? '不詳' : 'Unknown'), // {{10}} Owner phone
       ];
       
+      // Build profile link
+      const baseUrl = process.env.BASE_URL || (process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'https://petsos.hk');
+      const profileLink = `${baseUrl}/emergency-profile/${emergencyRequestId}`;
+      
       fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
         `${isZhHk ? '名稱' : 'Name'}: ${variables[0]}\n` +
         `${isZhHk ? '物種' : 'Species'}: ${variables[1]}\n` +
         `${isZhHk ? '緊急症狀' : 'Emergency'}: ${variables[5]}\n` +
         `${isZhHk ? '聯絡' : 'Contact'}: ${variables[8]} (${variables[9]})` +
-        medicalRecordsSummary;
+        medicalRecordsSummary +
+        `\n\n🔗 ${isZhHk ? '詳細資料' : 'Full Profile'}: ${profileLink}`;
       
     } else {
       // Anonymous user (basic template)
@@ -565,10 +575,15 @@ export class MessagingService {
         emergencyRequest.contactPhone || (isZhHk ? '不詳' : 'Unknown'), // {{7}} Owner phone
       ];
       
+      // Build profile link
+      const baseUrl = process.env.BASE_URL || (process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'https://petsos.hk');
+      const profileLink = `${baseUrl}/emergency-profile/${emergencyRequestId}`;
+      
       fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
         `${isZhHk ? '物種' : 'Species'}: ${variables[0]}\n` +
         `${isZhHk ? '緊急症狀' : 'Emergency'}: ${variables[3]}\n` +
-        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[5]} (${variables[6]})`;
+        `${isZhHk ? '聯絡' : 'Contact'}: ${variables[5]} (${variables[6]})` +
+        `\n\n🔗 ${isZhHk ? '詳細資料' : 'Full Profile'}: ${profileLink}`;
     }
 
     console.log('[Template Builder] Selected template:', templateName);

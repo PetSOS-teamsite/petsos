@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, MapPin, Phone, ChevronRight, ChevronLeft, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -76,12 +77,14 @@ export default function EmergencyPage() {
     locationLatitude: z.number().optional(),
     locationLongitude: z.number().optional(),
     manualLocation: z.string().optional(),
+    regionId: z.string().optional(),
   }).refine(
     (data) => 
       (data.locationLatitude !== undefined && data.locationLongitude !== undefined) || 
-      (data.manualLocation && data.manualLocation.length > 0),
+      (data.manualLocation && data.manualLocation.length > 0) ||
+      (data.regionId && data.regionId.length > 0),
     {
-      message: t("validation.location_required", "Please provide a location (GPS or manual entry)"),
+      message: t("validation.location_required", "Please provide a location (GPS, manual entry, or select a district)"),
       path: ["manualLocation"],
     }
   );
@@ -96,6 +99,7 @@ export default function EmergencyPage() {
     locationLatitude: z.number().optional(),
     locationLongitude: z.number().optional(),
     manualLocation: z.string().optional(),
+    regionId: z.string().optional(),
     contactName: z.string().min(2, t("validation.name_required", "Contact name is required")),
     contactPhone: z.string().min(6, t("validation.phone_required", "Please enter a valid phone number")),
     petId: z.string().optional(),
@@ -130,6 +134,7 @@ export default function EmergencyPage() {
     defaultValues: {
       symptom: "",
       manualLocation: "",
+      regionId: undefined,
       contactName: "",
       contactPhone: "",
       userId: userId, // Will be undefined for anonymous users
@@ -181,6 +186,12 @@ export default function EmergencyPage() {
       }
     }
   }, [step, gpsDetected, gpsRetryCount, form, t]); // Added gpsRetryCount and t to dependencies
+
+  // Fetch regions for location selection
+  const { data: regions = [] } = useQuery<any[]>({
+    queryKey: ["/api/regions"],
+    enabled: step === 2,
+  });
 
   // Fetch countries for parsing phone numbers
   const { data: countries = [] } = useQuery<any[]>({
@@ -776,13 +787,53 @@ export default function EmergencyPage() {
                       </div>
                     </div>
 
+                    {/* Region/District Selector */}
+                    <FormField
+                      control={form.control}
+                      name="regionId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-lg font-semibold">
+                            {t("emergency.step2.select_district", "Select District")}
+                          </FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <FormControl>
+                              <SelectTrigger className="text-lg" data-testid="select-region">
+                                <SelectValue placeholder={t("emergency.step2.district_placeholder", "Choose your district...")} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {regions.map((region: any) => (
+                                <SelectItem 
+                                  key={region.id} 
+                                  value={region.id}
+                                  data-testid={`region-option-${region.id}`}
+                                >
+                                  {language === 'zh-HK' ? region.nameZh : region.nameEn}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="relative flex items-center my-4">
+                      <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                      <span className="flex-shrink mx-4 text-gray-500 dark:text-gray-400 text-sm">
+                        {t("common.or", "OR")}
+                      </span>
+                      <div className="flex-grow border-t border-gray-300 dark:border-gray-600"></div>
+                    </div>
+
                     <FormField
                       control={form.control}
                       name="manualLocation"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-lg">
-                            {t("emergency.step2.manual_label", "Or enter your location manually")}
+                            {t("emergency.step2.manual_label", "Enter specific location")}
                           </FormLabel>
                           <FormControl>
                             <Input

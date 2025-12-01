@@ -1519,6 +1519,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(request);
   });
 
+  // Get emergency request profile (public shareable page for hospitals)
+  app.get("/api/emergency-requests/:id/profile", async (req, res) => {
+    try {
+      const request = await storage.getEmergencyRequest(req.params.id);
+      if (!request) {
+        return res.status(404).json({ message: "Emergency request not found" });
+      }
+
+      // Build the profile response with pet and medical records
+      const profileData: any = {
+        id: request.id,
+        symptom: request.symptom,
+        manualLocation: request.manualLocation,
+        contactName: request.contactName,
+        contactPhone: request.contactPhone,
+        petSpecies: request.petSpecies,
+        petBreed: request.petBreed,
+        petAge: request.petAge,
+        status: request.status,
+        createdAt: request.createdAt,
+        medicalSharingEnabled: false,
+      };
+
+      // If there's a pet associated, fetch pet details
+      if (request.petId) {
+        const pet = await storage.getPet(request.petId);
+        if (pet) {
+          profileData.pet = {
+            id: pet.id,
+            name: pet.name,
+            species: pet.species,
+            breed: pet.breed,
+            age: pet.age,
+            weight: pet.weight,
+            medicalNotes: pet.medicalNotes,
+            allergies: pet.allergies,
+            medications: pet.medications,
+            microchipId: pet.microchipId,
+          };
+
+          // Check if user has consented to emergency sharing
+          const consents = await storage.getMedicalSharingConsentsByPetId(request.petId);
+          const emergencyConsent = consents.find(c => c.consentType === 'emergency_broadcast' && c.enabled);
+          
+          if (emergencyConsent) {
+            profileData.medicalSharingEnabled = true;
+            // Fetch medical records
+            const records = await storage.getMedicalRecordsByPetId(request.petId);
+            if (records && records.length > 0) {
+              profileData.medicalRecords = records.map(r => ({
+                id: r.id,
+                title: r.title,
+                documentType: r.documentType,
+                description: r.description,
+                fileUrl: r.fileUrl,
+                createdAt: r.createdAt,
+              }));
+            }
+          }
+        }
+      }
+
+      res.json(profileData);
+    } catch (error) {
+      console.error("Error fetching emergency profile:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get emergency requests for user
   app.get("/api/users/:userId/emergency-requests", isAuthenticated, async (req: any, res) => {
     try {
