@@ -9,12 +9,41 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() => {
-    const stored = localStorage.getItem('language');
-    return (stored === 'en' || stored === 'zh-HK') ? stored : 'en';
-  });
+function getInitialLanguage(): Language {
+  // Check URL parameter first
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlLang = urlParams.get('lang');
+  if (urlLang === 'en' || urlLang === 'zh-HK') {
+    return urlLang;
+  }
+  
+  // Then check localStorage
+  const stored = localStorage.getItem('language');
+  if (stored === 'en' || stored === 'zh-HK') {
+    return stored;
+  }
+  
+  return 'en';
+}
 
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguageState] = useState<Language>(getInitialLanguage);
+
+  // Update language when URL changes
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLang = urlParams.get('lang');
+      if (urlLang === 'en' || urlLang === 'zh-HK') {
+        setLanguageState(urlLang);
+      }
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Persist to localStorage
   useEffect(() => {
     localStorage.setItem('language', language);
   }, [language]);

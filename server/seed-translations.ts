@@ -438,20 +438,38 @@ async function seedTranslations() {
   let updated = 0;
   
   for (const translation of translations) {
-    // Check if translation already exists
-    const existing = await storage.getTranslation(translation.key, 'en');
-    if (existing) {
-      await storage.updateTranslation(existing.id, {
+    // Seed English translation
+    const existingEn = await storage.getTranslation(translation.key, 'en');
+    if (existingEn) {
+      await storage.updateTranslation(existingEn.id, {
         key: translation.key,
-        en: translation.en,
-        zhHk: translation.zh,
+        language: 'en',
+        value: translation.en,
       });
       updated++;
     } else {
       await storage.createTranslation({
         key: translation.key,
-        en: translation.en,
-        zhHk: translation.zh,
+        language: 'en',
+        value: translation.en,
+      });
+      created++;
+    }
+    
+    // Seed Chinese translation
+    const existingZh = await storage.getTranslation(translation.key, 'zh-HK');
+    if (existingZh) {
+      await storage.updateTranslation(existingZh.id, {
+        key: translation.key,
+        language: 'zh-HK',
+        value: translation.zh,
+      });
+      updated++;
+    } else {
+      await storage.createTranslation({
+        key: translation.key,
+        language: 'zh-HK',
+        value: translation.zh,
       });
       created++;
     }

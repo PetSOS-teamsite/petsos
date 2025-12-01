@@ -373,14 +373,16 @@ export type PrivacyConsent = typeof privacyConsents.$inferSelect;
 // Translations table
 export const translations = pgTable("translations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  key: text("key").notNull().unique(), // e.g., "common.emergency_alert"
-  value: text("value"),
-  en: text("en").notNull(),
-  zhHk: text("zh_hk").notNull(),
+  key: text("key").notNull(), // e.g., "common.emergency_alert"
+  language: text("language").notNull(), // e.g., "en", "zh-HK"
+  value: text("value").notNull(),
+  namespace: text("namespace").notNull().default('common'),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const insertTranslationSchema = createInsertSchema(translations).omit({
   id: true,
+  updatedAt: true,
 });
 
 export type InsertTranslation = z.infer<typeof insertTranslationSchema>;

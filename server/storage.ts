@@ -939,13 +939,13 @@ export class MemStorage implements IStorage {
   // Translations
   async getTranslationsByLanguage(language: string): Promise<Translation[]> {
     return Array.from(this.translations.values()).filter(
-      t => (language === 'en' && !!t.en) || (language === 'zh-HK' && !!t.zhHk)
+      t => t.language === language
     );
   }
 
   async getTranslation(key: string, language: string): Promise<Translation | undefined> {
     return Array.from(this.translations.values()).find(
-      t => t.key === key
+      t => t.key === key && t.language === language
     );
   }
 
@@ -954,7 +954,8 @@ export class MemStorage implements IStorage {
     const translation: Translation = { 
       ...insertTranslation, 
       id, 
-      value: insertTranslation.value ?? null
+      namespace: insertTranslation.namespace ?? 'common',
+      updatedAt: new Date()
     };
     this.translations.set(id, translation);
     return translation;
@@ -963,7 +964,7 @@ export class MemStorage implements IStorage {
   async updateTranslation(id: string, updateData: Partial<InsertTranslation>): Promise<Translation | undefined> {
     const translation = this.translations.get(id);
     if (!translation) return undefined;
-    const updated = { ...translation, ...updateData };
+    const updated = { ...translation, ...updateData, updatedAt: new Date() };
     this.translations.set(id, updated);
     return updated;
   }
@@ -1812,23 +1813,25 @@ class DatabaseStorage implements IStorage {
   }
 
   async getTranslationsByLanguage(language: string): Promise<Translation[]> {
-    // Returns all translations - client can select en or zhHk field based on language
     try {
-      return await db.select().from(translations);
+      // Use raw SQL to ensure correct column mapping
+      const result = await db.execute(
+        sql`SELECT id, key, language, value, namespace, updated_at as "updatedAt" FROM translations WHERE language = ${language}`
+      );
+      return result.rows as Translation[];
     } catch (error) {
-      // Handle missing table or columns gracefully
-      console.warn('Translation table not ready or missing columns:', error instanceof Error ? error.message : error);
+      console.error('Translation table error:', error instanceof Error ? error.stack : error);
       return [];
     }
   }
 
   async getTranslation(key: string, language: string): Promise<Translation | undefined> {
-    // Get translation by key - client can select en or zhHk field based on language
     try {
-      const result = await db.select().from(translations).where(eq(translations.key, key));
+      const result = await db.select().from(translations).where(
+        and(eq(translations.key, key), eq(translations.language, language))
+      );
       return result[0];
     } catch (error) {
-      // Handle missing table or columns gracefully
       console.warn('Translation query failed:', error instanceof Error ? error.message : error);
       return undefined;
     }
