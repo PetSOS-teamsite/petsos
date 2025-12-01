@@ -485,11 +485,12 @@ export const insertPetMedicalSharingConsentSchema = createInsertSchema(petMedica
 export type InsertPetMedicalSharingConsent = z.infer<typeof insertPetMedicalSharingConsentSchema>;
 export type PetMedicalSharingConsent = typeof petMedicalSharingConsents.$inferSelect;
 
-// Push Notification Subscriptions table - stores OneSignal player IDs for push notifications
+// Push Notification Subscriptions table - stores FCM tokens for push notifications
 export const pushSubscriptions = pgTable("push_subscriptions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  playerId: text("player_id").notNull().unique(),
+  token: text("token").notNull().unique(), // FCM device token
+  provider: text("provider").notNull().default('fcm'), // fcm, onesignal (for migration)
   platform: text("platform").notNull(), // web, ios, android
   browserInfo: text("browser_info"),
   language: text("language").default('en'),
@@ -498,7 +499,7 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
   lastActiveAt: timestamp("last_active_at").notNull().defaultNow(),
 }, (table) => [
   index("idx_push_subscriptions_user").on(table.userId),
-  index("idx_push_subscriptions_player").on(table.playerId),
+  index("idx_push_subscriptions_token").on(table.token),
 ]);
 
 export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({
@@ -520,7 +521,7 @@ export const notificationBroadcasts = pgTable("notification_broadcasts", {
   targetAudience: text("target_audience").notNull().default('all'), // all, subscribed_users
   recipientCount: integer("recipient_count"),
   status: text("status").notNull().default('pending'), // pending, sent, failed
-  onesignalResponse: jsonb("onesignal_response"),
+  providerResponse: jsonb("provider_response"), // FCM or other provider response data
   createdAt: timestamp("created_at").notNull().defaultNow(),
   sentAt: timestamp("sent_at"),
 }, (table) => [
@@ -532,7 +533,7 @@ export const insertNotificationBroadcastSchema = createInsertSchema(notification
   createdAt: true,
   sentAt: true,
   recipientCount: true,
-  onesignalResponse: true,
+  providerResponse: true,
 });
 
 export type InsertNotificationBroadcast = z.infer<typeof insertNotificationBroadcastSchema>;

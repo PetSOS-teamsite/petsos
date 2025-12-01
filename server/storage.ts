@@ -152,10 +152,12 @@ export interface IStorage {
 
   // Push Subscriptions
   createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription>;
-  getPushSubscriptionByPlayerId(playerId: string): Promise<PushSubscription | undefined>;
+  getPushSubscriptionByToken(token: string): Promise<PushSubscription | undefined>;
   updatePushSubscription(id: string, data: Partial<InsertPushSubscription>): Promise<PushSubscription | undefined>;
-  deactivatePushSubscription(playerId: string): Promise<boolean>;
+  deactivatePushSubscription(token: string): Promise<boolean>;
+  deactivatePushSubscriptions(tokens: string[]): Promise<number>;
   getAllActivePushSubscriptions(language?: string): Promise<PushSubscription[]>;
+  getActiveTokens(language?: string): Promise<string[]>;
 
   // Notification Broadcasts
   createNotificationBroadcast(broadcast: InsertNotificationBroadcast): Promise<NotificationBroadcast>;
@@ -1291,7 +1293,7 @@ export class MemStorage implements IStorage {
     throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
   }
 
-  async getPushSubscriptionByPlayerId(playerId: string): Promise<PushSubscription | undefined> {
+  async getPushSubscriptionByToken(token: string): Promise<PushSubscription | undefined> {
     throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
   }
 
@@ -1299,11 +1301,19 @@ export class MemStorage implements IStorage {
     throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
   }
 
-  async deactivatePushSubscription(playerId: string): Promise<boolean> {
+  async deactivatePushSubscription(token: string): Promise<boolean> {
+    throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
+  }
+
+  async deactivatePushSubscriptions(tokens: string[]): Promise<number> {
     throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
   }
 
   async getAllActivePushSubscriptions(language?: string): Promise<PushSubscription[]> {
+    throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
+  }
+
+  async getActiveTokens(language?: string): Promise<string[]> {
     throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
   }
 
@@ -2141,7 +2151,7 @@ class DatabaseStorage implements IStorage {
 
   // Push Subscriptions
   async createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription> {
-    const existing = await this.getPushSubscriptionByPlayerId(subscription.playerId);
+    const existing = await this.getPushSubscriptionByToken(subscription.token);
     if (existing) {
       const result = await db.update(pushSubscriptions)
         .set({ 
@@ -2157,8 +2167,8 @@ class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getPushSubscriptionByPlayerId(playerId: string): Promise<PushSubscription | undefined> {
-    const result = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.playerId, playerId));
+  async getPushSubscriptionByToken(token: string): Promise<PushSubscription | undefined> {
+    const result = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.token, token));
     return result[0];
   }
 
@@ -2170,12 +2180,21 @@ class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async deactivatePushSubscription(playerId: string): Promise<boolean> {
+  async deactivatePushSubscription(token: string): Promise<boolean> {
     const result = await db.update(pushSubscriptions)
       .set({ isActive: false })
-      .where(eq(pushSubscriptions.playerId, playerId))
+      .where(eq(pushSubscriptions.token, token))
       .returning();
     return result.length > 0;
+  }
+
+  async deactivatePushSubscriptions(tokens: string[]): Promise<number> {
+    if (tokens.length === 0) return 0;
+    const result = await db.update(pushSubscriptions)
+      .set({ isActive: false })
+      .where(inArray(pushSubscriptions.token, tokens))
+      .returning();
+    return result.length;
   }
 
   async getAllActivePushSubscriptions(language?: string): Promise<PushSubscription[]> {
@@ -2187,6 +2206,11 @@ class DatabaseStorage implements IStorage {
         ));
     }
     return await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.isActive, true));
+  }
+
+  async getActiveTokens(language?: string): Promise<string[]> {
+    const subscriptions = await this.getAllActivePushSubscriptions(language);
+    return subscriptions.map(s => s.token);
   }
 
   // Notification Broadcasts
