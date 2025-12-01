@@ -25,8 +25,10 @@ import {
   insertFeatureFlagSchema,
   insertAuditLogSchema, insertPrivacyConsentSchema,
   insertTranslationSchema, insertEmergencyRequestSchema,
-  insertPetMedicalRecordSchema, insertPetMedicalSharingConsentSchema
+  insertPetMedicalRecordSchema, insertPetMedicalSharingConsentSchema,
+  insertPushSubscriptionSchema, insertNotificationBroadcastSchema
 } from "@shared/schema";
+import { oneSignalService } from "./services/onesignal";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import path from "path";
@@ -2459,6 +2461,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error updating medical consent:", error);
       res.status(500).json({ error: error.message || "Failed to update consent" });
+    }
+  });
+
+  // ===== PUSH NOTIFICATION ROUTES =====
+  
+  // Register push subscription
+  app.post("/api/push/subscribe", generalLimiter, async (req, res) => {
+    try {
+      const subscriptionData = insertPushSubscriptionSchema.safeParse(req.body);
+      if (!subscriptionData.success) {
+        return res.status(400).json({ 
+          error: "Invalid subscription data", 
+          details: subscriptionData.error.errors 
+        });
+      }
+      
+      const subscription = await storage.createPushSubscription(subscriptionData.data);
+      res.status(201).json(subscription);
+    } catch (error: any) {
+      console.error("Error creating push subscription:", error);
+      res.status(500).json({ error: error.message || "Failed to create subscription" });
+    }
+  });
+  
+  // Deactivate push subscription
+  app.delete("/api/push/unsubscribe", generalLimiter, async (req, res) => {
+    try {
+      const { playerId } = req.body;
+      if (!playerId) {
+        return res.status(400).json({ error: "playerId is required" });
+      }
+      
+      const success = await storage.deactivatePushSubscription(playerId);
+      if (success) {
+        res.json({ success: true, message: "Subscription deactivated" });
+      } else {
+        res.status(404).json({ error: "Subscription not found" });
+      }
+    } catch (error: any) {
+      console.error("Error deactivating push subscription:", error);
+      res.status(500).json({ error: error.message || "Failed to deactivate subscription" });
+    }
+  });
+  
+  // Admin: Send broadcast notification
+  app.post("/api/admin/notifications/broadcast", broadcastLimiter, isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const broadcastSchema = z.object({
+        title: z.string().min(1).max(100),
+        message: z.string().min(1).max(500),
+        targetLanguage: z.enum(['en', 'zh-HK']).optional(),
+        url: z.string().url().optional()
+      });
+      
+      const validationResult = broadcastSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid broadcast data", 
+          details: validationResult.error.errors 
+        });
+      }
+      
+      const { title, message, targetLanguage, url } = validationResult.data;
+      const userId = (req.user as any).id;
+      
+      // Create broadcast record first
+      const broadcast = await storage.createNotificationBroadcast({
+        title,
+        message,
+        targetLanguage: targetLanguage || null,
+        adminId: userId,
+        status: 'pending'
+      });
+      
+      // Send via OneSignal
+      const result = await oneSignalService.sendBroadcastNotification({
+        title,
+        message,
+        targetLanguage,
+        url
+      });
+      
+      // Update broadcast record with result
+      await storage.updateNotificationBroadcast(broadcast.id, {
+        status: result.success ? 'sent' : 'failed',
+        recipientCount: result.recipientCount || 0,
+        onesignalResponse: { 
+          onesignalId: result.onesignalId || null,
+          url: url || null,
+          error: result.error || null
+        },
+        sentAt: result.success ? new Date() : null
+      });
+      
+      // Create audit log
+      await storage.createAuditLog({
+        entityType: 'notification_broadcast',
+        entityId: broadcast.id,
+        action: 'send',
+        userId: userId,
+        changes: {
+          title,
+          message,
+          targetLanguage: targetLanguage || 'all',
+          recipientCount: result.recipientCount || 0,
+          success: result.success
+        }
+      });
+      
+      if (!result.success) {
+        return res.status(500).json({
+          error: "Failed to send notification",
+          broadcastId: broadcast.id,
+          details: result.error
+        });
+      }
+      
+      res.status(201).json({
+        success: true,
+        broadcastId: broadcast.id,
+        recipientCount: result.recipientCount,
+        onesignalId: result.onesignalId
+      });
+    } catch (error: any) {
+      console.error("Error sending broadcast notification:", error);
+      res.status(500).json({ error: error.message || "Failed to send broadcast" });
+    }
+  });
+  
+  // Admin: Get recent notification broadcasts
+  app.get("/api/admin/notifications/history", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const broadcasts = await storage.getRecentNotificationBroadcasts(limit);
+      res.json(broadcasts);
+    } catch (error: any) {
+      console.error("Error fetching notification history:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch history" });
     }
   });
 

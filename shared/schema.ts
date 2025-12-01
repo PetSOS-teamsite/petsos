@@ -482,3 +482,56 @@ export const insertPetMedicalSharingConsentSchema = createInsertSchema(petMedica
 
 export type InsertPetMedicalSharingConsent = z.infer<typeof insertPetMedicalSharingConsentSchema>;
 export type PetMedicalSharingConsent = typeof petMedicalSharingConsents.$inferSelect;
+
+// Push Notification Subscriptions table - stores OneSignal player IDs for push notifications
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  playerId: text("player_id").notNull().unique(),
+  platform: text("platform").notNull(), // web, ios, android
+  browserInfo: text("browser_info"),
+  language: text("language").default('en'),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastActiveAt: timestamp("last_active_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_push_subscriptions_user").on(table.userId),
+  index("idx_push_subscriptions_player").on(table.playerId),
+]);
+
+export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  lastActiveAt: true,
+});
+
+export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+
+// Admin Notification Broadcasts table - stores sent notifications for audit
+export const notificationBroadcasts = pgTable("notification_broadcasts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  targetLanguage: text("target_language"), // null = all, 'en', 'zh-HK'
+  targetAudience: text("target_audience").notNull().default('all'), // all, subscribed_users
+  recipientCount: integer("recipient_count"),
+  status: text("status").notNull().default('pending'), // pending, sent, failed
+  onesignalResponse: jsonb("onesignal_response"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  sentAt: timestamp("sent_at"),
+}, (table) => [
+  index("idx_notification_broadcasts_admin").on(table.adminId),
+]);
+
+export const insertNotificationBroadcastSchema = createInsertSchema(notificationBroadcasts).omit({
+  id: true,
+  createdAt: true,
+  sentAt: true,
+  recipientCount: true,
+  onesignalResponse: true,
+});
+
+export type InsertNotificationBroadcast = z.infer<typeof insertNotificationBroadcastSchema>;
+export type NotificationBroadcast = typeof notificationBroadcasts.$inferSelect;

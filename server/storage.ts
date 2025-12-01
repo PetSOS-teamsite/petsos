@@ -16,11 +16,13 @@ import {
   type HospitalUpdate, type InsertHospitalUpdate,
   type PetMedicalRecord, type InsertPetMedicalRecord,
   type PetMedicalSharingConsent, type InsertPetMedicalSharingConsent,
-  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents
+  type PushSubscription, type InsertPushSubscription,
+  type NotificationBroadcast, type InsertNotificationBroadcast,
+  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents, pushSubscriptions, notificationBroadcasts
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { eq, and, inArray, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -147,6 +149,19 @@ export interface IStorage {
   getMedicalSharingConsentsByPetId(petId: string): Promise<PetMedicalSharingConsent[]>;
   getMedicalSharingConsentsByUserId(userId: string): Promise<PetMedicalSharingConsent[]>;
   upsertMedicalSharingConsent(consent: InsertPetMedicalSharingConsent): Promise<PetMedicalSharingConsent>;
+
+  // Push Subscriptions
+  createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription>;
+  getPushSubscriptionByPlayerId(playerId: string): Promise<PushSubscription | undefined>;
+  updatePushSubscription(id: string, data: Partial<InsertPushSubscription>): Promise<PushSubscription | undefined>;
+  deactivatePushSubscription(playerId: string): Promise<boolean>;
+  getAllActivePushSubscriptions(language?: string): Promise<PushSubscription[]>;
+
+  // Notification Broadcasts
+  createNotificationBroadcast(broadcast: InsertNotificationBroadcast): Promise<NotificationBroadcast>;
+  getNotificationBroadcast(id: string): Promise<NotificationBroadcast | undefined>;
+  getRecentNotificationBroadcasts(limit?: number): Promise<NotificationBroadcast[]>;
+  updateNotificationBroadcast(id: string, data: Partial<NotificationBroadcast>): Promise<NotificationBroadcast | undefined>;
 
   // GDPR/PDPO Compliance
   exportUserData(userId: string): Promise<{
@@ -1269,6 +1284,44 @@ export class MemStorage implements IStorage {
   async upsertMedicalSharingConsent(consent: InsertPetMedicalSharingConsent): Promise<PetMedicalSharingConsent> {
     throw new Error("MemStorage does not support medical sharing consents - use DatabaseStorage");
   }
+
+  // Push Subscriptions - stub implementations
+  async createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription> {
+    throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
+  }
+
+  async getPushSubscriptionByPlayerId(playerId: string): Promise<PushSubscription | undefined> {
+    throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
+  }
+
+  async updatePushSubscription(id: string, data: Partial<InsertPushSubscription>): Promise<PushSubscription | undefined> {
+    throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
+  }
+
+  async deactivatePushSubscription(playerId: string): Promise<boolean> {
+    throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
+  }
+
+  async getAllActivePushSubscriptions(language?: string): Promise<PushSubscription[]> {
+    throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
+  }
+
+  // Notification Broadcasts - stub implementations
+  async createNotificationBroadcast(broadcast: InsertNotificationBroadcast): Promise<NotificationBroadcast> {
+    throw new Error("MemStorage does not support notification broadcasts - use DatabaseStorage");
+  }
+
+  async getNotificationBroadcast(id: string): Promise<NotificationBroadcast | undefined> {
+    throw new Error("MemStorage does not support notification broadcasts - use DatabaseStorage");
+  }
+
+  async getRecentNotificationBroadcasts(limit?: number): Promise<NotificationBroadcast[]> {
+    throw new Error("MemStorage does not support notification broadcasts - use DatabaseStorage");
+  }
+
+  async updateNotificationBroadcast(id: string, data: Partial<NotificationBroadcast>): Promise<NotificationBroadcast | undefined> {
+    throw new Error("MemStorage does not support notification broadcasts - use DatabaseStorage");
+  }
 }
 
 // Database storage implementation using PostgreSQL
@@ -2080,6 +2133,81 @@ class DatabaseStorage implements IStorage {
       return result[0];
     }
     const result = await db.insert(petMedicalSharingConsents).values(consent).returning();
+    return result[0];
+  }
+
+  // Push Subscriptions
+  async createPushSubscription(subscription: InsertPushSubscription): Promise<PushSubscription> {
+    const existing = await this.getPushSubscriptionByPlayerId(subscription.playerId);
+    if (existing) {
+      const result = await db.update(pushSubscriptions)
+        .set({ 
+          ...subscription, 
+          isActive: true,
+          lastActiveAt: new Date() 
+        })
+        .where(eq(pushSubscriptions.id, existing.id))
+        .returning();
+      return result[0];
+    }
+    const result = await db.insert(pushSubscriptions).values(subscription).returning();
+    return result[0];
+  }
+
+  async getPushSubscriptionByPlayerId(playerId: string): Promise<PushSubscription | undefined> {
+    const result = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.playerId, playerId));
+    return result[0];
+  }
+
+  async updatePushSubscription(id: string, data: Partial<InsertPushSubscription>): Promise<PushSubscription | undefined> {
+    const result = await db.update(pushSubscriptions)
+      .set({ ...data, lastActiveAt: new Date() })
+      .where(eq(pushSubscriptions.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deactivatePushSubscription(playerId: string): Promise<boolean> {
+    const result = await db.update(pushSubscriptions)
+      .set({ isActive: false })
+      .where(eq(pushSubscriptions.playerId, playerId))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getAllActivePushSubscriptions(language?: string): Promise<PushSubscription[]> {
+    if (language) {
+      return await db.select().from(pushSubscriptions)
+        .where(and(
+          eq(pushSubscriptions.isActive, true),
+          eq(pushSubscriptions.language, language)
+        ));
+    }
+    return await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.isActive, true));
+  }
+
+  // Notification Broadcasts
+  async createNotificationBroadcast(broadcast: InsertNotificationBroadcast): Promise<NotificationBroadcast> {
+    const result = await db.insert(notificationBroadcasts).values(broadcast).returning();
+    return result[0];
+  }
+
+  async getNotificationBroadcast(id: string): Promise<NotificationBroadcast | undefined> {
+    const result = await db.select().from(notificationBroadcasts).where(eq(notificationBroadcasts.id, id));
+    return result[0];
+  }
+
+  async getRecentNotificationBroadcasts(limit: number = 50): Promise<NotificationBroadcast[]> {
+    return await db.select().from(notificationBroadcasts)
+      .orderBy(desc(notificationBroadcasts.createdAt))
+      .limit(limit);
+  }
+
+  async updateNotificationBroadcast(id: string, data: Partial<NotificationBroadcast>): Promise<NotificationBroadcast | undefined> {
+    const result = await db.update(notificationBroadcasts)
+      .set(data)
+      .where(eq(notificationBroadcasts.id, id))
+      .returning();
     return result[0];
   }
 }

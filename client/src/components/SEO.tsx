@@ -9,6 +9,10 @@ interface SEOProps {
   canonical?: string;
   noindex?: boolean;
   language?: string;
+  alternateLanguages?: {
+    en?: string;
+    'zh-HK'?: string;
+  };
 }
 
 export function SEO({
@@ -19,6 +23,7 @@ export function SEO({
   canonical,
   noindex = false,
   language = 'en',
+  alternateLanguages,
 }: SEOProps) {
   const [location] = useLocation(); // Track route changes
 
@@ -88,6 +93,35 @@ export function SEO({
       link.href = canonical;
     }
 
+    // Handle hreflang tags for multilingual SEO
+    const existingHreflangs = document.querySelectorAll('link[rel="alternate"][hreflang]');
+    existingHreflangs.forEach(el => el.remove());
+    
+    if (alternateLanguages) {
+      if (alternateLanguages.en) {
+        const enLink = document.createElement('link');
+        enLink.rel = 'alternate';
+        enLink.hreflang = 'en';
+        enLink.href = alternateLanguages.en;
+        document.head.appendChild(enLink);
+      }
+      if (alternateLanguages['zh-HK']) {
+        const zhLink = document.createElement('link');
+        zhLink.rel = 'alternate';
+        zhLink.hreflang = 'zh-HK';
+        zhLink.href = alternateLanguages['zh-HK'];
+        document.head.appendChild(zhLink);
+      }
+      // Add x-default pointing to English version
+      if (alternateLanguages.en) {
+        const defaultLink = document.createElement('link');
+        defaultLink.rel = 'alternate';
+        defaultLink.hreflang = 'x-default';
+        defaultLink.href = alternateLanguages.en;
+        document.head.appendChild(defaultLink);
+      }
+    }
+
     // Handle noindex
     if (noindex) {
       updateMeta('robots', 'noindex, nofollow');
@@ -100,7 +134,7 @@ export function SEO({
 
     // Update HTML lang attribute to reflect current language
     document.documentElement.lang = language === 'zh-HK' ? 'zh-HK' : 'en';
-  }, [title, description, keywords, ogImage, canonical, noindex, language, location]); // Re-run on location change
+  }, [title, description, keywords, ogImage, canonical, noindex, language, location, alternateLanguages]); // Re-run on location change
 
   return null;
 }

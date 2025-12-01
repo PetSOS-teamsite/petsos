@@ -34,6 +34,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { analytics } from "@/lib/analytics";
 import { SEO } from "@/components/SEO";
+import { StructuredData, createLocalBusinessSchema, createBreadcrumbSchema } from "@/components/StructuredData";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import type { Hospital, HospitalConsultFee } from "@shared/schema";
@@ -228,6 +229,34 @@ export default function HospitalDetailPage() {
         description={`${language === 'zh-HK' ? hospital.nameZh : hospital.nameEn} - ${language === 'zh-HK' ? '診症費用、服務設施、聯絡資訊' : 'Consultation fees, facilities, and contact information'}`}
         canonical={`https://petsos.site/hospitals/${hospital.slug}`}
         language={language}
+        alternateLanguages={{
+          en: `https://petsos.site/hospitals/${hospital.slug}?lang=en`,
+          'zh-HK': `https://petsos.site/hospitals/${hospital.slug}?lang=zh-HK`,
+        }}
+      />
+      <StructuredData
+        id={`hospital-${hospital.id}-local-business`}
+        data={createLocalBusinessSchema({
+          id: hospital.id,
+          name: hospital.nameEn,
+          nameZh: hospital.nameZh,
+          address: hospital.addressEn,
+          addressZh: hospital.addressZh,
+          phone: hospital.phone || '',
+          whatsapp: hospital.whatsapp,
+          latitude: hospital.latitude,
+          longitude: hospital.longitude,
+          is24Hour: hospital.is24Hour || false,
+          regionId: hospital.regionId,
+        }, language)}
+      />
+      <StructuredData
+        id={`hospital-${hospital.id}-breadcrumb`}
+        data={createBreadcrumbSchema([
+          { name: language === 'zh-HK' ? '首頁' : 'Home', url: 'https://petsos.site' },
+          { name: language === 'zh-HK' ? '醫院' : 'Hospitals', url: 'https://petsos.site/hospitals' },
+          { name: language === 'zh-HK' ? hospital.nameZh : hospital.nameEn, url: `https://petsos.site/hospitals/${hospital.slug}` },
+        ])}
       />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
         {/* Header */}
