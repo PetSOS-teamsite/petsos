@@ -244,9 +244,9 @@ export default function HospitalDetailPage() {
           addressZh: hospital.addressZh,
           phone: hospital.phone || '',
           whatsapp: hospital.whatsapp,
-          latitude: hospital.latitude,
-          longitude: hospital.longitude,
-          is24Hour: hospital.is24Hour || false,
+          latitude: hospital.latitude ? parseFloat(hospital.latitude) : null,
+          longitude: hospital.longitude ? parseFloat(hospital.longitude) : null,
+          is24Hour: hospital.open247 || false,
           regionId: hospital.regionId,
         }, language)}
       />

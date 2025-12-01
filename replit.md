@@ -28,7 +28,8 @@ Preferred communication style: Simple, everyday language.
 - **Geolocation**: PostGIS for server-side geospatial queries, geography column with GIST spatial index, auto-user location detection, manual override.
 - **Messaging Architecture**: WhatsApp Business API as primary, email fallback, queue-based processing, template-based messaging.
 - **Analytics & Monitoring**: Google Analytics 4 (GA4), Sentry for error tracking and performance monitoring.
-- **SEO Optimization**: Comprehensive bilingual SEO with performance-first approach, Core Web Vitals monitoring, code splitting, image optimization, structured data, local SEO, technical SEO, social integration.
+- **SEO Optimization**: Comprehensive bilingual SEO with performance-first approach, Core Web Vitals monitoring, code splitting, image optimization, structured data (VeterinaryClinic, LocalBusiness, Breadcrumb schemas), hreflang tags for EN/zh-HK, local SEO, technical SEO, social integration.
+- **Push Notifications**: OneSignal-powered web push notifications for emergency alerts and platform updates. Admin broadcast composer with language targeting, audit logging, and notification history. Client-side permission banner with graceful fallback.
 - **Multi-Environment Configuration**: Centralized configuration for development, staging, and production environments using `.env` files.
 - **Deployment**: Dockerized services, GitHub for CI/CD, cloud-agnostic deployment, Infrastructure as Code.
 
@@ -42,6 +43,7 @@ Preferred communication style: Simple, everyday language.
 - **Emergency Request Editing**: Post-submission editing of contact info, symptoms, location with real-time broadcast message updates, Zod validation, audit trail, GPS location support, and bilingual UI.
 - **Internationalization**: Database-stored translations (EN, zh-HK), client-side language detection, comprehensive bilingual support.
 - **Multi-Region Configuration**: Database-driven configuration for countries, regions, and pet breeds, dynamic loading in UI components.
+- **Admin Push Notifications**: Admin panel (`/admin/notifications`) for composing and broadcasting push notifications to all users or by language preference. Includes notification history with recipient counts and delivery status.
 
 # External Dependencies
 
@@ -88,3 +90,7 @@ Preferred communication style: Simple, everyday language.
 ## Error Tracking & Monitoring
 - **@sentry/node**: Backend error tracking and performance monitoring.
 - **@sentry/react**: Frontend error tracking with React integration and session replay.
+
+## Push Notifications
+- **OneSignal**: Web push notification service for PWA notifications.
+- **Service Worker**: OneSignal-based service worker for background notification delivery.
