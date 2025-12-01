@@ -2511,8 +2511,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const broadcastSchema = z.object({
         title: z.string().min(1).max(100),
         message: z.string().min(1).max(500),
-        targetLanguage: z.enum(['en', 'zh-HK']).optional(),
-        url: z.string().url().optional()
+        targetLanguage: z.enum(['en', 'zh-HK']).nullable().optional(),
+        url: z.string().url().optional().or(z.literal(''))
       });
       
       const validationResult = broadcastSchema.safeParse(req.body);
@@ -2539,8 +2539,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await oneSignalService.sendBroadcastNotification({
         title,
         message,
-        targetLanguage,
-        url
+        targetLanguage: targetLanguage || undefined,
+        url: url || undefined
       });
       
       // Update broadcast record with result
