@@ -297,9 +297,11 @@ export const messages = pgTable("messages", {
   messageType: text("message_type").notNull(), // whatsapp, email, line
   recipient: text("recipient").notNull(),
   content: text("content").notNull(),
-  status: text("status").notNull().default('queued'), // queued, sent, delivered, failed
+  status: text("status").notNull().default('queued'), // queued, sent, delivered, read, failed
+  whatsappMessageId: text("whatsapp_message_id"), // Meta's wamid for tracking delivery status
   sentAt: timestamp("sent_at"),
   deliveredAt: timestamp("delivered_at"),
+  readAt: timestamp("read_at"), // When recipient opened/read the message
   failedAt: timestamp("failed_at"),
   errorMessage: text("error_message"),
   retryCount: integer("retry_count").notNull().default(0),

@@ -50,6 +50,12 @@ interface SendMessageOptions {
   content: string;
 }
 
+interface WhatsAppSendResult {
+  success: boolean;
+  messageId?: string; // Meta's wamid for tracking delivery status
+  error?: string;
+}
+
 export class MessagingService {
   
   /**
@@ -59,7 +65,7 @@ export class MessagingService {
     phoneNumber: string,
     templateName: string,
     templateVariables: string[]
-  ): Promise<boolean> {
+  ): Promise<WhatsAppSendResult> {
     console.log('[WhatsApp Template] Attempting to send template message...');
     console.log('[WhatsApp Template] Template:', templateName);
     console.log('[WhatsApp Template] Variables count:', templateVariables.length);
@@ -68,14 +74,14 @@ export class MessagingService {
     
     if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
       console.error('[WhatsApp Template] Credentials not configured - missing token or phone number ID');
-      return false;
+      return { success: false, error: 'WhatsApp credentials not configured' };
     }
 
     // Validate phone number
     const cleanedNumber = phoneNumber.replace(/[^0-9]/g, '');
     if (!cleanedNumber || cleanedNumber.length < 8) {
       console.error('[WhatsApp Template] Invalid phone number:', phoneNumber);
-      return false;
+      return { success: false, error: 'Invalid phone number' };
     }
 
     try {
@@ -121,30 +127,33 @@ export class MessagingService {
       if (!response.ok) {
         const error = await response.text();
         console.error('[WhatsApp Template] API error response:', error);
+        let errorMessage = error;
         try {
           const errorJson = JSON.parse(error);
           console.error('[WhatsApp Template] Parsed error:', JSON.stringify(errorJson, null, 2));
+          errorMessage = errorJson?.error?.message || error;
         } catch (e) {
           // Error wasn't JSON
         }
-        return false;
+        return { success: false, error: errorMessage };
       }
 
       const result = await response.json();
+      const messageId = result.messages?.[0]?.id;
       console.log('[WhatsApp Template] Message sent successfully!');
       console.log('[WhatsApp Template] API Response:', JSON.stringify(result, null, 2));
-      console.log('[WhatsApp Template] Message ID:', result.messages?.[0]?.id);
-      return true;
+      console.log('[WhatsApp Template] Message ID:', messageId);
+      return { success: true, messageId };
     } catch (error) {
       console.error('[WhatsApp Template] Error sending message:', error);
-      return false;
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
   /**
    * Send a message via WhatsApp Business API (legacy plain text - for fallback only)
    */
-  private async sendWhatsAppMessage(phoneNumber: string, content: string): Promise<boolean> {
+  private async sendWhatsAppMessage(phoneNumber: string, content: string): Promise<WhatsAppSendResult> {
     console.log('[WhatsApp] Attempting to send message...');
     console.log('[WhatsApp] Has Access Token:', !!WHATSAPP_ACCESS_TOKEN);
     console.log('[WhatsApp] Has Phone Number ID:', !!WHATSAPP_PHONE_NUMBER_ID);
@@ -152,7 +161,7 @@ export class MessagingService {
     
     if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
       console.error('[WhatsApp] Credentials not configured - missing token or phone number ID');
-      return false;
+      return { success: false, error: 'WhatsApp credentials not configured' };
     }
 
     // ⚠️ TESTING MODE: Override recipient with test numbers
@@ -170,7 +179,7 @@ export class MessagingService {
     const cleanedNumber = actualRecipient.replace(/[^0-9]/g, '');
     if (!cleanedNumber || cleanedNumber.length < 8) {
       console.error('[WhatsApp] Invalid phone number:', actualRecipient);
-      return false;
+      return { success: false, error: 'Invalid phone number' };
     }
 
     try {
@@ -203,24 +212,27 @@ export class MessagingService {
       if (!response.ok) {
         const error = await response.text();
         console.error('[WhatsApp] API error response:', error);
+        let errorMessage = error;
         try {
           const errorJson = JSON.parse(error);
           console.error('[WhatsApp] Parsed error:', JSON.stringify(errorJson, null, 2));
+          errorMessage = errorJson?.error?.message || error;
         } catch (e) {
           // Error wasn't JSON
         }
-        return false;
+        return { success: false, error: errorMessage };
       }
 
       const result = await response.json();
+      const messageId = result.messages?.[0]?.id;
       console.log('[WhatsApp] Message sent successfully!');
       console.log('[WhatsApp] API Response:', JSON.stringify(result, null, 2));
-      console.log('[WhatsApp] Message ID:', result.messages?.[0]?.id);
+      console.log('[WhatsApp] Message ID:', messageId);
       console.log('[WhatsApp] WhatsApp ID:', result.contacts?.[0]?.wa_id);
-      return true;
+      return { success: true, messageId };
     } catch (error) {
       console.error('[WhatsApp] Error sending message:', error);
-      return false;
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -323,6 +335,8 @@ export class MessagingService {
 
     try {
       let success = false;
+      let whatsappMessageId: string | undefined;
+      let errorMessage: string | undefined;
 
       if (message.messageType === 'whatsapp') {
         // Check if this is a template message (content starts with "[Template: ")
@@ -337,19 +351,26 @@ export class MessagingService {
             const templateData = await this.buildTemplateMessage(emergencyRequestId);
             
             if (templateData && templateData.templateName === templateName) {
-              success = await this.sendWhatsAppTemplateMessage(
+              const result = await this.sendWhatsAppTemplateMessage(
                 message.recipient,
                 templateData.templateName,
                 templateData.variables
               );
+              success = result.success;
+              whatsappMessageId = result.messageId;
+              errorMessage = result.error;
             } else {
               console.error('[Process Message] Failed to rebuild template data');
               success = false;
+              errorMessage = 'Failed to rebuild template data';
             }
           }
         } else {
           // Legacy plain text message
-          success = await this.sendWhatsAppMessage(message.recipient, message.content);
+          const result = await this.sendWhatsAppMessage(message.recipient, message.content);
+          success = result.success;
+          whatsappMessageId = result.messageId;
+          errorMessage = result.error;
         }
         
         // If WhatsApp fails, try email fallback
@@ -387,6 +408,7 @@ export class MessagingService {
         await storage.updateMessage(messageId, {
           status: 'sent',
           sentAt: new Date(),
+          whatsappMessageId: whatsappMessageId || null,
         });
       } else {
         // Retry logic
@@ -396,12 +418,13 @@ export class MessagingService {
           await storage.updateMessage(messageId, {
             status: 'failed',
             failedAt: new Date(),
-            errorMessage: 'Max retries exceeded',
+            errorMessage: errorMessage || 'Max retries exceeded',
             retryCount: newRetryCount,
           });
         } else {
           await storage.updateMessage(messageId, {
             retryCount: newRetryCount,
+            errorMessage: errorMessage || null,
           });
           
           // Schedule retry
