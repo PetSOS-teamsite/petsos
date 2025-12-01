@@ -91,9 +91,12 @@ export interface IStorage {
 
   // Messages
   getMessage(id: string): Promise<Message | undefined>;
+  getMessageByWhatsAppId(whatsappMessageId: string): Promise<Message | undefined>;
   getMessagesByEmergencyRequest(emergencyRequestId: string): Promise<Message[]>;
+  getAllMessages(limit?: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   updateMessage(id: string, message: Partial<InsertMessage>): Promise<Message | undefined>;
+  updateMessageByWhatsAppId(whatsappMessageId: string, updateData: Partial<InsertMessage>): Promise<Message | undefined>;
   getQueuedMessages(): Promise<Message[]>;
 
   // Feature Flags
@@ -829,10 +832,22 @@ export class MemStorage implements IStorage {
     return this.messages.get(id);
   }
 
+  async getMessageByWhatsAppId(whatsappMessageId: string): Promise<Message | undefined> {
+    return Array.from(this.messages.values()).find(
+      msg => msg.whatsappMessageId === whatsappMessageId
+    );
+  }
+
   async getMessagesByEmergencyRequest(emergencyRequestId: string): Promise<Message[]> {
     return Array.from(this.messages.values()).filter(
       msg => msg.emergencyRequestId === emergencyRequestId
     );
+  }
+
+  async getAllMessages(limit: number = 100): Promise<Message[]> {
+    return Array.from(this.messages.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, limit);
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
@@ -846,7 +861,9 @@ export class MemStorage implements IStorage {
       deliveredAt: insertMessage.deliveredAt ?? null,
       failedAt: insertMessage.failedAt ?? null,
       errorMessage: insertMessage.errorMessage ?? null,
-      retryCount: insertMessage.retryCount ?? 0
+      retryCount: insertMessage.retryCount ?? 0,
+      whatsappMessageId: insertMessage.whatsappMessageId ?? null,
+      readAt: insertMessage.readAt ?? null
     };
     this.messages.set(id, message);
     return message;
@@ -857,6 +874,14 @@ export class MemStorage implements IStorage {
     if (!message) return undefined;
     const updated = { ...message, ...updateData };
     this.messages.set(id, updated);
+    return updated;
+  }
+
+  async updateMessageByWhatsAppId(whatsappMessageId: string, updateData: Partial<InsertMessage>): Promise<Message | undefined> {
+    const message = await this.getMessageByWhatsAppId(whatsappMessageId);
+    if (!message) return undefined;
+    const updated = { ...message, ...updateData };
+    this.messages.set(message.id, updated);
     return updated;
   }
 
@@ -1759,8 +1784,19 @@ class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getMessageByWhatsAppId(whatsappMessageId: string): Promise<Message | undefined> {
+    const result = await db.select().from(messages).where(eq(messages.whatsappMessageId, whatsappMessageId));
+    return result[0];
+  }
+
   async getMessagesByEmergencyRequest(emergencyRequestId: string): Promise<Message[]> {
     return await db.select().from(messages).where(eq(messages.emergencyRequestId, emergencyRequestId));
+  }
+
+  async getAllMessages(limit: number = 100): Promise<Message[]> {
+    return await db.select().from(messages)
+      .orderBy(sql`${messages.createdAt} DESC`)
+      .limit(limit);
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
@@ -1772,6 +1808,14 @@ class DatabaseStorage implements IStorage {
     const result = await db.update(messages)
       .set(updateData)
       .where(eq(messages.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateMessageByWhatsAppId(whatsappMessageId: string, updateData: Partial<InsertMessage>): Promise<Message | undefined> {
+    const result = await db.update(messages)
+      .set(updateData)
+      .where(eq(messages.whatsappMessageId, whatsappMessageId))
       .returning();
     return result[0];
   }

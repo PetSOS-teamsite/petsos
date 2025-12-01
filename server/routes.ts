@@ -49,6 +49,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
       uptime: process.uptime()
     });
   });
+
+  // ===== WHATSAPP WEBHOOK ENDPOINTS =====
+  // These endpoints receive status updates from Meta when WhatsApp messages are delivered/read
+  // They must be publicly accessible (no auth) for Meta to call them
+  
+  // Webhook verification endpoint (GET) - Meta sends a challenge to verify the webhook
+  app.get('/api/webhooks/whatsapp', (req, res) => {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+    
+    // Use a verify token from environment variables
+    const verifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'petsos_webhook_verify';
+    
+    console.log('[WhatsApp Webhook] Verification request received');
+    console.log('[WhatsApp Webhook] Mode:', mode);
+    console.log('[WhatsApp Webhook] Token matches:', token === verifyToken);
+    
+    if (mode === 'subscribe' && token === verifyToken) {
+      console.log('[WhatsApp Webhook] Verification successful');
+      res.status(200).send(challenge);
+    } else {
+      console.error('[WhatsApp Webhook] Verification failed');
+      res.sendStatus(403);
+    }
+  });
+  
+  // Webhook event receiver (POST) - Meta sends status updates here
+  app.post('/api/webhooks/whatsapp', async (req, res) => {
+    try {
+      console.log('[WhatsApp Webhook] Event received:', JSON.stringify(req.body, null, 2));
+      
+      const body = req.body;
+      
+      // Meta sends events in a specific structure
+      if (body?.object === 'whatsapp_business_account') {
+        for (const entry of body.entry || []) {
+          for (const change of entry.changes || []) {
+            if (change.field === 'messages') {
+              const value = change.value;
+              
+              // Process message status updates
+              if (value?.statuses) {
+                for (const status of value.statuses) {
+                  const whatsappMessageId = status.id;
+                  const statusType = status.status; // sent, delivered, read, failed
+                  const timestamp = status.timestamp ? new Date(parseInt(status.timestamp) * 1000) : new Date();
+                  
+                  console.log(`[WhatsApp Webhook] Status update: ${whatsappMessageId} -> ${statusType}`);
+                  
+                  // Update our database based on the status
+                  try {
+                    const updateData: Record<string, any> = {};
+                    
+                    switch (statusType) {
+                      case 'sent':
+                        updateData.status = 'sent';
+                        updateData.sentAt = timestamp;
+                        break;
+                      case 'delivered':
+                        updateData.status = 'delivered';
+                        updateData.deliveredAt = timestamp;
+                        break;
+                      case 'read':
+                        updateData.readAt = timestamp;
+                        break;
+                      case 'failed':
+                        updateData.status = 'failed';
+                        updateData.failedAt = timestamp;
+                        // Extract error info if available
+                        if (status.errors && status.errors.length > 0) {
+                          updateData.errorMessage = status.errors[0].message || status.errors[0].title || 'Unknown error';
+                        }
+                        break;
+                    }
+                    
+                    if (Object.keys(updateData).length > 0) {
+                      const updated = await storage.updateMessageByWhatsAppId(whatsappMessageId, updateData);
+                      if (updated) {
+                        console.log(`[WhatsApp Webhook] Updated message ${updated.id} with status ${statusType}`);
+                      } else {
+                        console.log(`[WhatsApp Webhook] No message found for WhatsApp ID: ${whatsappMessageId}`);
+                      }
+                    }
+                  } catch (updateError) {
+                    console.error('[WhatsApp Webhook] Error updating message status:', updateError);
+                  }
+                }
+              }
+              
+              // Process incoming messages (if we want to track replies in the future)
+              if (value?.messages) {
+                for (const message of value.messages) {
+                  console.log(`[WhatsApp Webhook] Incoming message from ${message.from}: ${message.type}`);
+                  // Future: Track incoming replies for conversation threading
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // Always respond with 200 OK to acknowledge receipt
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('[WhatsApp Webhook] Error processing event:', error);
+      // Still return 200 to prevent Meta from retrying
+      res.sendStatus(200);
+    }
+  });
   
   // Serve sitemap.xml and robots.txt with correct content-type headers
   const publicDir = config.isDevelopment 
@@ -1854,6 +1964,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/messages/queued", async (req, res) => {
     const messages = await storage.getQueuedMessages();
     res.json(messages);
+  });
+
+  // ===== ADMIN MESSAGE MANAGEMENT ROUTES =====
+  
+  // Get all messages with status (admin only) - for WhatsApp dashboard
+  app.get("/api/admin/messages", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+      const allMessages = await storage.getAllMessages(limit);
+      
+      // Enrich messages with hospital names
+      const messagesWithDetails = await Promise.all(
+        allMessages.map(async (msg) => {
+          const hospital = msg.hospitalId ? await storage.getHospital(msg.hospitalId) : null;
+          const emergencyRequest = msg.emergencyRequestId ? await storage.getEmergencyRequest(msg.emergencyRequestId) : null;
+          return {
+            ...msg,
+            hospitalName: hospital?.name || 'Unknown Hospital',
+            emergencyRequestStatus: emergencyRequest?.status || 'unknown',
+            petInfo: emergencyRequest?.pet ? {
+              name: emergencyRequest.pet.name,
+              species: emergencyRequest.pet.species,
+              breed: emergencyRequest.pet.breed
+            } : null
+          };
+        })
+      );
+      
+      res.json(messagesWithDetails);
+    } catch (error) {
+      console.error('Error fetching all messages:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Get message statistics (admin only)
+  app.get("/api/admin/messages/stats", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const allMessages = await storage.getAllMessages(1000);
+      
+      const stats = {
+        total: allMessages.length,
+        queued: allMessages.filter(m => m.status === 'queued').length,
+        sent: allMessages.filter(m => m.status === 'sent').length,
+        delivered: allMessages.filter(m => m.status === 'delivered').length,
+        read: allMessages.filter(m => m.readAt !== null).length,
+        failed: allMessages.filter(m => m.status === 'failed').length,
+        byType: {
+          whatsapp: allMessages.filter(m => m.messageType === 'whatsapp').length,
+          email: allMessages.filter(m => m.messageType === 'email').length,
+          line: allMessages.filter(m => m.messageType === 'line').length
+        }
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching message stats:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Retry a failed message (admin only)
+  app.post("/api/admin/messages/:id/retry", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const messageId = req.params.id;
+      const message = await storage.getMessage(messageId);
+      
+      if (!message) {
+        return res.status(404).json({ message: 'Message not found' });
+      }
+      
+      // Reset message for retry
+      await storage.updateMessage(messageId, {
+        status: 'queued',
+        retryCount: 0,
+        failedAt: null,
+        errorMessage: null
+      });
+      
+      // Process the message immediately
+      await messagingService.processMessage(messageId);
+      
+      // Get updated message
+      const updatedMessage = await storage.getMessage(messageId);
+      
+      // Log the retry action
+      await storage.createAuditLog({
+        entityType: 'message',
+        entityId: messageId,
+        action: 'retry',
+        userId: (req.user as any).id,
+        changes: { previousStatus: message.status },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json(updatedMessage);
+    } catch (error) {
+      console.error('Error retrying message:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Resend to a specific hospital (admin only)
+  app.post("/api/admin/messages/resend", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { emergencyRequestId, hospitalId } = req.body;
+      
+      if (!emergencyRequestId || !hospitalId) {
+        return res.status(400).json({ message: 'emergencyRequestId and hospitalId are required' });
+      }
+      
+      const hospital = await storage.getHospital(hospitalId);
+      if (!hospital) {
+        return res.status(404).json({ message: 'Hospital not found' });
+      }
+      
+      const emergencyRequest = await storage.getEmergencyRequest(emergencyRequestId);
+      if (!emergencyRequest) {
+        return res.status(404).json({ message: 'Emergency request not found' });
+      }
+      
+      // Broadcast to this specific hospital
+      const result = await messagingService.broadcastEmergency(emergencyRequestId, [hospital]);
+      
+      // Log the resend action
+      await storage.createAuditLog({
+        entityType: 'message',
+        entityId: emergencyRequestId,
+        action: 'resend',
+        userId: (req.user as any).id,
+        changes: { hospitalId, hospitalName: hospital.name },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({ 
+        success: true, 
+        message: `Message resent to ${hospital.name}`,
+        result 
+      });
+    } catch (error) {
+      console.error('Error resending message:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
   });
 
   // ===== FEATURE FLAG ROUTES =====
