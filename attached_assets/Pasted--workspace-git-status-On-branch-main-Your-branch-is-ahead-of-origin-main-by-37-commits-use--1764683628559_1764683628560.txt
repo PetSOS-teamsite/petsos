@@ -1,0 +1,40 @@
+~/workspace$ git status
+On branch main
+Your branch is ahead of 'origin/main' by 37 commits.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+~/workspace$ git push
+Enumerating objects: 223, done.
+Counting objects: 100% (223/223), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (194/194), done.
+Writing objects:  24% (47/194), 2.59 MiB | 4Writing objects:  25% (49/194), 2.59 MiB | 4Writing objects:  25% (50/194), 5.64 MiB | 5Writing objects:  26% (51/194), 5.64 MiB | 5Writing objects:  27% (53/194), 5.64 MiB | 5Writing objects:  28% (55/194), 8.49 MiB | 5Writing objects:  28% (56/194), 8.49 MiB | 5Writing objects:  29% (57/194), 11.38 MiB | Writing objects:  30% (59/194), 11.38 MiB | Writing objects:  31% (61/194), 11.38 MiB | Writing objects:  32% (63/194), 11.38 MiB | Writing objects:  33% (65/194), 11.38 MiB | Writing objects:  34% (66/194), 11.38 MiB | Writing objects:  35% (68/194), 11.38 MiB | Writing objects:  36% (70/194), 11.38 MiB | Writing objects:  37% (72/194), 11.38 MiB | Writing objects:  38% (74/194), 11.38 MiB | Writing objects:  39% (77/194), 11.38 MiB | Writing objects:  40% (78/194), 11.38 MiB | Writing objects:  41% (80/194), 11.38 MiB | Writing objects:  42% (82/194), 11.38 MiB | Writing objects:  43% (84/194), 11.38 MiB | Writing objects:  44% (86/194), 11.38 MiB | Writing objects:  45% (88/194), 11.38 MiB | Writing objects:  46% (90/194), 11.38 MiB | Writing objects:  47% (92/194), 11.38 MiB | Writing objects:  48% (94/194), 11.38 MiB | Writing objects:  49% (96/194), 11.38 MiB | Writing objects:  50% (97/194), 11.38 MiB | Writing objects:  51% (99/194), 11.38 MiB | Writing objects:  52% (101/194), 11.38 MiB |Writing objects:  53% (103/194), 11.38 MiB |Writing objects:  54% (105/194), 11.38 MiB |Writing objects:  55% (107/194), 11.38 MiB |Writing objects:  56% (109/194), 11.38 MiB |Writing objects:  57% (111/194), 11.38 MiB |Writing objects:  58% (113/194), 11.38 MiB |Writing objects:  59% (115/194), 11.38 MiB |Writing objects:  60% (117/194), 11.38 MiB |Writing objects:  61% (119/194), 11.38 MiB |Writing objects:  62% (121/194), 11.38 MiB |Writing objects:  63% (123/194), 11.38 MiB |Writing objects:  64% (125/194), 11.38 MiB |Writing objects:  65% (127/194), 11.38 MiB |Writing objects:  66% (129/194), 11.38 MiB |Writing objects:  67% (130/194), 11.38 MiB |Writing objects:  68% (132/194), 11.38 MiB |Writing objects:  69% (134/194), 11.38 MiB |Writing objects:  70% (136/194), 11.38 MiB |Writing objects:  71% (138/194), 11.38 MiB |Writing objects:  72% (140/194), 11.38 MiB |Writing objects:  73% (142/194), 11.38 MiB |Writing objects:  74% (144/194), 11.38 MiB |Writing objects:  75% (146/194), 11.38 MiB |Writing objects:  76% (148/194), 11.38 MiB |Writing objects:  77% (150/194), 11.38 MiB |Writing objects:  78% (152/194), 11.38 MiB |Writing objects:  79% (154/194), 11.38 MiB |Writing objects:  80% (156/194), 11.38 MiB |Writing objects:  81% (158/194), 11.38 MiB |Writing objects:  82% (160/194), 11.38 MiB |Writing objects:  83% (162/194), 11.38 MiB |Writing objects:  84% (163/194), 11.38 MiB |Writing objects:  85% (165/194), 11.38 MiB |Writing objects:  86% (167/194), 11.38 MiB |Writing objects:  87% (169/194), 11.38 MiB |Writing objects:  88% (171/194), 11.38 MiB |Writing objects:  89% (173/194), 11.38 MiB |Writing objects:  90% (175/194), 11.38 MiB |Writing objects:  91% (177/194), 11.38 MiB |Writing objects:  92% (179/194), 11.38 MiB |Writing objects:  93% (181/194), 11.38 MiB |Writing objects:  94% (183/194), 11.38 MiB |Writing objects:  95% (185/194), 11.38 MiB |Writing objects:  96% (187/194), 11.38 MiB |Writing objects:  97% (189/194), 11.38 MiB |Writing objects:  98% (191/194), 11.38 MiB |Writing objects:  99% (193/194), 11.38 MiB |Writing objects: 100% (194/194), 11.38 MiB |Writing objects: 100% (194/194), 13.69 MiB | 5.54 MiB/s, done.
+Total 194 (delta 130), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (130/130), completed with 27 local objects.
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: 
+remote: - GITHUB PUSH PROTECTION
+remote:   —————————————————————————————————————————
+remote:     Resolve the following violations before pushing again
+remote: 
+remote:     - Push cannot contain secrets
+remote: 
+remote:     
+remote:      (?) Learn how to resolve a blocked push
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+remote:     
+remote:     
+remote:       —— Google Cloud Service Account Credentials ——————————
+remote:        locations:
+remote:          - commit: f8cd6582fde3a14f5049f1ab30e93c6903fd45d9
+remote:            path: attached_assets/Pasted--type-service-account-project-id-petsos-75fef-private-key-id-1cf1b8796f6e9883-1764602875716_1764602875717.txt:1
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/PetSOS-teamsite/petsos/security/secret-scanning/unblock-secret/36FkS2g9t6TDAoVev98sPGlt6KS
+remote:     
+remote: 
+remote: 
+To https://github.com/PetSOS-teamsite/petsos.git
+ ! [remote rejected] main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/PetSOS-teamsite/petsos.git'
