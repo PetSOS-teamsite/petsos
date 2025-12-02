@@ -2841,6 +2841,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: z.string().min(1).max(100),
         message: z.string().min(1).max(500),
         targetLanguage: z.enum(['en', 'zh-HK']).nullable().optional(),
+        targetRole: z.enum(['pet_owner', 'hospital_clinic']).nullable().optional(),
         url: z.string().url().optional().or(z.literal(''))
       });
       
@@ -2852,7 +2853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const { title, message, targetLanguage, url } = validationResult.data;
+      const { title, message, targetLanguage, targetRole, url } = validationResult.data;
       const userId = (req.user as any).id;
       
       // Create broadcast record first
@@ -2864,8 +2865,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'pending'
       });
       
-      // Get active FCM tokens for target language
-      const tokens = await storage.getActiveTokens(targetLanguage || undefined);
+      // Get active FCM tokens filtered by language and/or role
+      const tokens = await storage.getActiveTokens(targetLanguage || undefined, targetRole || undefined);
       
       if (tokens.length === 0) {
         // Update broadcast record - no recipients

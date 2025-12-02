@@ -159,8 +159,8 @@ export interface IStorage {
   updatePushSubscription(id: string, data: Partial<InsertPushSubscription>): Promise<PushSubscription | undefined>;
   deactivatePushSubscription(token: string): Promise<boolean>;
   deactivatePushSubscriptions(tokens: string[]): Promise<number>;
-  getAllActivePushSubscriptions(language?: string): Promise<PushSubscription[]>;
-  getActiveTokens(language?: string): Promise<string[]>;
+  getAllActivePushSubscriptions(language?: string, role?: string): Promise<PushSubscription[]>;
+  getActiveTokens(language?: string, role?: string): Promise<string[]>;
 
   // Notification Broadcasts
   createNotificationBroadcast(broadcast: InsertNotificationBroadcast): Promise<NotificationBroadcast>;
@@ -1334,11 +1334,11 @@ export class MemStorage implements IStorage {
     throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
   }
 
-  async getAllActivePushSubscriptions(language?: string): Promise<PushSubscription[]> {
+  async getAllActivePushSubscriptions(language?: string, role?: string): Promise<PushSubscription[]> {
     throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
   }
 
-  async getActiveTokens(language?: string): Promise<string[]> {
+  async getActiveTokens(language?: string, role?: string): Promise<string[]> {
     throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
   }
 
@@ -2241,19 +2241,51 @@ class DatabaseStorage implements IStorage {
     return result.length;
   }
 
-  async getAllActivePushSubscriptions(language?: string): Promise<PushSubscription[]> {
+  async getAllActivePushSubscriptions(language?: string, role?: string): Promise<PushSubscription[]> {
+    const conditions = [eq(pushSubscriptions.isActive, true)];
+    
     if (language) {
-      return await db.select().from(pushSubscriptions)
-        .where(and(
-          eq(pushSubscriptions.isActive, true),
-          eq(pushSubscriptions.language, language)
-        ));
+      conditions.push(eq(pushSubscriptions.language, language));
     }
-    return await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.isActive, true));
+    
+    // If role filter is specified, we need to join with users table
+    if (role) {
+      // Map role to user roles
+      // pet_owner = 'user' role
+      // hospital_clinic = 'hospital_staff' OR 'clinic_staff' roles
+      if (role === 'pet_owner') {
+        const result = await db.select({ subscription: pushSubscriptions })
+          .from(pushSubscriptions)
+          .innerJoin(users, eq(pushSubscriptions.userId, users.id))
+          .where(and(
+            ...conditions,
+            eq(users.role, 'user')
+          ));
+        return result.map(r => r.subscription);
+      } else if (role === 'hospital_clinic') {
+        const result = await db.select({ subscription: pushSubscriptions })
+          .from(pushSubscriptions)
+          .innerJoin(users, eq(pushSubscriptions.userId, users.id))
+          .where(and(
+            ...conditions,
+            or(
+              eq(users.role, 'hospital_staff'),
+              eq(users.role, 'clinic_staff')
+            )
+          ));
+        return result.map(r => r.subscription);
+      }
+    }
+    
+    // No role filter - return all active subscriptions
+    if (conditions.length === 1) {
+      return await db.select().from(pushSubscriptions).where(conditions[0]);
+    }
+    return await db.select().from(pushSubscriptions).where(and(...conditions));
   }
 
-  async getActiveTokens(language?: string): Promise<string[]> {
-    const subscriptions = await this.getAllActivePushSubscriptions(language);
+  async getActiveTokens(language?: string, role?: string): Promise<string[]> {
+    const subscriptions = await this.getAllActivePushSubscriptions(language, role);
     return subscriptions.map(s => s.token);
   }
 
