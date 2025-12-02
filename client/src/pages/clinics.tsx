@@ -15,7 +15,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { analytics } from "@/lib/analytics";
 import { SEO } from "@/components/SEO";
 import { StructuredData, createVeterinaryDirectorySchema, createBreadcrumbSchema } from "@/components/StructuredData";
-import type { Hospital } from "@shared/schema";
+import type { Hospital, Clinic } from "@shared/schema";
 
 type Region = {
   id: string;
@@ -24,11 +24,30 @@ type Region = {
   nameZh: string;
 };
 
+// Unified provider type that can represent both hospitals and clinics
+type VetProvider = {
+  id: string;
+  type: 'hospital' | 'clinic';
+  nameEn: string;
+  nameZh: string | null;
+  addressEn: string;
+  addressZh: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  regionId: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  is24Hour: boolean;
+  isPartner: boolean;
+  isAvailable: boolean;
+  slug?: string | null;
+};
+
 export default function ClinicsPage() {
   const { t, language } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
-  const [show24HourOnly, setShow24HourOnly] = useState(false); // Show all clinics by default
+  const [show24HourOnly, setShow24HourOnly] = useState(true); // Show 24-hour hospitals by default
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
 
@@ -40,10 +59,60 @@ export default function ClinicsPage() {
     queryKey: ["/api/hospitals"],
   });
 
-  // Filter only available hospitals
-  const allProviders = useMemo<Hospital[]>(() => {
-    return hospitals?.filter(hospital => hospital.isAvailable === true) || [];
-  }, [hospitals]);
+  const { data: clinics, isLoading: clinicsLoading } = useQuery<Clinic[]>({
+    queryKey: ["/api/clinics"],
+  });
+
+  // Combine hospitals and clinics into unified provider list
+  const allProviders = useMemo<VetProvider[]>(() => {
+    const providers: VetProvider[] = [];
+    
+    // Add hospitals
+    hospitals?.filter(h => h.isAvailable === true).forEach(h => {
+      providers.push({
+        id: h.id,
+        type: 'hospital',
+        nameEn: h.nameEn,
+        nameZh: h.nameZh,
+        addressEn: h.addressEn,
+        addressZh: h.addressZh,
+        phone: h.phone,
+        whatsapp: h.whatsapp,
+        regionId: h.regionId,
+        latitude: h.latitude,
+        longitude: h.longitude,
+        is24Hour: h.open247 === true,
+        isPartner: h.isPartner === true,
+        isAvailable: h.isAvailable === true,
+        slug: h.slug,
+      });
+    });
+    
+    // Add clinics
+    clinics?.filter(c => c.isAvailable === true && c.status === 'active').forEach(c => {
+      providers.push({
+        id: c.id,
+        type: 'clinic',
+        nameEn: c.name,
+        nameZh: c.nameZh,
+        addressEn: c.address,
+        addressZh: c.addressZh,
+        phone: c.phone,
+        whatsapp: c.whatsapp,
+        regionId: c.regionId,
+        latitude: c.latitude,
+        longitude: c.longitude,
+        is24Hour: c.is24Hour === true,
+        isPartner: c.isSupportHospital === true,
+        isAvailable: c.isAvailable === true,
+        slug: null,
+      });
+    });
+    
+    return providers;
+  }, [hospitals, clinics]);
+
+  const isLoading = hospitalsLoading || clinicsLoading;
 
   // Get user's GPS location on mount
   useEffect(() => {
@@ -79,24 +148,24 @@ export default function ClinicsPage() {
     return R * c;
   };
 
-  const filteredHospitals = allProviders?.filter((hospital) => {
+  const filteredProviders = allProviders?.filter((provider) => {
     const matchesSearch =
       !searchQuery ||
-      hospital.nameEn?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
-      hospital.nameZh?.includes(searchQuery) ||
-      hospital.addressEn?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
-      hospital.addressZh?.includes(searchQuery);
+      provider.nameEn?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
+      provider.nameZh?.includes(searchQuery) ||
+      provider.addressEn?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
+      provider.addressZh?.includes(searchQuery);
 
-    const matchesRegion = selectedRegion === "all" || hospital.regionId === selectedRegion;
+    const matchesRegion = selectedRegion === "all" || provider.regionId === selectedRegion;
     
     // Only filter by 24-hour status if the toggle is enabled
-    const matches24Hour = !show24HourOnly || hospital.open247 === true;
+    const matches24Hour = !show24HourOnly || provider.is24Hour === true;
 
     return matchesSearch && matchesRegion && matches24Hour;
   })
   // Sort by partner status first, then by distance
   ?.sort((a, b) => {
-    // Partner hospitals always come first
+    // Partner providers always come first
     if (a.isPartner && !b.isPartner) return -1;
     if (!a.isPartner && b.isPartner) return 1;
     
@@ -113,16 +182,16 @@ export default function ClinicsPage() {
     return distanceA - distanceB;
   });
 
-  // Track hospital search when filters change
+  // Track search when filters change
   useEffect(() => {
-    if (filteredHospitals && (searchQuery || selectedRegion !== "all" || show24HourOnly)) {
+    if (filteredProviders && (searchQuery || selectedRegion !== "all" || show24HourOnly)) {
       analytics.trackClinicSearch({
         region: selectedRegion !== "all" ? selectedRegion : undefined,
         is24Hour: show24HourOnly || undefined,
-        resultsCount: filteredHospitals.length,
+        resultsCount: filteredProviders.length,
       });
     }
-  }, [searchQuery, selectedRegion, show24HourOnly, filteredHospitals?.length]);
+  }, [searchQuery, selectedRegion, show24HourOnly, filteredProviders?.length]);
 
   const handleCall = (phone: string) => {
     window.location.href = `tel:${phone}`;
@@ -138,16 +207,16 @@ export default function ClinicsPage() {
     window.open(mapsUrl, "_blank");
   };
 
-  const handleCardClick = (hospital: Hospital, e: React.MouseEvent) => {
+  const handleCardClick = (provider: VetProvider, e: React.MouseEvent) => {
     // Prevent navigation if clicking on buttons
     const target = e.target as HTMLElement;
     if (target.closest('button')) {
       return;
     }
     
-    // Navigate to hospital detail page (with null check)
-    if (hospital.slug) {
-      window.location.href = `/hospitals/${hospital.slug}`;
+    // Navigate to hospital detail page (only for hospitals with slug)
+    if (provider.type === 'hospital' && provider.slug) {
+      window.location.href = `/hospitals/${provider.slug}`;
     }
   };
 
@@ -155,16 +224,16 @@ export default function ClinicsPage() {
     <>
       <SEO
         title={language === 'zh-HK'
-          ? "24小時動物醫院目錄 - PetSOS | GPS距離顯示"
-          : "24-Hour Animal Hospital Directory - PetSOS | GPS Distance Tracking"
+          ? "動物診所目錄 - PetSOS | GPS距離顯示"
+          : "Veterinary Clinics Directory - PetSOS | GPS Distance Tracking"
         }
         description={language === 'zh-HK'
-          ? "搜尋香港24小時動物醫院。GPS自動顯示距離，按最近醫院排序。覆蓋港島、九龍、新界所有地區。一鍵致電或WhatsApp聯絡，毛孩緊急情況最快找到協助。"
-          : "Search 24-hour animal hospitals in Hong Kong. GPS-powered distance tracking, sorted by nearest hospitals. Coverage across Hong Kong Island, Kowloon, and New Territories. One-tap call or WhatsApp contact for fast emergency help."
+          ? "搜尋香港動物診所及24小時動物醫院。GPS自動顯示距離，按最近診所排序。覆蓋港島、九龍、新界所有地區。一鍵致電或WhatsApp聯絡，毛孩緊急情況最快找到協助。"
+          : "Search veterinary clinics and 24-hour animal hospitals in Hong Kong. GPS-powered distance tracking, sorted by nearest clinics. Coverage across Hong Kong Island, Kowloon, and New Territories. One-tap call or WhatsApp contact for fast emergency help."
         }
         keywords={language === 'zh-HK'
-          ? "24小時獸醫, 動物醫院目錄, GPS尋找醫院, 最近獸醫, 香港島, 九龍, 新界, WhatsApp聯絡"
-          : "24-hour vet directory, animal hospital finder, GPS hospital search, nearest vet, Hong Kong Island, Kowloon, New Territories, WhatsApp contact"
+          ? "獸醫診所, 24小時獸醫, 動物醫院目錄, GPS尋找診所, 最近獸醫, 香港島, 九龍, 新界, WhatsApp聯絡"
+          : "vet clinic, 24-hour vet directory, animal hospital finder, GPS clinic search, nearest vet, Hong Kong Island, Kowloon, New Territories, WhatsApp contact"
         }
         canonical="https://petsos.site/clinics"
         language={language}
@@ -173,7 +242,7 @@ export default function ClinicsPage() {
       <StructuredData 
         data={createBreadcrumbSchema([
           { name: language === 'zh-HK' ? "主頁" : "Home", url: "https://petsos.site/" },
-          { name: language === 'zh-HK' ? "24小時動物醫院" : "24-Hour Animal Hospitals", url: "https://petsos.site/clinics" }
+          { name: language === 'zh-HK' ? "動物診所" : "Veterinary Clinics", url: "https://petsos.site/clinics" }
         ])} 
         id="schema-breadcrumb-clinics" 
       />
@@ -189,7 +258,7 @@ export default function ClinicsPage() {
                 </Button>
               </Link>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {language === 'zh-HK' ? '24小時動物醫院' : '24-Hour Animal Hospitals'}
+                {language === 'zh-HK' ? '動物診所' : 'Veterinary Clinics'}
               </h1>
             </div>
             <LanguageSwitcher />
@@ -205,7 +274,7 @@ export default function ClinicsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               type="text"
-              placeholder={language === 'zh-HK' ? '搜尋動物醫院名稱或地址...' : 'Search hospitals by name or address...'}
+              placeholder={language === 'zh-HK' ? '搜尋動物診所名稱或地址...' : 'Search clinics by name or address...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-12 text-base"
@@ -257,7 +326,7 @@ export default function ClinicsPage() {
               className="flex items-center gap-2 cursor-pointer text-sm font-medium text-red-900 dark:text-red-100"
             >
               <Clock className="h-4 w-4 text-red-600 dark:text-red-400" />
-              {language === 'zh-HK' ? '只顯示24小時醫院' : 'Show 24-Hour Hospitals Only'}
+              {language === 'zh-HK' ? '只顯示24小時診所' : 'Show 24-Hour Only'}
             </Label>
           </div>
 
@@ -276,7 +345,7 @@ export default function ClinicsPage() {
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
                 <p className="text-sm text-red-900 dark:text-red-100 font-medium">
-                  {language === 'zh-HK' ? '📍 已按距離排序 - 最近的醫院優先顯示' : '📍 Sorted by distance - Nearest hospitals first'}
+                  {language === 'zh-HK' ? '📍 已按距離排序 - 最近的診所優先顯示' : '📍 Sorted by distance - Nearest clinics first'}
                 </p>
               </div>
             </div>
@@ -293,7 +362,7 @@ export default function ClinicsPage() {
         </div>
 
         {/* Results Count */}
-        {hospitalsLoading ? (
+        {isLoading ? (
           <div className="max-w-4xl mx-auto mb-4">
             <Skeleton className="h-6 w-40" />
           </div>
@@ -301,16 +370,16 @@ export default function ClinicsPage() {
           <div className="max-w-4xl mx-auto mb-4">
             <p className="text-gray-600 dark:text-gray-400 text-sm" data-testid="text-results-count">
               {language === 'zh-HK' 
-                ? `已找到 ${filteredHospitals?.length || 0} 間動物醫院`
-                : `${filteredHospitals?.length || 0} ${filteredHospitals?.length !== 1 ? 'hospitals' : 'hospital'} found`
+                ? `已找到 ${filteredProviders?.length || 0} 間動物診所`
+                : `${filteredProviders?.length || 0} ${filteredProviders?.length !== 1 ? 'clinics' : 'clinic'} found`
               }
             </p>
           </div>
         )}
 
-        {/* Hospital List */}
+        {/* Clinic List */}
         <div className="max-w-4xl mx-auto space-y-3">
-          {hospitalsLoading ? (
+          {isLoading ? (
             <>
               {[1, 2, 3].map((i) => (
                 <Card key={i}>
@@ -324,65 +393,89 @@ export default function ClinicsPage() {
                 </Card>
               ))}
             </>
-          ) : filteredHospitals && filteredHospitals.length > 0 ? (
-            filteredHospitals.map((hospital) => (
+          ) : filteredProviders && filteredProviders.length > 0 ? (
+            filteredProviders.map((provider) => (
               <Card
-                key={hospital.id}
-                className="group hover:shadow-lg hover:border-l-red-700 transition-all border-l-4 border-l-red-600 cursor-pointer"
-                onClick={(e) => handleCardClick(hospital, e)}
-                data-testid={`card-clinic-${hospital.id}`}
+                key={provider.id}
+                className={`group hover:shadow-lg transition-all border-l-4 cursor-pointer ${
+                  provider.type === 'hospital' 
+                    ? 'hover:border-l-red-700 border-l-red-600' 
+                    : 'hover:border-l-blue-700 border-l-blue-600'
+                }`}
+                onClick={(e) => handleCardClick(provider, e)}
+                data-testid={`card-clinic-${provider.id}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap gap-2 mb-2">
                         {/* Partner Badge */}
-                        {hospital.isPartner && (
-                          <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 font-bold" data-testid={`badge-partner-${hospital.id}`}>
+                        {provider.isPartner && (
+                          <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 font-bold" data-testid={`badge-partner-${provider.id}`}>
                             ⭐ PetSOS Partner
                           </Badge>
                         )}
                         
-                        {/* Hospital Badge */}
-                        <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 font-bold" data-testid={`badge-hospital-${hospital.id}`}>
-                          <Building2 className="h-3 w-3 mr-1" />
-                          {hospital.open247 
-                            ? (language === 'zh-HK' ? '24小時動物醫院' : '24-Hour Hospital')
-                            : (language === 'zh-HK' ? '動物醫院' : 'Animal Hospital')
-                          }
-                        </Badge>
+                        {/* Provider Type Badge */}
+                        {provider.type === 'hospital' ? (
+                          <Badge className="bg-gradient-to-r from-emerald-600 to-teal-600 font-bold" data-testid={`badge-type-${provider.id}`}>
+                            <Building2 className="h-3 w-3 mr-1" />
+                            {provider.is24Hour 
+                              ? (language === 'zh-HK' ? '24小時動物醫院' : '24-Hour Hospital')
+                              : (language === 'zh-HK' ? '動物醫院' : 'Animal Hospital')
+                            }
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-gradient-to-r from-blue-600 to-cyan-600 font-bold" data-testid={`badge-type-${provider.id}`}>
+                            <Building2 className="h-3 w-3 mr-1" />
+                            {provider.is24Hour 
+                              ? (language === 'zh-HK' ? '24小時診所' : '24-Hour Clinic')
+                              : (language === 'zh-HK' ? '動物診所' : 'Veterinary Clinic')
+                            }
+                          </Badge>
+                        )}
                       </div>
                       
-                      {/* Hospital Name - Compact */}
+                      {/* Provider Name - Compact */}
                       <CardTitle className="text-lg mb-1 leading-tight">
-                        <span className="flex items-center gap-1.5 font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors" data-testid={`text-clinic-name-${hospital.id}`}>
-                          {language === 'zh-HK' && hospital.nameZh ? hospital.nameZh : hospital.nameEn}
-                          <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-red-600 flex-shrink-0" />
+                        <span className={`flex items-center gap-1.5 font-bold text-gray-900 dark:text-white transition-colors ${
+                          provider.type === 'hospital' ? 'group-hover:text-red-600' : 'group-hover:text-blue-600'
+                        }`} data-testid={`text-clinic-name-${provider.id}`}>
+                          {language === 'zh-HK' && provider.nameZh ? provider.nameZh : provider.nameEn}
+                          {provider.type === 'hospital' && provider.slug && (
+                            <ExternalLink className={`h-4 w-4 text-gray-400 flex-shrink-0 ${
+                              provider.type === 'hospital' ? 'group-hover:text-red-600' : 'group-hover:text-blue-600'
+                            }`} />
+                          )}
                         </span>
-                        {language === 'zh-HK' && hospital.nameZh && (
+                        {language === 'zh-HK' && provider.nameZh && (
                           <span className="block text-sm font-normal text-gray-500 dark:text-gray-400 mt-0.5">
-                            {hospital.nameEn}
+                            {provider.nameEn}
                           </span>
                         )}
                       </CardTitle>
                       
                       {/* Distance Badge - Prominent */}
-                      {userLocation && hospital.latitude && hospital.longitude && (
-                        <div className="inline-flex items-center gap-1 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-xs font-semibold mb-2" data-testid={`text-clinic-distance-${hospital.id}`}>
+                      {userLocation && provider.latitude && provider.longitude && (
+                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold mb-2 ${
+                          provider.type === 'hospital' 
+                            ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                            : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                        }`} data-testid={`text-clinic-distance-${provider.id}`}>
                           <MapPin className="h-3 w-3" />
-                          {calculateDistance(userLocation.lat, userLocation.lng, parseFloat(hospital.latitude), parseFloat(hospital.longitude)).toFixed(1)} km {language === 'zh-HK' ? '距離' : 'away'}
+                          {calculateDistance(userLocation.lat, userLocation.lng, parseFloat(provider.latitude), parseFloat(provider.longitude)).toFixed(1)} km {language === 'zh-HK' ? '距離' : 'away'}
                         </div>
                       )}
                       
                       {/* Address - Single Line Truncated */}
-                      <div className="text-xs text-gray-600 dark:text-gray-400 truncate" data-testid={`text-clinic-address-${hospital.id}`}>
-                        {language === 'zh-HK' && hospital.addressZh ? hospital.addressZh : hospital.addressEn}
+                      <div className="text-xs text-gray-600 dark:text-gray-400 truncate" data-testid={`text-clinic-address-${provider.id}`}>
+                        {language === 'zh-HK' && provider.addressZh ? provider.addressZh : provider.addressEn}
                       </div>
                     </div>
                     
                     {/* 24-Hour Badge - Prominent with Brand Color */}
-                    {hospital.open247 && (
-                      <Badge className="bg-red-600 hover:bg-red-700 shrink-0" data-testid={`badge-24hour-${hospital.id}`}>
+                    {provider.is24Hour && (
+                      <Badge className="bg-red-600 hover:bg-red-700 shrink-0" data-testid={`badge-24hour-${provider.id}`}>
                         <Clock className="h-3 w-3 mr-1" />
                         {language === 'zh-HK' ? '24小時' : '24hrs'}
                       </Badge>
@@ -392,45 +485,57 @@ export default function ClinicsPage() {
                 <CardContent className="pt-0">
                   {/* Action Buttons - Compact Row */}
                   <div className="flex gap-2">
-                    {hospital.phone && (
+                    {provider.phone && (
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleCall(hospital.phone!);
+                          handleCall(provider.phone!);
                         }}
                         size="sm"
-                        className="flex-1 bg-red-600 hover:bg-red-700"
-                        data-testid={`button-call-${hospital.id}`}
+                        className={`flex-1 ${
+                          provider.type === 'hospital' 
+                            ? 'bg-red-600 hover:bg-red-700' 
+                            : 'bg-blue-600 hover:bg-blue-700'
+                        }`}
+                        data-testid={`button-call-${provider.id}`}
                       >
                         <Phone className="h-4 w-4 mr-1" />
                         {language === 'zh-HK' ? '致電' : 'Call'}
                       </Button>
                     )}
-                    {hospital.whatsapp && (
+                    {provider.whatsapp && (
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleWhatsApp(hospital.whatsapp!);
+                          handleWhatsApp(provider.whatsapp!);
                         }}
                         variant="outline"
                         size="sm"
-                        className="flex-1 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        data-testid={`button-whatsapp-${hospital.id}`}
+                        className={`flex-1 ${
+                          provider.type === 'hospital' 
+                            ? 'border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20' 
+                            : 'border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                        }`}
+                        data-testid={`button-whatsapp-${provider.id}`}
                       >
                         <MessageCircle className="h-4 w-4 mr-1" />
                         WhatsApp
                       </Button>
                     )}
-                    {hospital.latitude && hospital.longitude && (
+                    {provider.latitude && provider.longitude && (
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleMaps(parseFloat(hospital.latitude!), parseFloat(hospital.longitude!), hospital.nameEn);
+                          handleMaps(parseFloat(provider.latitude!), parseFloat(provider.longitude!), provider.nameEn);
                         }}
                         variant="outline"
                         size="sm"
-                        className="flex-1 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        data-testid={`button-maps-${hospital.id}`}
+                        className={`flex-1 ${
+                          provider.type === 'hospital' 
+                            ? 'border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20' 
+                            : 'border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                        }`}
+                        data-testid={`button-maps-${provider.id}`}
                       >
                         <Navigation className="h-4 w-4 mr-1" />
                         {language === 'zh-HK' ? '導航' : 'Maps'}
@@ -444,7 +549,7 @@ export default function ClinicsPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <p className="text-gray-600 dark:text-gray-400 mb-2" data-testid="text-no-results">
-                  {language === 'zh-HK' ? '未找到符合條件的動物醫院' : 'No hospitals found matching your criteria'}
+                  {language === 'zh-HK' ? '未找到符合條件的動物診所' : 'No clinics found matching your criteria'}
                 </p>
                 <p className="text-gray-500 dark:text-gray-500 text-sm">
                   {language === 'zh-HK' ? '請嘗試調整搜尋條件' : 'Try adjusting your search or filters'}
