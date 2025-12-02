@@ -542,7 +542,10 @@ export class MessagingService {
       const lastHospital = await storage.getHospital(pet.lastVisitHospitalId);
       const lastHospitalName = lastHospital ? (isZhHk && lastHospital.nameZh ? lastHospital.nameZh : lastHospital.nameEn) : (isZhHk ? '不詳' : 'Unknown');
       
-      // Build 11 variables for full template
+      // Build profile link
+      const profileLink = `${getBaseUrl()}/emergency-profile/${emergencyRequestId}`;
+      
+      // Build 12 variables for full template (includes profile URL)
       variables = [
         lastHospitalName, // {{1}} Last visited hospital
         pet.name || (isZhHk ? '未命名' : 'Unnamed'), // {{2}} Pet name
@@ -555,10 +558,8 @@ export class MessagingService {
         emergencyRequest.manualLocation || (isZhHk ? '不詳' : 'Unknown'), // {{9}} Location
         emergencyRequest.contactName || (isZhHk ? '寵物主人' : 'Pet Owner'), // {{10}} Owner name
         emergencyRequest.contactPhone || (isZhHk ? '不詳' : 'Unknown'), // {{11}} Owner phone
+        profileLink, // {{12}} Profile URL
       ];
-      
-      // Build profile link
-      const profileLink = `${getBaseUrl()}/emergency-profile/${emergencyRequestId}`;
       
       fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
         `${isZhHk ? '已登記寵物（有醫療記錄）' : 'REGISTERED PET WITH MEDICAL HISTORY'}\n` +
@@ -573,7 +574,10 @@ export class MessagingService {
       // New registered pet (no visit history)
       templateName = `emergency_pet_alert_new${langSuffix}`;
       
-      // Build 10 variables for new template
+      // Build profile link
+      const profileLink = `${getBaseUrl()}/emergency-profile/${emergencyRequestId}`;
+      
+      // Build 11 variables for new template (includes profile URL)
       variables = [
         pet.name || (isZhHk ? '未命名' : 'Unnamed'), // {{1}} Pet name
         emergencyRequest.petSpecies || (isZhHk ? '不詳' : 'Unknown'), // {{2}} Species
@@ -585,10 +589,8 @@ export class MessagingService {
         emergencyRequest.manualLocation || (isZhHk ? '不詳' : 'Unknown'), // {{8}} Location
         emergencyRequest.contactName || (isZhHk ? '寵物主人' : 'Pet Owner'), // {{9}} Owner name
         emergencyRequest.contactPhone || (isZhHk ? '不詳' : 'Unknown'), // {{10}} Owner phone
+        profileLink, // {{11}} Profile URL
       ];
-      
-      // Build profile link
-      const profileLink = `${getBaseUrl()}/emergency-profile/${emergencyRequestId}`;
       
       fallbackText = `🚨 ${isZhHk ? '緊急寵物求助' : 'EMERGENCY PET ALERT'}\n\n` +
         `${isZhHk ? '名稱' : 'Name'}: ${variables[0]}\n` +
