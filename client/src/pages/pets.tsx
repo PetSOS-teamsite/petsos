@@ -49,7 +49,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/hooks/useAuth";
-import { PawPrint, Plus, Pencil, Trash2, ArrowLeft, Check, ChevronsUpDown } from "lucide-react";
+import { PawPrint, Plus, Pencil, Trash2, ArrowLeft, Check, ChevronsUpDown, Camera, X, Upload, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import type { Pet, Clinic, User } from "@shared/schema";
 import { PET_SPECIES, getBreedOptions } from "@shared/pet-data";
@@ -226,6 +226,119 @@ export default function PetsPage() {
       });
     },
   });
+
+  // Track photo upload state
+  const [uploadingPhotoForPetId, setUploadingPhotoForPetId] = useState<string | null>(null);
+
+  const uploadPhotoMutation = useMutation({
+    mutationFn: async ({ petId, file }: { petId: string; file: File }) => {
+      // Get upload URL (signed URL for PUT)
+      const urlResponse = await apiRequest('POST', `/api/pets/${petId}/photo-upload-url`, {});
+      const { uploadURL } = await urlResponse.json();
+      
+      // Upload file directly to object storage via PUT
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type,
+        },
+        body: file,
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload photo');
+      }
+      
+      // The filePath is the uploadURL without query params (signed URL base)
+      const filePath = uploadURL.split('?')[0];
+      
+      // Update pet with photo URL
+      const photoResponse = await apiRequest('POST', `/api/pets/${petId}/photo`, { filePath });
+      return await photoResponse.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users', authUser?.id, 'pets'] });
+      toast({
+        title: t("pets.success.photo_upload", "Photo uploaded!"),
+        description: t("pets.success.photo_upload_desc", "Your pet's photo has been updated."),
+      });
+      setUploadingPhotoForPetId(null);
+    },
+    onError: (error: Error) => {
+      // Try to parse backend error message if available
+      let errorMessage = error.message;
+      try {
+        const parsed = JSON.parse(error.message);
+        if (parsed.message) errorMessage = parsed.message;
+        else if (parsed.error) errorMessage = parsed.error;
+      } catch {
+        // Use the original error message
+      }
+      
+      toast({
+        title: t("pets.error.photo_upload", "Failed to upload photo"),
+        description: errorMessage,
+        variant: "destructive",
+      });
+      setUploadingPhotoForPetId(null);
+    },
+  });
+
+  const deletePhotoMutation = useMutation({
+    mutationFn: async (petId: string) => {
+      const response = await apiRequest('DELETE', `/api/pets/${petId}/photo`, {});
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users', authUser?.id, 'pets'] });
+      toast({
+        title: t("pets.success.photo_delete", "Photo removed"),
+        description: t("pets.success.photo_delete_desc", "Your pet's photo has been removed."),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("pets.error.photo_delete", "Failed to remove photo"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handlePhotoChange = (petId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: t("pets.error.invalid_file", "Invalid file type"),
+          description: t("pets.error.invalid_file_desc", "Please select an image file (JPEG, PNG, etc.)"),
+          variant: "destructive",
+        });
+        // Reset the input to allow retry
+        event.target.value = '';
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: t("pets.error.file_too_large", "File too large"),
+          description: t("pets.error.file_too_large_desc", "Maximum file size is 5MB"),
+          variant: "destructive",
+        });
+        // Reset the input to allow retry
+        event.target.value = '';
+        return;
+      }
+      
+      setUploadingPhotoForPetId(petId);
+      uploadPhotoMutation.mutate({ petId, file });
+    }
+    
+    // Reset the input to allow re-selecting the same file
+    event.target.value = '';
+  };
 
   const onSubmit = (data: PetFormData) => {
     if (editingPet) {
@@ -607,32 +720,84 @@ export default function PetsPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 {pets.map((pet) => (
                   <Card key={pet.id} data-testid={`card-pet-${pet.id}`}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <span>{pet.name}</span>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(pet)}
-                            data-testid={`button-edit-pet-${pet.id}`}
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start gap-4">
+                        {/* Pet Photo Section */}
+                        <div className="relative flex-shrink-0">
+                          <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700">
+                            {pet.photoUrl ? (
+                              <img
+                                src={pet.photoUrl}
+                                alt={pet.name}
+                                className="w-full h-full object-cover"
+                                data-testid={`img-pet-photo-${pet.id}`}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <PawPrint className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                              </div>
+                            )}
+                          </div>
+                          {/* Photo upload button */}
+                          <label 
+                            className="absolute bottom-0 right-0 w-7 h-7 bg-primary hover:bg-primary/90 rounded-full flex items-center justify-center cursor-pointer shadow-lg border-2 border-white dark:border-gray-900"
+                            data-testid={`button-upload-photo-${pet.id}`}
                           >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(pet.id)}
-                            data-testid={`button-delete-pet-${pet.id}`}
-                          >
-                            <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
-                          </Button>
+                            {uploadingPhotoForPetId === pet.id ? (
+                              <Loader2 className="w-4 h-4 text-white animate-spin" />
+                            ) : (
+                              <Camera className="w-4 h-4 text-white" />
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handlePhotoChange(pet.id, e)}
+                              disabled={uploadingPhotoForPetId === pet.id}
+                              data-testid={`input-photo-${pet.id}`}
+                            />
+                          </label>
+                          {/* Remove photo button (only show if photo exists) */}
+                          {pet.photoUrl && !uploadingPhotoForPetId && (
+                            <button
+                              className="absolute top-0 right-0 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-sm"
+                              onClick={() => deletePhotoMutation.mutate(pet.id)}
+                              data-testid={`button-remove-photo-${pet.id}`}
+                            >
+                              <X className="w-3 h-3 text-white" />
+                            </button>
+                          )}
                         </div>
-                      </CardTitle>
-                      <CardDescription>
-                        {pet.species}
-                        {pet.breed && ` • ${pet.breed}`}
-                      </CardDescription>
+                        
+                        {/* Pet Info */}
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="flex items-center justify-between">
+                            <span className="truncate">{pet.name}</span>
+                            <div className="flex gap-1 flex-shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(pet)}
+                                data-testid={`button-edit-pet-${pet.id}`}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(pet.id)}
+                                data-testid={`button-delete-pet-${pet.id}`}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
+                              </Button>
+                            </div>
+                          </CardTitle>
+                          <CardDescription>
+                            {pet.species}
+                            {pet.breed && ` • ${pet.breed}`}
+                          </CardDescription>
+                        </div>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">

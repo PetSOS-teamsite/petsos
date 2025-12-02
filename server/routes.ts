@@ -720,6 +720,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get pet photo upload URL
+  app.post("/api/pets/:id/photo-upload-url", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const petId = req.params.id;
+      
+      // Verify user owns this pet
+      const pet = await storage.getPet(petId);
+      if (!pet) {
+        return res.status(404).json({ error: "Pet not found" });
+      }
+      if (pet.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error: any) {
+      console.error("Error getting pet photo upload URL:", error);
+      res.status(500).json({ error: error.message || "Failed to get upload URL" });
+    }
+  });
+
+  // Update pet photo
+  app.post("/api/pets/:id/photo", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const petId = req.params.id;
+      
+      // Validate request body
+      const photoUpdateSchema = z.object({
+        filePath: z.string().min(1, "File path is required"),
+      });
+      
+      const validationResult = photoUpdateSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid request", 
+          details: validationResult.error.errors 
+        });
+      }
+      
+      const { filePath: rawFilePath } = validationResult.data;
+      
+      // Verify user owns this pet
+      const pet = await storage.getPet(petId);
+      if (!pet) {
+        return res.status(404).json({ error: "Pet not found" });
+      }
+      if (pet.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const objectStorageService = new ObjectStorageService();
+      
+      // Normalize the file path from upload URL
+      const filePath = objectStorageService.normalizeObjectEntityPath(rawFilePath);
+      
+      // Validate the normalized path is a valid object path
+      if (!filePath.startsWith('/objects/')) {
+        return res.status(400).json({ 
+          error: "Invalid file path", 
+          message: "The uploaded file path is not a valid object storage path."
+        });
+      }
+      
+      // Set ACL policy - public for pet photos (gracefully handle errors)
+      try {
+        await objectStorageService.trySetObjectEntityAclPolicy(filePath, {
+          owner: userId,
+          visibility: "public",
+        });
+      } catch (aclError) {
+        console.warn("Failed to set ACL policy for pet photo:", aclError);
+        // Continue anyway - the file might still be accessible
+      }
+      
+      // Get the public URL for the photo
+      const photoUrl = objectStorageService.getObjectEntityPublicUrl(filePath);
+      
+      // Validate the photo URL is valid before saving
+      if (!photoUrl || typeof photoUrl !== 'string') {
+        return res.status(500).json({ 
+          error: "Failed to generate photo URL", 
+          message: "Could not generate a valid URL for the uploaded photo."
+        });
+      }
+      
+      // Update pet with photo URL
+      const updatedPet = await storage.updatePet(petId, { photoUrl });
+      
+      await storage.createAuditLog({
+        entityType: 'pet',
+        entityId: petId,
+        action: 'update',
+        userId,
+        changes: { photoUrl },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json(updatedPet);
+    } catch (error: any) {
+      console.error("Error updating pet photo:", error);
+      res.status(500).json({ error: error.message || "Failed to update pet photo" });
+    }
+  });
+
+  // Delete pet photo
+  app.delete("/api/pets/:id/photo", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const petId = req.params.id;
+      
+      // Verify user owns this pet
+      const pet = await storage.getPet(petId);
+      if (!pet) {
+        return res.status(404).json({ error: "Pet not found" });
+      }
+      if (pet.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      // Update pet to remove photo URL
+      const updatedPet = await storage.updatePet(petId, { photoUrl: null });
+      
+      await storage.createAuditLog({
+        entityType: 'pet',
+        entityId: petId,
+        action: 'update',
+        userId,
+        changes: { photoUrl: null },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json(updatedPet);
+    } catch (error: any) {
+      console.error("Error deleting pet photo:", error);
+      res.status(500).json({ error: error.message || "Failed to delete pet photo" });
+    }
+  });
+
   // ===== REGION ROUTES =====
   
   // Get all regions

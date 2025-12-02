@@ -111,6 +111,7 @@ export const pets = pgTable("pets", {
   color: text("color"),
   medicalHistory: text("medical_history"),
   microchipId: text("microchip_id"),
+  photoUrl: text("photo_url"), // Pet profile photo URL
 });
 
 export const insertPetSchema = createInsertSchema(pets).omit({
