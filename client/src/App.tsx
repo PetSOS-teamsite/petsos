@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { CookieConsent } from "@/components/CookieConsent";
 import { PushNotificationBanner } from "@/components/PushNotificationBanner";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { usePageTracking } from "@/hooks/useAnalytics";
 import { initSentry } from "@/lib/sentry";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -217,6 +218,7 @@ function App() {
             </Suspense>
             <CookieConsent />
             <PushNotificationBanner />
+            <OfflineIndicator />
           </TooltipProvider>
         </LanguageProvider>
       </QueryClientProvider>
