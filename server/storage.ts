@@ -530,14 +530,12 @@ export class MemStorage implements IStorage {
     const region: Region = { 
       ...insertRegion, 
       id,
-      countryId: insertRegion.countryId,
+      countryCode: insertRegion.countryCode,
       code: insertRegion.code,
       nameEn: insertRegion.nameEn,
       nameZh: insertRegion.nameZh ?? null,
-      countryCode: insertRegion.countryCode ?? null,
-      active: insertRegion.active ?? null,
-      phonePrefix: insertRegion.phonePrefix ?? null,
-      flag: insertRegion.flag ?? null
+      coordinates: insertRegion.coordinates ?? null,
+      active: insertRegion.active ?? true,
     };
     this.regions.set(id, region);
     return region;
