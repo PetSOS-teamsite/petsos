@@ -36,6 +36,22 @@ export const defaultNotificationPreferences: NotificationPreferences = {
   vetTips: true,
 };
 
+// Storage quota configuration (in bytes)
+export const STORAGE_QUOTA = {
+  MAX_STORAGE_PER_USER: 100 * 1024 * 1024, // 100 MB per user
+  MAX_RECORDS_PER_USER: 50, // Maximum 50 records per user
+  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10 MB per file
+};
+
+export type StorageUsage = {
+  usedBytes: number;
+  recordCount: number;
+  maxBytes: number;
+  maxRecords: number;
+  maxFileSize: number;
+  percentUsed: number;
+};
+
 // Users table - unified auth system
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

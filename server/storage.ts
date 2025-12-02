@@ -146,6 +146,7 @@ export interface IStorage {
   createMedicalRecord(record: InsertPetMedicalRecord): Promise<PetMedicalRecord>;
   updateMedicalRecord(id: string, record: Partial<InsertPetMedicalRecord>): Promise<PetMedicalRecord | undefined>;
   deleteMedicalRecord(id: string): Promise<boolean>;
+  getUserStorageUsage(userId: string): Promise<{ usedBytes: number; recordCount: number }>;
   
   // Pet Medical Sharing Consents
   getMedicalSharingConsent(petId: string, userId: string, consentType: string): Promise<PetMedicalSharingConsent | undefined>;
@@ -1300,6 +1301,10 @@ export class MemStorage implements IStorage {
     throw new Error("MemStorage does not support medical records - use DatabaseStorage");
   }
 
+  async getUserStorageUsage(userId: string): Promise<{ usedBytes: number; recordCount: number }> {
+    throw new Error("MemStorage does not support storage usage - use DatabaseStorage");
+  }
+
   // Pet Medical Sharing Consents - stub implementations
   async getMedicalSharingConsent(petId: string, userId: string, consentType: string): Promise<PetMedicalSharingConsent | undefined> {
     throw new Error("MemStorage does not support medical sharing consents - use DatabaseStorage");
@@ -2164,6 +2169,20 @@ class DatabaseStorage implements IStorage {
   async deleteMedicalRecord(id: string): Promise<boolean> {
     const result = await db.delete(petMedicalRecords).where(eq(petMedicalRecords.id, id)).returning();
     return result.length > 0;
+  }
+
+  async getUserStorageUsage(userId: string): Promise<{ usedBytes: number; recordCount: number }> {
+    const result = await db.select({
+      usedBytes: sql<number>`COALESCE(SUM(${petMedicalRecords.fileSize}), 0)`,
+      recordCount: sql<number>`COUNT(*)`,
+    })
+    .from(petMedicalRecords)
+    .where(eq(petMedicalRecords.userId, userId));
+    
+    return {
+      usedBytes: Number(result[0]?.usedBytes) || 0,
+      recordCount: Number(result[0]?.recordCount) || 0,
+    };
   }
 
   // Pet Medical Sharing Consents

@@ -26,7 +26,8 @@ import {
   insertAuditLogSchema, insertPrivacyConsentSchema,
   insertTranslationSchema, insertEmergencyRequestSchema,
   insertPetMedicalRecordSchema, insertPetMedicalSharingConsentSchema,
-  insertPushSubscriptionSchema, insertNotificationBroadcastSchema
+  insertPushSubscriptionSchema, insertNotificationBroadcastSchema,
+  STORAGE_QUOTA
 } from "@shared/schema";
 import { fcmService, sendBroadcastNotification as sendFCMBroadcast } from "./services/fcm";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
@@ -2754,12 +2755,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== MEDICAL RECORDS ROUTES =====
   
+  // Get user's storage usage
+  app.get("/api/medical-records/storage-usage", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const usage = await storage.getUserStorageUsage(userId);
+      
+      res.json({
+        usedBytes: usage.usedBytes,
+        recordCount: usage.recordCount,
+        maxBytes: STORAGE_QUOTA.MAX_STORAGE_PER_USER,
+        maxRecords: STORAGE_QUOTA.MAX_RECORDS_PER_USER,
+        maxFileSize: STORAGE_QUOTA.MAX_FILE_SIZE,
+        percentUsed: Math.round((usage.usedBytes / STORAGE_QUOTA.MAX_STORAGE_PER_USER) * 100),
+      });
+    } catch (error: any) {
+      console.error("Error getting storage usage:", error);
+      res.status(500).json({ error: error.message || "Failed to get storage usage" });
+    }
+  });
+  
   // Get upload URL for medical records
   app.post("/api/medical-records/upload-url", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = (req.user as any).id;
+      
+      // Check storage quota before allowing upload
+      const usage = await storage.getUserStorageUsage(userId);
+      
+      if (usage.recordCount >= STORAGE_QUOTA.MAX_RECORDS_PER_USER) {
+        return res.status(403).json({ 
+          error: "Storage quota exceeded", 
+          message: `Maximum of ${STORAGE_QUOTA.MAX_RECORDS_PER_USER} medical records allowed. Please delete some records to upload more.`,
+          quota: {
+            usedRecords: usage.recordCount,
+            maxRecords: STORAGE_QUOTA.MAX_RECORDS_PER_USER,
+          }
+        });
+      }
+      
+      if (usage.usedBytes >= STORAGE_QUOTA.MAX_STORAGE_PER_USER) {
+        const usedMB = Math.round(usage.usedBytes / (1024 * 1024));
+        const maxMB = Math.round(STORAGE_QUOTA.MAX_STORAGE_PER_USER / (1024 * 1024));
+        return res.status(403).json({ 
+          error: "Storage quota exceeded", 
+          message: `Storage limit of ${maxMB}MB reached (${usedMB}MB used). Please delete some records to upload more.`,
+          quota: {
+            usedBytes: usage.usedBytes,
+            maxBytes: STORAGE_QUOTA.MAX_STORAGE_PER_USER,
+          }
+        });
+      }
+      
       const objectStorageService = new ObjectStorageService();
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadURL });
+      res.json({ 
+        uploadURL,
+        quota: {
+          usedBytes: usage.usedBytes,
+          usedRecords: usage.recordCount,
+          maxBytes: STORAGE_QUOTA.MAX_STORAGE_PER_USER,
+          maxRecords: STORAGE_QUOTA.MAX_RECORDS_PER_USER,
+          maxFileSize: STORAGE_QUOTA.MAX_FILE_SIZE,
+        }
+      });
     } catch (error: any) {
       console.error("Error getting upload URL:", error);
       res.status(500).json({ error: error.message || "Failed to get upload URL" });
@@ -2770,6 +2829,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/medical-records", isAuthenticated, async (req: any, res) => {
     try {
       const userId = (req.user as any).id;
+      const fileSize = req.body.fileSize || 0;
+      
+      // Validate file size
+      if (fileSize > STORAGE_QUOTA.MAX_FILE_SIZE) {
+        const maxSizeMB = Math.round(STORAGE_QUOTA.MAX_FILE_SIZE / (1024 * 1024));
+        return res.status(403).json({ 
+          error: "File too large", 
+          message: `Maximum file size is ${maxSizeMB}MB.`,
+        });
+      }
+      
+      // Check storage quota before creating record
+      const usage = await storage.getUserStorageUsage(userId);
+      
+      if (usage.recordCount >= STORAGE_QUOTA.MAX_RECORDS_PER_USER) {
+        return res.status(403).json({ 
+          error: "Storage quota exceeded", 
+          message: `Maximum of ${STORAGE_QUOTA.MAX_RECORDS_PER_USER} medical records allowed.`,
+        });
+      }
+      
+      if ((usage.usedBytes + fileSize) > STORAGE_QUOTA.MAX_STORAGE_PER_USER) {
+        const maxMB = Math.round(STORAGE_QUOTA.MAX_STORAGE_PER_USER / (1024 * 1024));
+        return res.status(403).json({ 
+          error: "Storage quota exceeded", 
+          message: `This upload would exceed your storage limit of ${maxMB}MB.`,
+        });
+      }
+      
       const objectStorageService = new ObjectStorageService();
       
       // Normalize the file path from upload URL
