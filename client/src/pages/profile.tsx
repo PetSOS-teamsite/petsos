@@ -31,13 +31,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
-import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft, Download, Shield, Trash2, AlertTriangle, Edit, PawPrint } from "lucide-react";
+import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft, Download, Shield, Trash2, AlertTriangle, Edit, PawPrint, Bell, Megaphone, Sparkles, AlertCircle, Lightbulb } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import type { User as UserType, Region, Pet } from "@shared/schema";
+import type { User as UserType, Region, Pet, NotificationPreferences } from "@shared/schema";
 
 const createProfileSchema = (t: (key: string, fallback: string) => string) => z.object({
   name: z.string().min(1, t("profile.validation.name", "Name is required")).optional().or(z.literal('')),
@@ -73,6 +74,42 @@ export default function ProfilePage() {
     queryKey: ['/api/users', authUser?.id, 'pets'],
     enabled: !!authUser?.id,
   });
+
+  // Notification preferences query
+  const { data: notificationPrefs, isLoading: notificationPrefsLoading } = useQuery<NotificationPreferences>({
+    queryKey: ['/api/users', authUser?.id, 'notification-preferences'],
+    enabled: !!authUser?.id,
+  });
+
+  // Notification preferences mutation
+  const updateNotificationPrefsMutation = useMutation({
+    mutationFn: async (prefs: Partial<NotificationPreferences>) => {
+      const response = await apiRequest(
+        'PATCH',
+        `/api/users/${authUser?.id}/notification-preferences`,
+        prefs
+      );
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users', authUser?.id, 'notification-preferences'] });
+      toast({
+        title: t("profile.notifications.success", "Notification preferences updated"),
+        description: t("profile.notifications.success_desc", "Your notification settings have been saved."),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("profile.notifications.error", "Update failed"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleNotificationToggle = (key: keyof NotificationPreferences, value: boolean) => {
+    updateNotificationPrefsMutation.mutate({ [key]: value });
+  };
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -479,6 +516,139 @@ export default function ProfilePage() {
                 </Button>
               </form>
             </Form>
+          </CardContent>
+        </Card>
+
+        {/* Notification Preferences */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="w-6 h-6" />
+              {t("profile.notifications.title", "Notification Preferences")}
+            </CardTitle>
+            <CardDescription>
+              {t("profile.notifications.desc", "Control what types of notifications you receive")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {notificationPrefsLoading ? (
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                {t("loading.notifications", "Loading notification preferences...")}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Emergency Alerts */}
+                <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        {t("profile.notifications.emergency_alerts", "Emergency Alerts")}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {t("profile.notifications.emergency_alerts_desc", "Critical notifications about your emergency requests")}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notificationPrefs?.emergencyAlerts ?? true}
+                    onCheckedChange={(checked) => handleNotificationToggle('emergencyAlerts', checked)}
+                    disabled={updateNotificationPrefsMutation.isPending}
+                    data-testid="switch-emergency-alerts"
+                  />
+                </div>
+
+                {/* General Updates */}
+                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-3">
+                    <Megaphone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        {t("profile.notifications.general_updates", "General Updates")}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {t("profile.notifications.general_updates_desc", "Platform announcements and service updates")}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notificationPrefs?.generalUpdates ?? true}
+                    onCheckedChange={(checked) => handleNotificationToggle('generalUpdates', checked)}
+                    disabled={updateNotificationPrefsMutation.isPending}
+                    data-testid="switch-general-updates"
+                  />
+                </div>
+
+                {/* System Alerts */}
+                <div className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        {t("profile.notifications.system_alerts", "System Alerts")}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {t("profile.notifications.system_alerts_desc", "Maintenance notices and security alerts")}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notificationPrefs?.systemAlerts ?? true}
+                    onCheckedChange={(checked) => handleNotificationToggle('systemAlerts', checked)}
+                    disabled={updateNotificationPrefsMutation.isPending}
+                    data-testid="switch-system-alerts"
+                  />
+                </div>
+
+                {/* Vet Tips */}
+                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-3">
+                    <Lightbulb className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        {t("profile.notifications.vet_tips", "Veterinary Tips")}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {t("profile.notifications.vet_tips_desc", "Pet health tips and educational content")}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notificationPrefs?.vetTips ?? true}
+                    onCheckedChange={(checked) => handleNotificationToggle('vetTips', checked)}
+                    disabled={updateNotificationPrefsMutation.isPending}
+                    data-testid="switch-vet-tips"
+                  />
+                </div>
+
+                {/* Promotions */}
+                <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        {t("profile.notifications.promotions", "Promotions & Offers")}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {t("profile.notifications.promotions_desc", "Special offers from partner clinics and hospitals")}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notificationPrefs?.promotions ?? false}
+                    onCheckedChange={(checked) => handleNotificationToggle('promotions', checked)}
+                    disabled={updateNotificationPrefsMutation.isPending}
+                    data-testid="switch-promotions"
+                  />
+                </div>
+
+                {updateNotificationPrefsMutation.isPending && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                    {t("profile.notifications.saving", "Saving preferences...")}
+                  </p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -17,6 +17,25 @@ export const sessions = pgTable("sessions", {
   expire: timestamp("expire").notNull(),
 });
 
+// Notification preferences structure for users
+export const notificationPreferencesSchema = z.object({
+  emergencyAlerts: z.boolean().default(true),    // Receive emergency-related notifications
+  generalUpdates: z.boolean().default(true),     // Receive general platform updates
+  promotions: z.boolean().default(false),        // Receive promotions and offers
+  systemAlerts: z.boolean().default(true),       // Receive system maintenance alerts
+  vetTips: z.boolean().default(true),            // Receive veterinary tips and articles
+});
+
+export type NotificationPreferences = z.infer<typeof notificationPreferencesSchema>;
+
+export const defaultNotificationPreferences: NotificationPreferences = {
+  emergencyAlerts: true,
+  generalUpdates: true,
+  promotions: false,
+  systemAlerts: true,
+  vetTips: true,
+};
+
 // Users table - unified auth system
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -38,6 +57,9 @@ export const users = pgTable("users", {
   region: text("region"), // HK district or region identifier
   regionPreference: text("region_preference"),
   clinicId: varchar("clinic_id").references(() => clinics.id, { onDelete: 'set null' }),
+  
+  // Notification preferences - stores user's notification opt-in choices
+  notificationPreferences: jsonb("notification_preferences").$type<NotificationPreferences>(),
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

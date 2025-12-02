@@ -423,6 +423,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get notification preferences for user
+  app.get("/api/users/:id/notification-preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const requestingUserId = (req.user as any).id;
+      const targetUserId = req.params.id;
+      
+      // Users can only view their own preferences unless they're admin
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (requestingUserId !== targetUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only view your own preferences" });
+      }
+      
+      const user = await storage.getUser(targetUserId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return notification preferences or defaults
+      const preferences = user.notificationPreferences || {
+        emergencyAlerts: true,
+        generalUpdates: true,
+        promotions: false,
+        systemAlerts: true,
+        vetTips: true,
+      };
+      
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error fetching notification preferences:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update notification preferences for user
+  app.patch("/api/users/:id/notification-preferences", isAuthenticated, async (req: any, res) => {
+    try {
+      const requestingUserId = (req.user as any).id;
+      const targetUserId = req.params.id;
+      
+      // Users can only update their own preferences unless they're admin
+      const requestingUser = await storage.getUser(requestingUserId);
+      if (!requestingUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      if (requestingUserId !== targetUserId && requestingUser.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden - You can only update your own preferences" });
+      }
+      
+      // Validate the notification preferences
+      const notificationPreferencesUpdateSchema = z.object({
+        emergencyAlerts: z.boolean().optional(),
+        generalUpdates: z.boolean().optional(),
+        promotions: z.boolean().optional(),
+        systemAlerts: z.boolean().optional(),
+        vetTips: z.boolean().optional(),
+      });
+      
+      const updates = notificationPreferencesUpdateSchema.parse(req.body);
+      
+      // Get existing preferences and merge with updates
+      const user = await storage.getUser(targetUserId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const currentPreferences = user.notificationPreferences || {
+        emergencyAlerts: true,
+        generalUpdates: true,
+        promotions: false,
+        systemAlerts: true,
+        vetTips: true,
+      };
+      
+      const newPreferences = { ...currentPreferences, ...updates };
+      
+      const updatedUser = await storage.updateUser(targetUserId, {
+        notificationPreferences: newPreferences
+      });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      await storage.createAuditLog({
+        entityType: 'user',
+        entityId: targetUserId,
+        action: 'update_notification_preferences',
+        userId: requestingUserId,
+        changes: updates,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json(updatedUser.notificationPreferences);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error updating notification preferences:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // ===== ADMIN ROUTES =====
   
   // Get all users (admin only)
