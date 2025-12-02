@@ -158,10 +158,11 @@ export default function ClinicsPage() {
 
     const matchesRegion = selectedRegion === "all" || provider.regionId === selectedRegion;
     
-    // Only filter by 24-hour status if the toggle is enabled
-    const matches24Hour = !show24HourOnly || provider.is24Hour === true;
+    // When 24-hour filter is ON: Show only 24-hour hospitals (not clinics)
+    // When 24-hour filter is OFF: Show all providers (hospitals + clinics)
+    const matches24HourFilter = !show24HourOnly || (provider.type === 'hospital' && provider.is24Hour === true);
 
-    return matchesSearch && matchesRegion && matches24Hour;
+    return matchesSearch && matchesRegion && matches24HourFilter;
   })
   // Sort by partner status first, then by distance
   ?.sort((a, b) => {
@@ -326,7 +327,7 @@ export default function ClinicsPage() {
               className="flex items-center gap-2 cursor-pointer text-sm font-medium text-red-900 dark:text-red-100"
             >
               <Clock className="h-4 w-4 text-red-600 dark:text-red-400" />
-              {language === 'zh-HK' ? '只顯示24小時診所' : 'Show 24-Hour Only'}
+              {language === 'zh-HK' ? '只顯示24小時醫院' : 'Show 24-Hour Hospitals Only'}
             </Label>
           </div>
 
