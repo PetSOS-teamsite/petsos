@@ -274,6 +274,7 @@ export class MemStorage implements IStorage {
         status: 'active',
         services: ['emergency', 'surgery', 'dental'],
         ownerVerificationCode: null,
+        ownerVerificationCodeExpiresAt: null,
         createdAt: new Date()
       },
       {
@@ -296,6 +297,7 @@ export class MemStorage implements IStorage {
         status: 'active',
         services: ['emergency', 'vaccination'],
         ownerVerificationCode: null,
+        ownerVerificationCodeExpiresAt: null,
         createdAt: new Date()
       },
       {
@@ -318,6 +320,7 @@ export class MemStorage implements IStorage {
         status: 'active',
         services: ['general', 'grooming'],
         ownerVerificationCode: null,
+        ownerVerificationCodeExpiresAt: null,
         createdAt: new Date()
       },
       {
@@ -340,6 +343,7 @@ export class MemStorage implements IStorage {
         status: 'active',
         services: ['emergency', '24hour'],
         ownerVerificationCode: null,
+        ownerVerificationCodeExpiresAt: null,
         createdAt: new Date()
       }
     ];
@@ -727,7 +731,8 @@ export class MemStorage implements IStorage {
       isAvailable: insertClinic.isAvailable ?? true,
       isSupportHospital: insertClinic.isSupportHospital ?? false,
       services: insertClinic.services ?? null,
-      ownerVerificationCode: insertClinic.ownerVerificationCode ?? null
+      ownerVerificationCode: insertClinic.ownerVerificationCode ?? null,
+      ownerVerificationCodeExpiresAt: insertClinic.ownerVerificationCodeExpiresAt ?? null
     };
     this.clinics.set(id, clinic);
     return clinic;
@@ -1092,6 +1097,7 @@ export class MemStorage implements IStorage {
       bloodBankAccess: insertHospital.bloodBankAccess ?? null,
       sxEmergencySoft: insertHospital.sxEmergencySoft ?? null,
       ownerVerificationCode: insertHospital.ownerVerificationCode ?? null,
+      ownerVerificationCodeExpiresAt: insertHospital.ownerVerificationCodeExpiresAt ?? null,
       verified: insertHospital.verified ?? false,
       sxEmergencyOrtho: insertHospital.sxEmergencyOrtho ?? null,
       anaesMonitoring: insertHospital.anaesMonitoring ?? null,
@@ -1979,7 +1985,8 @@ class DatabaseStorage implements IStorage {
   async createHospital(insertHospital: InsertHospital): Promise<Hospital> {
     const result = await db.insert(hospitals).values({
       ...insertHospital,
-      ownerVerificationCode: insertHospital.ownerVerificationCode ?? null
+      ownerVerificationCode: insertHospital.ownerVerificationCode ?? null,
+      ownerVerificationCodeExpiresAt: insertHospital.ownerVerificationCodeExpiresAt ?? null
     }).returning();
     return result[0];
   }

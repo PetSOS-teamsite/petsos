@@ -2427,7 +2427,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const code = Math.floor(Math.random() * 900000 + 100000).toString();
-      const updatedClinic = await storage.updateClinic(req.params.id, { ownerVerificationCode: code });
+      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours from now
+      const updatedClinic = await storage.updateClinic(req.params.id, { 
+        ownerVerificationCode: code,
+        ownerVerificationCodeExpiresAt: expiresAt
+      });
 
       await storage.createAuditLog({
         entityType: 'clinic',
@@ -2437,7 +2441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('user-agent')
       });
       
-      res.json({ code, clinicId: clinic.id });
+      res.json({ code, clinicId: clinic.id, expiresAt });
     } catch (error) {
       console.error("Generate clinic code error:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -2458,6 +2462,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (clinic.ownerVerificationCode !== verificationCode) {
         return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      // Check if code has expired
+      if (clinic.ownerVerificationCodeExpiresAt && new Date() > new Date(clinic.ownerVerificationCodeExpiresAt)) {
+        return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
       }
 
       res.json({ verified: true, clinicId: clinic.id });
@@ -2500,6 +2509,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid verification code" });
       }
 
+      // Check if code has expired
+      if (clinic.ownerVerificationCodeExpiresAt && new Date() > new Date(clinic.ownerVerificationCodeExpiresAt)) {
+        return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
+      }
+
       // Update clinic with owner-provided data (uses same storage function as admin)
       const updatedClinic = await storage.updateClinic(req.params.id, updateData);
 
@@ -2530,7 +2544,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const code = Math.floor(Math.random() * 900000 + 100000).toString();
-      const updatedHospital = await storage.updateHospital(req.params.id, { ownerVerificationCode: code });
+      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours from now
+      const updatedHospital = await storage.updateHospital(req.params.id, { 
+        ownerVerificationCode: code,
+        ownerVerificationCodeExpiresAt: expiresAt
+      });
 
       await storage.createAuditLog({
         entityType: 'hospital',
@@ -2540,7 +2558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('user-agent')
       });
       
-      res.json({ code, hospitalId: hospital.id });
+      res.json({ code, hospitalId: hospital.id, expiresAt });
     } catch (error) {
       console.error("Generate hospital code error:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -2561,6 +2579,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (hospital.ownerVerificationCode !== verificationCode) {
         return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      // Check if code has expired
+      if (hospital.ownerVerificationCodeExpiresAt && new Date() > new Date(hospital.ownerVerificationCodeExpiresAt)) {
+        return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
       }
 
       res.json({ verified: true, hospitalId: hospital.id });
@@ -2593,6 +2616,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify ownership with code
       if (hospital.ownerVerificationCode !== verificationCode) {
         return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      // Check if code has expired
+      if (hospital.ownerVerificationCodeExpiresAt && new Date() > new Date(hospital.ownerVerificationCodeExpiresAt)) {
+        return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
       }
 
       // Update hospital with owner-provided data (uses same storage function as admin)

@@ -989,6 +989,7 @@ export default function AdminHospitalsPage() {
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
   const [hospitalForCode, setHospitalForCode] = useState<Hospital | null>(null);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [codeExpiresAt, setCodeExpiresAt] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRegion, setFilterRegion] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -1247,10 +1248,11 @@ export default function AdminHospitalsPage() {
     mutationFn: async (hospitalId: string) => {
       const response = await apiRequest("POST", `/api/hospitals/${hospitalId}/generate-code`, {});
       const data = await response.json();
-      return data.code;
+      return { code: data.code, expiresAt: data.expiresAt };
     },
-    onSuccess: (code: string) => {
-      setGeneratedCode(code);
+    onSuccess: (data: { code: string; expiresAt: string }) => {
+      setGeneratedCode(data.code);
+      setCodeExpiresAt(data.expiresAt);
       setIsCodeDialogOpen(true);
       toast({ title: "Code generated successfully" });
     },
@@ -1611,7 +1613,12 @@ export default function AdminHospitalsPage() {
       </AlertDialog>
 
       {/* Generated Code Dialog */}
-      <Dialog open={isCodeDialogOpen} onOpenChange={setIsCodeDialogOpen}>
+      <Dialog open={isCodeDialogOpen} onOpenChange={(open) => {
+        setIsCodeDialogOpen(open);
+        if (!open) {
+          setCodeExpiresAt(null);
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Generated Code</DialogTitle>
@@ -1621,16 +1628,27 @@ export default function AdminHospitalsPage() {
           </DialogHeader>
           {generatedCode && hospitalForCode && (
             <div className="space-y-4">
-              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-center">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Access Code:</p>
-                <p className="text-3xl font-mono font-bold text-red-600 dark:text-red-400 text-center tracking-widest">
+                <p className="text-3xl font-mono font-bold text-red-600 dark:text-red-400 tracking-widest">
                   {generatedCode}
                 </p>
+                {codeExpiresAt && (
+                  <p className="text-xs text-orange-600 dark:text-orange-400 mt-3" data-testid="text-code-expiry">
+                    <Clock className="inline h-3 w-3 mr-1" />
+                    Expires: {new Date(codeExpiresAt).toLocaleDateString()} ({new Date(codeExpiresAt).toLocaleTimeString()})
+                  </p>
+                )}
               </div>
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Edit Link:</p>
                 <p className="text-sm font-mono break-all text-blue-600 dark:text-blue-400">
                   {`${window.location.origin}/hospital/edit/${hospitalForCode.slug}`}
+                </p>
+              </div>
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                <p className="text-xs text-amber-800 dark:text-amber-300">
+                  <strong>Important:</strong> This code expires in 48 hours. After expiration, a new code must be generated.
                 </p>
               </div>
               <div className="flex gap-2">

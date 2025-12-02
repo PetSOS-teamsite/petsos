@@ -253,6 +253,7 @@ export default function AdminClinicsPage() {
   const [importResults, setImportResults] = useState<any>(null);
   const [clinicForCode, setClinicForCode] = useState<Clinic | null>(null);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [codeExpiresAt, setCodeExpiresAt] = useState<string | null>(null);
 
   const { data: clinics, isLoading: clinicsLoading, refetch } = useQuery<Clinic[]>({
     queryKey: ["/api/clinics"],
@@ -323,11 +324,13 @@ export default function AdminClinicsPage() {
 
   const generateCodeMutation = useMutation({
     mutationFn: async (clinicId: string) => {
-      const response: any = await apiRequest("POST", `/api/clinics/${clinicId}/generate-code`, {});
-      return response.code;
+      const response = await apiRequest("POST", `/api/clinics/${clinicId}/generate-code`, {});
+      const data = await response.json();
+      return { code: data.code, expiresAt: data.expiresAt };
     },
-    onSuccess: (code: string) => {
-      setGeneratedCode(code);
+    onSuccess: (data: { code: string; expiresAt: string }) => {
+      setGeneratedCode(data.code);
+      setCodeExpiresAt(data.expiresAt);
       toast({ title: "Code generated successfully" });
     },
     onError: (error: any) => {
@@ -709,6 +712,7 @@ export default function AdminClinicsPage() {
         if (!open) {
           setClinicForCode(null);
           setGeneratedCode(null);
+          setCodeExpiresAt(null);
         }
       }}>
         <DialogContent data-testid="dialog-generated-code">
@@ -724,6 +728,12 @@ export default function AdminClinicsPage() {
               <p className="text-5xl font-bold text-red-600 dark:text-red-400 tracking-widest font-mono" data-testid="text-generated-code">
                 {generatedCode}
               </p>
+              {codeExpiresAt && (
+                <p className="text-xs text-orange-600 dark:text-orange-400 mt-3" data-testid="text-code-expiry">
+                  <Clock className="inline h-3 w-3 mr-1" />
+                  Expires: {formatDate(new Date(codeExpiresAt))} ({new Date(codeExpiresAt).toLocaleTimeString()})
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -751,6 +761,12 @@ export default function AdminClinicsPage() {
               </div>
             </div>
 
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                <strong>Important:</strong> This code expires in 48 hours. After expiration, a new code must be generated.
+              </p>
+            </div>
+
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
               <p className="text-xs text-blue-800 dark:text-blue-300">
                 <strong>How to share:</strong> Send both the link and the 6-digit code to the clinic owner. They'll need both to access the edit form.
@@ -764,6 +780,7 @@ export default function AdminClinicsPage() {
               onClick={() => {
                 setClinicForCode(null);
                 setGeneratedCode(null);
+                setCodeExpiresAt(null);
               }}
               data-testid="button-close-code-dialog"
             >
@@ -771,7 +788,8 @@ export default function AdminClinicsPage() {
             </Button>
             <Button
               onClick={() => {
-                const message = `PetSOS Clinic Edit Access\n\nClinic: ${clinicForCode?.name}\nAccess Code: ${generatedCode}\n\nLink: ${window.location.origin}/clinic/edit/${clinicForCode?.id}`;
+                const expiryInfo = codeExpiresAt ? `\nExpires: ${formatDate(new Date(codeExpiresAt))} ${new Date(codeExpiresAt).toLocaleTimeString()}` : '';
+                const message = `PetSOS Clinic Edit Access\n\nClinic: ${clinicForCode?.name}\nAccess Code: ${generatedCode}${expiryInfo}\n\nLink: ${window.location.origin}/clinic/edit/${clinicForCode?.id}`;
                 navigator.clipboard.writeText(message);
                 toast({ title: "Access info copied", description: "Ready to send to clinic owner" });
               }}

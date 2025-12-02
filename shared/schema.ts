@@ -161,6 +161,7 @@ export const clinics = pgTable("clinics", {
   status: text("status").notNull().default('active'), // active, inactive, deleted
   services: text("services").array(),
   ownerVerificationCode: text("owner_verification_code"), // 6-digit passcode for clinic owner edit link
+  ownerVerificationCodeExpiresAt: timestamp("owner_verification_code_expires_at"), // When the code expires
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -268,6 +269,7 @@ export const hospitals = pgTable("hospitals", {
   recheckWindow: text("recheck_window"),
   refundPolicy: text("refund_policy"),
   ownerVerificationCode: text("owner_verification_code"), // 6-digit passcode for hospital owner edit link
+  ownerVerificationCodeExpiresAt: timestamp("owner_verification_code_expires_at"), // When the code expires
   verified: boolean("verified").notNull().default(false),
   
   createdAt: timestamp("created_at").notNull().defaultNow(),
