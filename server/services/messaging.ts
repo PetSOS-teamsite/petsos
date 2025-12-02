@@ -633,6 +633,7 @@ export class MessagingService {
 
   /**
    * Broadcast emergency to multiple hospitals
+   * Sends BOTH English and Traditional Chinese messages to each hospital
    */
   async broadcastEmergency(
     emergencyRequestId: string,
@@ -641,24 +642,27 @@ export class MessagingService {
   ): Promise<Message[]> {
     const messages: Message[] = [];
 
-    // Build template message once for all hospitals
-    const templateData = await this.buildTemplateMessage(emergencyRequestId);
-    if (!templateData) {
-      console.error('[Broadcast] Failed to build template message');
-      throw new Error('Failed to build emergency message template');
+    // Build template messages for BOTH languages
+    const templateDataEn = await this.buildTemplateMessage(emergencyRequestId, 'en');
+    const templateDataZh = await this.buildTemplateMessage(emergencyRequestId, 'zh-HK');
+    
+    if (!templateDataEn || !templateDataZh) {
+      console.error('[Broadcast] Failed to build template messages');
+      throw new Error('Failed to build emergency message templates');
     }
 
-    const { templateName, variables, fallbackText } = templateData;
+    console.log('[Broadcast] Sending bilingual messages (EN + ZH-HK) to each hospital');
 
-    for (const hospitalId of hospitalIds) {
-      const hospital = await storage.getHospital(hospitalId);
-      if (!hospital) {
-        console.warn(`Hospital not found: ${hospitalId}`);
-        continue;
-      }
-
-      // Determine message type and recipient based on available contact methods
-      // Priority: WhatsApp > Email (hospitals don't have LINE integration)
+    // Helper function to send a single language message
+    const sendLanguageMessage = async (
+      hospitalId: string,
+      hospital: any,
+      templateData: { templateName: string; variables: string[]; fallbackText: string },
+      langLabel: string
+    ) => {
+      const { templateName, variables, fallbackText } = templateData;
+      
+      // Determine message type and recipient
       let messageType: 'whatsapp' | 'email' | 'line';
       let recipient: string;
       let contentToStore: string;
@@ -670,26 +674,12 @@ export class MessagingService {
       } else if (hospital.email) {
         messageType = 'email';
         recipient = hospital.email;
-        contentToStore = fallbackText; // Email uses fallback text
+        contentToStore = fallbackText;
       } else {
-        console.warn(`No valid contact method (WhatsApp or Email) for hospital ${hospitalId}`);
-        
-        // Create failed message record for tracking
-        await storage.createMessage({
-          emergencyRequestId,
-          hospitalId,
-          recipient: hospital.phone || 'unknown',
-          messageType: 'whatsapp',
-          content: fallbackText,
-          status: 'failed',
-          errorMessage: 'No valid WhatsApp or Email contact available',
-          failedAt: new Date(),
-        });
-        
-        continue;
+        return null; // No valid contact method
       }
 
-      // Create message record with template info embedded in content
+      // Create message record
       const msg = await storage.createMessage({
         emergencyRequestId,
         hospitalId,
@@ -704,8 +694,46 @@ export class MessagingService {
       
       // Reload message to get updated status
       const updatedMsg = await storage.getMessage(msg.id);
-      if (updatedMsg) {
-        messages.push(updatedMsg);
+      console.log(`[Broadcast] ${langLabel} message sent to ${hospital.nameEn || hospital.nameZh}: ${updatedMsg?.status}`);
+      return updatedMsg;
+    };
+
+    for (const hospitalId of hospitalIds) {
+      const hospital = await storage.getHospital(hospitalId);
+      if (!hospital) {
+        console.warn(`Hospital not found: ${hospitalId}`);
+        continue;
+      }
+
+      // Check if hospital has valid contact method
+      if (!hospital.whatsapp && !hospital.email) {
+        console.warn(`No valid contact method (WhatsApp or Email) for hospital ${hospitalId}`);
+        
+        // Create failed message record for tracking
+        await storage.createMessage({
+          emergencyRequestId,
+          hospitalId,
+          recipient: hospital.phone || 'unknown',
+          messageType: 'whatsapp',
+          content: templateDataEn.fallbackText,
+          status: 'failed',
+          errorMessage: 'No valid WhatsApp or Email contact available',
+          failedAt: new Date(),
+        });
+        
+        continue;
+      }
+
+      // Send English message first
+      const msgEn = await sendLanguageMessage(hospitalId, hospital, templateDataEn, 'EN');
+      if (msgEn) {
+        messages.push(msgEn);
+      }
+
+      // Send Traditional Chinese message
+      const msgZh = await sendLanguageMessage(hospitalId, hospital, templateDataZh, 'ZH-HK');
+      if (msgZh) {
+        messages.push(msgZh);
       }
     }
 
