@@ -22,7 +22,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, inArray, sql, desc } from "drizzle-orm";
+import { eq, and, or, inArray, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Users

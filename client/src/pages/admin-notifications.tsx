@@ -10,7 +10,9 @@ import {
   XCircle,
   Users,
   Globe,
-  RefreshCw
+  RefreshCw,
+  PawPrint,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -43,6 +45,7 @@ export default function AdminNotificationsPage() {
   const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
+  const [targetAudience, setTargetAudience] = useState("all"); // all, pet_owner, hospital_clinic
   const [targetLanguage, setTargetLanguage] = useState("all");
   const [url, setUrl] = useState("");
 
@@ -51,10 +54,11 @@ export default function AdminNotificationsPage() {
   });
 
   const sendMutation = useMutation({
-    mutationFn: async (data: { title: string; message: string; targetLanguage?: string; url?: string }) => {
+    mutationFn: async (data: { title: string; message: string; targetAudience?: string; targetLanguage?: string; url?: string }) => {
       return apiRequest("POST", "/api/admin/notifications/broadcast", {
         title: data.title,
         message: data.message,
+        targetRole: data.targetAudience === 'all' ? null : data.targetAudience,
         targetLanguage: data.targetLanguage === 'all' ? null : data.targetLanguage,
         url: data.url || undefined,
       });
@@ -67,6 +71,7 @@ export default function AdminNotificationsPage() {
       setTitle("");
       setMessage("");
       setUrl("");
+      setTargetAudience("all");
       setTargetLanguage("all");
       queryClient.invalidateQueries({ queryKey: ["/api/admin/notifications/history"] });
     },
@@ -109,7 +114,8 @@ export default function AdminNotificationsPage() {
 
     sendMutation.mutate({ 
       title: title.trim(), 
-      message: message.trim(), 
+      message: message.trim(),
+      targetAudience,
       targetLanguage,
       url: url.trim() 
     });
@@ -189,9 +195,9 @@ export default function AdminNotificationsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="targetLanguage">Target Audience</Label>
-                <Select value={targetLanguage} onValueChange={setTargetLanguage}>
-                  <SelectTrigger data-testid="select-target-language">
+                <Label htmlFor="targetAudience">Target Audience</Label>
+                <Select value={targetAudience} onValueChange={setTargetAudience}>
+                  <SelectTrigger data-testid="select-target-audience">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -199,6 +205,35 @@ export default function AdminNotificationsPage() {
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
                         All Users
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="pet_owner">
+                      <div className="flex items-center gap-2">
+                        <PawPrint className="h-4 w-4" />
+                        Pet Owners
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="hospital_clinic">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4" />
+                        Hospitals / Clinics
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="targetLanguage">Language Filter</Label>
+                <Select value={targetLanguage} onValueChange={setTargetLanguage}>
+                  <SelectTrigger data-testid="select-target-language">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4" />
+                        All Languages
                       </div>
                     </SelectItem>
                     <SelectItem value="en">
