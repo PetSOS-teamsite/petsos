@@ -47,7 +47,7 @@ export default function ClinicsPage() {
   const { t, language } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRegion, setSelectedRegion] = useState<string>("all");
-  const [show24HourOnly, setShow24HourOnly] = useState(true); // Show 24-hour hospitals by default
+  const [showHospitals, setShowHospitals] = useState(true); // true = hospitals, false = clinics
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
 
@@ -63,54 +63,49 @@ export default function ClinicsPage() {
     queryKey: ["/api/clinics"],
   });
 
-  // Combine hospitals and clinics into unified provider list
-  const allProviders = useMemo<VetProvider[]>(() => {
-    const providers: VetProvider[] = [];
-    
-    // Add hospitals
-    hospitals?.filter(h => h.isAvailable === true).forEach(h => {
-      providers.push({
-        id: h.id,
-        type: 'hospital',
-        nameEn: h.nameEn,
-        nameZh: h.nameZh,
-        addressEn: h.addressEn,
-        addressZh: h.addressZh,
-        phone: h.phone,
-        whatsapp: h.whatsapp,
-        regionId: h.regionId,
-        latitude: h.latitude,
-        longitude: h.longitude,
-        is24Hour: h.open247 === true,
-        isPartner: h.isPartner === true,
-        isAvailable: h.isAvailable === true,
-        slug: h.slug,
-      });
-    });
-    
-    // Add clinics
-    clinics?.filter(c => c.isAvailable === true && c.status === 'active').forEach(c => {
-      providers.push({
-        id: c.id,
-        type: 'clinic',
-        nameEn: c.name,
-        nameZh: c.nameZh,
-        addressEn: c.address,
-        addressZh: c.addressZh,
-        phone: c.phone,
-        whatsapp: c.whatsapp,
-        regionId: c.regionId,
-        latitude: c.latitude,
-        longitude: c.longitude,
-        is24Hour: c.is24Hour === true,
-        isPartner: c.isSupportHospital === true,
-        isAvailable: c.isAvailable === true,
-        slug: null,
-      });
-    });
-    
-    return providers;
-  }, [hospitals, clinics]);
+  // Separate provider lists for hospitals and clinics
+  const hospitalProviders = useMemo<VetProvider[]>(() => {
+    return hospitals?.filter(h => h.isAvailable === true).map(h => ({
+      id: h.id,
+      type: 'hospital' as const,
+      nameEn: h.nameEn,
+      nameZh: h.nameZh,
+      addressEn: h.addressEn,
+      addressZh: h.addressZh,
+      phone: h.phone,
+      whatsapp: h.whatsapp,
+      regionId: h.regionId,
+      latitude: h.latitude,
+      longitude: h.longitude,
+      is24Hour: h.open247 === true,
+      isPartner: h.isPartner === true,
+      isAvailable: h.isAvailable === true,
+      slug: h.slug,
+    })) || [];
+  }, [hospitals]);
+
+  const clinicProviders = useMemo<VetProvider[]>(() => {
+    return clinics?.filter(c => c.isAvailable === true && c.status === 'active').map(c => ({
+      id: c.id,
+      type: 'clinic' as const,
+      nameEn: c.name,
+      nameZh: c.nameZh,
+      addressEn: c.address,
+      addressZh: c.addressZh,
+      phone: c.phone,
+      whatsapp: c.whatsapp,
+      regionId: c.regionId,
+      latitude: c.latitude,
+      longitude: c.longitude,
+      is24Hour: c.is24Hour === true,
+      isPartner: c.isSupportHospital === true,
+      isAvailable: c.isAvailable === true,
+      slug: null,
+    })) || [];
+  }, [clinics]);
+
+  // Select which provider list to display based on toggle
+  const allProviders = showHospitals ? hospitalProviders : clinicProviders;
 
   const isLoading = hospitalsLoading || clinicsLoading;
 
@@ -157,12 +152,8 @@ export default function ClinicsPage() {
       provider.addressZh?.includes(searchQuery);
 
     const matchesRegion = selectedRegion === "all" || provider.regionId === selectedRegion;
-    
-    // When 24-hour filter is ON: Show only 24-hour hospitals (not clinics)
-    // When 24-hour filter is OFF: Show all providers (hospitals + clinics)
-    const matches24HourFilter = !show24HourOnly || (provider.type === 'hospital' && provider.is24Hour === true);
 
-    return matchesSearch && matchesRegion && matches24HourFilter;
+    return matchesSearch && matchesRegion;
   })
   // Sort by partner status first, then by distance
   ?.sort((a, b) => {
@@ -185,14 +176,14 @@ export default function ClinicsPage() {
 
   // Track search when filters change
   useEffect(() => {
-    if (filteredProviders && (searchQuery || selectedRegion !== "all" || show24HourOnly)) {
+    if (filteredProviders && (searchQuery || selectedRegion !== "all")) {
       analytics.trackClinicSearch({
         region: selectedRegion !== "all" ? selectedRegion : undefined,
-        is24Hour: show24HourOnly || undefined,
+        directoryType: showHospitals ? 'hospital' : 'clinic',
         resultsCount: filteredProviders.length,
       });
     }
-  }, [searchQuery, selectedRegion, show24HourOnly, filteredProviders?.length]);
+  }, [searchQuery, selectedRegion, showHospitals, filteredProviders?.length]);
 
   const handleCall = (phone: string) => {
     window.location.href = `tel:${phone}`;
@@ -310,24 +301,32 @@ export default function ClinicsPage() {
             </Tabs>
           )}
 
-          {/* 24 Hour Filter - Brand Styled */}
+          {/* Directory Type Toggle - Hospital vs Clinic */}
           <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800">
             <Switch
-              id="24hour-filter"
-              checked={show24HourOnly}
+              id="directory-toggle"
+              checked={showHospitals}
               onCheckedChange={(value) => {
-                console.log('[24h Filter] Switch toggled:', value);
-                setShow24HourOnly(value);
+                setShowHospitals(value);
               }}
-              data-testid="switch-24hour-filter"
+              data-testid="switch-directory-toggle"
               className="data-[state=checked]:bg-red-600"
             />
             <Label
-              htmlFor="24hour-filter"
+              htmlFor="directory-toggle"
               className="flex items-center gap-2 cursor-pointer text-sm font-medium text-red-900 dark:text-red-100"
             >
-              <Clock className="h-4 w-4 text-red-600 dark:text-red-400" />
-              {language === 'zh-HK' ? '只顯示24小時醫院' : 'Show 24-Hour Hospitals Only'}
+              {showHospitals ? (
+                <>
+                  <Clock className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  {language === 'zh-HK' ? '24小時動物醫院' : '24-Hour Hospitals'}
+                </>
+              ) : (
+                <>
+                  <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  {language === 'zh-HK' ? '動物診所' : 'Veterinary Clinics'}
+                </>
+              )}
             </Label>
           </div>
 
@@ -346,7 +345,9 @@ export default function ClinicsPage() {
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
                 <p className="text-sm text-red-900 dark:text-red-100 font-medium">
-                  {language === 'zh-HK' ? '📍 已按距離排序 - 最近的診所優先顯示' : '📍 Sorted by distance - Nearest clinics first'}
+                  {language === 'zh-HK' 
+                    ? `📍 已按距離排序 - 最近的${showHospitals ? '醫院' : '診所'}優先顯示`
+                    : `📍 Sorted by distance - Nearest ${showHospitals ? 'hospitals' : 'clinics'} first`}
                 </p>
               </div>
             </div>
@@ -371,8 +372,8 @@ export default function ClinicsPage() {
           <div className="max-w-4xl mx-auto mb-4">
             <p className="text-gray-600 dark:text-gray-400 text-sm" data-testid="text-results-count">
               {language === 'zh-HK' 
-                ? `已找到 ${filteredProviders?.length || 0} 間動物診所`
-                : `${filteredProviders?.length || 0} ${filteredProviders?.length !== 1 ? 'clinics' : 'clinic'} found`
+                ? `已找到 ${filteredProviders?.length || 0} 間${showHospitals ? '24小時動物醫院' : '動物診所'}`
+                : `${filteredProviders?.length || 0} ${showHospitals ? '24-hour hospital' : 'clinic'}${filteredProviders?.length !== 1 ? 's' : ''} found`
               }
             </p>
           </div>

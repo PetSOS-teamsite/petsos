@@ -93,13 +93,13 @@ export const analytics = {
   // Track clinic search
   trackClinicSearch(data: {
     region?: string;
-    is24Hour?: boolean;
+    directoryType?: 'hospital' | 'clinic';
     resultsCount: number;
   }) {
     this.event('clinic_search', {
       event_category: 'Search',
       region: data.region || 'all',
-      is_24_hour: data.is24Hour,
+      directory_type: data.directoryType || 'hospital',
       results_count: data.resultsCount,
     });
   },
