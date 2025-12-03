@@ -9,6 +9,10 @@ import { db } from "./db";
 import { messages } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import rateLimit from "express-rate-limit";
+import * as OTPAuth from "otpauth";
+import * as QRCode from "qrcode";
+import bcrypt from "bcrypt";
+import crypto from "crypto";
 import { 
   generalLimiter, 
   authLimiter, 
@@ -34,6 +38,7 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import path from "path";
 import { config } from "./config";
+import { encryptTotpSecret, decryptTotpSecret, isEncryptedSecret } from "./encryption";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Replit Auth
@@ -529,6 +534,417 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error updating notification preferences:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // ===== TWO-FACTOR AUTHENTICATION ROUTES =====
+  
+  // Setup 2FA - Generate TOTP secret and QR code (admin only)
+  // SECURITY FLOW:
+  // 1. Generate raw TOTP secret
+  // 2. Create otpauth:// URL and QR code from raw secret (for authenticator apps)
+  // 3. Encrypt the raw secret for secure storage
+  // 4. Store ENCRYPTED secret in database (never store plain secrets)
+  // 5. Return UNENCRYPTED secret and QR to client (for one-time display only)
+  app.post("/api/auth/2fa/setup", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.twoFactorEnabled) {
+        return res.status(400).json({ message: "2FA is already enabled" });
+      }
+      
+      // Step 1: Generate a new TOTP secret (raw, unencrypted)
+      const secret = new OTPAuth.Secret({ size: 20 });
+      const rawSecret = secret.base32; // This is what authenticator apps need
+      
+      // Step 2: Create TOTP object and generate QR code from RAW secret
+      const totp = new OTPAuth.TOTP({
+        issuer: "PetSOS",
+        label: user.email || user.name || "Admin",
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: secret,
+      });
+      
+      const otpauthUrl = totp.toString();
+      const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
+      
+      // Step 3: Encrypt the secret for secure database storage
+      const encryptedSecret = encryptTotpSecret(rawSecret);
+      
+      // Step 4: Store the ENCRYPTED secret in database (will be confirmed on verify)
+      await storage.updateUserTwoFactor(userId, encryptedSecret, null, false);
+      
+      // Step 5: Return RAW (unencrypted) secret and QR to client for one-time display
+      // IMPORTANT: We return rawSecret (not encryptedSecret) so authenticator apps work
+      res.json({
+        secret: rawSecret,
+        qrCode: qrCodeDataUrl,
+        otpauthUrl: otpauthUrl,
+      });
+    } catch (error) {
+      console.error("Error setting up 2FA:", error);
+      res.status(500).json({ message: "Failed to setup 2FA" });
+    }
+  });
+  
+  // Verify 2FA code and enable 2FA
+  // SECURITY: This endpoint does NOT return the secret - it was already shown during setup
+  // Only backup codes are returned (one-time display for user to save)
+  app.post("/api/auth/2fa/verify", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { code } = req.body;
+      
+      if (!code || typeof code !== 'string') {
+        return res.status(400).json({ message: "Verification code is required" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (!user.twoFactorSecret) {
+        return res.status(400).json({ message: "2FA setup not initiated. Please start setup first." });
+      }
+      
+      if (user.twoFactorEnabled) {
+        return res.status(400).json({ message: "2FA is already enabled" });
+      }
+      
+      // SECURITY FIX: Decrypt the secret before verification
+      // Handle backwards compatibility with unencrypted secrets
+      let decryptedSecret: string;
+      try {
+        if (isEncryptedSecret(user.twoFactorSecret)) {
+          decryptedSecret = decryptTotpSecret(user.twoFactorSecret);
+        } else {
+          decryptedSecret = user.twoFactorSecret;
+        }
+      } catch (decryptError) {
+        console.error("Error decrypting 2FA secret:", decryptError);
+        return res.status(500).json({ message: "Failed to process 2FA secret" });
+      }
+      
+      // Verify the TOTP code
+      const totp = new OTPAuth.TOTP({
+        issuer: "PetSOS",
+        label: user.email || user.name || "Admin",
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: OTPAuth.Secret.fromBase32(decryptedSecret),
+      });
+      
+      const delta = totp.validate({ token: code, window: 1 });
+      
+      if (delta === null) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+      
+      // Generate backup codes
+      const backupCodes: string[] = [];
+      const hashedBackupCodes: string[] = [];
+      
+      for (let i = 0; i < 10; i++) {
+        const code = crypto.randomBytes(4).toString('hex').toUpperCase();
+        backupCodes.push(code);
+        const hashed = await bcrypt.hash(code, 10);
+        hashedBackupCodes.push(hashed);
+      }
+      
+      // Enable 2FA with backup codes (keep the encrypted secret)
+      await storage.updateUserTwoFactor(userId, user.twoFactorSecret, hashedBackupCodes, true);
+      
+      await storage.createAuditLog({
+        entityType: 'user',
+        entityId: userId,
+        action: '2fa_enabled',
+        userId: userId,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({
+        success: true,
+        message: "2FA has been enabled",
+        backupCodes: backupCodes, // Return plain backup codes only once
+      });
+    } catch (error) {
+      console.error("Error verifying 2FA:", error);
+      res.status(500).json({ message: "Failed to verify 2FA" });
+    }
+  });
+  
+  // Disable 2FA (requires current code)
+  app.post("/api/auth/2fa/disable", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { code } = req.body;
+      
+      if (!code || typeof code !== 'string') {
+        return res.status(400).json({ message: "Verification code is required" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (!user.twoFactorEnabled || !user.twoFactorSecret) {
+        return res.status(400).json({ message: "2FA is not enabled" });
+      }
+      
+      // SECURITY FIX: Decrypt the secret before verification
+      let decryptedSecret: string;
+      try {
+        if (isEncryptedSecret(user.twoFactorSecret)) {
+          decryptedSecret = decryptTotpSecret(user.twoFactorSecret);
+        } else {
+          decryptedSecret = user.twoFactorSecret;
+        }
+      } catch (decryptError) {
+        console.error("Error decrypting 2FA secret:", decryptError);
+        return res.status(500).json({ message: "Failed to process 2FA secret" });
+      }
+      
+      // Verify the TOTP code
+      const totp = new OTPAuth.TOTP({
+        issuer: "PetSOS",
+        label: user.email || user.name || "Admin",
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: OTPAuth.Secret.fromBase32(decryptedSecret),
+      });
+      
+      const delta = totp.validate({ token: code, window: 1 });
+      
+      if (delta === null) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+      
+      // Disable 2FA
+      await storage.updateUserTwoFactor(userId, null, null, false);
+      
+      await storage.createAuditLog({
+        entityType: 'user',
+        entityId: userId,
+        action: '2fa_disabled',
+        userId: userId,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({
+        success: true,
+        message: "2FA has been disabled",
+      });
+    } catch (error) {
+      console.error("Error disabling 2FA:", error);
+      res.status(500).json({ message: "Failed to disable 2FA" });
+    }
+  });
+  
+  // Generate new backup codes
+  app.post("/api/auth/2fa/backup-codes", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { code } = req.body;
+      
+      if (!code || typeof code !== 'string') {
+        return res.status(400).json({ message: "Verification code is required" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (!user.twoFactorEnabled || !user.twoFactorSecret) {
+        return res.status(400).json({ message: "2FA is not enabled" });
+      }
+      
+      // SECURITY FIX: Decrypt the secret before verification
+      let decryptedSecret: string;
+      try {
+        if (isEncryptedSecret(user.twoFactorSecret)) {
+          decryptedSecret = decryptTotpSecret(user.twoFactorSecret);
+        } else {
+          decryptedSecret = user.twoFactorSecret;
+        }
+      } catch (decryptError) {
+        console.error("Error decrypting 2FA secret:", decryptError);
+        return res.status(500).json({ message: "Failed to process 2FA secret" });
+      }
+      
+      // Verify the TOTP code
+      const totp = new OTPAuth.TOTP({
+        issuer: "PetSOS",
+        label: user.email || user.name || "Admin",
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: OTPAuth.Secret.fromBase32(decryptedSecret),
+      });
+      
+      const delta = totp.validate({ token: code, window: 1 });
+      
+      if (delta === null) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+      
+      // Generate new backup codes
+      const backupCodes: string[] = [];
+      const hashedBackupCodes: string[] = [];
+      
+      for (let i = 0; i < 10; i++) {
+        const newCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+        backupCodes.push(newCode);
+        const hashed = await bcrypt.hash(newCode, 10);
+        hashedBackupCodes.push(hashed);
+      }
+      
+      // Update backup codes
+      await storage.updateUserTwoFactor(userId, user.twoFactorSecret, hashedBackupCodes, true);
+      
+      await storage.createAuditLog({
+        entityType: 'user',
+        entityId: userId,
+        action: '2fa_backup_codes_regenerated',
+        userId: userId,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({
+        success: true,
+        backupCodes: backupCodes,
+      });
+    } catch (error) {
+      console.error("Error generating backup codes:", error);
+      res.status(500).json({ message: "Failed to generate backup codes" });
+    }
+  });
+  
+  // Validate 2FA code during login
+  app.post("/api/auth/2fa/validate", async (req: any, res) => {
+    try {
+      const { code, useBackupCode } = req.body;
+      const pendingUserId = (req.session as any)?.pendingTwoFactorUserId;
+      
+      if (!pendingUserId) {
+        return res.status(400).json({ message: "No pending 2FA validation" });
+      }
+      
+      if (!code || typeof code !== 'string') {
+        return res.status(400).json({ message: "Verification code is required" });
+      }
+      
+      const user = await storage.getUser(pendingUserId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (!user.twoFactorEnabled || !user.twoFactorSecret) {
+        return res.status(400).json({ message: "2FA is not enabled for this user" });
+      }
+      
+      let isValid = false;
+      
+      if (useBackupCode) {
+        // Validate using backup code
+        isValid = await storage.validateBackupCode(pendingUserId, code);
+      } else {
+        // SECURITY FIX: Decrypt the secret before verification
+        let decryptedSecret: string;
+        try {
+          if (isEncryptedSecret(user.twoFactorSecret)) {
+            decryptedSecret = decryptTotpSecret(user.twoFactorSecret);
+          } else {
+            decryptedSecret = user.twoFactorSecret;
+          }
+        } catch (decryptError) {
+          console.error("Error decrypting 2FA secret:", decryptError);
+          return res.status(500).json({ message: "Failed to process 2FA secret" });
+        }
+        
+        // Validate using TOTP code
+        const totp = new OTPAuth.TOTP({
+          issuer: "PetSOS",
+          label: user.email || user.name || "Admin",
+          algorithm: "SHA1",
+          digits: 6,
+          period: 30,
+          secret: OTPAuth.Secret.fromBase32(decryptedSecret),
+        });
+        
+        const delta = totp.validate({ token: code, window: 1 });
+        isValid = delta !== null;
+      }
+      
+      if (!isValid) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+      
+      // Clear pending 2FA and fully authenticate the user
+      delete (req.session as any).pendingTwoFactorUserId;
+      
+      // Log the user in
+      req.logIn(user, (err: Error) => {
+        if (err) {
+          console.error("Error logging in after 2FA:", err);
+          return res.status(500).json({ message: "Login failed after 2FA validation" });
+        }
+        
+        req.session.save((saveErr: Error) => {
+          if (saveErr) {
+            console.error("Error saving session after 2FA:", saveErr);
+            return res.status(500).json({ message: "Session save failed" });
+          }
+          
+          res.json({
+            success: true,
+            user: sanitizeUser(user),
+          });
+        });
+      });
+    } catch (error) {
+      console.error("Error validating 2FA:", error);
+      res.status(500).json({ message: "Failed to validate 2FA" });
+    }
+  });
+  
+  // Get 2FA status for current user
+  app.get("/api/auth/2fa/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({
+        enabled: user.twoFactorEnabled,
+        hasBackupCodes: !!(user.twoFactorBackupCodes && user.twoFactorBackupCodes.length > 0),
+        backupCodesCount: user.twoFactorBackupCodes?.length || 0,
+      });
+    } catch (error) {
+      console.error("Error getting 2FA status:", error);
+      res.status(500).json({ message: "Failed to get 2FA status" });
     }
   });
 

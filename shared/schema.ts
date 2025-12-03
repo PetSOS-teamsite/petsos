@@ -77,6 +77,11 @@ export const users = pgTable("users", {
   // Notification preferences - stores user's notification opt-in choices
   notificationPreferences: jsonb("notification_preferences").$type<NotificationPreferences>(),
   
+  // Two-Factor Authentication fields (for admin users)
+  twoFactorSecret: text("two_factor_secret"), // Encrypted TOTP secret
+  twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
+  twoFactorBackupCodes: text("two_factor_backup_codes").array(), // Hashed one-time backup codes
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [

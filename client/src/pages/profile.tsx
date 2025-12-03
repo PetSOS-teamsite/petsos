@@ -1,9 +1,19 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -36,7 +46,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
-import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft, Download, Shield, Trash2, AlertTriangle, Edit, PawPrint, Bell, Megaphone, Sparkles, AlertCircle, Lightbulb } from "lucide-react";
+import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft, Download, Shield, Trash2, AlertTriangle, Edit, PawPrint, Bell, Megaphone, Sparkles, AlertCircle, Lightbulb, Lock, Key, Copy, Check, RefreshCw } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import type { User as UserType, Region, Pet, NotificationPreferences } from "@shared/schema";
 
@@ -109,6 +119,124 @@ export default function ProfilePage() {
 
   const handleNotificationToggle = (key: keyof NotificationPreferences, value: boolean) => {
     updateNotificationPrefsMutation.mutate({ [key]: value });
+  };
+
+  // Two-Factor Authentication state and queries (admin only)
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
+  const [twoFactorSetupData, setTwoFactorSetupData] = useState<{ qrCode: string; secret: string } | null>(null);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
+  const [showBackupCodes, setShowBackupCodes] = useState(false);
+  const [copiedBackupCodes, setCopiedBackupCodes] = useState(false);
+  const [showDisable2FADialog, setShowDisable2FADialog] = useState(false);
+  const [disable2FACode, setDisable2FACode] = useState('');
+  
+  const isAdmin = user?.role === 'admin';
+  
+  const { data: twoFactorStatus, isLoading: twoFactorStatusLoading } = useQuery<{
+    enabled: boolean;
+    hasBackupCodes: boolean;
+    backupCodesCount: number;
+  }>({
+    queryKey: ['/api/auth/2fa/status'],
+    enabled: !!authUser?.id && isAdmin,
+  });
+  
+  const setup2FAMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/auth/2fa/setup', {});
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setTwoFactorSetupData({ qrCode: data.qrCode, secret: data.secret });
+      setShowTwoFactorSetup(true);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("profile.2fa.setup_error", "Setup failed"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const verify2FAMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const response = await apiRequest('POST', '/api/auth/2fa/verify', { code });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setBackupCodes(data.backupCodes);
+      setShowBackupCodes(true);
+      setShowTwoFactorSetup(false);
+      setTwoFactorCode('');
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/2fa/status'] });
+      toast({
+        title: t("profile.2fa.enabled_title", "2FA Enabled"),
+        description: t("profile.2fa.enabled_desc", "Two-factor authentication has been enabled. Save your backup codes."),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("profile.2fa.verify_error", "Verification failed"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const disable2FAMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const response = await apiRequest('POST', '/api/auth/2fa/disable', { code });
+      return await response.json();
+    },
+    onSuccess: () => {
+      setShowDisable2FADialog(false);
+      setDisable2FACode('');
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/2fa/status'] });
+      toast({
+        title: t("profile.2fa.disabled_title", "2FA Disabled"),
+        description: t("profile.2fa.disabled_desc", "Two-factor authentication has been disabled."),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("profile.2fa.disable_error", "Disable failed"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const regenerateBackupCodesMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const response = await apiRequest('POST', '/api/auth/2fa/backup-codes', { code });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setBackupCodes(data.backupCodes);
+      setShowBackupCodes(true);
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/2fa/status'] });
+      toast({
+        title: t("profile.2fa.codes_regenerated", "Backup Codes Regenerated"),
+        description: t("profile.2fa.codes_regenerated_desc", "New backup codes have been generated. Save them securely."),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t("profile.2fa.regenerate_error", "Failed to regenerate codes"),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const handleCopyBackupCodes = () => {
+    if (backupCodes) {
+      navigator.clipboard.writeText(backupCodes.join('\n'));
+      setCopiedBackupCodes(true);
+      setTimeout(() => setCopiedBackupCodes(false), 2000);
+    }
   };
 
   const form = useForm<ProfileFormData>({
@@ -651,6 +779,276 @@ export default function ProfilePage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Two-Factor Authentication (Admin Only) */}
+        {isAdmin && (
+          <Card className="mt-6 border-2 border-amber-200 dark:border-amber-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                <Lock className="w-6 h-6" />
+                {t("profile.2fa.title", "Two-Factor Authentication")}
+              </CardTitle>
+              <CardDescription>
+                {t("profile.2fa.desc", "Add an extra layer of security to your admin account")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {twoFactorStatusLoading ? (
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  {t("loading.2fa", "Loading 2FA status...")}
+                </div>
+              ) : twoFactorStatus?.enabled ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center">
+                      <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-green-800 dark:text-green-300">
+                        {t("profile.2fa.enabled_status", "2FA is enabled")}
+                      </p>
+                      <p className="text-sm text-green-600 dark:text-green-400">
+                        {t("profile.2fa.backup_count", `${twoFactorStatus.backupCodesCount} backup codes remaining`)}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        const code = prompt(t("profile.2fa.enter_code", "Enter your 2FA code to regenerate backup codes:"));
+                        if (code) regenerateBackupCodesMutation.mutate(code);
+                      }}
+                      disabled={regenerateBackupCodesMutation.isPending}
+                      data-testid="button-regenerate-backup-codes"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      {t("profile.2fa.regenerate_codes", "New Backup Codes")}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      onClick={() => setShowDisable2FADialog(true)}
+                      data-testid="button-disable-2fa"
+                    >
+                      <Lock className="w-4 h-4 mr-2" />
+                      {t("profile.2fa.disable_button", "Disable 2FA")}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <p className="text-sm text-amber-800 dark:text-amber-300">
+                      {t("profile.2fa.not_enabled", "Two-factor authentication adds an extra layer of security by requiring a code from your authenticator app when logging in.")}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setup2FAMutation.mutate()}
+                    disabled={setup2FAMutation.isPending}
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                    data-testid="button-enable-2fa"
+                  >
+                    <Key className="w-4 h-4 mr-2" />
+                    {setup2FAMutation.isPending 
+                      ? t("profile.2fa.setting_up", "Setting up...") 
+                      : t("profile.2fa.enable_button", "Enable Two-Factor Authentication")}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 2FA Setup Dialog */}
+        <Dialog open={showTwoFactorSetup} onOpenChange={setShowTwoFactorSetup}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t("profile.2fa.setup_title", "Set Up Two-Factor Authentication")}</DialogTitle>
+              <DialogDescription>
+                {t("profile.2fa.setup_desc", "Scan the QR code with your authenticator app (Google Authenticator, Authy, etc.)")}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {twoFactorSetupData && (
+                <>
+                  <div className="flex justify-center p-4 bg-white rounded-lg">
+                    <img 
+                      src={twoFactorSetupData.qrCode} 
+                      alt="2FA QR Code" 
+                      className="w-48 h-48"
+                      data-testid="img-2fa-qrcode"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                      {t("profile.2fa.manual_entry", "Or enter this code manually:")}
+                    </p>
+                    <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded font-mono text-sm">
+                      <code className="flex-1 text-center" data-testid="text-2fa-secret">{twoFactorSetupData.secret}</code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigator.clipboard.writeText(twoFactorSetupData.secret)}
+                        data-testid="button-copy-secret"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      {t("profile.2fa.enter_verification", "Enter the 6-digit code from your app:")}
+                    </label>
+                    <div className="flex justify-center">
+                      <InputOTP
+                        value={twoFactorCode}
+                        onChange={setTwoFactorCode}
+                        maxLength={6}
+                        data-testid="input-2fa-code"
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                        </InputOTPGroup>
+                        <InputOTPSeparator />
+                        <InputOTPGroup>
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowTwoFactorSetup(false);
+                  setTwoFactorCode('');
+                }}
+              >
+                {t("common.cancel", "Cancel")}
+              </Button>
+              <Button
+                onClick={() => verify2FAMutation.mutate(twoFactorCode)}
+                disabled={twoFactorCode.length !== 6 || verify2FAMutation.isPending}
+                data-testid="button-verify-2fa"
+              >
+                {verify2FAMutation.isPending 
+                  ? t("profile.2fa.verifying", "Verifying...") 
+                  : t("profile.2fa.verify_button", "Verify & Enable")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Backup Codes Dialog */}
+        <Dialog open={showBackupCodes} onOpenChange={setShowBackupCodes}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t("profile.2fa.backup_title", "Save Your Backup Codes")}</DialogTitle>
+              <DialogDescription>
+                {t("profile.2fa.backup_desc", "Store these codes securely. Each code can only be used once if you lose access to your authenticator app.")}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {backupCodes && (
+                <div className="grid grid-cols-2 gap-2 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg font-mono text-sm">
+                  {backupCodes.map((code, index) => (
+                    <div key={index} className="p-2 bg-white dark:bg-gray-700 rounded text-center" data-testid={`text-backup-code-${index}`}>
+                      {code}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button
+                onClick={handleCopyBackupCodes}
+                variant="outline"
+                className="w-full"
+                data-testid="button-copy-backup-codes"
+              >
+                {copiedBackupCodes ? (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    {t("profile.2fa.copied", "Copied!")}
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-2" />
+                    {t("profile.2fa.copy_codes", "Copy All Codes")}
+                  </>
+                )}
+              </Button>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setShowBackupCodes(false)} data-testid="button-close-backup-codes">
+                {t("profile.2fa.saved_codes", "I've Saved My Codes")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Disable 2FA Dialog */}
+        <Dialog open={showDisable2FADialog} onOpenChange={setShowDisable2FADialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t("profile.2fa.disable_title", "Disable Two-Factor Authentication")}</DialogTitle>
+              <DialogDescription>
+                {t("profile.2fa.disable_desc", "Enter your current 2FA code to disable two-factor authentication. This will make your account less secure.")}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex justify-center">
+                <InputOTP
+                  value={disable2FACode}
+                  onChange={setDisable2FACode}
+                  maxLength={6}
+                  data-testid="input-disable-2fa-code"
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                  </InputOTPGroup>
+                  <InputOTPSeparator />
+                  <InputOTPGroup>
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDisable2FADialog(false);
+                  setDisable2FACode('');
+                }}
+              >
+                {t("common.cancel", "Cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => disable2FAMutation.mutate(disable2FACode)}
+                disabled={disable2FACode.length !== 6 || disable2FAMutation.isPending}
+                data-testid="button-confirm-disable-2fa"
+              >
+                {disable2FAMutation.isPending 
+                  ? t("profile.2fa.disabling", "Disabling...") 
+                  : t("profile.2fa.confirm_disable", "Disable 2FA")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Privacy & Data Rights - Moved to Bottom */}
         <Card className="mt-6 border-gray-200 dark:border-gray-800">

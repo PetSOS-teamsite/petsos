@@ -11,7 +11,7 @@ import { config as appConfig } from "./config";
 // Helper function to sanitize user data before sending to client
 export function sanitizeUser(user: any) {
   if (!user) return null;
-  const { passwordHash, password, ...sanitized } = user;
+  const { passwordHash, password, twoFactorSecret, twoFactorBackupCodes, ...sanitized } = user;
   return sanitized;
 }
 
@@ -180,6 +180,15 @@ export async function setupAuth(app: Express) {
             return done(null, false, { message: "Invalid credentials" });
           }
 
+          // SECURITY FIX: Do NOT return user when 2FA is required
+          // This prevents Passport from attaching req.user before 2FA verification
+          // The login route will handle setting pendingTwoFactorUserId in session
+          if (user.role === 'admin' && user.twoFactorEnabled) {
+            // Use type assertion to pass extra properties to info object
+            // The standard IVerifyOptions only allows 'message', but we need userId too
+            return done(null, false, { message: 'requiresTwoFactor', requiresTwoFactor: true, userId: user.id } as any);
+          }
+
           done(null, user);
         } catch (error) {
           done(error);
@@ -201,9 +210,33 @@ export async function setupAuth(app: Express) {
       if (err) {
         return res.status(500).json({ message: "Internal server error" });
       }
+      
+      // SECURITY FIX: Check if 2FA is required BEFORE checking !user
+      // When 2FA is required, LocalStrategy returns done(null, false, { requiresTwoFactor: true, userId: ... })
+      // This ensures Passport NEVER attaches req.user until after OTP validation
+      if (!user && info?.requiresTwoFactor && info?.userId) {
+        // Store ONLY the pending user ID in session for 2FA validation
+        // This is NOT full authentication - user cannot access protected routes
+        (req.session as any).pendingTwoFactorUserId = info.userId;
+        
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('[Auth] Session save error during 2FA:', saveErr);
+            return res.status(500).json({ message: "Session error" });
+          }
+          return res.json({ 
+            success: true, 
+            requiresTwoFactor: true,
+            userId: info.userId
+          });
+        });
+        return;
+      }
+      
       if (!user) {
         return res.status(401).json({ message: info?.message || "Authentication failed" });
       }
+      
       req.logIn(user, (err) => {
         if (err) {
           return res.status(500).json({ message: "Login failed" });
@@ -278,6 +311,11 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/auth/user", (req, res) => {
+    // SECURITY FIX: Check if 2FA is pending - user should NOT be considered authenticated yet
+    if ((req.session as any)?.pendingTwoFactorUserId) {
+      return res.json({ requiresTwoFactor: true });
+    }
+    
     if (req.isAuthenticated()) {
       res.json(sanitizeUser(req.user));
     } else {

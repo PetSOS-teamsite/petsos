@@ -28,6 +28,16 @@ import { PhoneInput } from "@/components/PhoneInput";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
+import { Lock, Key } from "lucide-react";
 
 // Email-specific schemas
 const emailLoginSchema = z.object({
@@ -67,6 +77,13 @@ export default function LoginPage() {
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const { toast } = useToast();
   const { t } = useTranslation();
+  
+  // 2FA state
+  const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const [isVerifying2FA, setIsVerifying2FA] = useState(false);
+  const [pendingUserInfo, setPendingUserInfo] = useState<{ id: string; email?: string; name?: string } | null>(null);
 
   const emailLoginForm = useForm({
     resolver: zodResolver(emailLoginSchema),
@@ -130,6 +147,15 @@ export default function LoginPage() {
         throw new Error(error.message || "Login failed");
       }
       
+      const result = await response.json();
+      
+      // Check if 2FA is required
+      if (result.requiresTwoFactor) {
+        setPendingUserInfo(result.user);
+        setShowTwoFactorModal(true);
+        return;
+      }
+      
       // Wait for the user query to refetch before redirecting
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
@@ -146,6 +172,49 @@ export default function LoginPage() {
         description: error.message || "Login failed",
         variant: "destructive",
       });
+    }
+  };
+  
+  const handleVerify2FA = async () => {
+    if (!twoFactorCode || twoFactorCode.length < 6) return;
+    
+    setIsVerifying2FA(true);
+    try {
+      const response = await fetch("/api/auth/2fa/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          code: twoFactorCode,
+          useBackupCode: useBackupCode
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Verification failed");
+      }
+      
+      // Wait for the user query to refetch before redirecting
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      
+      toast({
+        title: "Success",
+        description: "Logged in successfully!",
+      });
+      
+      setShowTwoFactorModal(false);
+      setTwoFactorCode('');
+      setPendingUserInfo(null);
+      setLocation("/profile");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Verification failed",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifying2FA(false);
     }
   };
 
@@ -459,6 +528,114 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Two-Factor Authentication Modal */}
+      <Dialog open={showTwoFactorModal} onOpenChange={(open) => {
+        if (!open) {
+          setShowTwoFactorModal(false);
+          setTwoFactorCode('');
+          setUseBackupCode(false);
+          setPendingUserInfo(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-amber-600" />
+              {t("login.2fa.title", "Two-Factor Authentication")}
+            </DialogTitle>
+            <DialogDescription>
+              {pendingUserInfo?.email && (
+                <span className="block text-sm text-gray-500 mb-2">
+                  {t("login.2fa.logging_in_as", "Logging in as")} {pendingUserInfo.email}
+                </span>
+              )}
+              {useBackupCode 
+                ? t("login.2fa.backup_desc", "Enter one of your backup codes to continue logging in.")
+                : t("login.2fa.desc", "Enter the 6-digit code from your authenticator app to continue logging in.")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex justify-center">
+              {useBackupCode ? (
+                <Input
+                  value={twoFactorCode}
+                  onChange={(e) => setTwoFactorCode(e.target.value.toUpperCase())}
+                  placeholder="XXXXXXXX"
+                  className="text-center font-mono text-lg"
+                  maxLength={8}
+                  data-testid="input-backup-code"
+                />
+              ) : (
+                <InputOTP
+                  value={twoFactorCode}
+                  onChange={setTwoFactorCode}
+                  maxLength={6}
+                  data-testid="input-2fa-login-code"
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                  </InputOTPGroup>
+                  <InputOTPSeparator />
+                  <InputOTPGroup>
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              )}
+            </div>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setUseBackupCode(!useBackupCode);
+                  setTwoFactorCode('');
+                }}
+                className="text-sm text-blue-600 hover:underline"
+                data-testid="button-toggle-backup-code"
+              >
+                {useBackupCode 
+                  ? t("login.2fa.use_app", "Use authenticator app instead")
+                  : t("login.2fa.use_backup", "Use a backup code instead")}
+              </button>
+            </div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowTwoFactorModal(false);
+                setTwoFactorCode('');
+                setUseBackupCode(false);
+                setPendingUserInfo(null);
+              }}
+              data-testid="button-cancel-2fa"
+            >
+              {t("common.cancel", "Cancel")}
+            </Button>
+            <Button
+              onClick={handleVerify2FA}
+              disabled={(useBackupCode ? twoFactorCode.length < 6 : twoFactorCode.length !== 6) || isVerifying2FA}
+              data-testid="button-verify-2fa-login"
+            >
+              {isVerifying2FA ? (
+                <>
+                  <Key className="w-4 h-4 mr-2 animate-spin" />
+                  {t("login.2fa.verifying", "Verifying...")}
+                </>
+              ) : (
+                <>
+                  <Key className="w-4 h-4 mr-2" />
+                  {t("login.2fa.verify", "Verify & Sign In")}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

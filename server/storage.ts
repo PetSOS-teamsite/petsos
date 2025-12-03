@@ -35,6 +35,10 @@ export interface IStorage {
   updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
   upsertUser(user: InsertUser): Promise<User>;
+  
+  // Two-Factor Authentication
+  updateUserTwoFactor(userId: string, secret: string | null, backupCodes: string[] | null, enabled: boolean): Promise<User | undefined>;
+  validateBackupCode(userId: string, code: string): Promise<boolean>;
 
   // Pets
   getPet(id: string): Promise<Pet | undefined>;
@@ -246,6 +250,10 @@ export class MemStorage implements IStorage {
       regionPreference: null,
       role: 'user',
       clinicId: null,
+      notificationPreferences: null,
+      twoFactorSecret: null,
+      twoFactorEnabled: false,
+      twoFactorBackupCodes: null,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -1367,6 +1375,46 @@ export class MemStorage implements IStorage {
   async updateNotificationBroadcast(id: string, data: Partial<NotificationBroadcast>): Promise<NotificationBroadcast | undefined> {
     throw new Error("MemStorage does not support notification broadcasts - use DatabaseStorage");
   }
+
+  // Two-Factor Authentication methods
+  async updateUserTwoFactor(userId: string, secret: string | null, backupCodes: string[] | null, enabled: boolean): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    const updatedUser: User = {
+      ...user,
+      twoFactorSecret: secret,
+      twoFactorBackupCodes: backupCodes,
+      twoFactorEnabled: enabled,
+      updatedAt: new Date()
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+
+  async validateBackupCode(userId: string, code: string): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user || !user.twoFactorBackupCodes || user.twoFactorBackupCodes.length === 0) {
+      return false;
+    }
+    
+    const bcrypt = require('bcrypt');
+    const backupCodes = user.twoFactorBackupCodes;
+    
+    for (let i = 0; i < backupCodes.length; i++) {
+      const isMatch = await bcrypt.compare(code, backupCodes[i]);
+      if (isMatch) {
+        // SECURITY FIX: Remove used backup code - codes are single-use only
+        // Create new array without the matched code and update the user in the Map
+        const remainingCodes = backupCodes.filter((_, index) => index !== i);
+        await this.updateUserTwoFactor(userId, user.twoFactorSecret, remainingCodes, user.twoFactorEnabled);
+        return true;
+      }
+    }
+    
+    return false;
+  }
 }
 
 // Database storage implementation using PostgreSQL
@@ -1694,6 +1742,41 @@ class DatabaseStorage implements IStorage {
     // Create new user
     const [user] = await db.insert(users).values(userData).returning();
     return user;
+  }
+
+  async updateUserTwoFactor(userId: string, secret: string | null, backupCodes: string[] | null, enabled: boolean): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set({
+        twoFactorSecret: secret,
+        twoFactorBackupCodes: backupCodes,
+        twoFactorEnabled: enabled,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0];
+  }
+
+  async validateBackupCode(userId: string, code: string): Promise<boolean> {
+    const user = await this.getUser(userId);
+    if (!user || !user.twoFactorBackupCodes) {
+      return false;
+    }
+    
+    const bcrypt = await import('bcrypt');
+    const backupCodes = user.twoFactorBackupCodes;
+    
+    for (let i = 0; i < backupCodes.length; i++) {
+      const isMatch = await bcrypt.compare(code, backupCodes[i]);
+      if (isMatch) {
+        const newBackupCodes = [...backupCodes];
+        newBackupCodes.splice(i, 1);
+        await this.updateUserTwoFactor(userId, user.twoFactorSecret, newBackupCodes, user.twoFactorEnabled);
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   async getPet(id: string): Promise<Pet | undefined> {
