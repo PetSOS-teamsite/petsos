@@ -3399,6 +3399,181 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== WHATSAPP CHAT ENDPOINTS (Two-way messaging) =====
+  
+  // Get all conversations (admin only)
+  app.get("/api/admin/conversations", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const includeArchived = req.query.includeArchived === 'true';
+      const conversations = await storage.getAllConversations(includeArchived);
+      res.json(conversations);
+    } catch (error) {
+      console.error('[Conversations] Error fetching:', error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+  
+  // Get single conversation (admin only)
+  app.get("/api/admin/conversations/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const conversation = await storage.getConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ message: "Conversation not found" });
+      }
+      res.json(conversation);
+    } catch (error) {
+      console.error('[Conversations] Error fetching:', error);
+      res.status(500).json({ message: "Failed to fetch conversation" });
+    }
+  });
+  
+  // Get messages for a conversation (admin only)
+  app.get("/api/admin/conversations/:id/messages", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      const messages = await storage.getChatMessagesByConversation(req.params.id, limit, offset);
+      res.json(messages);
+    } catch (error) {
+      console.error('[Conversations] Error fetching messages:', error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+  
+  // Mark conversation as read (admin only)
+  app.post("/api/admin/conversations/:id/read", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.markConversationAsRead(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[Conversations] Error marking as read:', error);
+      res.status(500).json({ message: "Failed to mark as read" });
+    }
+  });
+  
+  // Archive/unarchive conversation (admin only)
+  app.post("/api/admin/conversations/:id/archive", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { archive } = z.object({ archive: z.boolean() }).parse(req.body);
+      
+      if (archive) {
+        await storage.archiveConversation(req.params.id);
+      } else {
+        await storage.updateConversation(req.params.id, { isArchived: false });
+      }
+      
+      res.json({ success: true, archived: archive });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error('[Conversations] Error archiving:', error);
+      res.status(500).json({ message: "Failed to archive conversation" });
+    }
+  });
+  
+  // Send reply message (admin only)
+  app.post("/api/admin/conversations/:id/reply", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { content } = z.object({ content: z.string().min(1) }).parse(req.body);
+      
+      const conversation = await storage.getConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ message: "Conversation not found" });
+      }
+      
+      // Send via WhatsApp API
+      const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
+      const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      const WHATSAPP_API_URL = 'https://graph.facebook.com/v17.0';
+      
+      if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+        return res.status(500).json({ message: "WhatsApp not configured" });
+      }
+      
+      const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+      const payload = {
+        messaging_product: 'whatsapp',
+        to: conversation.phoneNumber,
+        type: 'text',
+        text: { body: content },
+      };
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        console.error('[Chat Reply] WhatsApp API error:', responseData);
+        return res.status(500).json({ 
+          message: "Failed to send message",
+          error: responseData.error?.message || 'Unknown error'
+        });
+      }
+      
+      const whatsappMessageId = responseData.messages?.[0]?.id;
+      
+      // Store the outbound message
+      const chatMessage = await storage.createChatMessage({
+        conversationId: conversation.id,
+        direction: 'outbound',
+        content,
+        messageType: 'text',
+        whatsappMessageId,
+        status: 'sent',
+        sentAt: new Date(),
+      });
+      
+      // Update conversation
+      await storage.updateConversation(conversation.id, {
+        lastMessageAt: new Date(),
+        lastMessagePreview: content.substring(0, 100),
+      });
+      
+      // Audit log
+      await storage.createAuditLog({
+        entityType: 'whatsapp_chat',
+        entityId: chatMessage.id,
+        action: 'send_reply',
+        userId: req.user?.id,
+        changes: { conversationId: conversation.id, content: content.substring(0, 50) },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      console.log(`[Chat Reply] Sent message ${chatMessage.id} to ${conversation.phoneNumber}`);
+      
+      res.json(chatMessage);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error('[Chat Reply] Error:', error);
+      res.status(500).json({ message: "Failed to send reply" });
+    }
+  });
+  
+  // Get unread conversation count (admin only)
+  app.get("/api/admin/conversations/unread-count", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const conversations = await storage.getAllConversations(false);
+      const unreadCount = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+      const unreadConversations = conversations.filter(c => (c.unreadCount || 0) > 0).length;
+      res.json({ unreadCount, unreadConversations });
+    } catch (error) {
+      console.error('[Conversations] Error getting unread count:', error);
+      res.status(500).json({ message: "Failed to get unread count" });
+    }
+  });
+
   // ===== OWNER VERIFICATION ENDPOINTS =====
   
   // Generate 6-digit verification code for clinic (admin only)
