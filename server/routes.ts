@@ -145,11 +145,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
               
-              // Process incoming messages (if we want to track replies in the future)
+              // Process incoming messages - store in chat conversations
               if (value?.messages) {
                 for (const message of value.messages) {
-                  console.log(`[WhatsApp Webhook] Incoming message from ${message.from}: ${message.type}`);
-                  // Future: Track incoming replies for conversation threading
+                  const senderPhone = message.from;
+                  const messageType = message.type; // text, image, document, audio, video
+                  const timestamp = message.timestamp ? new Date(parseInt(message.timestamp) * 1000) : new Date();
+                  const whatsappMsgId = message.id;
+                  
+                  console.log(`[WhatsApp Webhook] Incoming message from ${senderPhone}: ${messageType}`);
+                  
+                  try {
+                    // Sanitize phone number (digits only)
+                    const sanitizedPhone = senderPhone.replace(/[^0-9]/g, '');
+                    
+                    // Extract message content based on type
+                    let content = '';
+                    let mediaUrl: string | undefined;
+                    
+                    switch (messageType) {
+                      case 'text':
+                        content = message.text?.body || '';
+                        break;
+                      case 'image':
+                        content = message.image?.caption || '[Image]';
+                        mediaUrl = message.image?.id; // Media ID for later retrieval
+                        break;
+                      case 'document':
+                        content = message.document?.filename || '[Document]';
+                        mediaUrl = message.document?.id;
+                        break;
+                      case 'audio':
+                        content = '[Audio message]';
+                        mediaUrl = message.audio?.id;
+                        break;
+                      case 'video':
+                        content = message.video?.caption || '[Video]';
+                        mediaUrl = message.video?.id;
+                        break;
+                      case 'sticker':
+                        content = '[Sticker]';
+                        break;
+                      case 'location':
+                        content = `[Location: ${message.location?.latitude}, ${message.location?.longitude}]`;
+                        break;
+                      case 'contacts':
+                        content = '[Contact shared]';
+                        break;
+                      default:
+                        content = `[${messageType} message]`;
+                    }
+                    
+                    // Find or create conversation
+                    let conversation = await storage.getConversationByPhone(sanitizedPhone);
+                    
+                    if (!conversation) {
+                      // Try to find matching hospital by phone
+                      const hospital = await storage.findHospitalByPhone(sanitizedPhone);
+                      
+                      // Get sender's profile name from webhook if available
+                      const senderName = value.contacts?.[0]?.profile?.name || 
+                                        (hospital ? (hospital.nameEn || hospital.nameZh) : undefined);
+                      
+                      // Create new conversation
+                      conversation = await storage.createConversation({
+                        phoneNumber: sanitizedPhone,
+                        hospitalId: hospital?.id || null,
+                        displayName: senderName || `+${sanitizedPhone}`,
+                        lastMessageAt: timestamp,
+                        lastMessagePreview: content.substring(0, 100),
+                        unreadCount: 1,
+                        isArchived: false,
+                      });
+                      
+                      console.log(`[WhatsApp Webhook] Created new conversation ${conversation.id} for ${sanitizedPhone}`);
+                    } else {
+                      // Update existing conversation
+                      await storage.updateConversation(conversation.id, {
+                        lastMessageAt: timestamp,
+                        lastMessagePreview: content.substring(0, 100),
+                        unreadCount: (conversation.unreadCount || 0) + 1,
+                      });
+                    }
+                    
+                    // Store the incoming message
+                    const chatMessage = await storage.createChatMessage({
+                      conversationId: conversation.id,
+                      direction: 'inbound',
+                      content,
+                      messageType,
+                      mediaUrl,
+                      whatsappMessageId: whatsappMsgId,
+                      status: 'received',
+                      sentAt: timestamp,
+                    });
+                    
+                    console.log(`[WhatsApp Webhook] Stored incoming message ${chatMessage.id} in conversation ${conversation.id}`);
+                    
+                  } catch (msgError) {
+                    console.error('[WhatsApp Webhook] Error processing incoming message:', msgError);
+                  }
+                }
+              }
+              
+              // Also update chat message status for outbound messages
+              if (value?.statuses) {
+                for (const status of value.statuses) {
+                  const whatsappMessageId = status.id;
+                  const statusType = status.status;
+                  const timestamp = status.timestamp ? new Date(parseInt(status.timestamp) * 1000) : new Date();
+                  
+                  // Try to update chat message status (for two-way chat)
+                  try {
+                    const chatUpdateData: Record<string, any> = {};
+                    
+                    switch (statusType) {
+                      case 'sent':
+                        chatUpdateData.status = 'sent';
+                        chatUpdateData.sentAt = timestamp;
+                        break;
+                      case 'delivered':
+                        chatUpdateData.status = 'delivered';
+                        chatUpdateData.deliveredAt = timestamp;
+                        break;
+                      case 'read':
+                        chatUpdateData.status = 'read';
+                        chatUpdateData.readAt = timestamp;
+                        break;
+                      case 'failed':
+                        chatUpdateData.status = 'failed';
+                        if (status.errors?.[0]) {
+                          chatUpdateData.errorMessage = status.errors[0].message || status.errors[0].title;
+                        }
+                        break;
+                    }
+                    
+                    if (Object.keys(chatUpdateData).length > 0) {
+                      const updatedChat = await storage.updateChatMessageByWhatsAppId(whatsappMessageId, chatUpdateData);
+                      if (updatedChat) {
+                        console.log(`[WhatsApp Webhook] Updated chat message ${updatedChat.id} status to ${statusType}`);
+                      }
+                    }
+                  } catch (chatError) {
+                    // Silently ignore - message might be from broadcast system, not chat
+                  }
                 }
               }
             }
