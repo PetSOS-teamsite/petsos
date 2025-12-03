@@ -65,31 +65,35 @@ export default function LandingPage() {
           </p>
           
           {/* Emergency CTA - Most Prominent */}
-          <div className="flex flex-col gap-4 items-center mb-6">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
-              <Button
-                onClick={handleEmergency}
-                size="lg"
-                className="bg-white hover:bg-gray-100 text-red-600 px-10 py-7 text-xl font-bold shadow-lg"
-                data-testid="button-emergency-now"
-              >
-                <AlertCircle className="mr-2 h-6 w-6" />
-                {t('landing.emergency_button', 'Emergency Help Now')}
-              </Button>
-              <Button
-                onClick={handleFindHospitals}
-                size="lg"
-                className="px-8 py-7 text-lg border-2 border-white bg-transparent text-white hover:bg-white hover:text-red-600 font-semibold transition-all"
-                data-testid="button-find-hospitals"
-              >
-                <MapPin className="mr-2 h-5 w-5" />
-                {t('landing.find_hospitals_button', 'Find Nearby 24-Hour Hospitals')}
-              </Button>
-            </div>
+          <div className="flex flex-col gap-4 items-center mb-6 max-w-md mx-auto w-full px-4">
+            {/* Primary Action - Emergency (Largest, Most Prominent) */}
+            <Button
+              onClick={handleEmergency}
+              size="lg"
+              className="w-full bg-white hover:bg-gray-100 text-red-600 py-8 text-xl font-bold shadow-xl hover:shadow-2xl transition-all rounded-2xl"
+              data-testid="button-emergency-now"
+            >
+              <AlertCircle className="mr-3 h-7 w-7" />
+              {t('landing.emergency_button', 'Emergency Help Now')}
+            </Button>
+            
+            {/* Divider with spacing */}
+            <div className="w-full h-px bg-white/20 my-2" />
+            
+            {/* Secondary Actions - Equal Width, Stacked */}
+            <Button
+              onClick={handleFindHospitals}
+              size="lg"
+              className="w-full py-6 text-base border-2 border-white/80 bg-white/10 text-white hover:bg-white hover:text-red-600 font-semibold transition-all rounded-xl backdrop-blur-sm"
+              data-testid="button-find-hospitals"
+            >
+              <MapPin className="mr-2 h-5 w-5" />
+              {t('landing.find_hospitals_button', 'Find Nearby 24-Hour Hospitals')}
+            </Button>
             <Button
               onClick={handleLogin}
               size="lg"
-              className="px-8 py-6 text-base border-2 border-white bg-transparent text-white hover:bg-white hover:text-red-600 font-medium transition-all"
+              className="w-full py-6 text-base border-2 border-white/80 bg-white/10 text-white hover:bg-white hover:text-red-600 font-semibold transition-all rounded-xl backdrop-blur-sm"
               data-testid="button-login-corner"
             >
               <UserCircle className="mr-2 h-5 w-5" />
