@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
-import { SimpleFileUploader } from "./SimpleFileUploader";
+import { DragDropUpload } from "./DragDropUpload";
 import { FileText, Upload, Trash2, Download, Shield, AlertCircle } from "lucide-react";
 import type { PetMedicalRecord, PetMedicalSharingConsent } from "@shared/schema";
 
@@ -268,7 +268,7 @@ export function MedicalRecordsSection({ petId, petName }: MedicalRecordsSectionP
                 <div>
                   <Label>{language === 'zh-HK' ? '文件' : 'File'} *</Label>
                   <div className="mt-2">
-                    <SimpleFileUploader
+                    <DragDropUpload
                       key={isUploadDialogOpen ? 'open' : 'closed'}
                       onUploadComplete={handleUploadComplete}
                       onError={handleUploadError}
