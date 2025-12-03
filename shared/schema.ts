@@ -618,3 +618,59 @@ export const insertClinicReviewSchema = createInsertSchema(clinicReviews).omit({
 
 export type InsertClinicReview = z.infer<typeof insertClinicReviewSchema>;
 export type ClinicReview = typeof clinicReviews.$inferSelect;
+
+// WhatsApp Conversations table - tracks two-way chat sessions with hospitals
+export const whatsappConversations = pgTable("whatsapp_conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  hospitalId: varchar("hospital_id").references(() => hospitals.id, { onDelete: 'set null' }),
+  phoneNumber: text("phone_number").notNull(), // Sanitized WhatsApp number (digits only)
+  displayName: text("display_name"), // Hospital name or WhatsApp profile name
+  lastMessageAt: timestamp("last_message_at").notNull().defaultNow(),
+  lastMessagePreview: text("last_message_preview"), // First 100 chars of last message
+  unreadCount: integer("unread_count").notNull().default(0),
+  isArchived: boolean("is_archived").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_whatsapp_conversations_phone").on(table.phoneNumber),
+  index("idx_whatsapp_conversations_hospital").on(table.hospitalId),
+  index("idx_whatsapp_conversations_last_message").on(table.lastMessageAt),
+]);
+
+export const insertWhatsappConversationSchema = createInsertSchema(whatsappConversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertWhatsappConversation = z.infer<typeof insertWhatsappConversationSchema>;
+export type WhatsappConversation = typeof whatsappConversations.$inferSelect;
+
+// WhatsApp Chat Messages table - stores individual messages in conversations
+export const whatsappChatMessages = pgTable("whatsapp_chat_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").notNull().references(() => whatsappConversations.id, { onDelete: 'cascade' }),
+  direction: text("direction").notNull(), // 'inbound' (from hospital) or 'outbound' (from PetSOS)
+  content: text("content").notNull(),
+  messageType: text("message_type").notNull().default('text'), // text, image, document, audio, video
+  mediaUrl: text("media_url"), // URL for media messages
+  whatsappMessageId: text("whatsapp_message_id"), // Meta's wamid for tracking
+  status: text("status").notNull().default('sent'), // sent, delivered, read, failed (for outbound)
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  readAt: timestamp("read_at"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_whatsapp_chat_messages_conversation").on(table.conversationId),
+  index("idx_whatsapp_chat_messages_created").on(table.createdAt),
+  index("idx_whatsapp_chat_messages_whatsapp_id").on(table.whatsappMessageId),
+]);
+
+export const insertWhatsappChatMessageSchema = createInsertSchema(whatsappChatMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertWhatsappChatMessage = z.infer<typeof insertWhatsappChatMessageSchema>;
+export type WhatsappChatMessage = typeof whatsappChatMessages.$inferSelect;
