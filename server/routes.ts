@@ -3618,7 +3618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin: Send broadcast notification
+  // Admin: Send or schedule broadcast notification
   app.post("/api/admin/notifications/broadcast", broadcastLimiter, isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const broadcastSchema = z.object({
@@ -3626,7 +3626,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: z.string().min(1).max(500),
         targetLanguage: z.enum(['en', 'zh-HK']).nullable().optional(),
         targetRole: z.enum(['pet_owner', 'hospital_clinic']).nullable().optional(),
-        url: z.string().url().optional().or(z.literal(''))
+        url: z.string().url().optional().or(z.literal('')),
+        scheduledFor: z.string().datetime().nullable().optional()
       });
       
       const validationResult = broadcastSchema.safeParse(req.body);
@@ -3637,14 +3638,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const { title, message, targetLanguage, targetRole, url } = validationResult.data;
+      const { title, message, targetLanguage, targetRole, url, scheduledFor } = validationResult.data;
       const userId = (req.user as any).id;
       
-      // Create broadcast record first
+      // If scheduledFor is provided, create a scheduled notification
+      if (scheduledFor) {
+        const scheduledDate = new Date(scheduledFor);
+        
+        // Validate scheduled time is in the future
+        if (scheduledDate <= new Date()) {
+          return res.status(400).json({ 
+            error: "Scheduled time must be in the future" 
+          });
+        }
+        
+        // Create scheduled broadcast record
+        const broadcast = await storage.createNotificationBroadcast({
+          title,
+          message,
+          targetLanguage: targetLanguage || null,
+          targetRole: targetRole || null,
+          url: url || null,
+          adminId: userId,
+          status: 'scheduled',
+          scheduledFor: scheduledDate
+        });
+        
+        // Create audit log
+        await storage.createAuditLog({
+          entityType: 'notification_broadcast',
+          entityId: broadcast.id,
+          action: 'schedule',
+          userId: userId,
+          changes: { 
+            title,
+            message,
+            scheduledFor: scheduledFor,
+            targetLanguage: targetLanguage || 'all'
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+        
+        return res.status(201).json({
+          success: true,
+          broadcastId: broadcast.id,
+          scheduled: true,
+          scheduledFor: scheduledDate.toISOString(),
+          message: 'Notification scheduled successfully'
+        });
+      }
+      
+      // Immediate send - original logic
       const broadcast = await storage.createNotificationBroadcast({
         title,
         message,
         targetLanguage: targetLanguage || null,
+        targetRole: targetRole || null,
+        url: url || null,
         adminId: userId,
         status: 'pending'
       });
@@ -3732,7 +3783,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin: Get recent notification broadcasts
+  // Admin: Get all notification broadcasts (with pagination)
+  app.get("/api/admin/notifications", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+      const page = Math.max(parseInt(req.query.page as string) || 1, 1);
+      const offset = (page - 1) * limit;
+      
+      const { broadcasts, total } = await storage.getAllNotificationBroadcasts(limit, offset);
+      
+      res.json({
+        broadcasts,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit)
+        }
+      });
+    } catch (error: any) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch notifications" });
+    }
+  });
+  
+  // Admin: Cancel a scheduled notification
+  app.delete("/api/admin/notifications/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = (req.user as any).id;
+      
+      // Get the notification first
+      const broadcast = await storage.getNotificationBroadcast(id);
+      
+      if (!broadcast) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+      
+      // Only allow cancellation of scheduled notifications
+      if (broadcast.status !== 'scheduled') {
+        return res.status(400).json({ 
+          error: "Only scheduled notifications can be cancelled",
+          currentStatus: broadcast.status
+        });
+      }
+      
+      // Update status to cancelled
+      const updated = await storage.updateNotificationBroadcastStatus(id, 'cancelled');
+      
+      // Create audit log
+      await storage.createAuditLog({
+        entityType: 'notification_broadcast',
+        entityId: id,
+        action: 'cancel',
+        userId: userId,
+        changes: { 
+          previousStatus: 'scheduled',
+          newStatus: 'cancelled'
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({
+        success: true,
+        message: "Notification cancelled successfully",
+        broadcast: updated
+      });
+    } catch (error: any) {
+      console.error("Error cancelling notification:", error);
+      res.status(500).json({ error: error.message || "Failed to cancel notification" });
+    }
+  });
+  
+  // Admin: Get recent notification broadcasts (legacy endpoint for backwards compatibility)
   app.get("/api/admin/notifications/history", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);

@@ -5,9 +5,10 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initSentry, setupSentryMiddleware, setupSentryErrorHandler, captureException } from "./sentry";
 import { config } from "./config";
 import { ensureTranslationsExist } from "./seed-translations";
+import { startNotificationScheduler } from "./services/notification-scheduler";
 import fs from "fs";
 import path from "path";
-// Schema refresh trigger: 2025-11-29
+// Schema refresh trigger: 2025-12-03
 
 const app = express();
 
@@ -175,5 +176,8 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${config.port}`);
+    
+    // Start the notification scheduler
+    startNotificationScheduler();
   });
 })();

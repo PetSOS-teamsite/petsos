@@ -22,7 +22,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, or, inArray, sql, desc } from "drizzle-orm";
+import { eq, and, or, inArray, sql, desc, lte } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -171,7 +171,10 @@ export interface IStorage {
   createNotificationBroadcast(broadcast: InsertNotificationBroadcast): Promise<NotificationBroadcast>;
   getNotificationBroadcast(id: string): Promise<NotificationBroadcast | undefined>;
   getRecentNotificationBroadcasts(limit?: number): Promise<NotificationBroadcast[]>;
+  getAllNotificationBroadcasts(limit?: number, offset?: number): Promise<{ broadcasts: NotificationBroadcast[]; total: number }>;
+  getScheduledNotifications(): Promise<NotificationBroadcast[]>;
   updateNotificationBroadcast(id: string, data: Partial<NotificationBroadcast>): Promise<NotificationBroadcast | undefined>;
+  updateNotificationBroadcastStatus(id: string, status: string): Promise<NotificationBroadcast | undefined>;
 
   // GDPR/PDPO Compliance
   exportUserData(userId: string): Promise<{
@@ -211,6 +214,8 @@ export class MemStorage implements IStorage {
   private hospitalUpdates: Map<string, HospitalUpdate>;
   private petMedicalRecordsMap: Map<string, PetMedicalRecord>;
   private petMedicalSharingConsentsMap: Map<string, PetMedicalSharingConsent>;
+  private pushSubscriptionsMap: Map<string, PushSubscription>;
+  private notificationBroadcastsMap: Map<string, NotificationBroadcast>;
 
   constructor() {
     this.users = new Map();
@@ -230,6 +235,8 @@ export class MemStorage implements IStorage {
     this.hospitalUpdates = new Map();
     this.petMedicalRecordsMap = new Map();
     this.petMedicalSharingConsentsMap = new Map();
+    this.pushSubscriptionsMap = new Map();
+    this.notificationBroadcastsMap = new Map();
     
     // Seed test user
     const testUser: User = {
@@ -1359,21 +1366,74 @@ export class MemStorage implements IStorage {
     throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
   }
 
-  // Notification Broadcasts - stub implementations
+  // Notification Broadcasts - in-memory implementations
   async createNotificationBroadcast(broadcast: InsertNotificationBroadcast): Promise<NotificationBroadcast> {
-    throw new Error("MemStorage does not support notification broadcasts - use DatabaseStorage");
+    const id = randomUUID();
+    const newBroadcast: NotificationBroadcast = {
+      id,
+      title: broadcast.title,
+      message: broadcast.message,
+      targetLanguage: broadcast.targetLanguage ?? null,
+      targetAudience: broadcast.targetAudience ?? 'all',
+      targetRole: broadcast.targetRole ?? null,
+      url: broadcast.url ?? null,
+      adminId: broadcast.adminId,
+      status: broadcast.status ?? 'pending',
+      scheduledFor: broadcast.scheduledFor ?? null,
+      sentAt: null,
+      recipientCount: null,
+      providerResponse: null,
+      createdAt: new Date()
+    };
+    this.notificationBroadcastsMap.set(id, newBroadcast);
+    return newBroadcast;
   }
 
   async getNotificationBroadcast(id: string): Promise<NotificationBroadcast | undefined> {
-    throw new Error("MemStorage does not support notification broadcasts - use DatabaseStorage");
+    return this.notificationBroadcastsMap.get(id);
   }
 
-  async getRecentNotificationBroadcasts(limit?: number): Promise<NotificationBroadcast[]> {
-    throw new Error("MemStorage does not support notification broadcasts - use DatabaseStorage");
+  async getRecentNotificationBroadcasts(limit: number = 50): Promise<NotificationBroadcast[]> {
+    const broadcasts = Array.from(this.notificationBroadcastsMap.values());
+    return broadcasts
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0))
+      .slice(0, limit);
   }
 
   async updateNotificationBroadcast(id: string, data: Partial<NotificationBroadcast>): Promise<NotificationBroadcast | undefined> {
-    throw new Error("MemStorage does not support notification broadcasts - use DatabaseStorage");
+    const broadcast = this.notificationBroadcastsMap.get(id);
+    if (!broadcast) return undefined;
+    const updated = { ...broadcast, ...data };
+    this.notificationBroadcastsMap.set(id, updated);
+    return updated;
+  }
+
+  async getAllNotificationBroadcasts(limit: number = 50, offset: number = 0): Promise<{ broadcasts: NotificationBroadcast[]; total: number }> {
+    const allBroadcasts = Array.from(this.notificationBroadcastsMap.values());
+    const sorted = allBroadcasts.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+    return {
+      broadcasts: sorted.slice(offset, offset + limit),
+      total: allBroadcasts.length
+    };
+  }
+
+  async getScheduledNotifications(): Promise<NotificationBroadcast[]> {
+    const now = new Date();
+    return Array.from(this.notificationBroadcastsMap.values())
+      .filter(broadcast => 
+        broadcast.status === 'scheduled' && 
+        broadcast.scheduledFor !== null && 
+        broadcast.scheduledFor <= now
+      )
+      .sort((a, b) => (a.scheduledFor?.getTime() || 0) - (b.scheduledFor?.getTime() || 0));
+  }
+
+  async updateNotificationBroadcastStatus(id: string, status: string): Promise<NotificationBroadcast | undefined> {
+    const broadcast = this.notificationBroadcastsMap.get(id);
+    if (!broadcast) return undefined;
+    const updated = { ...broadcast, status };
+    this.notificationBroadcastsMap.set(id, updated);
+    return updated;
   }
 
   // Two-Factor Authentication methods
@@ -2413,9 +2473,38 @@ class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
+  async getAllNotificationBroadcasts(limit: number = 50, offset: number = 0): Promise<{ broadcasts: NotificationBroadcast[]; total: number }> {
+    const broadcasts = await db.select().from(notificationBroadcasts)
+      .orderBy(desc(notificationBroadcasts.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    const countResult = await db.select({ count: sql<number>`count(*)` }).from(notificationBroadcasts);
+    const total = Number(countResult[0]?.count) || 0;
+    
+    return { broadcasts, total };
+  }
+
+  async getScheduledNotifications(): Promise<NotificationBroadcast[]> {
+    return await db.select().from(notificationBroadcasts)
+      .where(and(
+        eq(notificationBroadcasts.status, 'scheduled'),
+        lte(notificationBroadcasts.scheduledFor, new Date())
+      ))
+      .orderBy(notificationBroadcasts.scheduledFor);
+  }
+
   async updateNotificationBroadcast(id: string, data: Partial<NotificationBroadcast>): Promise<NotificationBroadcast | undefined> {
     const result = await db.update(notificationBroadcasts)
       .set(data)
+      .where(eq(notificationBroadcasts.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateNotificationBroadcastStatus(id: string, status: string): Promise<NotificationBroadcast | undefined> {
+    const result = await db.update(notificationBroadcasts)
+      .set({ status })
       .where(eq(notificationBroadcasts.id, id))
       .returning();
     return result[0];

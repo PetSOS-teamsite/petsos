@@ -565,13 +565,18 @@ export const notificationBroadcasts = pgTable("notification_broadcasts", {
   message: text("message").notNull(),
   targetLanguage: text("target_language"), // null = all, 'en', 'zh-HK'
   targetAudience: text("target_audience").notNull().default('all'), // all, subscribed_users
+  targetRole: text("target_role"), // null = all, 'pet_owner', 'hospital_clinic'
+  url: text("url"), // click-through URL
   recipientCount: integer("recipient_count"),
-  status: text("status").notNull().default('pending'), // pending, sent, failed
+  status: text("status").notNull().default('pending'), // pending, scheduled, sent, failed, cancelled
+  scheduledFor: timestamp("scheduled_for"), // null = immediate, otherwise the scheduled time
   providerResponse: jsonb("provider_response"), // FCM or other provider response data
   createdAt: timestamp("created_at").notNull().defaultNow(),
   sentAt: timestamp("sent_at"),
 }, (table) => [
   index("idx_notification_broadcasts_admin").on(table.adminId),
+  index("idx_notification_broadcasts_status").on(table.status),
+  index("idx_notification_broadcasts_scheduled").on(table.scheduledFor),
 ]);
 
 export const insertNotificationBroadcastSchema = createInsertSchema(notificationBroadcasts).omit({
