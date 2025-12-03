@@ -285,16 +285,12 @@ export default function AdminChatsPage() {
 
   const newConversationMutation = useMutation({
     mutationFn: async ({ phoneNumber, displayName, message }: { phoneNumber: string; displayName?: string; message: string }) => {
-      const createResponse = await apiRequest("POST", "/api/admin/conversations", {
+      const response = await apiRequest("POST", "/api/admin/conversations/new", {
         phoneNumber,
         displayName: displayName || undefined,
-      });
-      const conversation = await createResponse.json();
-      
-      await apiRequest("POST", `/api/admin/conversations/${conversation.id}/reply`, {
         content: message,
       });
-      
+      const { conversation } = await response.json();
       return conversation;
     },
     onSuccess: (conversation) => {
