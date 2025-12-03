@@ -3413,6 +3413,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get unread conversation count (admin only) - MUST be before :id routes
+  app.get("/api/admin/conversations/unread-count", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const conversations = await storage.getAllConversations(false);
+      const unreadCount = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+      const unreadConversations = conversations.filter(c => (c.unreadCount || 0) > 0).length;
+      res.json({ unreadCount, unreadConversations });
+    } catch (error) {
+      console.error('[Conversations] Error getting unread count:', error);
+      res.status(500).json({ message: "Failed to get unread count" });
+    }
+  });
+  
   // Get single conversation (admin only)
   app.get("/api/admin/conversations/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
@@ -3558,19 +3571,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error('[Chat Reply] Error:', error);
       res.status(500).json({ message: "Failed to send reply" });
-    }
-  });
-  
-  // Get unread conversation count (admin only)
-  app.get("/api/admin/conversations/unread-count", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const conversations = await storage.getAllConversations(false);
-      const unreadCount = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
-      const unreadConversations = conversations.filter(c => (c.unreadCount || 0) > 0).length;
-      res.json({ unreadCount, unreadConversations });
-    } catch (error) {
-      console.error('[Conversations] Error getting unread count:', error);
-      res.status(500).json({ message: "Failed to get unread count" });
     }
   });
 
