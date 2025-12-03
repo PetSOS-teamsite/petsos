@@ -4043,6 +4043,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== ADMIN ANALYTICS ROUTES =====
+  
+  // Admin: Get analytics overview (summary metrics)
+  app.get("/api/admin/analytics/overview", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const overview = await storage.getAnalyticsOverview();
+      res.json(overview);
+    } catch (error: any) {
+      console.error("Error fetching analytics overview:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch analytics overview" });
+    }
+  });
+
+  // Admin: Get emergency request trends
+  app.get("/api/admin/analytics/emergency-trends", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const days = Math.min(Math.max(parseInt(req.query.days as string) || 30, 1), 365);
+      const trends = await storage.getEmergencyTrends(days);
+      res.json(trends);
+    } catch (error: any) {
+      console.error("Error fetching emergency trends:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch emergency trends" });
+    }
+  });
+
+  // Admin: Get user activity trends
+  app.get("/api/admin/analytics/user-activity", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const days = Math.min(Math.max(parseInt(req.query.days as string) || 30, 1), 365);
+      const activity = await storage.getUserActivityTrends(days);
+      res.json(activity);
+    } catch (error: any) {
+      console.error("Error fetching user activity:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch user activity" });
+    }
+  });
+
   // Firebase config endpoint for service worker
   app.get("/api/config/firebase", (req, res) => {
     res.json({

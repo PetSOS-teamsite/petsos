@@ -19,7 +19,8 @@ import {
   Heart,
   Stethoscope,
   Bell,
-  MessageSquare
+  MessageSquare,
+  TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -200,6 +201,12 @@ export default function AdminDashboardPage() {
                 <Button variant="outline" size="sm" data-testid="button-admin-messages">
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Messages
+                </Button>
+              </Link>
+              <Link href="/admin/analytics">
+                <Button variant="outline" size="sm" data-testid="button-admin-analytics">
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Analytics
                 </Button>
               </Link>
               <Link href="/admin/config">

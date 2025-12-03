@@ -23,7 +23,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, or, inArray, sql, desc, lte } from "drizzle-orm";
+import { eq, and, or, inArray, sql, desc, lte, gte, count } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -203,6 +203,29 @@ export interface IStorage {
       messages: number;
       user: boolean;
     };
+  }>;
+
+  // Analytics
+  getAnalyticsOverview(): Promise<{
+    totalUsers: number;
+    newUsers24h: number;
+    newUsers7d: number;
+    newUsers30d: number;
+    totalPets: number;
+    totalEmergencyRequests: number;
+    emergencyByStatus: { status: string; count: number }[];
+    totalClinics: number;
+    activeClinics: number;
+    totalHospitals: number;
+  }>;
+  getEmergencyTrends(days: number): Promise<{
+    dailyTrends: { date: string; count: number }[];
+    byRegion: { regionId: string; regionName: string; count: number }[];
+    byStatus: { status: string; count: number }[];
+  }>;
+  getUserActivityTrends(days: number): Promise<{
+    registrationTrends: { date: string; count: number }[];
+    totalActiveUsers: number;
   }>;
 }
 
@@ -2687,6 +2710,145 @@ class DatabaseStorage implements IStorage {
         reviewCount: reviewCount
       })
       .where(eq(clinics.id, clinicId));
+  }
+
+  // Analytics Methods
+  async getAnalyticsOverview(): Promise<{
+    totalUsers: number;
+    newUsers24h: number;
+    newUsers7d: number;
+    newUsers30d: number;
+    totalPets: number;
+    totalEmergencyRequests: number;
+    emergencyByStatus: { status: string; count: number }[];
+    totalClinics: number;
+    activeClinics: number;
+    totalHospitals: number;
+  }> {
+    const now = new Date();
+    const h24Ago = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const d7Ago = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const d30Ago = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const [
+      totalUsersResult,
+      newUsers24hResult,
+      newUsers7dResult,
+      newUsers30dResult,
+      totalPetsResult,
+      totalEmergencyResult,
+      emergencyByStatusResult,
+      totalClinicsResult,
+      activeClinicsResult,
+      totalHospitalsResult
+    ] = await Promise.all([
+      db.select({ count: sql<number>`count(*)::int` }).from(users),
+      db.select({ count: sql<number>`count(*)::int` }).from(users).where(gte(users.createdAt, h24Ago)),
+      db.select({ count: sql<number>`count(*)::int` }).from(users).where(gte(users.createdAt, d7Ago)),
+      db.select({ count: sql<number>`count(*)::int` }).from(users).where(gte(users.createdAt, d30Ago)),
+      db.select({ count: sql<number>`count(*)::int` }).from(pets),
+      db.select({ count: sql<number>`count(*)::int` }).from(emergencyRequests),
+      db.select({ 
+        status: emergencyRequests.status, 
+        count: sql<number>`count(*)::int` 
+      }).from(emergencyRequests).groupBy(emergencyRequests.status),
+      db.select({ count: sql<number>`count(*)::int` }).from(clinics),
+      db.select({ count: sql<number>`count(*)::int` }).from(clinics).where(eq(clinics.isAvailable, true)),
+      db.select({ count: sql<number>`count(*)::int` }).from(hospitals)
+    ]);
+
+    return {
+      totalUsers: Number(totalUsersResult[0]?.count || 0),
+      newUsers24h: Number(newUsers24hResult[0]?.count || 0),
+      newUsers7d: Number(newUsers7dResult[0]?.count || 0),
+      newUsers30d: Number(newUsers30dResult[0]?.count || 0),
+      totalPets: Number(totalPetsResult[0]?.count || 0),
+      totalEmergencyRequests: Number(totalEmergencyResult[0]?.count || 0),
+      emergencyByStatus: emergencyByStatusResult.map(r => ({ status: r.status, count: Number(r.count || 0) })),
+      totalClinics: Number(totalClinicsResult[0]?.count || 0),
+      activeClinics: Number(activeClinicsResult[0]?.count || 0),
+      totalHospitals: Number(totalHospitalsResult[0]?.count || 0)
+    };
+  }
+
+  async getEmergencyTrends(days: number): Promise<{
+    dailyTrends: { date: string; count: number }[];
+    byRegion: { regionId: string; regionName: string; count: number }[];
+    byStatus: { status: string; count: number }[];
+  }> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+
+    const [dailyTrendsResult, byRegionResult, byStatusResult] = await Promise.all([
+      db.select({
+        date: sql<string>`DATE(${emergencyRequests.createdAt})::text`,
+        count: sql<number>`count(*)::int`
+      })
+      .from(emergencyRequests)
+      .where(gte(emergencyRequests.createdAt, startDate))
+      .groupBy(sql`DATE(${emergencyRequests.createdAt})`)
+      .orderBy(sql`DATE(${emergencyRequests.createdAt})`),
+      
+      db.select({
+        regionId: emergencyRequests.regionId,
+        regionName: sql<string>`COALESCE(${regions.nameEn}, 'Unknown Region')`,
+        count: sql<number>`count(*)::int`
+      })
+      .from(emergencyRequests)
+      .leftJoin(regions, eq(emergencyRequests.regionId, regions.id))
+      .where(gte(emergencyRequests.createdAt, startDate))
+      .groupBy(emergencyRequests.regionId, regions.nameEn)
+      .orderBy(sql`count(*) DESC`)
+      .limit(10),
+      
+      db.select({
+        status: emergencyRequests.status,
+        count: sql<number>`count(*)::int`
+      })
+      .from(emergencyRequests)
+      .where(gte(emergencyRequests.createdAt, startDate))
+      .groupBy(emergencyRequests.status)
+    ]);
+
+    return {
+      dailyTrends: dailyTrendsResult.map(r => ({ date: r.date, count: Number(r.count || 0) })),
+      byRegion: byRegionResult.map(r => ({ 
+        regionId: r.regionId || 'unknown', 
+        regionName: r.regionName || 'Unknown Region', 
+        count: Number(r.count || 0) 
+      })),
+      byStatus: byStatusResult.map(r => ({ status: r.status, count: Number(r.count || 0) }))
+    };
+  }
+
+  async getUserActivityTrends(days: number): Promise<{
+    registrationTrends: { date: string; count: number }[];
+    totalActiveUsers: number;
+  }> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+
+    const [registrationTrendsResult, activeUsersResult] = await Promise.all([
+      db.select({
+        date: sql<string>`DATE(${users.createdAt})::text`,
+        count: sql<number>`count(*)::int`
+      })
+      .from(users)
+      .where(gte(users.createdAt, startDate))
+      .groupBy(sql`DATE(${users.createdAt})`)
+      .orderBy(sql`DATE(${users.createdAt})`),
+      
+      db.select({ count: sql<number>`count(DISTINCT ${emergencyRequests.userId})::int` })
+        .from(emergencyRequests)
+        .where(gte(emergencyRequests.createdAt, startDate))
+    ]);
+
+    return {
+      registrationTrends: registrationTrendsResult.map(r => ({ date: r.date, count: Number(r.count || 0) })),
+      totalActiveUsers: Number(activeUsersResult[0]?.count || 0)
+    };
   }
 }
 
