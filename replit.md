@@ -53,6 +53,7 @@ Preferred communication style: Simple, everyday language.
 - **Clinic Reviews/Ratings**: Pet owners can rate clinics (1-5 stars) with optional text reviews. Reviews require moderation (pending → approved). Average ratings and counts cached on clinic records.
 - **Drag-and-Drop Upload**: Enhanced medical record upload with drag-and-drop zone, file previews, upload progress, memory-safe cleanup.
 - **Admin Analytics Dashboard**: Visual analytics at `/admin/analytics` with summary cards, line charts for trends, bar charts for regional distribution, pie charts for status breakdown. Configurable date ranges.
+- **Two-Way WhatsApp Chat**: Admin chat interface at `/admin/chats` for two-way messaging with hospitals. Features include: conversation list with unread counts, message threading, real-time polling, optimistic updates, archive/unarchive, hospital linking, and message status tracking (sent/delivered/read). Uses the same WhatsApp number as emergency broadcasts.
 
 # External Dependencies
 
