@@ -43,7 +43,16 @@ Preferred communication style: Simple, everyday language.
 - **Emergency Request Editing**: Post-submission editing of contact info, symptoms, location with real-time broadcast message updates, Zod validation, audit trail, GPS location support, and bilingual UI.
 - **Internationalization**: Database-stored translations (EN, zh-HK), client-side language detection, comprehensive bilingual support.
 - **Multi-Region Configuration**: Database-driven configuration for countries, regions, and pet breeds, dynamic loading in UI components.
-- **Admin Push Notifications**: Admin panel (`/admin/notifications`) for composing and broadcasting push notifications to all users or by language preference. Includes notification history with recipient counts and delivery status.
+- **Admin Push Notifications**: Admin panel (`/admin/notifications`) for composing and broadcasting push notifications to all users or by language preference. Includes notification history with recipient counts and delivery status. Supports scheduled notifications with date/time picker and cancellation.
+- **Hospital Access Code Expiry**: Hospital access codes now have configurable expiration (default 72 hours). Expired codes are rejected during validation.
+- **User Notification Preferences**: Users can control notification types (emergency alerts, platform updates, marketing) via profile settings.
+- **Storage Quotas**: Medical record storage limited to 100MB per user, 50 records max, 10MB per file. Quota validation at upload and record creation.
+- **Pet Photo Upload**: Pet profiles support photo uploads with image preview, stored in object storage with public ACL.
+- **Offline Emergency Support**: Service worker queues emergency requests when offline, processes on reconnection or app startup. Visual indicator shows offline status and queued count.
+- **Admin Two-Factor Authentication (2FA)**: TOTP-based 2FA for admin accounts with QR code setup, backup codes (single-use, hashed), encrypted secrets at rest (AES-256-GCM).
+- **Clinic Reviews/Ratings**: Pet owners can rate clinics (1-5 stars) with optional text reviews. Reviews require moderation (pending → approved). Average ratings and counts cached on clinic records.
+- **Drag-and-Drop Upload**: Enhanced medical record upload with drag-and-drop zone, file previews, upload progress, memory-safe cleanup.
+- **Admin Analytics Dashboard**: Visual analytics at `/admin/analytics` with summary cards, line charts for trends, bar charts for regional distribution, pie charts for status breakdown. Configurable date ranges.
 
 # External Dependencies
 
