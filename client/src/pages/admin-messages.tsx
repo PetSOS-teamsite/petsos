@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,7 @@ import {
   Send,
   Eye,
   MessageSquare,
+  MessagesSquare,
   Mail,
   RotateCcw,
 } from "lucide-react";
@@ -106,6 +108,11 @@ function getTypeIcon(type: string) {
   }
 }
 
+interface UnreadCount {
+  unreadCount: number;
+  unreadConversations: number;
+}
+
 export default function AdminMessagesPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("all");
@@ -116,6 +123,11 @@ export default function AdminMessagesPage() {
 
   const { data: messages, isLoading: loadingMessages, refetch: refetchMessages } = useQuery<Message[]>({
     queryKey: ["/api/admin/messages"],
+  });
+
+  const { data: unreadData } = useQuery<UnreadCount>({
+    queryKey: ["/api/admin/conversations/unread-count"],
+    refetchInterval: 30000,
   });
 
   const retryMutation = useMutation({
@@ -173,10 +185,26 @@ export default function AdminMessagesPage() {
             Monitor message delivery status and manage failed messages
           </p>
         </div>
-        <Button onClick={refreshAll} variant="outline" data-testid="button-refresh-messages">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/chats">
+            <Button variant="outline" className="relative" data-testid="link-admin-chats">
+              <MessagesSquare className="mr-2 h-4 w-4" />
+              Chats
+              {unreadData && unreadData.unreadConversations > 0 && (
+                <Badge 
+                  className="absolute -top-2 -right-2 h-5 min-w-[20px] px-1 bg-red-500 text-white text-xs"
+                  data-testid="badge-unread-chats"
+                >
+                  {unreadData.unreadConversations}
+                </Badge>
+              )}
+            </Button>
+          </Link>
+          <Button onClick={refreshAll} variant="outline" data-testid="button-refresh-messages">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}

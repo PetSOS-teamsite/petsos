@@ -20,6 +20,7 @@ import {
   Stethoscope,
   Bell,
   MessageSquare,
+  MessagesSquare,
   TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,11 @@ import { queryClient } from "@/lib/queryClient";
 import type { EmergencyRequest, Region, Pet, User } from "@shared/schema";
 import { format } from "date-fns";
 
+interface UnreadCount {
+  unreadCount: number;
+  unreadConversations: number;
+}
+
 export default function AdminDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -59,6 +65,11 @@ export default function AdminDashboardPage() {
 
   const { data: regions } = useQuery<Region[]>({
     queryKey: ["/api/regions"],
+  });
+
+  const { data: unreadData } = useQuery<UnreadCount>({
+    queryKey: ["/api/admin/conversations/unread-count"],
+    refetchInterval: 30000,
   });
 
   // Calculate stats
@@ -201,6 +212,19 @@ export default function AdminDashboardPage() {
                 <Button variant="outline" size="sm" data-testid="button-admin-messages">
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Messages
+                </Button>
+              </Link>
+              <Link href="/admin/chats">
+                <Button variant="outline" size="sm" className="relative" data-testid="button-admin-chats">
+                  <MessagesSquare className="h-4 w-4 mr-2" />
+                  Chats
+                  {unreadData && unreadData.unreadConversations > 0 && (
+                    <Badge 
+                      className="absolute -top-2 -right-2 h-5 min-w-[20px] px-1 bg-red-500 text-white text-xs"
+                    >
+                      {unreadData.unreadConversations}
+                    </Badge>
+                  )}
                 </Button>
               </Link>
               <Link href="/admin/analytics">
