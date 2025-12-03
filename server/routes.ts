@@ -3454,6 +3454,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Start new conversation (admin only)
+  app.post("/api/admin/conversations/new", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { phoneNumber, displayName, content } = z.object({
+        phoneNumber: z.string().min(8),
+        displayName: z.string().optional(),
+        content: z.string().min(1),
+      }).parse(req.body);
+      
+      // Sanitize phone number
+      const sanitizedPhone = phoneNumber.replace(/[^0-9]/g, '');
+      
+      // Check if conversation already exists
+      let conversation = await storage.getConversationByPhone(sanitizedPhone);
+      
+      if (!conversation) {
+        // Try to find matching hospital
+        const hospital = await storage.findHospitalByPhone(sanitizedPhone);
+        
+        // Create new conversation
+        conversation = await storage.createConversation({
+          phoneNumber: sanitizedPhone,
+          hospitalId: hospital?.id || null,
+          displayName: displayName || (hospital ? (hospital.nameEn || hospital.nameZh) : `+${sanitizedPhone}`),
+          lastMessageAt: new Date(),
+          lastMessagePreview: content.substring(0, 100),
+          unreadCount: 0,
+          isArchived: false,
+        });
+      }
+      
+      // Send via WhatsApp API
+      const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
+      const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      const WHATSAPP_API_URL = 'https://graph.facebook.com/v17.0';
+      
+      if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+        return res.status(500).json({ message: "WhatsApp not configured" });
+      }
+      
+      const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+      const payload = {
+        messaging_product: 'whatsapp',
+        to: sanitizedPhone,
+        type: 'text',
+        text: { body: content },
+      };
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        console.error('[New Chat] WhatsApp API error:', responseData);
+        return res.status(500).json({ 
+          message: "Failed to send message",
+          error: responseData.error?.message || 'Unknown error'
+        });
+      }
+      
+      const whatsappMessageId = responseData.messages?.[0]?.id;
+      
+      // Store the outbound message
+      const chatMessage = await storage.createChatMessage({
+        conversationId: conversation.id,
+        direction: 'outbound',
+        content,
+        messageType: 'text',
+        whatsappMessageId,
+        status: 'sent',
+        sentAt: new Date(),
+      });
+      
+      // Update conversation
+      await storage.updateConversation(conversation.id, {
+        lastMessageAt: new Date(),
+        lastMessagePreview: content.substring(0, 100),
+      });
+      
+      // Audit log
+      await storage.createAuditLog({
+        entityType: 'whatsapp_chat',
+        entityId: chatMessage.id,
+        action: 'start_conversation',
+        userId: req.user?.id,
+        changes: { conversationId: conversation.id, phoneNumber: sanitizedPhone },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      console.log(`[New Chat] Started conversation ${conversation.id} with ${sanitizedPhone}`);
+      
+      res.json({ conversation, message: chatMessage });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error('[New Chat] Error:', error);
+      res.status(500).json({ message: "Failed to start conversation" });
+    }
+  });
+
   // Mark conversation as read (admin only)
   app.post("/api/admin/conversations/:id/read", isAuthenticated, isAdmin, async (req, res) => {
     try {

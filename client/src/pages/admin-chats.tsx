@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import {
@@ -15,6 +15,13 @@ import {
   Clock,
   User,
   Settings,
+  Search,
+  Plus,
+  Volume2,
+  VolumeX,
+  Image as ImageIcon,
+  FileText,
+  Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +31,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, format } from "date-fns";
@@ -49,6 +67,97 @@ function getStatusIcon(status: string, readAt?: string | Date | null) {
   }
 }
 
+function playNotificationSound() {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800;
+    oscillator.type = 'sine';
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch (e) {
+    console.log('Could not play notification sound:', e);
+  }
+}
+
+function MediaPreview({ message }: { message: WhatsappChatMessage }) {
+  const isOutbound = message.direction === "outbound";
+  
+  if (!message.mediaUrl && message.messageType === "text") {
+    return null;
+  }
+  
+  const iconClass = isOutbound ? "text-green-100" : "text-gray-500";
+  
+  switch (message.messageType) {
+    case "image":
+      return (
+        <div className="flex items-center gap-2 mb-1">
+          <ImageIcon className={`h-4 w-4 ${iconClass}`} />
+          <span className="text-xs opacity-75">Image</span>
+          {message.mediaUrl && (
+            <a 
+              href={message.mediaUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs underline opacity-75 hover:opacity-100"
+              data-testid={`media-link-${message.id}`}
+            >
+              View
+            </a>
+          )}
+        </div>
+      );
+    case "document":
+      return (
+        <div className="flex items-center gap-2 mb-1">
+          <FileText className={`h-4 w-4 ${iconClass}`} />
+          <span className="text-xs opacity-75">Document</span>
+          {message.mediaUrl && (
+            <a 
+              href={message.mediaUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs underline opacity-75 hover:opacity-100"
+              data-testid={`media-link-${message.id}`}
+            >
+              Download
+            </a>
+          )}
+        </div>
+      );
+    case "audio":
+    case "video":
+      return (
+        <div className="flex items-center gap-2 mb-1">
+          <Play className={`h-4 w-4 ${iconClass}`} />
+          <span className="text-xs opacity-75">{message.messageType === "audio" ? "Audio" : "Video"}</span>
+          {message.mediaUrl && (
+            <a 
+              href={message.mediaUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs underline opacity-75 hover:opacity-100"
+              data-testid={`media-link-${message.id}`}
+            >
+              Play
+            </a>
+          )}
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
 export default function AdminChatsPage() {
   const { toast } = useToast();
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -56,6 +165,25 @@ export default function AdminChatsPage() {
   const [replyContent, setReplyContent] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [pendingMessage, setPendingMessage] = useState<WhatsappChatMessage | null>(null);
+  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showNewChatDialog, setShowNewChatDialog] = useState(false);
+  const [newChatPhone, setNewChatPhone] = useState("+852");
+  const [newChatDisplayName, setNewChatDisplayName] = useState("");
+  const [newChatMessage, setNewChatMessage] = useState("");
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('chatSoundEnabled') !== 'false';
+    }
+    return true;
+  });
+  const [sendReadReceipts, setSendReadReceipts] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('chatReadReceipts') === 'true';
+    }
+    return false;
+  });
+  const previousMessagesRef = useRef<WhatsappChatMessage[] | undefined>(undefined);
 
   const { data: conversations, isLoading: loadingConversations, refetch: refetchConversations } = useQuery<ConversationWithHospital[]>({
     queryKey: ["/api/admin/conversations", showArchived],
@@ -155,6 +283,41 @@ export default function AdminChatsPage() {
     },
   });
 
+  const newConversationMutation = useMutation({
+    mutationFn: async ({ phoneNumber, displayName, message }: { phoneNumber: string; displayName?: string; message: string }) => {
+      const createResponse = await apiRequest("POST", "/api/admin/conversations", {
+        phoneNumber,
+        displayName: displayName || undefined,
+      });
+      const conversation = await createResponse.json();
+      
+      await apiRequest("POST", `/api/admin/conversations/${conversation.id}/reply`, {
+        content: message,
+      });
+      
+      return conversation;
+    },
+    onSuccess: (conversation) => {
+      toast({
+        title: "Conversation Created",
+        description: "New conversation started successfully",
+      });
+      setShowNewChatDialog(false);
+      setNewChatPhone("+852");
+      setNewChatDisplayName("");
+      setNewChatMessage("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/conversations"] });
+      setSelectedConversationId(conversation.id);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create conversation",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     if (selectedConversationId && selectedConversation?.unreadCount && selectedConversation.unreadCount > 0) {
       markAsReadMutation.mutate(selectedConversationId);
@@ -164,6 +327,31 @@ export default function AdminChatsPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, pendingMessage]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chatSoundEnabled', String(soundEnabled));
+    }
+  }, [soundEnabled]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chatReadReceipts', String(sendReadReceipts));
+    }
+  }, [sendReadReceipts]);
+
+  useEffect(() => {
+    if (messages && previousMessagesRef.current && soundEnabled) {
+      const prevIds = new Set(previousMessagesRef.current.map(m => m.id));
+      const newInboundMessages = messages.filter(
+        m => !prevIds.has(m.id) && m.direction === "inbound"
+      );
+      if (newInboundMessages.length > 0) {
+        playNotificationSound();
+      }
+    }
+    previousMessagesRef.current = messages;
+  }, [messages, soundEnabled]);
 
   const handleSendReply = () => {
     if (!replyContent.trim() || !selectedConversationId) return;
@@ -192,7 +380,30 @@ export default function AdminChatsPage() {
     ? [...(messages || []), pendingMessage]
     : messages;
 
+  const filteredConversations = conversations?.filter(c => {
+    if (!searchTerm.trim()) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      (c.displayName?.toLowerCase().includes(search)) ||
+      (c.phoneNumber?.toLowerCase().includes(search)) ||
+      (c.lastMessagePreview?.toLowerCase().includes(search))
+    );
+  });
+
   const unreadTotal = conversations?.reduce((sum, c) => sum + (c.unreadCount || 0), 0) || 0;
+
+  const handleToggleSound = () => {
+    setSoundEnabled(prev => !prev);
+  };
+
+  const handleNewConversation = () => {
+    if (!newChatPhone.trim() || !newChatMessage.trim()) return;
+    newConversationMutation.mutate({
+      phoneNumber: newChatPhone.trim(),
+      displayName: newChatDisplayName.trim() || undefined,
+      message: newChatMessage.trim(),
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
@@ -221,6 +432,96 @@ export default function AdminChatsPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handleToggleSound}
+                title={soundEnabled ? "Mute notifications" : "Unmute notifications"}
+                data-testid="button-toggle-sound"
+              >
+                {soundEnabled ? (
+                  <Volume2 className="h-4 w-4" />
+                ) : (
+                  <VolumeX className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
+              <Dialog open={showNewChatDialog} onOpenChange={setShowNewChatDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="icon" data-testid="button-new-chat">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent data-testid="dialog-new-chat">
+                  <DialogHeader>
+                    <DialogTitle>Start New Conversation</DialogTitle>
+                    <DialogDescription>
+                      Send a message to a new phone number to start a conversation.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-chat-phone">Phone Number</Label>
+                      <Input
+                        id="new-chat-phone"
+                        value={newChatPhone}
+                        onChange={(e) => setNewChatPhone(e.target.value)}
+                        placeholder="+852 XXXX XXXX"
+                        data-testid="input-new-chat-phone"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Include country code (e.g., +852 for Hong Kong)
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-chat-name">Display Name (Optional)</Label>
+                      <Input
+                        id="new-chat-name"
+                        value={newChatDisplayName}
+                        onChange={(e) => setNewChatDisplayName(e.target.value)}
+                        placeholder="Hospital Name or Contact"
+                        data-testid="input-new-chat-name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-chat-message">Initial Message</Label>
+                      <Textarea
+                        id="new-chat-message"
+                        value={newChatMessage}
+                        onChange={(e) => setNewChatMessage(e.target.value)}
+                        placeholder="Type your message..."
+                        rows={4}
+                        data-testid="input-new-chat-message"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowNewChatDialog(false)}
+                      data-testid="button-cancel-new-chat"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleNewConversation}
+                      disabled={!newChatPhone.trim() || !newChatMessage.trim() || newConversationMutation.isPending}
+                      data-testid="button-send-new-chat"
+                    >
+                      {newConversationMutation.isPending ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Send
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               <Button variant="outline" size="icon" onClick={handleRefresh} data-testid="button-refresh">
                 <RefreshCw className={`h-4 w-4 ${loadingConversations ? 'animate-spin' : ''}`} />
               </Button>
@@ -261,6 +562,16 @@ export default function AdminChatsPage() {
                   />
                 </div>
               </div>
+              <div className="relative mt-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search conversations..."
+                  className="pl-9"
+                  data-testid="input-search-conversations"
+                />
+              </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-hidden p-0">
               <ScrollArea className="h-full">
@@ -270,15 +581,15 @@ export default function AdminChatsPage() {
                       <Skeleton key={i} className="h-16 w-full" />
                     ))}
                   </div>
-                ) : conversations?.length === 0 ? (
+                ) : filteredConversations?.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                     <MessageSquare className="h-12 w-12 mb-4 opacity-50" />
                     <p>No conversations found</p>
-                    <p className="text-sm">Incoming messages from hospitals will appear here</p>
+                    <p className="text-sm">{searchTerm ? "Try a different search term" : "Incoming messages from hospitals will appear here"}</p>
                   </div>
                 ) : (
                   <div className="divide-y">
-                    {conversations?.map((conversation) => (
+                    {filteredConversations?.map((conversation) => (
                       <button
                         key={conversation.id}
                         onClick={() => setSelectedConversationId(conversation.id)}
@@ -363,8 +674,19 @@ export default function AdminChatsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mr-2" title="Send read receipts when viewing messages">
+                        <Checkbox
+                          id="read-receipts"
+                          checked={sendReadReceipts}
+                          onCheckedChange={(checked) => setSendReadReceipts(checked === true)}
+                          data-testid="checkbox-read-receipts"
+                        />
+                        <Label htmlFor="read-receipts" className="text-xs text-muted-foreground cursor-pointer">
+                          Read receipts
+                        </Label>
+                      </div>
                       {selectedConversation?.hospitalId && (
-                        <Link href={`/admin/hospitals`}>
+                        <Link href={`/admin/hospitals?id=${selectedConversation?.hospitalId}`}>
                           <Button variant="outline" size="sm" data-testid="button-view-hospital">
                             <Building2 className="h-4 w-4 mr-1" />
                             View Hospital
@@ -428,7 +750,10 @@ export default function AdminChatsPage() {
                                   : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
                               }`}
                             >
-                              <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                              <MediaPreview message={message} />
+                              {message.content && (
+                                <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                              )}
                               <div className={`flex items-center gap-1 mt-1 text-xs ${
                                 message.direction === "outbound"
                                   ? "text-green-100 justify-end"
