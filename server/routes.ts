@@ -1738,6 +1738,181 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== CLINIC REVIEWS ROUTES =====
+
+  // Get reviews for a clinic (public - returns approved reviews only)
+  app.get("/api/clinics/:id/reviews", async (req, res) => {
+    try {
+      const clinicId = req.params.id;
+      const clinic = await storage.getClinic(clinicId);
+      if (!clinic) {
+        return res.status(404).json({ message: "Clinic not found" });
+      }
+      const reviews = await storage.getClinicReviews(clinicId);
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching clinic reviews:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create a review for a clinic (authenticated users only)
+  app.post("/api/clinics/:id/reviews", isAuthenticated, async (req: any, res) => {
+    try {
+      const clinicId = req.params.id;
+      const userId = (req.user as any).id;
+
+      const clinic = await storage.getClinic(clinicId);
+      if (!clinic) {
+        return res.status(404).json({ message: "Clinic not found" });
+      }
+
+      // Check if user already reviewed this clinic
+      const existingReview = await storage.getUserReviewForClinic(userId, clinicId);
+      if (existingReview) {
+        return res.status(400).json({ message: "You have already reviewed this clinic" });
+      }
+
+      // Validate request body
+      const reviewSchema = z.object({
+        rating: z.number().min(1).max(5),
+        reviewText: z.string().optional(),
+      });
+      const { rating, reviewText } = reviewSchema.parse(req.body);
+
+      const review = await storage.createClinicReview({
+        clinicId,
+        userId,
+        rating,
+        reviewText: reviewText || null,
+        status: 'approved', // Auto-approve for now, can add moderation later
+      });
+
+      // Update clinic rating stats
+      await storage.updateClinicRatingStats(clinicId);
+
+      await storage.createAuditLog({
+        entityType: 'clinic_review',
+        entityId: review.id,
+        action: 'create',
+        userId,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.status(201).json(review);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating clinic review:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update own review
+  app.patch("/api/reviews/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const reviewId = req.params.id;
+      const userId = (req.user as any).id;
+
+      const review = await storage.getClinicReview(reviewId);
+      if (!review) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+
+      // Check ownership
+      if (review.userId !== userId) {
+        return res.status(403).json({ message: "You can only update your own reviews" });
+      }
+
+      const updateSchema = z.object({
+        rating: z.number().min(1).max(5).optional(),
+        reviewText: z.string().optional().nullable(),
+      });
+      const updateData = updateSchema.parse(req.body);
+
+      const updatedReview = await storage.updateClinicReview(reviewId, updateData);
+
+      // Update clinic rating stats
+      await storage.updateClinicRatingStats(review.clinicId);
+
+      await storage.createAuditLog({
+        entityType: 'clinic_review',
+        entityId: reviewId,
+        action: 'update',
+        userId,
+        changes: updateData,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json(updatedReview);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error updating clinic review:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete own review
+  app.delete("/api/reviews/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const reviewId = req.params.id;
+      const userId = (req.user as any).id;
+
+      const review = await storage.getClinicReview(reviewId);
+      if (!review) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+
+      // Check ownership (admins can also delete)
+      const user = await storage.getUser(userId);
+      if (review.userId !== userId && user?.role !== 'admin') {
+        return res.status(403).json({ message: "You can only delete your own reviews" });
+      }
+
+      const clinicId = review.clinicId;
+      await storage.deleteClinicReview(reviewId);
+
+      // Update clinic rating stats
+      await storage.updateClinicRatingStats(clinicId);
+
+      await storage.createAuditLog({
+        entityType: 'clinic_review',
+        entityId: reviewId,
+        action: 'delete',
+        userId,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting clinic review:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get current user's review for a clinic
+  app.get("/api/clinics/:id/my-review", isAuthenticated, async (req: any, res) => {
+    try {
+      const clinicId = req.params.id;
+      const userId = (req.user as any).id;
+
+      const review = await storage.getUserReviewForClinic(userId, clinicId);
+      if (!review) {
+        return res.status(404).json({ message: "No review found" });
+      }
+      res.json(review);
+    } catch (error) {
+      console.error("Error fetching user review:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Import clinics from CSV
   app.post("/api/clinics/import", isAuthenticated, isAdmin, async (req, res) => {
     try {

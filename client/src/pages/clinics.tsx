@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Clock, Navigation, ExternalLink, Building2 } from "lucide-react";
+import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Clock, Navigation, ExternalLink, Building2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +41,8 @@ type VetProvider = {
   isPartner: boolean;
   isAvailable: boolean;
   slug?: string | null;
+  averageRating?: string | null;
+  reviewCount?: number;
 };
 
 export default function ClinicsPage() {
@@ -101,6 +103,8 @@ export default function ClinicsPage() {
       isPartner: c.isSupportHospital === true,
       isAvailable: c.isAvailable === true,
       slug: null,
+      averageRating: c.averageRating,
+      reviewCount: c.reviewCount ?? 0,
     })) || [];
   }, [clinics]);
 
@@ -473,6 +477,30 @@ export default function ClinicsPage() {
                       <div className="text-xs text-gray-600 dark:text-gray-400 truncate" data-testid={`text-clinic-address-${provider.id}`}>
                         {language === 'zh-HK' && provider.addressZh ? provider.addressZh : provider.addressEn}
                       </div>
+
+                      {/* Star Rating Display */}
+                      {provider.averageRating && Number(provider.averageRating) > 0 && (
+                        <div className="flex items-center gap-1 mt-2" data-testid={`rating-display-${provider.id}`}>
+                          <div className="flex items-center">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-3.5 w-3.5 ${
+                                  star <= Math.round(Number(provider.averageRating))
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'fill-gray-200 text-gray-200 dark:fill-gray-600 dark:text-gray-600'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                            {Number(provider.averageRating).toFixed(1)}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            ({provider.reviewCount} {language === 'zh-HK' ? '評價' : provider.reviewCount === 1 ? 'review' : 'reviews'})
+                          </span>
+                        </div>
+                      )}
                     </div>
                     
                     {/* 24-Hour Badge - Prominent with Brand Color */}

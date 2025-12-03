@@ -206,6 +206,8 @@ export const clinics = pgTable("clinics", {
   services: text("services").array(),
   ownerVerificationCode: text("owner_verification_code"), // 6-digit passcode for clinic owner edit link
   ownerVerificationCodeExpiresAt: timestamp("owner_verification_code_expires_at"), // When the code expires
+  averageRating: decimal("average_rating"), // Calculated average of approved reviews (1-5)
+  reviewCount: integer("review_count").notNull().default(0), // Total number of approved reviews
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -589,3 +591,30 @@ export const insertNotificationBroadcastSchema = createInsertSchema(notification
 
 export type InsertNotificationBroadcast = z.infer<typeof insertNotificationBroadcastSchema>;
 export type NotificationBroadcast = typeof notificationBroadcasts.$inferSelect;
+
+// Clinic Reviews table - stores user reviews for clinics
+export const clinicReviews = pgTable("clinic_reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clinicId: varchar("clinic_id").notNull().references(() => clinics.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  rating: integer("rating").notNull(), // 1-5 stars
+  reviewText: text("review_text"), // Optional comment
+  status: text("status").notNull().default('pending'), // pending, approved, rejected
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_clinic_reviews_clinic").on(table.clinicId),
+  index("idx_clinic_reviews_user").on(table.userId),
+  index("idx_clinic_reviews_status").on(table.status),
+]);
+
+export const insertClinicReviewSchema = createInsertSchema(clinicReviews).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  rating: z.number().min(1).max(5),
+});
+
+export type InsertClinicReview = z.infer<typeof insertClinicReviewSchema>;
+export type ClinicReview = typeof clinicReviews.$inferSelect;

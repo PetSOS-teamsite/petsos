@@ -18,7 +18,8 @@ import {
   type PetMedicalSharingConsent, type InsertPetMedicalSharingConsent,
   type PushSubscription, type InsertPushSubscription,
   type NotificationBroadcast, type InsertNotificationBroadcast,
-  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents, pushSubscriptions, notificationBroadcasts
+  type ClinicReview, type InsertClinicReview,
+  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents, pushSubscriptions, notificationBroadcasts, clinicReviews
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -176,6 +177,15 @@ export interface IStorage {
   updateNotificationBroadcast(id: string, data: Partial<NotificationBroadcast>): Promise<NotificationBroadcast | undefined>;
   updateNotificationBroadcastStatus(id: string, status: string): Promise<NotificationBroadcast | undefined>;
 
+  // Clinic Reviews
+  createClinicReview(review: InsertClinicReview): Promise<ClinicReview>;
+  getClinicReviews(clinicId: string): Promise<(ClinicReview & { user: { displayName: string | null } })[]>;
+  getClinicReview(id: string): Promise<ClinicReview | undefined>;
+  getUserReviewForClinic(userId: string, clinicId: string): Promise<ClinicReview | undefined>;
+  updateClinicReview(id: string, data: Partial<InsertClinicReview>): Promise<ClinicReview | undefined>;
+  deleteClinicReview(id: string): Promise<boolean>;
+  updateClinicRatingStats(clinicId: string): Promise<void>;
+
   // GDPR/PDPO Compliance
   exportUserData(userId: string): Promise<{
     user: User | undefined;
@@ -216,6 +226,7 @@ export class MemStorage implements IStorage {
   private petMedicalSharingConsentsMap: Map<string, PetMedicalSharingConsent>;
   private pushSubscriptionsMap: Map<string, PushSubscription>;
   private notificationBroadcastsMap: Map<string, NotificationBroadcast>;
+  private clinicReviewsMap: Map<string, ClinicReview>;
 
   constructor() {
     this.users = new Map();
@@ -237,6 +248,7 @@ export class MemStorage implements IStorage {
     this.petMedicalSharingConsentsMap = new Map();
     this.pushSubscriptionsMap = new Map();
     this.notificationBroadcastsMap = new Map();
+    this.clinicReviewsMap = new Map();
     
     // Seed test user
     const testUser: User = {
@@ -291,6 +303,8 @@ export class MemStorage implements IStorage {
         services: ['emergency', 'surgery', 'dental'],
         ownerVerificationCode: null,
         ownerVerificationCodeExpiresAt: null,
+        averageRating: null,
+        reviewCount: 0,
         createdAt: new Date()
       },
       {
@@ -314,6 +328,8 @@ export class MemStorage implements IStorage {
         services: ['emergency', 'vaccination'],
         ownerVerificationCode: null,
         ownerVerificationCodeExpiresAt: null,
+        averageRating: null,
+        reviewCount: 0,
         createdAt: new Date()
       },
       {
@@ -337,6 +353,8 @@ export class MemStorage implements IStorage {
         services: ['general', 'grooming'],
         ownerVerificationCode: null,
         ownerVerificationCodeExpiresAt: null,
+        averageRating: null,
+        reviewCount: 0,
         createdAt: new Date()
       },
       {
@@ -360,6 +378,8 @@ export class MemStorage implements IStorage {
         services: ['emergency', '24hour'],
         ownerVerificationCode: null,
         ownerVerificationCodeExpiresAt: null,
+        averageRating: null,
+        reviewCount: 0,
         createdAt: new Date()
       }
     ];
@@ -1436,6 +1456,88 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  // Clinic Reviews - in-memory implementations
+  async createClinicReview(review: InsertClinicReview): Promise<ClinicReview> {
+    const id = randomUUID();
+    const now = new Date();
+    const newReview: ClinicReview = {
+      id,
+      clinicId: review.clinicId,
+      userId: review.userId,
+      rating: review.rating,
+      reviewText: review.reviewText ?? null,
+      status: review.status ?? 'pending',
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.clinicReviewsMap.set(id, newReview);
+    return newReview;
+  }
+
+  async getClinicReviews(clinicId: string): Promise<(ClinicReview & { user: { displayName: string | null } })[]> {
+    const reviews = Array.from(this.clinicReviewsMap.values())
+      .filter(review => review.clinicId === clinicId && review.status === 'approved');
+    
+    return reviews.map(review => {
+      const user = this.users.get(review.userId);
+      const displayName = user?.name || user?.username || null;
+      return {
+        ...review,
+        user: { displayName }
+      };
+    });
+  }
+
+  async getClinicReview(id: string): Promise<ClinicReview | undefined> {
+    return this.clinicReviewsMap.get(id);
+  }
+
+  async getUserReviewForClinic(userId: string, clinicId: string): Promise<ClinicReview | undefined> {
+    return Array.from(this.clinicReviewsMap.values()).find(
+      review => review.userId === userId && review.clinicId === clinicId
+    );
+  }
+
+  async updateClinicReview(id: string, data: Partial<InsertClinicReview>): Promise<ClinicReview | undefined> {
+    const review = this.clinicReviewsMap.get(id);
+    if (!review) return undefined;
+    const updated: ClinicReview = {
+      ...review,
+      ...data,
+      updatedAt: new Date(),
+    };
+    this.clinicReviewsMap.set(id, updated);
+    return updated;
+  }
+
+  async deleteClinicReview(id: string): Promise<boolean> {
+    return this.clinicReviewsMap.delete(id);
+  }
+
+  async updateClinicRatingStats(clinicId: string): Promise<void> {
+    const approvedReviews = Array.from(this.clinicReviewsMap.values())
+      .filter(review => review.clinicId === clinicId && review.status === 'approved');
+    
+    const clinic = this.clinics.get(clinicId);
+    if (!clinic) return;
+
+    if (approvedReviews.length === 0) {
+      const updated = { ...clinic, averageRating: null, reviewCount: 0 };
+      this.clinics.set(clinicId, updated);
+      return;
+    }
+
+    const totalRating = approvedReviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = (totalRating / approvedReviews.length).toFixed(2);
+    
+    const updated = {
+      ...clinic,
+      averageRating: averageRating,
+      reviewCount: approvedReviews.length,
+    };
+    this.clinics.set(clinicId, updated);
+  }
+
   // Two-Factor Authentication methods
   async updateUserTwoFactor(userId: string, secret: string | null, backupCodes: string[] | null, enabled: boolean): Promise<User | undefined> {
     const user = this.users.get(userId);
@@ -2508,6 +2610,83 @@ class DatabaseStorage implements IStorage {
       .where(eq(notificationBroadcasts.id, id))
       .returning();
     return result[0];
+  }
+
+  // Clinic Reviews
+  async createClinicReview(review: InsertClinicReview): Promise<ClinicReview> {
+    const result = await db.insert(clinicReviews).values(review).returning();
+    return result[0];
+  }
+
+  async getClinicReviews(clinicId: string): Promise<(ClinicReview & { user: { displayName: string | null } })[]> {
+    const result = await db.select({
+      id: clinicReviews.id,
+      clinicId: clinicReviews.clinicId,
+      userId: clinicReviews.userId,
+      rating: clinicReviews.rating,
+      reviewText: clinicReviews.reviewText,
+      status: clinicReviews.status,
+      createdAt: clinicReviews.createdAt,
+      updatedAt: clinicReviews.updatedAt,
+      user: {
+        displayName: sql<string | null>`COALESCE(${users.name}, ${users.username})`,
+      }
+    })
+    .from(clinicReviews)
+    .innerJoin(users, eq(clinicReviews.userId, users.id))
+    .where(and(
+      eq(clinicReviews.clinicId, clinicId),
+      eq(clinicReviews.status, 'approved')
+    ))
+    .orderBy(desc(clinicReviews.createdAt));
+    return result;
+  }
+
+  async getClinicReview(id: string): Promise<ClinicReview | undefined> {
+    const result = await db.select().from(clinicReviews).where(eq(clinicReviews.id, id));
+    return result[0];
+  }
+
+  async getUserReviewForClinic(userId: string, clinicId: string): Promise<ClinicReview | undefined> {
+    const result = await db.select().from(clinicReviews).where(
+      and(eq(clinicReviews.userId, userId), eq(clinicReviews.clinicId, clinicId))
+    );
+    return result[0];
+  }
+
+  async updateClinicReview(id: string, data: Partial<InsertClinicReview>): Promise<ClinicReview | undefined> {
+    const result = await db.update(clinicReviews)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(clinicReviews.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteClinicReview(id: string): Promise<boolean> {
+    const result = await db.delete(clinicReviews).where(eq(clinicReviews.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async updateClinicRatingStats(clinicId: string): Promise<void> {
+    const stats = await db.select({
+      avgRating: sql<string>`AVG(${clinicReviews.rating})::decimal(3,2)`,
+      count: sql<number>`COUNT(*)::int`
+    })
+    .from(clinicReviews)
+    .where(and(
+      eq(clinicReviews.clinicId, clinicId),
+      eq(clinicReviews.status, 'approved')
+    ));
+    
+    const avgRating = stats[0]?.avgRating || null;
+    const reviewCount = stats[0]?.count || 0;
+    
+    await db.update(clinics)
+      .set({ 
+        averageRating: avgRating,
+        reviewCount: reviewCount
+      })
+      .where(eq(clinics.id, clinicId));
   }
 }
 
