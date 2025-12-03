@@ -19,7 +19,9 @@ import {
   type PushSubscription, type InsertPushSubscription,
   type NotificationBroadcast, type InsertNotificationBroadcast,
   type ClinicReview, type InsertClinicReview,
-  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents, pushSubscriptions, notificationBroadcasts, clinicReviews
+  type WhatsappConversation, type InsertWhatsappConversation,
+  type WhatsappChatMessage, type InsertWhatsappChatMessage,
+  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents, pushSubscriptions, notificationBroadcasts, clinicReviews, whatsappConversations, whatsappChatMessages
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -227,6 +229,26 @@ export interface IStorage {
     registrationTrends: { date: string; count: number }[];
     totalActiveUsers: number;
   }>;
+
+  // WhatsApp Conversations
+  getConversation(id: string): Promise<WhatsappConversation | undefined>;
+  getConversationByPhone(phoneNumber: string): Promise<WhatsappConversation | undefined>;
+  getAllConversations(includeArchived?: boolean): Promise<WhatsappConversation[]>;
+  createConversation(data: InsertWhatsappConversation): Promise<WhatsappConversation>;
+  updateConversation(id: string, data: Partial<InsertWhatsappConversation>): Promise<WhatsappConversation | undefined>;
+  archiveConversation(id: string): Promise<boolean>;
+
+  // WhatsApp Chat Messages
+  getChatMessage(id: string): Promise<WhatsappChatMessage | undefined>;
+  getChatMessageByWhatsAppId(whatsappMessageId: string): Promise<WhatsappChatMessage | undefined>;
+  getChatMessagesByConversation(conversationId: string, limit?: number, offset?: number): Promise<WhatsappChatMessage[]>;
+  createChatMessage(data: InsertWhatsappChatMessage): Promise<WhatsappChatMessage>;
+  updateChatMessage(id: string, data: Partial<InsertWhatsappChatMessage>): Promise<WhatsappChatMessage | undefined>;
+  updateChatMessageByWhatsAppId(whatsappMessageId: string, data: Partial<InsertWhatsappChatMessage>): Promise<WhatsappChatMessage | undefined>;
+  markConversationAsRead(conversationId: string): Promise<void>;
+
+  // Helper for WhatsApp
+  findHospitalByPhone(phoneNumber: string): Promise<Hospital | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -1600,6 +1622,65 @@ export class MemStorage implements IStorage {
     
     return false;
   }
+
+  // WhatsApp Conversations - stub implementations
+  async getConversation(id: string): Promise<WhatsappConversation | undefined> {
+    throw new Error("MemStorage does not support WhatsApp conversations - use DatabaseStorage");
+  }
+
+  async getConversationByPhone(phoneNumber: string): Promise<WhatsappConversation | undefined> {
+    throw new Error("MemStorage does not support WhatsApp conversations - use DatabaseStorage");
+  }
+
+  async getAllConversations(includeArchived?: boolean): Promise<WhatsappConversation[]> {
+    throw new Error("MemStorage does not support WhatsApp conversations - use DatabaseStorage");
+  }
+
+  async createConversation(data: InsertWhatsappConversation): Promise<WhatsappConversation> {
+    throw new Error("MemStorage does not support WhatsApp conversations - use DatabaseStorage");
+  }
+
+  async updateConversation(id: string, data: Partial<InsertWhatsappConversation>): Promise<WhatsappConversation | undefined> {
+    throw new Error("MemStorage does not support WhatsApp conversations - use DatabaseStorage");
+  }
+
+  async archiveConversation(id: string): Promise<boolean> {
+    throw new Error("MemStorage does not support WhatsApp conversations - use DatabaseStorage");
+  }
+
+  // WhatsApp Chat Messages - stub implementations
+  async getChatMessage(id: string): Promise<WhatsappChatMessage | undefined> {
+    throw new Error("MemStorage does not support WhatsApp chat messages - use DatabaseStorage");
+  }
+
+  async getChatMessageByWhatsAppId(whatsappMessageId: string): Promise<WhatsappChatMessage | undefined> {
+    throw new Error("MemStorage does not support WhatsApp chat messages - use DatabaseStorage");
+  }
+
+  async getChatMessagesByConversation(conversationId: string, limit?: number, offset?: number): Promise<WhatsappChatMessage[]> {
+    throw new Error("MemStorage does not support WhatsApp chat messages - use DatabaseStorage");
+  }
+
+  async createChatMessage(data: InsertWhatsappChatMessage): Promise<WhatsappChatMessage> {
+    throw new Error("MemStorage does not support WhatsApp chat messages - use DatabaseStorage");
+  }
+
+  async updateChatMessage(id: string, data: Partial<InsertWhatsappChatMessage>): Promise<WhatsappChatMessage | undefined> {
+    throw new Error("MemStorage does not support WhatsApp chat messages - use DatabaseStorage");
+  }
+
+  async updateChatMessageByWhatsAppId(whatsappMessageId: string, data: Partial<InsertWhatsappChatMessage>): Promise<WhatsappChatMessage | undefined> {
+    throw new Error("MemStorage does not support WhatsApp chat messages - use DatabaseStorage");
+  }
+
+  async markConversationAsRead(conversationId: string): Promise<void> {
+    throw new Error("MemStorage does not support WhatsApp chat messages - use DatabaseStorage");
+  }
+
+  // Helper for WhatsApp - stub implementation
+  async findHospitalByPhone(phoneNumber: string): Promise<Hospital | undefined> {
+    throw new Error("MemStorage does not support findHospitalByPhone - use DatabaseStorage");
+  }
 }
 
 // Database storage implementation using PostgreSQL
@@ -2849,6 +2930,126 @@ class DatabaseStorage implements IStorage {
       registrationTrends: registrationTrendsResult.map(r => ({ date: r.date, count: Number(r.count || 0) })),
       totalActiveUsers: Number(activeUsersResult[0]?.count || 0)
     };
+  }
+
+  // WhatsApp Conversations
+  async getConversation(id: string): Promise<WhatsappConversation | undefined> {
+    const result = await db.select().from(whatsappConversations).where(eq(whatsappConversations.id, id));
+    return result[0];
+  }
+
+  async getConversationByPhone(phoneNumber: string): Promise<WhatsappConversation | undefined> {
+    const sanitizedPhone = phoneNumber.replace(/\D/g, '');
+    const result = await db.select().from(whatsappConversations).where(eq(whatsappConversations.phoneNumber, sanitizedPhone));
+    return result[0];
+  }
+
+  async getAllConversations(includeArchived: boolean = false): Promise<WhatsappConversation[]> {
+    if (includeArchived) {
+      return await db.select().from(whatsappConversations).orderBy(desc(whatsappConversations.lastMessageAt));
+    }
+    return await db.select().from(whatsappConversations)
+      .where(eq(whatsappConversations.isArchived, false))
+      .orderBy(desc(whatsappConversations.lastMessageAt));
+  }
+
+  async createConversation(data: InsertWhatsappConversation): Promise<WhatsappConversation> {
+    const sanitizedData = {
+      ...data,
+      phoneNumber: data.phoneNumber.replace(/\D/g, '')
+    };
+    const result = await db.insert(whatsappConversations).values(sanitizedData).returning();
+    return result[0];
+  }
+
+  async updateConversation(id: string, data: Partial<InsertWhatsappConversation>): Promise<WhatsappConversation | undefined> {
+    const updateData = { ...data, updatedAt: new Date() };
+    if (data.phoneNumber) {
+      updateData.phoneNumber = data.phoneNumber.replace(/\D/g, '');
+    }
+    const result = await db.update(whatsappConversations)
+      .set(updateData)
+      .where(eq(whatsappConversations.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async archiveConversation(id: string): Promise<boolean> {
+    const result = await db.update(whatsappConversations)
+      .set({ isArchived: true, updatedAt: new Date() })
+      .where(eq(whatsappConversations.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  // WhatsApp Chat Messages
+  async getChatMessage(id: string): Promise<WhatsappChatMessage | undefined> {
+    const result = await db.select().from(whatsappChatMessages).where(eq(whatsappChatMessages.id, id));
+    return result[0];
+  }
+
+  async getChatMessageByWhatsAppId(whatsappMessageId: string): Promise<WhatsappChatMessage | undefined> {
+    const result = await db.select().from(whatsappChatMessages).where(eq(whatsappChatMessages.whatsappMessageId, whatsappMessageId));
+    return result[0];
+  }
+
+  async getChatMessagesByConversation(conversationId: string, limit: number = 100, offset: number = 0): Promise<WhatsappChatMessage[]> {
+    return await db.select().from(whatsappChatMessages)
+      .where(eq(whatsappChatMessages.conversationId, conversationId))
+      .orderBy(whatsappChatMessages.createdAt)
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async createChatMessage(data: InsertWhatsappChatMessage): Promise<WhatsappChatMessage> {
+    const result = await db.insert(whatsappChatMessages).values(data).returning();
+    return result[0];
+  }
+
+  async updateChatMessage(id: string, data: Partial<InsertWhatsappChatMessage>): Promise<WhatsappChatMessage | undefined> {
+    const result = await db.update(whatsappChatMessages)
+      .set(data)
+      .where(eq(whatsappChatMessages.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateChatMessageByWhatsAppId(whatsappMessageId: string, data: Partial<InsertWhatsappChatMessage>): Promise<WhatsappChatMessage | undefined> {
+    const result = await db.update(whatsappChatMessages)
+      .set(data)
+      .where(eq(whatsappChatMessages.whatsappMessageId, whatsappMessageId))
+      .returning();
+    return result[0];
+  }
+
+  async markConversationAsRead(conversationId: string): Promise<void> {
+    const now = new Date();
+    await Promise.all([
+      db.update(whatsappChatMessages)
+        .set({ status: 'read', readAt: now })
+        .where(
+          and(
+            eq(whatsappChatMessages.conversationId, conversationId),
+            eq(whatsappChatMessages.direction, 'inbound'),
+            sql`${whatsappChatMessages.readAt} IS NULL`
+          )
+        ),
+      db.update(whatsappConversations)
+        .set({ unreadCount: 0, updatedAt: now })
+        .where(eq(whatsappConversations.id, conversationId))
+    ]);
+  }
+
+  // Helper for WhatsApp
+  async findHospitalByPhone(phoneNumber: string): Promise<Hospital | undefined> {
+    const sanitizedPhone = phoneNumber.replace(/\D/g, '');
+    const result = await db.select().from(hospitals).where(
+      or(
+        eq(hospitals.phone, sanitizedPhone),
+        eq(hospitals.whatsapp, sanitizedPhone)
+      )
+    );
+    return result[0];
   }
 }
 
