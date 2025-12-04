@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, Loader2, Check, Clock, Lock, Building2, Stethoscope, Users, DollarSign, Phone, Image as ImageIcon, Upload, XCircle } from "lucide-react";
+import { ArrowLeft, Loader2, Check, Clock, Lock, Building2, Stethoscope, Users, DollarSign, Phone, Image as ImageIcon, Upload, XCircle, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -100,6 +100,8 @@ export default function HospitalOwnerEditVerifiedPage() {
   const [verified, setVerified] = useState(false);
   const [saved, setSaved] = useState(false);
   const [newPhotoUrl, setNewPhotoUrl] = useState("");
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hospitalSlug = params?.slug as string;
 
@@ -288,6 +290,104 @@ export default function HospitalOwnerEditVerifiedPage() {
       toast({ title: "Error saving hospital", description: error.message, variant: "destructive" });
     },
   });
+
+  const uploadPhotoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      if (!hospital?.id) throw new Error("Hospital not found");
+      const code = verifyForm.getValues("verificationCode");
+      
+      const urlResponse = await apiRequest('POST', `/api/hospitals/${hospital.id}/photo-upload-url`, { 
+        verificationCode: code 
+      });
+      const { uploadURL } = await urlResponse.json();
+      
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload photo');
+      }
+      
+      const filePath = uploadURL.split('?')[0];
+      
+      const photoResponse = await apiRequest('POST', `/api/hospitals/${hospital.id}/photo`, { 
+        verificationCode: code,
+        filePath 
+      });
+      return await photoResponse.json();
+    },
+    onSuccess: (data) => {
+      const newPhotoUrl = data.photoUrl;
+      const currentPhotos = (hospitalForm.getValues("photos") || []) as string[];
+      hospitalForm.setValue("photos", [...currentPhotos, newPhotoUrl] as any, {
+        shouldDirty: true,
+        shouldTouch: true
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/hospitals", hospitalSlug] });
+      toast({ title: "Photo uploaded successfully!" });
+      setIsUploadingPhoto(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to upload photo", description: error.message, variant: "destructive" });
+      setIsUploadingPhoto(false);
+    },
+  });
+
+  const deletePhotoMutation = useMutation({
+    mutationFn: async (photoUrl: string) => {
+      if (!hospital?.id) throw new Error("Hospital not found");
+      const code = verifyForm.getValues("verificationCode");
+      
+      const response = await fetch(`/api/hospitals/${hospital.id}/photo`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verificationCode: code, photoUrl }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete photo');
+      }
+      
+      return { photoUrl };
+    },
+    onSuccess: ({ photoUrl }) => {
+      const currentPhotos = (hospitalForm.getValues("photos") || []) as string[];
+      hospitalForm.setValue("photos", currentPhotos.filter(url => url !== photoUrl) as any, {
+        shouldDirty: true,
+        shouldTouch: true
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/hospitals", hospitalSlug] });
+      toast({ title: "Photo removed successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to remove photo", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      toast({ title: "Invalid file type", description: "Please select an image file", variant: "destructive" });
+      event.target.value = '';
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Maximum file size is 5MB", variant: "destructive" });
+      event.target.value = '';
+      return;
+    }
+    
+    setIsUploadingPhoto(true);
+    uploadPhotoMutation.mutate(file);
+    event.target.value = '';
+  };
 
   if (!match) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center"><p className="text-gray-500">Hospital not found</p></div>;
 
@@ -1158,18 +1258,49 @@ export default function HospitalOwnerEditVerifiedPage() {
                 <CardDescription>Add photos of your hospital to help pet owners</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter photo URL (e.g., https://example.com/photo.jpg)"
-                    value={newPhotoUrl}
-                    onChange={(e) => setNewPhotoUrl(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPhoto())}
-                    data-testid="input-photo-url"
-                  />
-                  <Button type="button" onClick={addPhoto} data-testid="button-add-photo">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Add
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingPhoto}
+                    className="flex-shrink-0"
+                    data-testid="button-upload-photo"
+                  >
+                    {isUploadingPhoto ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="h-4 w-4 mr-2" />
+                        Upload from Device
+                      </>
+                    )}
                   </Button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    disabled={isUploadingPhoto}
+                    data-testid="input-file-upload"
+                  />
+                  <div className="flex gap-2 flex-1">
+                    <Input
+                      placeholder="Or enter photo URL"
+                      value={newPhotoUrl}
+                      onChange={(e) => setNewPhotoUrl(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPhoto())}
+                      data-testid="input-photo-url"
+                    />
+                    <Button type="button" onClick={addPhoto} data-testid="button-add-photo">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Add URL
+                    </Button>
+                  </div>
                 </div>
 
                 {photos && photos.length > 0 ? (
@@ -1189,7 +1320,8 @@ export default function HospitalOwnerEditVerifiedPage() {
                           variant="destructive"
                           size="icon"
                           className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removePhoto(index)}
+                          onClick={() => deletePhotoMutation.mutate(url)}
+                          disabled={deletePhotoMutation.isPending}
                           data-testid={`button-remove-photo-${index}`}
                         >
                           <XCircle className="h-4 w-4" />
@@ -1204,7 +1336,7 @@ export default function HospitalOwnerEditVerifiedPage() {
                   <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
                     <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p>No photos added yet</p>
-                    <p className="text-sm">Add photo URLs above to display them here</p>
+                    <p className="text-sm">Upload from your device or add photo URLs</p>
                   </div>
                 )}
               </CardContent>

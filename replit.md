@@ -48,6 +48,7 @@ Preferred communication style: Simple, everyday language.
 - **User Notification Preferences**: Users can control notification types (emergency alerts, platform updates, marketing) via profile settings.
 - **Storage Quotas**: Medical record storage limited to 100MB per user, 50 records max, 10MB per file. Quota validation at upload and record creation.
 - **Pet Photo Upload**: Pet profiles support photo uploads with image preview, stored in object storage with public ACL.
+- **Hospital Photo Upload**: Hospital photos can be uploaded directly from device (in addition to URL input) by both verified hospital owners and admins. Photos are stored in object storage with public ACL. API routes support verification code authentication for owners and session-based auth for admins.
 - **Offline Emergency Support**: Service worker queues emergency requests when offline, processes on reconnection or app startup. Visual indicator shows offline status and queued count.
 - **Admin Two-Factor Authentication (2FA)**: TOTP-based 2FA for admin accounts with QR code setup, backup codes (single-use, hashed), encrypted secrets at rest (AES-256-GCM).
 - **Clinic Reviews/Ratings**: Pet owners can rate clinics (1-5 stars) with optional text reviews. Reviews require moderation (pending → approved). Average ratings and counts cached on clinic records.

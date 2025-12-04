@@ -3911,6 +3911,294 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get hospital photo upload URL (for verified hospital owners)
+  app.post("/api/hospitals/:id/photo-upload-url", async (req: any, res: any) => {
+    try {
+      const { verificationCode } = z.object({
+        verificationCode: z.string().length(6, "Code must be 6 digits"),
+      }).parse(req.body);
+
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      // Verify ownership with code
+      if (hospital.ownerVerificationCode !== verificationCode) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      // Check if code has expired
+      if (hospital.ownerVerificationCodeExpiresAt && new Date() > new Date(hospital.ownerVerificationCodeExpiresAt)) {
+        return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error getting hospital photo upload URL:", error);
+      res.status(500).json({ error: error.message || "Failed to get upload URL" });
+    }
+  });
+
+  // Add hospital photo (for verified hospital owners)
+  app.post("/api/hospitals/:id/photo", async (req: any, res: any) => {
+    try {
+      const { verificationCode, filePath: rawFilePath } = z.object({
+        verificationCode: z.string().length(6, "Code must be 6 digits"),
+        filePath: z.string().min(1, "File path is required"),
+      }).parse(req.body);
+
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      // Verify ownership with code
+      if (hospital.ownerVerificationCode !== verificationCode) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      // Check if code has expired
+      if (hospital.ownerVerificationCodeExpiresAt && new Date() > new Date(hospital.ownerVerificationCodeExpiresAt)) {
+        return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      
+      // Extract the file path from the signed URL (remove bucket/domain info)
+      const filePath = objectStorageService.extractObjectEntityPath(rawFilePath);
+      if (!filePath) {
+        return res.status(400).json({ 
+          error: "Invalid file path", 
+          message: "Could not extract valid file path from the uploaded file URL."
+        });
+      }
+      
+      // Set ACL policy - public for hospital photos
+      try {
+        await objectStorageService.trySetObjectEntityAclPolicy(filePath, {
+          owner: hospital.id,
+          visibility: "public",
+        });
+      } catch (aclError) {
+        console.warn("Failed to set ACL policy for hospital photo:", aclError);
+        // Continue anyway - the file might still be accessible
+      }
+      
+      // Get the public URL for the photo
+      const photoUrl = objectStorageService.getObjectEntityPublicUrl(filePath);
+      
+      if (!photoUrl || typeof photoUrl !== 'string') {
+        return res.status(500).json({ 
+          error: "Failed to generate photo URL", 
+          message: "Could not generate a valid URL for the uploaded photo."
+        });
+      }
+      
+      // Add photo to hospital's photos array
+      const currentPhotos = (hospital.photos || []) as string[];
+      const updatedPhotos = [...currentPhotos, photoUrl];
+      
+      const updatedHospital = await storage.updateHospital(req.params.id, { photos: updatedPhotos });
+
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: hospital.id,
+        action: 'update',
+        changes: { photos: updatedPhotos },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({ photoUrl, hospital: updatedHospital });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error adding hospital photo:", error);
+      res.status(500).json({ error: error.message || "Failed to add hospital photo" });
+    }
+  });
+
+  // Delete hospital photo (for verified hospital owners)
+  app.delete("/api/hospitals/:id/photo", async (req: any, res: any) => {
+    try {
+      const { verificationCode, photoUrl } = z.object({
+        verificationCode: z.string().length(6, "Code must be 6 digits"),
+        photoUrl: z.string().min(1, "Photo URL is required"),
+      }).parse(req.body);
+
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      // Verify ownership with code
+      if (hospital.ownerVerificationCode !== verificationCode) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      // Check if code has expired
+      if (hospital.ownerVerificationCodeExpiresAt && new Date() > new Date(hospital.ownerVerificationCodeExpiresAt)) {
+        return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
+      }
+      
+      // Remove photo from hospital's photos array
+      const currentPhotos = (hospital.photos || []) as string[];
+      const updatedPhotos = currentPhotos.filter(url => url !== photoUrl);
+      
+      const updatedHospital = await storage.updateHospital(req.params.id, { photos: updatedPhotos });
+
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: hospital.id,
+        action: 'update',
+        changes: { photos: updatedPhotos },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({ hospital: updatedHospital });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error deleting hospital photo:", error);
+      res.status(500).json({ error: error.message || "Failed to delete hospital photo" });
+    }
+  });
+
+  // Get hospital photo upload URL (for admin)
+  app.post("/api/admin/hospitals/:id/photo-upload-url", isAuthenticated, isAdmin, async (req: any, res: any) => {
+    try {
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error: any) {
+      console.error("Error getting hospital photo upload URL:", error);
+      res.status(500).json({ error: error.message || "Failed to get upload URL" });
+    }
+  });
+
+  // Add hospital photo (for admin)
+  app.post("/api/admin/hospitals/:id/photo", isAuthenticated, isAdmin, async (req: any, res: any) => {
+    try {
+      const { filePath: rawFilePath } = z.object({
+        filePath: z.string().min(1, "File path is required"),
+      }).parse(req.body);
+
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      
+      // Extract the file path from the signed URL
+      const filePath = objectStorageService.extractObjectEntityPath(rawFilePath);
+      if (!filePath) {
+        return res.status(400).json({ 
+          error: "Invalid file path", 
+          message: "Could not extract valid file path from the uploaded file URL."
+        });
+      }
+      
+      // Set ACL policy - public for hospital photos
+      try {
+        await objectStorageService.trySetObjectEntityAclPolicy(filePath, {
+          owner: hospital.id,
+          visibility: "public",
+        });
+      } catch (aclError) {
+        console.warn("Failed to set ACL policy for hospital photo:", aclError);
+      }
+      
+      // Get the public URL for the photo
+      const photoUrl = objectStorageService.getObjectEntityPublicUrl(filePath);
+      
+      if (!photoUrl || typeof photoUrl !== 'string') {
+        return res.status(500).json({ 
+          error: "Failed to generate photo URL", 
+          message: "Could not generate a valid URL for the uploaded photo."
+        });
+      }
+      
+      // Add photo to hospital's photos array
+      const currentPhotos = (hospital.photos || []) as string[];
+      const updatedPhotos = [...currentPhotos, photoUrl];
+      
+      const updatedHospital = await storage.updateHospital(req.params.id, { photos: updatedPhotos });
+
+      const userId = (req.user as any).id;
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: hospital.id,
+        action: 'update',
+        userId,
+        changes: { photos: updatedPhotos },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({ photoUrl, hospital: updatedHospital });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error adding hospital photo:", error);
+      res.status(500).json({ error: error.message || "Failed to add hospital photo" });
+    }
+  });
+
+  // Delete hospital photo (for admin)
+  app.delete("/api/admin/hospitals/:id/photo", isAuthenticated, isAdmin, async (req: any, res: any) => {
+    try {
+      const { photoUrl } = z.object({
+        photoUrl: z.string().min(1, "Photo URL is required"),
+      }).parse(req.body);
+
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      
+      // Remove photo from hospital's photos array
+      const currentPhotos = (hospital.photos || []) as string[];
+      const updatedPhotos = currentPhotos.filter(url => url !== photoUrl);
+      
+      const updatedHospital = await storage.updateHospital(req.params.id, { photos: updatedPhotos });
+
+      const userId = (req.user as any).id;
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: hospital.id,
+        action: 'update',
+        userId,
+        changes: { photos: updatedPhotos },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({ hospital: updatedHospital });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error deleting hospital photo:", error);
+      res.status(500).json({ error: error.message || "Failed to delete hospital photo" });
+    }
+  });
+
   // ===== MEDICAL RECORDS ROUTES =====
   
   // Get user's storage usage
