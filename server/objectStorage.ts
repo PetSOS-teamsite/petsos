@@ -237,6 +237,36 @@ export class ObjectStorageService {
       requestedPermission: requestedPermission ?? ObjectPermission.READ,
     });
   }
+
+  // Extracts the object entity path from a raw file path (like a signed URL).
+  // This is an alias for normalizeObjectEntityPath for semantic clarity.
+  extractObjectEntityPath(rawPath: string): string {
+    return this.normalizeObjectEntityPath(rawPath);
+  }
+
+  // Gets the public URL for an object entity path.
+  // For paths like /objects/uploads/uuid, returns the accessible URL.
+  getObjectEntityPublicUrl(objectPath: string): string {
+    if (!objectPath.startsWith('/objects/')) {
+      // If it's already a full URL or different format, return as-is
+      return objectPath;
+    }
+
+    // Extract the entity ID from /objects/...
+    const entityId = objectPath.slice('/objects/'.length);
+    
+    let entityDir = this.getPrivateObjectDir();
+    if (!entityDir.endsWith("/")) {
+      entityDir = `${entityDir}/`;
+    }
+    
+    // Parse the full path to get bucket and object names
+    const fullPath = `${entityDir}${entityId}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    
+    // Return the public GCS URL
+    return `https://storage.googleapis.com/${bucketName}/${objectName}`;
+  }
 }
 
 function parseObjectPath(path: string): {

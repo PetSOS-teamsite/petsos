@@ -481,6 +481,10 @@ export class MemStorage implements IStorage {
       phone: insertUser.phone ?? null,
       region: insertUser.region ?? null,
       clinicId: insertUser.clinicId ?? null,
+      notificationPreferences: insertUser.notificationPreferences ?? null,
+      twoFactorSecret: insertUser.twoFactorSecret ?? null,
+      twoFactorEnabled: insertUser.twoFactorEnabled ?? false,
+      twoFactorBackupCodes: insertUser.twoFactorBackupCodes ?? null,
     };
     this.users.set(id, user);
     return user;
@@ -540,6 +544,10 @@ export class MemStorage implements IStorage {
       region: userData.region ?? null,
       regionPreference: userData.regionPreference ?? null,
       clinicId: userData.clinicId ?? null,
+      notificationPreferences: userData.notificationPreferences ?? null,
+      twoFactorSecret: userData.twoFactorSecret ?? null,
+      twoFactorEnabled: userData.twoFactorEnabled ?? false,
+      twoFactorBackupCodes: userData.twoFactorBackupCodes ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -579,7 +587,8 @@ export class MemStorage implements IStorage {
       type: insertPet.type ?? null,
       color: insertPet.color ?? null,
       medicalHistory: insertPet.medicalHistory ?? null,
-      microchipId: insertPet.microchipId ?? null
+      microchipId: insertPet.microchipId ?? null,
+      photoUrl: insertPet.photoUrl ?? null,
     };
     this.pets.set(id, pet);
     return pet;
@@ -813,7 +822,9 @@ export class MemStorage implements IStorage {
       isSupportHospital: insertClinic.isSupportHospital ?? false,
       services: insertClinic.services ?? null,
       ownerVerificationCode: insertClinic.ownerVerificationCode ?? null,
-      ownerVerificationCodeExpiresAt: insertClinic.ownerVerificationCodeExpiresAt ?? null
+      ownerVerificationCodeExpiresAt: insertClinic.ownerVerificationCodeExpiresAt ?? null,
+      averageRating: insertClinic.averageRating ?? null,
+      reviewCount: insertClinic.reviewCount ?? 0,
     };
     this.clinics.set(id, clinic);
     return clinic;
@@ -1680,6 +1691,109 @@ export class MemStorage implements IStorage {
   // Helper for WhatsApp - stub implementation
   async findHospitalByPhone(phoneNumber: string): Promise<Hospital | undefined> {
     throw new Error("MemStorage does not support findHospitalByPhone - use DatabaseStorage");
+  }
+
+  // Analytics Methods - stub implementations for MemStorage
+  async getAnalyticsOverview(): Promise<{
+    totalUsers: number;
+    newUsers24h: number;
+    newUsers7d: number;
+    newUsers30d: number;
+    totalPets: number;
+    totalEmergencyRequests: number;
+    emergencyByStatus: { status: string; count: number }[];
+    totalClinics: number;
+    activeClinics: number;
+    totalHospitals: number;
+  }> {
+    const now = new Date();
+    const h24Ago = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const d7Ago = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const d30Ago = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const allUsers = Array.from(this.users.values());
+    const allPets = Array.from(this.pets.values());
+    const allRequests = Array.from(this.emergencyRequests.values());
+    const allClinics = Array.from(this.clinics.values());
+    const allHospitals = Array.from(this.hospitals.values());
+
+    const statusCounts = allRequests.reduce((acc, req) => {
+      acc[req.status] = (acc[req.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      totalUsers: allUsers.length,
+      newUsers24h: allUsers.filter(u => u.createdAt >= h24Ago).length,
+      newUsers7d: allUsers.filter(u => u.createdAt >= d7Ago).length,
+      newUsers30d: allUsers.filter(u => u.createdAt >= d30Ago).length,
+      totalPets: allPets.length,
+      totalEmergencyRequests: allRequests.length,
+      emergencyByStatus: Object.entries(statusCounts).map(([status, count]) => ({ status, count })),
+      totalClinics: allClinics.length,
+      activeClinics: allClinics.filter(c => c.isAvailable).length,
+      totalHospitals: allHospitals.length,
+    };
+  }
+
+  async getEmergencyTrends(days: number): Promise<{
+    dailyTrends: { date: string; count: number }[];
+    byRegion: { regionId: string; regionName: string; count: number }[];
+    byStatus: { status: string; count: number }[];
+  }> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+
+    const allRequests = Array.from(this.emergencyRequests.values()).filter(r => r.createdAt >= startDate);
+
+    const dailyCounts = allRequests.reduce((acc, req) => {
+      const dateStr = req.createdAt.toISOString().split('T')[0];
+      acc[dateStr] = (acc[dateStr] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const regionCounts = allRequests.reduce((acc, req) => {
+      const regionId = req.regionId || 'unknown';
+      acc[regionId] = (acc[regionId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const statusCounts = allRequests.reduce((acc, req) => {
+      acc[req.status] = (acc[req.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      dailyTrends: Object.entries(dailyCounts).map(([date, count]) => ({ date, count })).sort((a, b) => a.date.localeCompare(b.date)),
+      byRegion: Object.entries(regionCounts).map(([regionId, count]) => ({ regionId, regionName: 'Unknown Region', count })),
+      byStatus: Object.entries(statusCounts).map(([status, count]) => ({ status, count })),
+    };
+  }
+
+  async getUserActivityTrends(days: number): Promise<{
+    registrationTrends: { date: string; count: number }[];
+    totalActiveUsers: number;
+  }> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+
+    const allUsers = Array.from(this.users.values()).filter(u => u.createdAt >= startDate);
+    const allRequests = Array.from(this.emergencyRequests.values()).filter(r => r.createdAt >= startDate);
+
+    const registrationCounts = allUsers.reduce((acc, user) => {
+      const dateStr = user.createdAt.toISOString().split('T')[0];
+      acc[dateStr] = (acc[dateStr] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const activeUserIds = new Set(allRequests.filter(r => r.userId).map(r => r.userId));
+
+    return {
+      registrationTrends: Object.entries(registrationCounts).map(([date, count]) => ({ date, count })).sort((a, b) => a.date.localeCompare(b.date)),
+      totalActiveUsers: activeUserIds.size,
+    };
   }
 }
 
