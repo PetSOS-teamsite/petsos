@@ -3688,30 +3688,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate 6-digit verification code for clinic (admin only)
   app.post("/api/clinics/:id/generate-code", isAuthenticated, isAdmin, async (req: any, res: any) => {
     try {
+      console.log(`[Generate Clinic Code] Starting for clinic ID: ${req.params.id}`);
+      
       const clinic = await storage.getClinic(req.params.id);
       if (!clinic) {
+        console.log(`[Generate Clinic Code] Clinic not found: ${req.params.id}`);
         return res.status(404).json({ message: "Clinic not found" });
       }
+      console.log(`[Generate Clinic Code] Found clinic: ${clinic.name}`);
 
       const code = Math.floor(Math.random() * 900000 + 100000).toString();
-      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours from now
+      const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours from now
+      
+      console.log(`[Generate Clinic Code] Updating clinic with code, expires at: ${expiresAt.toISOString()}`);
       const updatedClinic = await storage.updateClinic(req.params.id, { 
         ownerVerificationCode: code,
         ownerVerificationCodeExpiresAt: expiresAt
       });
-
-      await storage.createAuditLog({
-        entityType: 'clinic',
-        entityId: clinic.id,
-        action: 'generate_code',
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent')
-      });
       
-      res.json({ code, clinicId: clinic.id, expiresAt });
+      if (!updatedClinic) {
+        console.error(`[Generate Clinic Code] Update returned undefined for clinic: ${req.params.id}`);
+        return res.status(500).json({ message: "Failed to update clinic with verification code" });
+      }
+      console.log(`[Generate Clinic Code] Clinic updated successfully`);
+
+      try {
+        await storage.createAuditLog({
+          entityType: 'clinic',
+          entityId: clinic.id,
+          action: 'generate_code',
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      } catch (auditError) {
+        console.error(`[Generate Clinic Code] Audit log error (non-fatal):`, auditError);
+      }
+      
+      console.log(`[Generate Clinic Code] Success - returning code for clinic: ${clinic.id}`);
+      res.json({ code, clinicId: clinic.id, expiresAt: expiresAt.toISOString() });
     } catch (error) {
-      console.error("Generate clinic code error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      console.error("[Generate Clinic Code] Error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: "Failed to generate code", error: errorMessage });
     }
   });
 
@@ -3805,30 +3823,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate 6-digit verification code for hospital (admin only)
   app.post("/api/hospitals/:id/generate-code", isAuthenticated, isAdmin, async (req: any, res: any) => {
     try {
+      console.log(`[Generate Code] Starting for hospital ID: ${req.params.id}`);
+      
       const hospital = await storage.getHospital(req.params.id);
       if (!hospital) {
+        console.log(`[Generate Code] Hospital not found: ${req.params.id}`);
         return res.status(404).json({ message: "Hospital not found" });
       }
+      console.log(`[Generate Code] Found hospital: ${hospital.nameEn}`);
 
       const code = Math.floor(Math.random() * 900000 + 100000).toString();
-      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours from now
+      const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours from now
+      
+      console.log(`[Generate Code] Updating hospital with code, expires at: ${expiresAt.toISOString()}`);
       const updatedHospital = await storage.updateHospital(req.params.id, { 
         ownerVerificationCode: code,
         ownerVerificationCodeExpiresAt: expiresAt
       });
-
-      await storage.createAuditLog({
-        entityType: 'hospital',
-        entityId: hospital.id,
-        action: 'generate_code',
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent')
-      });
       
-      res.json({ code, hospitalId: hospital.id, expiresAt });
+      if (!updatedHospital) {
+        console.error(`[Generate Code] Update returned undefined for hospital: ${req.params.id}`);
+        return res.status(500).json({ message: "Failed to update hospital with verification code" });
+      }
+      console.log(`[Generate Code] Hospital updated successfully`);
+
+      try {
+        await storage.createAuditLog({
+          entityType: 'hospital',
+          entityId: hospital.id,
+          action: 'generate_code',
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      } catch (auditError) {
+        console.error(`[Generate Code] Audit log error (non-fatal):`, auditError);
+      }
+      
+      console.log(`[Generate Code] Success - returning code for hospital: ${hospital.id}`);
+      res.json({ code, hospitalId: hospital.id, expiresAt: expiresAt.toISOString() });
     } catch (error) {
-      console.error("Generate hospital code error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      console.error("[Generate Code] Error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: "Failed to generate code", error: errorMessage });
     }
   });
 
