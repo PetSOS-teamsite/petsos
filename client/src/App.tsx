@@ -12,12 +12,13 @@ import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { usePageTracking } from "@/hooks/useAnalytics";
 import { initSentry } from "@/lib/sentry";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { initializeCapacitor, isNativePlatform } from "@/lib/capacitor";
 import LandingPage from "@/pages/landing";
 import LoginPage from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
 // Cache-busting: Force new bundle hash for Cloudflare bypass
-const BUILD_VERSION = "2025-11-27-18-35-full-schema-sync";
+const BUILD_VERSION = "2025-12-04-capacitor-mobile-ready";
 
 // Lazy-loaded pages - only load when needed
 const EmergencyPage = lazy(() => import("@/pages/emergency"));
@@ -213,6 +214,9 @@ function App() {
     
     // Defer Sentry initialization to post-mount to avoid blocking FCP
     initSentry();
+    
+    // Initialize Capacitor for native mobile support
+    initializeCapacitor();
   }, []);
 
   return (

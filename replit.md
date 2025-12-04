@@ -13,6 +13,7 @@ Preferred communication style: Simple, everyday language.
 - **Design Principles**: Accessible, customizable components; minimal bundle size; Tailwind CSS for theming; type-safe form validation.
 - **Branding**: Text-based "PetSOS" logo, vibrant red (#EF4444) primary color, custom SVG favicon.
 - **PWA Support**: Full Progressive Web App support with web app manifest, installable to home screen, standalone display mode, emergency and clinic shortcuts.
+- **Native Mobile Apps**: Capacitor-based iOS and Android app wrappers for App Store and Play Store deployment. Includes native push notifications, haptic feedback, deep linking, and platform-specific UI adaptations.
 - **Localization**: Bilingual optimization (EN/ZH-HK), comprehensive Open Graph and Twitter Cards, geo-targeting, database-stored translations, colloquial HK terminology.
 - **Emergency UI**: Multi-step emergency request form, compact VoiceRecorder UI, real-time editable broadcast messages.
 - **Clinic Display**: Compact clinic action buttons, brand-aligned directory, red-themed compact cards, clickable cards with Maps integration, mobile-optimized horizontally scrollable region tabs.

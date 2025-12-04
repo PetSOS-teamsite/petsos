@@ -4503,6 +4503,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: error.message || "Failed to deactivate subscription" });
     }
   });
+
+  // Register native push token (for iOS/Android Capacitor apps)
+  // This endpoint accepts APNs tokens (iOS) or FCM tokens (Android) from native apps
+  app.post("/api/push/register-native", generalLimiter, async (req: any, res) => {
+    try {
+      // Validate request body
+      const nativeTokenSchema = z.object({
+        token: z.string().min(1, "Token is required"),
+        platform: z.enum(['ios', 'android', 'web']),
+        deviceInfo: z.object({
+          platform: z.string().optional(),
+          isNative: z.boolean().optional(),
+          model: z.string().optional(),
+          osVersion: z.string().optional(),
+          appVersion: z.string().optional(),
+        }).passthrough().optional(),
+      });
+
+      const validationResult = nativeTokenSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: "Invalid request data",
+          details: validationResult.error.errors
+        });
+      }
+
+      const { token, platform, deviceInfo } = validationResult.data;
+
+      // Get user ID if authenticated (optional - allows anonymous device registration)
+      const userId = req.user?.id || null;
+
+      // Determine provider based on platform
+      // iOS uses APNs tokens (but Firebase can proxy them), Android uses FCM
+      const provider = platform === 'ios' ? 'apns' : 'fcm';
+
+      // Check if this token already exists
+      const existingSubscription = await storage.getPushSubscriptionByToken(token);
+
+      if (existingSubscription) {
+        // Update existing subscription
+        const updated = await storage.updatePushSubscription(existingSubscription.id, {
+          userId: userId || existingSubscription.userId,
+          platform,
+          provider,
+          browserInfo: deviceInfo ? JSON.stringify(deviceInfo) : existingSubscription.browserInfo,
+          isActive: true,
+        });
+
+        console.log(`[Push Native] Updated existing subscription for token: ${token.substring(0, 20)}...`);
+        return res.json({
+          success: true,
+          message: "Push token updated",
+          subscriptionId: updated?.id || existingSubscription.id,
+          isNew: false,
+        });
+      }
+
+      // Create new subscription
+      const subscription = await storage.createPushSubscription({
+        userId,
+        token,
+        provider,
+        platform,
+        browserInfo: deviceInfo ? JSON.stringify(deviceInfo) : null,
+        language: req.user?.language || 'en',
+        isActive: true,
+      });
+
+      console.log(`[Push Native] Created new subscription for platform: ${platform}, token: ${token.substring(0, 20)}...`);
+      
+      res.status(201).json({
+        success: true,
+        message: "Push token registered",
+        subscriptionId: subscription.id,
+        isNew: true,
+      });
+    } catch (error: any) {
+      console.error("Error registering native push token:", error);
+      res.status(500).json({ error: error.message || "Failed to register push token" });
+    }
+  });
   
   // Admin: Send or schedule broadcast notification
   app.post("/api/admin/notifications/broadcast", broadcastLimiter, isAuthenticated, isAdmin, async (req: any, res) => {
