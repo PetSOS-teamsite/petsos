@@ -90,7 +90,8 @@ Preferred communication style: Simple, everyday language.
   - Required Environment Variables:
     - `WHATSAPP_ACCESS_TOKEN`: Meta Business API access token
     - `WHATSAPP_PHONE_NUMBER_ID`: WhatsApp Business phone number ID
-    - `WHATSAPP_WEBHOOK_VERIFY_TOKEN`: Webhook verification token (default: 'petsos_webhook_verify')
+    - `WHATSAPP_WEBHOOK_VERIFY_TOKEN`: Webhook verification token (required, no default)
+    - `WHATSAPP_APP_SECRET`: App Secret from Meta Business settings for webhook signature verification
   - WhatsApp Coexistence: Allows simultaneous API automation and manual WhatsApp Business App usage
 - **SendGrid**: Email fallback.
 

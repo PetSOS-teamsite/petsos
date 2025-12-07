@@ -40,6 +40,62 @@ import path from "path";
 import { config } from "./config";
 import { encryptTotpSecret, decryptTotpSecret, isEncryptedSecret } from "./encryption";
 
+// WhatsApp webhook signature verification
+// Meta signs all webhook payloads with X-Hub-Signature-256 using your app secret
+function verifyWhatsAppSignature(req: any): boolean {
+  const signature = req.headers['x-hub-signature-256'];
+  const appSecret = process.env.WHATSAPP_APP_SECRET;
+  
+  // If no app secret configured, log warning but allow in development
+  if (!appSecret) {
+    if (config.isDevelopment) {
+      console.warn('[WhatsApp Webhook] WHATSAPP_APP_SECRET not configured - skipping signature verification in development');
+      return true;
+    }
+    console.error('[WhatsApp Webhook] WHATSAPP_APP_SECRET not configured - rejecting request in production');
+    return false;
+  }
+  
+  // Signature header is required
+  if (!signature) {
+    console.error('[WhatsApp Webhook] Missing X-Hub-Signature-256 header');
+    return false;
+  }
+  
+  // Get raw body for signature verification (Buffer captured by express.json middleware)
+  const rawBody = req.rawBody as Buffer | undefined;
+  if (!rawBody) {
+    console.error('[WhatsApp Webhook] Raw body not available for signature verification');
+    return false;
+  }
+  
+  // Compute expected signature using the raw body buffer
+  const expectedSignature = 'sha256=' + crypto
+    .createHmac('sha256', appSecret)
+    .update(rawBody)
+    .digest('hex');
+  
+  // Use timing-safe comparison to prevent timing attacks
+  try {
+    const signatureBuffer = Buffer.from(signature, 'utf8');
+    const expectedBuffer = Buffer.from(expectedSignature, 'utf8');
+    
+    if (signatureBuffer.length !== expectedBuffer.length) {
+      console.error('[WhatsApp Webhook] Signature length mismatch');
+      return false;
+    }
+    
+    const isValid = crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
+    if (!isValid) {
+      console.error('[WhatsApp Webhook] Invalid signature');
+    }
+    return isValid;
+  } catch (error) {
+    console.error('[WhatsApp Webhook] Signature verification error:', error);
+    return false;
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Replit Auth
   await setupAuth(app);
@@ -66,26 +122,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
     
-    // Use a verify token from environment variables
-    const verifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'petsos_webhook_verify';
+    // SECURITY: Require verify token from environment variable - no hardcoded fallback
+    const verifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
     
-    console.log('[WhatsApp Webhook] Verification request received');
-    console.log('[WhatsApp Webhook] Mode:', mode);
-    console.log('[WhatsApp Webhook] Token matches:', token === verifyToken);
+    if (!verifyToken) {
+      console.error('[WhatsApp Webhook] WHATSAPP_WEBHOOK_VERIFY_TOKEN not configured');
+      return res.sendStatus(500);
+    }
     
     if (mode === 'subscribe' && token === verifyToken) {
       console.log('[WhatsApp Webhook] Verification successful');
       res.status(200).send(challenge);
     } else {
-      console.error('[WhatsApp Webhook] Verification failed');
+      console.error('[WhatsApp Webhook] Verification failed - invalid token');
       res.sendStatus(403);
     }
   });
   
   // Webhook event receiver (POST) - Meta sends status updates here
   app.post('/api/webhooks/whatsapp', async (req, res) => {
+    // SECURITY: Verify webhook signature before processing any data
+    if (!verifyWhatsAppSignature(req)) {
+      console.error('[WhatsApp Webhook] Signature verification failed - rejecting request');
+      return res.sendStatus(401);
+    }
+    
     try {
-      console.log('[WhatsApp Webhook] Event received:', JSON.stringify(req.body, null, 2));
+      console.log('[WhatsApp Webhook] Event received (signature verified)');
       
       const body = req.body;
       
