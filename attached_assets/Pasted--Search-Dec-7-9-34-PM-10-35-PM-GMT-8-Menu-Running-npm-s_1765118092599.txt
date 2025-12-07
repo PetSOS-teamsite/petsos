@@ -1,0 +1,145 @@
+
+Search
+
+Dec 7, 9:34 PM - 10:35 PM
+GMT+8
+
+Menu
+
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+⚠️ FIREBASE_SERVICE_ACCOUNT_JSON not set - push notifications will be simulated
+🌱 Seeding translations...
+Sentry DSN not provided - error tracking disabled
+✅ Found 459 translations
+1:35:24 PM [express] serving on port 10000
+[NotificationScheduler] Starting notification scheduler (checking every minute)
+✅ Translation seeding complete!
+   - Created: 0 translations
+   - Updated: 756 translations
+   - Total keys: 378
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+⚠️ FIREBASE_SERVICE_ACCOUNT_JSON not set - push notifications will be simulated
+🌱 Seeding translations...
+Sentry DSN not provided - error tracking disabled
+✅ Found 459 translations
+1:44:53 PM [express] serving on port 10000
+[NotificationScheduler] Starting notification scheduler (checking every minute)
+✅ Translation seeding complete!
+   - Created: 0 translations
+   - Updated: 756 translations
+   - Total keys: 378
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+⚠️ FIREBASE_SERVICE_ACCOUNT_JSON not set - push notifications will be simulated
+🌱 Seeding translations...
+Sentry DSN not provided - error tracking disabled
+✅ Found 459 translations
+1:54:27 PM [express] serving on port 10000
+[NotificationScheduler] Starting notification scheduler (checking every minute)
+✅ Translation seeding complete!
+   - Created: 0 translations
+   - Updated: 756 translations
+   - Total keys: 378
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+⚠️ FIREBASE_SERVICE_ACCOUNT_JSON not set - push notifications will be simulated
+🌱 Seeding translations...
+Sentry DSN not provided - error tracking disabled
+✅ Found 459 translations
+2:03:54 PM [express] serving on port 10000
+[NotificationScheduler] Starting notification scheduler (checking every minute)
+✅ Translation seeding complete!
+   - Created: 0 translations
+   - Updated: 756 translations
+   - Total keys: 378
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+⚠️ FIREBASE_SERVICE_ACCOUNT_JSON not set - push notifications will be simulated
+🌱 Seeding translations...
+Sentry DSN not provided - error tracking disabled
+✅ Found 459 translations
+2:13:16 PM [express] serving on port 10000
+[NotificationScheduler] Starting notification scheduler (checking every minute)
+✅ Translation seeding complete!
+   - Created: 0 translations
+   - Updated: 756 translations
+   - Total keys: 378
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+⚠️ FIREBASE_SERVICE_ACCOUNT_JSON not set - push notifications will be simulated
+🌱 Seeding translations...
+Sentry DSN not provided - error tracking disabled
+✅ Found 459 translations
+2:22:42 PM [express] serving on port 10000
+[NotificationScheduler] Starting notification scheduler (checking every minute)
+2:23:49 PM [express] GET /api.php 200 in 2ms
+✅ Translation seeding complete!
+   - Created: 0 translations
+   - Updated: 756 translations
+   - Total keys: 378
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+[Config] All required environment variables are set
+[Config] Environment: production
+[Config] Port: 10000
+[Config] Rate limiting: enabled
+[Config] Session secure cookies: true
+[Config] Sentry monitoring: disabled
+[Config] Regional defaults: HK (+852), Language: zh-HK
+⚠️ FIREBASE_SERVICE_ACCOUNT_JSON not set - push notifications will be simulated
+🌱 Seeding translations...
+Sentry DSN not provided - error tracking disabled
+✅ Found 459 translations
+2:32:15 PM [express] serving on port 10000
+[NotificationScheduler] Starting notification scheduler (checking every minute)
