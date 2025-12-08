@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PetSOS</string>
+    <string name="title_activity_main">PetSOS</string>
+    <string name="package_name">site.petsos.app</string>
+    <string name="custom_url_scheme">site.petsos.app</string>
+</resources>

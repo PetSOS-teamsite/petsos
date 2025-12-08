@@ -3403,6 +3403,26 @@ var ObjectStorageService = class {
       requestedPermission: requestedPermission ?? "read" /* READ */
     });
   }
+  // Extracts the object entity path from a raw file path (like a signed URL).
+  // This is an alias for normalizeObjectEntityPath for semantic clarity.
+  extractObjectEntityPath(rawPath) {
+    return this.normalizeObjectEntityPath(rawPath);
+  }
+  // Gets the public URL for an object entity path.
+  // For paths like /objects/uploads/uuid, returns the accessible URL.
+  getObjectEntityPublicUrl(objectPath) {
+    if (!objectPath.startsWith("/objects/")) {
+      return objectPath;
+    }
+    const entityId = objectPath.slice("/objects/".length);
+    let entityDir = this.getPrivateObjectDir();
+    if (!entityDir.endsWith("/")) {
+      entityDir = `${entityDir}/`;
+    }
+    const fullPath = `${entityDir}${entityId}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    return `https://storage.googleapis.com/${bucketName}/${objectName}`;
+  }
 };
 function parseObjectPath(path5) {
   if (!path5.startsWith("/")) {
@@ -3504,6 +3524,44 @@ function isEncryptedSecret(secret) {
 }
 
 // server/routes.ts
+function verifyWhatsAppSignature(req) {
+  const signature = req.headers["x-hub-signature-256"];
+  const appSecret = process.env.WHATSAPP_APP_SECRET;
+  if (!appSecret) {
+    if (config.isDevelopment) {
+      console.warn("[WhatsApp Webhook] WHATSAPP_APP_SECRET not configured - skipping signature verification in development");
+      return true;
+    }
+    console.error("[WhatsApp Webhook] WHATSAPP_APP_SECRET not configured - rejecting request in production");
+    return false;
+  }
+  if (!signature) {
+    console.error("[WhatsApp Webhook] Missing X-Hub-Signature-256 header");
+    return false;
+  }
+  const rawBody = req.rawBody;
+  if (!rawBody) {
+    console.error("[WhatsApp Webhook] Raw body not available for signature verification");
+    return false;
+  }
+  const expectedSignature = "sha256=" + crypto2.createHmac("sha256", appSecret).update(rawBody).digest("hex");
+  try {
+    const signatureBuffer = Buffer.from(signature, "utf8");
+    const expectedBuffer = Buffer.from(expectedSignature, "utf8");
+    if (signatureBuffer.length !== expectedBuffer.length) {
+      console.error("[WhatsApp Webhook] Signature length mismatch");
+      return false;
+    }
+    const isValid = crypto2.timingSafeEqual(signatureBuffer, expectedBuffer);
+    if (!isValid) {
+      console.error("[WhatsApp Webhook] Invalid signature");
+    }
+    return isValid;
+  } catch (error) {
+    console.error("[WhatsApp Webhook] Signature verification error:", error);
+    return false;
+  }
+}
 async function registerRoutes(app2) {
   await setupAuth(app2);
   setupTestUtils(app2);
@@ -3518,21 +3576,26 @@ async function registerRoutes(app2) {
     const mode = req.query["hub.mode"];
     const token = req.query["hub.verify_token"];
     const challenge = req.query["hub.challenge"];
-    const verifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || "petsos_webhook_verify";
-    console.log("[WhatsApp Webhook] Verification request received");
-    console.log("[WhatsApp Webhook] Mode:", mode);
-    console.log("[WhatsApp Webhook] Token matches:", token === verifyToken);
+    const verifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
+    if (!verifyToken) {
+      console.error("[WhatsApp Webhook] WHATSAPP_WEBHOOK_VERIFY_TOKEN not configured");
+      return res.sendStatus(500);
+    }
     if (mode === "subscribe" && token === verifyToken) {
       console.log("[WhatsApp Webhook] Verification successful");
       res.status(200).send(challenge);
     } else {
-      console.error("[WhatsApp Webhook] Verification failed");
+      console.error("[WhatsApp Webhook] Verification failed - invalid token");
       res.sendStatus(403);
     }
   });
   app2.post("/api/webhooks/whatsapp", async (req, res) => {
+    if (!verifyWhatsAppSignature(req)) {
+      console.error("[WhatsApp Webhook] Signature verification failed - rejecting request");
+      return res.sendStatus(401);
+    }
     try {
-      console.log("[WhatsApp Webhook] Event received:", JSON.stringify(req.body, null, 2));
+      console.log("[WhatsApp Webhook] Event received (signature verified)");
       const body = req.body;
       if (body?.object === "whatsapp_business_account") {
         for (const entry of body.entry || []) {
@@ -6105,6 +6168,17 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to fetch conversations" });
     }
   });
+  app2.get("/api/admin/conversations/unread-count", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const conversations = await storage.getAllConversations(false);
+      const unreadCount = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+      const unreadConversations = conversations.filter((c) => (c.unreadCount || 0) > 0).length;
+      res.json({ unreadCount, unreadConversations });
+    } catch (error) {
+      console.error("[Conversations] Error getting unread count:", error);
+      res.status(500).json({ message: "Failed to get unread count" });
+    }
+  });
   app2.get("/api/admin/conversations/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const conversation = await storage.getConversation(req.params.id);
@@ -6126,6 +6200,89 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("[Conversations] Error fetching messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+  app2.post("/api/admin/conversations/new", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { phoneNumber, displayName, content } = z2.object({
+        phoneNumber: z2.string().min(8),
+        displayName: z2.string().optional(),
+        content: z2.string().min(1)
+      }).parse(req.body);
+      const sanitizedPhone = phoneNumber.replace(/[^0-9]/g, "");
+      let conversation = await storage.getConversationByPhone(sanitizedPhone);
+      if (!conversation) {
+        const hospital = await storage.findHospitalByPhone(sanitizedPhone);
+        conversation = await storage.createConversation({
+          phoneNumber: sanitizedPhone,
+          hospitalId: hospital?.id || null,
+          displayName: displayName || (hospital ? hospital.nameEn || hospital.nameZh : `+${sanitizedPhone}`),
+          lastMessageAt: /* @__PURE__ */ new Date(),
+          lastMessagePreview: content.substring(0, 100),
+          unreadCount: 0,
+          isArchived: false
+        });
+      }
+      const WHATSAPP_ACCESS_TOKEN2 = process.env.WHATSAPP_ACCESS_TOKEN;
+      const WHATSAPP_PHONE_NUMBER_ID2 = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      const WHATSAPP_API_URL2 = "https://graph.facebook.com/v17.0";
+      if (!WHATSAPP_ACCESS_TOKEN2 || !WHATSAPP_PHONE_NUMBER_ID2) {
+        return res.status(500).json({ message: "WhatsApp not configured" });
+      }
+      const url = `${WHATSAPP_API_URL2}/${WHATSAPP_PHONE_NUMBER_ID2}/messages`;
+      const payload = {
+        messaging_product: "whatsapp",
+        to: sanitizedPhone,
+        type: "text",
+        text: { body: content }
+      };
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${WHATSAPP_ACCESS_TOKEN2}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      const responseData = await response.json();
+      if (!response.ok) {
+        console.error("[New Chat] WhatsApp API error:", responseData);
+        return res.status(500).json({
+          message: "Failed to send message",
+          error: responseData.error?.message || "Unknown error"
+        });
+      }
+      const whatsappMessageId = responseData.messages?.[0]?.id;
+      const chatMessage = await storage.createChatMessage({
+        conversationId: conversation.id,
+        direction: "outbound",
+        content,
+        messageType: "text",
+        whatsappMessageId,
+        status: "sent",
+        sentAt: /* @__PURE__ */ new Date()
+      });
+      await storage.updateConversation(conversation.id, {
+        lastMessageAt: /* @__PURE__ */ new Date(),
+        lastMessagePreview: content.substring(0, 100)
+      });
+      await storage.createAuditLog({
+        entityType: "whatsapp_chat",
+        entityId: chatMessage.id,
+        action: "start_conversation",
+        userId: req.user?.id,
+        changes: { conversationId: conversation.id, phoneNumber: sanitizedPhone },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent")
+      });
+      console.log(`[New Chat] Started conversation ${conversation.id} with ${sanitizedPhone}`);
+      res.json({ conversation, message: chatMessage });
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("[New Chat] Error:", error);
+      res.status(500).json({ message: "Failed to start conversation" });
     }
   });
   app2.post("/api/admin/conversations/:id/read", isAuthenticated, isAdmin, async (req, res) => {
@@ -6223,40 +6380,44 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to send reply" });
     }
   });
-  app2.get("/api/admin/conversations/unread-count", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const conversations = await storage.getAllConversations(false);
-      const unreadCount = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
-      const unreadConversations = conversations.filter((c) => (c.unreadCount || 0) > 0).length;
-      res.json({ unreadCount, unreadConversations });
-    } catch (error) {
-      console.error("[Conversations] Error getting unread count:", error);
-      res.status(500).json({ message: "Failed to get unread count" });
-    }
-  });
   app2.post("/api/clinics/:id/generate-code", isAuthenticated, isAdmin, async (req, res) => {
     try {
+      console.log(`[Generate Clinic Code] Starting for clinic ID: ${req.params.id}`);
       const clinic = await storage.getClinic(req.params.id);
       if (!clinic) {
+        console.log(`[Generate Clinic Code] Clinic not found: ${req.params.id}`);
         return res.status(404).json({ message: "Clinic not found" });
       }
+      console.log(`[Generate Clinic Code] Found clinic: ${clinic.name}`);
       const code = Math.floor(Math.random() * 9e5 + 1e5).toString();
-      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1e3);
+      const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1e3);
+      console.log(`[Generate Clinic Code] Updating clinic with code, expires at: ${expiresAt.toISOString()}`);
       const updatedClinic = await storage.updateClinic(req.params.id, {
         ownerVerificationCode: code,
         ownerVerificationCodeExpiresAt: expiresAt
       });
-      await storage.createAuditLog({
-        entityType: "clinic",
-        entityId: clinic.id,
-        action: "generate_code",
-        ipAddress: req.ip,
-        userAgent: req.get("user-agent")
-      });
-      res.json({ code, clinicId: clinic.id, expiresAt });
+      if (!updatedClinic) {
+        console.error(`[Generate Clinic Code] Update returned undefined for clinic: ${req.params.id}`);
+        return res.status(500).json({ message: "Failed to update clinic with verification code" });
+      }
+      console.log(`[Generate Clinic Code] Clinic updated successfully`);
+      try {
+        await storage.createAuditLog({
+          entityType: "clinic",
+          entityId: clinic.id,
+          action: "generate_code",
+          ipAddress: req.ip,
+          userAgent: req.get("user-agent")
+        });
+      } catch (auditError) {
+        console.error(`[Generate Clinic Code] Audit log error (non-fatal):`, auditError);
+      }
+      console.log(`[Generate Clinic Code] Success - returning code for clinic: ${clinic.id}`);
+      res.json({ code, clinicId: clinic.id, expiresAt: expiresAt.toISOString() });
     } catch (error) {
-      console.error("Generate clinic code error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      console.error("[Generate Clinic Code] Error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: "Failed to generate code", error: errorMessage });
     }
   });
   app2.post("/api/clinics/:id/verify", async (req, res) => {
@@ -6330,27 +6491,42 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/hospitals/:id/generate-code", isAuthenticated, isAdmin, async (req, res) => {
     try {
+      console.log(`[Generate Code] Starting for hospital ID: ${req.params.id}`);
       const hospital = await storage.getHospital(req.params.id);
       if (!hospital) {
+        console.log(`[Generate Code] Hospital not found: ${req.params.id}`);
         return res.status(404).json({ message: "Hospital not found" });
       }
+      console.log(`[Generate Code] Found hospital: ${hospital.nameEn}`);
       const code = Math.floor(Math.random() * 9e5 + 1e5).toString();
-      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1e3);
+      const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1e3);
+      console.log(`[Generate Code] Updating hospital with code, expires at: ${expiresAt.toISOString()}`);
       const updatedHospital = await storage.updateHospital(req.params.id, {
         ownerVerificationCode: code,
         ownerVerificationCodeExpiresAt: expiresAt
       });
-      await storage.createAuditLog({
-        entityType: "hospital",
-        entityId: hospital.id,
-        action: "generate_code",
-        ipAddress: req.ip,
-        userAgent: req.get("user-agent")
-      });
-      res.json({ code, hospitalId: hospital.id, expiresAt });
+      if (!updatedHospital) {
+        console.error(`[Generate Code] Update returned undefined for hospital: ${req.params.id}`);
+        return res.status(500).json({ message: "Failed to update hospital with verification code" });
+      }
+      console.log(`[Generate Code] Hospital updated successfully`);
+      try {
+        await storage.createAuditLog({
+          entityType: "hospital",
+          entityId: hospital.id,
+          action: "generate_code",
+          ipAddress: req.ip,
+          userAgent: req.get("user-agent")
+        });
+      } catch (auditError) {
+        console.error(`[Generate Code] Audit log error (non-fatal):`, auditError);
+      }
+      console.log(`[Generate Code] Success - returning code for hospital: ${hospital.id}`);
+      res.json({ code, hospitalId: hospital.id, expiresAt: expiresAt.toISOString() });
     } catch (error) {
-      console.error("Generate hospital code error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      console.error("[Generate Code] Error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ message: "Failed to generate code", error: errorMessage });
     }
   });
   app2.post("/api/hospitals/:id/verify", async (req, res) => {
@@ -6409,6 +6585,226 @@ async function registerRoutes(app2) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.post("/api/hospitals/:id/photo-upload-url", async (req, res) => {
+    try {
+      const { verificationCode } = z2.object({
+        verificationCode: z2.string().length(6, "Code must be 6 digits")
+      }).parse(req.body);
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      if (hospital.ownerVerificationCode !== verificationCode) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+      if (hospital.ownerVerificationCodeExpiresAt && /* @__PURE__ */ new Date() > new Date(hospital.ownerVerificationCodeExpiresAt)) {
+        return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
+      }
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error getting hospital photo upload URL:", error);
+      res.status(500).json({ error: error.message || "Failed to get upload URL" });
+    }
+  });
+  app2.post("/api/hospitals/:id/photo", async (req, res) => {
+    try {
+      const { verificationCode, filePath: rawFilePath } = z2.object({
+        verificationCode: z2.string().length(6, "Code must be 6 digits"),
+        filePath: z2.string().min(1, "File path is required")
+      }).parse(req.body);
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      if (hospital.ownerVerificationCode !== verificationCode) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+      if (hospital.ownerVerificationCodeExpiresAt && /* @__PURE__ */ new Date() > new Date(hospital.ownerVerificationCodeExpiresAt)) {
+        return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
+      }
+      const objectStorageService = new ObjectStorageService();
+      const filePath = objectStorageService.extractObjectEntityPath(rawFilePath);
+      if (!filePath) {
+        return res.status(400).json({
+          error: "Invalid file path",
+          message: "Could not extract valid file path from the uploaded file URL."
+        });
+      }
+      try {
+        await objectStorageService.trySetObjectEntityAclPolicy(filePath, {
+          owner: hospital.id,
+          visibility: "public"
+        });
+      } catch (aclError) {
+        console.warn("Failed to set ACL policy for hospital photo:", aclError);
+      }
+      const photoUrl = objectStorageService.getObjectEntityPublicUrl(filePath);
+      if (!photoUrl || typeof photoUrl !== "string") {
+        return res.status(500).json({
+          error: "Failed to generate photo URL",
+          message: "Could not generate a valid URL for the uploaded photo."
+        });
+      }
+      const currentPhotos = hospital.photos || [];
+      const updatedPhotos = [...currentPhotos, photoUrl];
+      const updatedHospital = await storage.updateHospital(req.params.id, { photos: updatedPhotos });
+      await storage.createAuditLog({
+        entityType: "hospital",
+        entityId: hospital.id,
+        action: "update",
+        changes: { photos: updatedPhotos },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent")
+      });
+      res.json({ photoUrl, hospital: updatedHospital });
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error adding hospital photo:", error);
+      res.status(500).json({ error: error.message || "Failed to add hospital photo" });
+    }
+  });
+  app2.delete("/api/hospitals/:id/photo", async (req, res) => {
+    try {
+      const { verificationCode, photoUrl } = z2.object({
+        verificationCode: z2.string().length(6, "Code must be 6 digits"),
+        photoUrl: z2.string().min(1, "Photo URL is required")
+      }).parse(req.body);
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      if (hospital.ownerVerificationCode !== verificationCode) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+      if (hospital.ownerVerificationCodeExpiresAt && /* @__PURE__ */ new Date() > new Date(hospital.ownerVerificationCodeExpiresAt)) {
+        return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
+      }
+      const currentPhotos = hospital.photos || [];
+      const updatedPhotos = currentPhotos.filter((url) => url !== photoUrl);
+      const updatedHospital = await storage.updateHospital(req.params.id, { photos: updatedPhotos });
+      await storage.createAuditLog({
+        entityType: "hospital",
+        entityId: hospital.id,
+        action: "update",
+        changes: { photos: updatedPhotos },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent")
+      });
+      res.json({ hospital: updatedHospital });
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error deleting hospital photo:", error);
+      res.status(500).json({ error: error.message || "Failed to delete hospital photo" });
+    }
+  });
+  app2.post("/api/admin/hospitals/:id/photo-upload-url", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting hospital photo upload URL:", error);
+      res.status(500).json({ error: error.message || "Failed to get upload URL" });
+    }
+  });
+  app2.post("/api/admin/hospitals/:id/photo", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { filePath: rawFilePath } = z2.object({
+        filePath: z2.string().min(1, "File path is required")
+      }).parse(req.body);
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      const objectStorageService = new ObjectStorageService();
+      const filePath = objectStorageService.extractObjectEntityPath(rawFilePath);
+      if (!filePath) {
+        return res.status(400).json({
+          error: "Invalid file path",
+          message: "Could not extract valid file path from the uploaded file URL."
+        });
+      }
+      try {
+        await objectStorageService.trySetObjectEntityAclPolicy(filePath, {
+          owner: hospital.id,
+          visibility: "public"
+        });
+      } catch (aclError) {
+        console.warn("Failed to set ACL policy for hospital photo:", aclError);
+      }
+      const photoUrl = objectStorageService.getObjectEntityPublicUrl(filePath);
+      if (!photoUrl || typeof photoUrl !== "string") {
+        return res.status(500).json({
+          error: "Failed to generate photo URL",
+          message: "Could not generate a valid URL for the uploaded photo."
+        });
+      }
+      const currentPhotos = hospital.photos || [];
+      const updatedPhotos = [...currentPhotos, photoUrl];
+      const updatedHospital = await storage.updateHospital(req.params.id, { photos: updatedPhotos });
+      const userId = req.user.id;
+      await storage.createAuditLog({
+        entityType: "hospital",
+        entityId: hospital.id,
+        action: "update",
+        userId,
+        changes: { photos: updatedPhotos },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent")
+      });
+      res.json({ photoUrl, hospital: updatedHospital });
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error adding hospital photo:", error);
+      res.status(500).json({ error: error.message || "Failed to add hospital photo" });
+    }
+  });
+  app2.delete("/api/admin/hospitals/:id/photo", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { photoUrl } = z2.object({
+        photoUrl: z2.string().min(1, "Photo URL is required")
+      }).parse(req.body);
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      const currentPhotos = hospital.photos || [];
+      const updatedPhotos = currentPhotos.filter((url) => url !== photoUrl);
+      const updatedHospital = await storage.updateHospital(req.params.id, { photos: updatedPhotos });
+      const userId = req.user.id;
+      await storage.createAuditLog({
+        entityType: "hospital",
+        entityId: hospital.id,
+        action: "update",
+        userId,
+        changes: { photos: updatedPhotos },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent")
+      });
+      res.json({ hospital: updatedHospital });
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error deleting hospital photo:", error);
+      res.status(500).json({ error: error.message || "Failed to delete hospital photo" });
     }
   });
   app2.get("/api/medical-records/storage-usage", isAuthenticated, async (req, res) => {
@@ -6651,6 +7047,67 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error deactivating push subscription:", error);
       res.status(500).json({ error: error.message || "Failed to deactivate subscription" });
+    }
+  });
+  app2.post("/api/push/register-native", generalLimiter, async (req, res) => {
+    try {
+      const nativeTokenSchema = z2.object({
+        token: z2.string().min(1, "Token is required"),
+        platform: z2.enum(["ios", "android", "web"]),
+        deviceInfo: z2.object({
+          platform: z2.string().optional(),
+          isNative: z2.boolean().optional(),
+          model: z2.string().optional(),
+          osVersion: z2.string().optional(),
+          appVersion: z2.string().optional()
+        }).passthrough().optional()
+      });
+      const validationResult = nativeTokenSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: "Invalid request data",
+          details: validationResult.error.errors
+        });
+      }
+      const { token, platform, deviceInfo } = validationResult.data;
+      const userId = req.user?.id || null;
+      const provider = platform === "ios" ? "apns" : "fcm";
+      const existingSubscription = await storage.getPushSubscriptionByToken(token);
+      if (existingSubscription) {
+        const updated = await storage.updatePushSubscription(existingSubscription.id, {
+          userId: userId || existingSubscription.userId,
+          platform,
+          provider,
+          browserInfo: deviceInfo ? JSON.stringify(deviceInfo) : existingSubscription.browserInfo,
+          isActive: true
+        });
+        console.log(`[Push Native] Updated existing subscription for token: ${token.substring(0, 20)}...`);
+        return res.json({
+          success: true,
+          message: "Push token updated",
+          subscriptionId: updated?.id || existingSubscription.id,
+          isNew: false
+        });
+      }
+      const subscription = await storage.createPushSubscription({
+        userId,
+        token,
+        provider,
+        platform,
+        browserInfo: deviceInfo ? JSON.stringify(deviceInfo) : null,
+        language: req.user?.language || "en",
+        isActive: true
+      });
+      console.log(`[Push Native] Created new subscription for platform: ${platform}, token: ${token.substring(0, 20)}...`);
+      res.status(201).json({
+        success: true,
+        message: "Push token registered",
+        subscriptionId: subscription.id,
+        isNew: true
+      });
+    } catch (error) {
+      console.error("Error registering native push token:", error);
+      res.status(500).json({ error: error.message || "Failed to register push token" });
     }
   });
   app2.post("/api/admin/notifications/broadcast", broadcastLimiter, isAuthenticated, isAdmin, async (req, res) => {
