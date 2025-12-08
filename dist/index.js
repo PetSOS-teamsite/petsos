@@ -8112,6 +8112,27 @@ function startNotificationScheduler() {
 import fs2 from "fs";
 import path4 from "path";
 var app = express2();
+var isReady = false;
+var startTime = Date.now();
+app.get("/livez", (_req, res) => {
+  res.status(200).json({
+    status: "alive",
+    uptime: Math.floor((Date.now() - startTime) / 1e3)
+  });
+});
+app.get("/readyz", (_req, res) => {
+  if (isReady) {
+    res.status(200).json({
+      status: "ready",
+      uptime: Math.floor((Date.now() - startTime) / 1e3)
+    });
+  } else {
+    res.status(503).json({
+      status: "initializing",
+      uptime: Math.floor((Date.now() - startTime) / 1e3)
+    });
+  }
+});
 initSentry();
 setupSentryMiddleware(app);
 app.set("trust proxy", true);
@@ -8176,7 +8197,7 @@ app.use((req, res, next) => {
   next();
 });
 (async () => {
-  await ensureTranslationsExist();
+  ensureTranslationsExist().then(() => log("[Startup] Translations seeded successfully")).catch((err) => log(`[Startup] Translation seeding error (non-critical): ${err.message}`));
   const server = await registerRoutes(app);
   setupSentryErrorHandler(app);
   app.use((err, _req, res, _next) => {
@@ -8218,6 +8239,12 @@ app.use((req, res, next) => {
     reusePort: true
   }, () => {
     log(`serving on port ${config.port}`);
-    startNotificationScheduler();
+    isReady = true;
+    const startupTime = Date.now() - startTime;
+    log(`[Startup] Server ready in ${startupTime}ms`);
+    setTimeout(() => {
+      startNotificationScheduler();
+      log("[Startup] Notification scheduler started (deferred)");
+    }, 2e3);
   });
 })();

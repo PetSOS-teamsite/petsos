@@ -12,6 +12,34 @@ import path from "path";
 
 const app = express();
 
+// Track server readiness for health checks
+let isReady = false;
+const startTime = Date.now();
+
+// FAST LIVENESS CHECK - responds immediately even during cold starts
+// This endpoint is registered BEFORE any async initialization to minimize cold start latency
+app.get('/livez', (_req, res) => {
+  res.status(200).json({ 
+    status: 'alive',
+    uptime: Math.floor((Date.now() - startTime) / 1000)
+  });
+});
+
+// Readiness check - only returns healthy when full initialization is complete
+app.get('/readyz', (_req, res) => {
+  if (isReady) {
+    res.status(200).json({ 
+      status: 'ready',
+      uptime: Math.floor((Date.now() - startTime) / 1000)
+    });
+  } else {
+    res.status(503).json({ 
+      status: 'initializing',
+      uptime: Math.floor((Date.now() - startTime) / 1000)
+    });
+  }
+});
+
 // Initialize Sentry first, before any other middleware
 initSentry();
 
@@ -110,8 +138,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Ensure translations exist in the database (auto-seed if empty)
-  await ensureTranslationsExist();
+  // COLD START OPTIMIZATION: Run translations seeding in background (non-blocking)
+  // This allows the server to start accepting requests faster
+  ensureTranslationsExist()
+    .then(() => log('[Startup] Translations seeded successfully'))
+    .catch((err) => log(`[Startup] Translation seeding error (non-critical): ${err.message}`));
   
   const server = await registerRoutes(app);
 
@@ -177,7 +208,16 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${config.port}`);
     
-    // Start the notification scheduler
-    startNotificationScheduler();
+    // Mark server as fully ready
+    isReady = true;
+    const startupTime = Date.now() - startTime;
+    log(`[Startup] Server ready in ${startupTime}ms`);
+    
+    // COLD START OPTIMIZATION: Defer notification scheduler start by 2 seconds
+    // This allows the server to respond to initial requests faster
+    setTimeout(() => {
+      startNotificationScheduler();
+      log('[Startup] Notification scheduler started (deferred)');
+    }, 2000);
   });
 })();
