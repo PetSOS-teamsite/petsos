@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "931627445026",
+    "project_id": "petsos-75fef",
+    "storage_bucket": "petsos-75fef.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:931627445026:android:0b34800002425ccb36937b",
+        "android_client_info": {
+          "package_name": "site.petsos.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOZXpTGwObxhWUsMBGUi-XzOdPguRMUNM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
