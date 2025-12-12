@@ -453,23 +453,28 @@ export const translationData = [
   { key: "auth.has_account", en: "Already have an account?", zh: "已有帳戶？" },
 ];
 
-export async function seedTranslations(): Promise<{ created: number; updated: number }> {
+export async function seedTranslations(): Promise<{ created: number; updated: number; skipped: number }> {
   console.log("🌱 Seeding translations...");
   
   let created = 0;
   let updated = 0;
+  let skipped = 0;
   
   for (const translation of translationData) {
     try {
-      // Seed English translation
+      // Seed English translation - only update if value changed
       const existingEn = await storage.getTranslation(translation.key, 'en');
       if (existingEn) {
-        await storage.updateTranslation(existingEn.id, {
-          key: translation.key,
-          language: 'en',
-          value: translation.en,
-        });
-        updated++;
+        if (existingEn.value !== translation.en) {
+          await storage.updateTranslation(existingEn.id, {
+            key: translation.key,
+            language: 'en',
+            value: translation.en,
+          });
+          updated++;
+        } else {
+          skipped++;
+        }
       } else {
         await storage.createTranslation({
           key: translation.key,
@@ -479,15 +484,19 @@ export async function seedTranslations(): Promise<{ created: number; updated: nu
         created++;
       }
       
-      // Seed Chinese translation
+      // Seed Chinese translation - only update if value changed
       const existingZh = await storage.getTranslation(translation.key, 'zh-HK');
       if (existingZh) {
-        await storage.updateTranslation(existingZh.id, {
-          key: translation.key,
-          language: 'zh-HK',
-          value: translation.zh,
-        });
-        updated++;
+        if (existingZh.value !== translation.zh) {
+          await storage.updateTranslation(existingZh.id, {
+            key: translation.key,
+            language: 'zh-HK',
+            value: translation.zh,
+          });
+          updated++;
+        } else {
+          skipped++;
+        }
       } else {
         await storage.createTranslation({
           key: translation.key,
@@ -504,9 +513,10 @@ export async function seedTranslations(): Promise<{ created: number; updated: nu
   console.log(`✅ Translation seeding complete!`);
   console.log(`   - Created: ${created} translations`);
   console.log(`   - Updated: ${updated} translations`);
+  console.log(`   - Skipped: ${skipped} unchanged`);
   console.log(`   - Total keys: ${translationData.length}`);
   
-  return { created, updated };
+  return { created, updated, skipped };
 }
 
 export async function ensureTranslationsExist(): Promise<void> {
@@ -523,8 +533,10 @@ export async function ensureTranslationsExist(): Promise<void> {
   }
 }
 
-// Only run if executed directly (not imported)
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Only run if explicitly requested via environment variable
+// The ESM direct-run check doesn't work correctly after bundling with esbuild
+if (process.env.RUN_TRANSLATION_SEED === 'true') {
+  console.log('📝 Running translation seed via RUN_TRANSLATION_SEED=true');
   seedTranslations()
     .then(() => process.exit(0))
     .catch((error) => {

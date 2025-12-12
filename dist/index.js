@@ -7949,16 +7949,21 @@ async function seedTranslations() {
   console.log("\u{1F331} Seeding translations...");
   let created = 0;
   let updated = 0;
+  let skipped = 0;
   for (const translation of translationData) {
     try {
       const existingEn = await storage.getTranslation(translation.key, "en");
       if (existingEn) {
-        await storage.updateTranslation(existingEn.id, {
-          key: translation.key,
-          language: "en",
-          value: translation.en
-        });
-        updated++;
+        if (existingEn.value !== translation.en) {
+          await storage.updateTranslation(existingEn.id, {
+            key: translation.key,
+            language: "en",
+            value: translation.en
+          });
+          updated++;
+        } else {
+          skipped++;
+        }
       } else {
         await storage.createTranslation({
           key: translation.key,
@@ -7969,12 +7974,16 @@ async function seedTranslations() {
       }
       const existingZh = await storage.getTranslation(translation.key, "zh-HK");
       if (existingZh) {
-        await storage.updateTranslation(existingZh.id, {
-          key: translation.key,
-          language: "zh-HK",
-          value: translation.zh
-        });
-        updated++;
+        if (existingZh.value !== translation.zh) {
+          await storage.updateTranslation(existingZh.id, {
+            key: translation.key,
+            language: "zh-HK",
+            value: translation.zh
+          });
+          updated++;
+        } else {
+          skipped++;
+        }
       } else {
         await storage.createTranslation({
           key: translation.key,
@@ -7990,8 +7999,9 @@ async function seedTranslations() {
   console.log(`\u2705 Translation seeding complete!`);
   console.log(`   - Created: ${created} translations`);
   console.log(`   - Updated: ${updated} translations`);
+  console.log(`   - Skipped: ${skipped} unchanged`);
   console.log(`   - Total keys: ${translationData.length}`);
-  return { created, updated };
+  return { created, updated, skipped };
 }
 async function ensureTranslationsExist() {
   try {
@@ -8006,7 +8016,8 @@ async function ensureTranslationsExist() {
     console.error("Error checking translations:", error);
   }
 }
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.env.RUN_TRANSLATION_SEED === "true") {
+  console.log("\u{1F4DD} Running translation seed via RUN_TRANSLATION_SEED=true");
   seedTranslations().then(() => process.exit(0)).catch((error) => {
     console.error("\u274C Error seeding translations:", error);
     process.exit(1);
