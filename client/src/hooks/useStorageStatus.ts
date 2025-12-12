@@ -12,7 +12,7 @@ export function useStorageStatus() {
   });
 
   return {
-    isStorageAvailable: data?.available ?? false,
+    isStorageAvailable: isLoading ? true : (data?.available ?? false),
     isLoading,
     message: data?.message ?? '',
   };

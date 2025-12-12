@@ -28,6 +28,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useStorageStatus } from "@/hooks/useStorageStatus";
 import { formatDate } from "@/lib/dateFormat";
 import type { Hospital, Region } from "@shared/schema";
 
@@ -96,6 +97,7 @@ type HospitalFormData = z.infer<typeof hospitalFormSchema>;
 
 export default function HospitalOwnerEditVerifiedPage() {
   const { toast } = useToast();
+  const { isStorageAvailable } = useStorageStatus();
   const [match, params] = useRoute("/hospital/edit/:slug");
   const [verified, setVerified] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -1259,38 +1261,42 @@ export default function HospitalOwnerEditVerifiedPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingPhoto}
-                    className="flex-shrink-0"
-                    data-testid="button-upload-photo"
-                  >
-                    {isUploadingPhoto ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Camera className="h-4 w-4 mr-2" />
-                        Upload from Device
-                      </>
-                    )}
-                  </Button>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    disabled={isUploadingPhoto}
-                    data-testid="input-file-upload"
-                  />
+                  {isStorageAvailable && (
+                    <>
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploadingPhoto}
+                        className="flex-shrink-0"
+                        data-testid="button-upload-photo"
+                      >
+                        {isUploadingPhoto ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="h-4 w-4 mr-2" />
+                            Upload from Device
+                          </>
+                        )}
+                      </Button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        disabled={isUploadingPhoto}
+                        data-testid="input-file-upload"
+                      />
+                    </>
+                  )}
                   <div className="flex gap-2 flex-1">
                     <Input
-                      placeholder="Or enter photo URL"
+                      placeholder={isStorageAvailable ? "Or enter photo URL" : "Enter photo URL"}
                       value={newPhotoUrl}
                       onChange={(e) => setNewPhotoUrl(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPhoto())}

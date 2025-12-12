@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useStorageStatus } from "@/hooks/useStorageStatus";
 import { DragDropUpload } from "./DragDropUpload";
 import { FileText, Upload, Trash2, Download, Shield, AlertCircle } from "lucide-react";
 import type { PetMedicalRecord, PetMedicalSharingConsent } from "@shared/schema";
@@ -58,6 +59,7 @@ const DOCUMENT_TYPES = [
 export function MedicalRecordsSection({ petId, petName }: MedicalRecordsSectionProps) {
   const { toast } = useToast();
   const { t, language } = useTranslation();
+  const { isStorageAvailable } = useStorageStatus();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
   const [newRecord, setNewRecord] = useState({
@@ -214,14 +216,15 @@ export function MedicalRecordsSection({ petId, petName }: MedicalRecordsSectionP
             </p>
           </div>
 
-          {/* Upload Button */}
-          <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="mb-4" data-testid={`button-upload-record-${petId}`}>
-                <Upload className="w-4 h-4 mr-2" />
-                {language === 'zh-HK' ? '上傳記錄' : 'Upload Record'}
-              </Button>
-            </DialogTrigger>
+          {/* Upload Button - only show when storage is available */}
+          {isStorageAvailable ? (
+            <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="mb-4" data-testid={`button-upload-record-${petId}`}>
+                  <Upload className="w-4 h-4 mr-2" />
+                  {language === 'zh-HK' ? '上傳記錄' : 'Upload Record'}
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>
@@ -303,7 +306,17 @@ export function MedicalRecordsSection({ petId, petName }: MedicalRecordsSectionP
                 </div>
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          ) : (
+            <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                {language === 'zh-HK' 
+                  ? '檔案上傳功能暫時未能使用' 
+                  : 'File upload is currently unavailable'}
+              </p>
+            </div>
+          )}
 
           {/* Records List */}
           {recordsLoading ? (

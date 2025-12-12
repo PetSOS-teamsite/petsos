@@ -49,6 +49,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/hooks/useAuth";
+import { useStorageStatus } from "@/hooks/useStorageStatus";
 import { PawPrint, Plus, Pencil, Trash2, ArrowLeft, Check, ChevronsUpDown, Camera, X, Upload, Loader2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import type { Pet, Clinic, User } from "@shared/schema";
@@ -79,6 +80,7 @@ export default function PetsPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { t, language } = useTranslation();
+  const { isStorageAvailable } = useStorageStatus();
   
   const petSchema = createPetSchema(t);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -738,25 +740,27 @@ export default function PetsPage() {
                               </div>
                             )}
                           </div>
-                          {/* Photo upload button */}
-                          <label 
-                            className="absolute bottom-0 right-0 w-7 h-7 bg-primary hover:bg-primary/90 rounded-full flex items-center justify-center cursor-pointer shadow-lg border-2 border-white dark:border-gray-900"
-                            data-testid={`button-upload-photo-${pet.id}`}
-                          >
-                            {uploadingPhotoForPetId === pet.id ? (
-                              <Loader2 className="w-4 h-4 text-white animate-spin" />
-                            ) : (
-                              <Camera className="w-4 h-4 text-white" />
-                            )}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => handlePhotoChange(pet.id, e)}
-                              disabled={uploadingPhotoForPetId === pet.id}
-                              data-testid={`input-photo-${pet.id}`}
-                            />
-                          </label>
+                          {/* Photo upload button - only show when storage is available */}
+                          {isStorageAvailable && (
+                            <label 
+                              className="absolute bottom-0 right-0 w-7 h-7 bg-primary hover:bg-primary/90 rounded-full flex items-center justify-center cursor-pointer shadow-lg border-2 border-white dark:border-gray-900"
+                              data-testid={`button-upload-photo-${pet.id}`}
+                            >
+                              {uploadingPhotoForPetId === pet.id ? (
+                                <Loader2 className="w-4 h-4 text-white animate-spin" />
+                              ) : (
+                                <Camera className="w-4 h-4 text-white" />
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handlePhotoChange(pet.id, e)}
+                                disabled={uploadingPhotoForPetId === pet.id}
+                                data-testid={`input-photo-${pet.id}`}
+                              />
+                            </label>
+                          )}
                           {/* Remove photo button (only show if photo exists) */}
                           {pet.photoUrl && !uploadingPhotoForPetId && (
                             <button

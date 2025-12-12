@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, X, Activity, Image as ImageIcon, Upload, XCircle, Copy, ExternalLink, KeyRound, Star, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useStorageStatus } from "@/hooks/useStorageStatus";
 import {
   Dialog,
   DialogContent,
@@ -131,6 +132,7 @@ function HospitalForm({ form, onSubmit, submitLabel, hospitalId }: {
   hospitalId?: string;
 }) {
   const { toast } = useToast();
+  const { isStorageAvailable } = useStorageStatus();
   const { data: regions } = useQuery<Region[]>({
     queryKey: ["/api/regions"],
   });
@@ -393,7 +395,7 @@ function HospitalForm({ form, onSubmit, submitLabel, hospitalId }: {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-2">
-                  {hospitalId && (
+                  {hospitalId && isStorageAvailable && (
                     <>
                       <Button 
                         type="button" 
@@ -428,7 +430,7 @@ function HospitalForm({ form, onSubmit, submitLabel, hospitalId }: {
                   )}
                   <div className="flex gap-2 flex-1">
                     <Input
-                      placeholder={hospitalId ? "Or enter photo URL" : "Enter photo URL (e.g., https://example.com/photo.jpg)"}
+                      placeholder={(hospitalId && isStorageAvailable) ? "Or enter photo URL" : "Enter photo URL (e.g., https://example.com/photo.jpg)"}
                       value={newPhotoUrl}
                       onChange={(e) => setNewPhotoUrl(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPhoto())}
