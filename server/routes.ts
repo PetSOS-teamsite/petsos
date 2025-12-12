@@ -34,7 +34,7 @@ import {
   STORAGE_QUOTA
 } from "@shared/schema";
 import { fcmService, sendBroadcastNotification as sendFCMBroadcast } from "./services/fcm";
-import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { ObjectStorageService, ObjectNotFoundError, getStorageStatus } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import path from "path";
 import { config } from "./config";
@@ -435,14 +435,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Check if object storage is available (used by frontend to show/hide upload buttons)
   app.get('/api/storage/status', (req, res) => {
-    const privateObjectDir = process.env.PRIVATE_OBJECT_DIR;
-    const isAvailable = !!privateObjectDir && privateObjectDir.length > 0;
-    res.json({ 
-      available: isAvailable,
-      message: isAvailable 
-        ? 'Object storage is configured' 
-        : 'Object storage not available. Use URL-based uploads instead.'
-    });
+    const status = getStorageStatus();
+    res.json(status);
   });
   
   // Apply general rate limiter to all API routes (100 req/15min)
