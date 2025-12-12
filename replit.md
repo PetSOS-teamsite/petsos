@@ -127,3 +127,42 @@ Preferred communication style: Simple, everyday language.
     - `VITE_FIREBASE_MESSAGING_SENDER_ID` (frontend): Firebase messaging sender ID
     - `VITE_FIREBASE_APP_ID` (frontend): Firebase app ID
     - `VITE_FIREBASE_VAPID_KEY` (frontend): Firebase VAPID key for web push
+
+## Cloud Storage (Object Storage)
+- **Provider Abstraction**: Auto-detects between Replit Object Storage and Google Cloud Storage
+  - Detection priority: Replit (PRIVATE_OBJECT_DIR) → GCS (GCS_SERVICE_ACCOUNT_JSON + GCS_BUCKET_NAME)
+  - Falls back to unavailable state if neither configured
+- **Replit Provider**: Uses sidecar service at `127.0.0.1:1106` for authentication
+- **GCS Provider**: Uses service account credentials for standalone deployment
+  - Required Environment Variables (for Render/GCS):
+    - `GCS_SERVICE_ACCOUNT_JSON`: Full service account JSON as string
+    - `GCS_BUCKET_NAME`: GCS bucket name
+  - Files stored under `uploads/` prefix
+  - Public URLs: `https://storage.googleapis.com/{bucket}/{object}`
+- **API Endpoint**: `/api/storage/status` returns `{ available, provider, message }`
+
+# Multi-Platform Deployment
+
+## Supported Platforms
+- **Replit** (primary): Full feature support including Object Storage
+- **Render** (secondary): Requires GCS configuration for file storage
+
+## Feature Compatibility Matrix
+
+| Feature | Replit | Render | Notes |
+|---------|--------|--------|-------|
+| **Object Storage** | ✅ Native | ✅ GCS | Set GCS_SERVICE_ACCOUNT_JSON + GCS_BUCKET_NAME |
+| **Google OAuth** | ✅ | ✅ | Set PRODUCTION_URL for callback URL |
+| **Email/Password Auth** | ✅ | ✅ | Works everywhere |
+| **Gmail Sending** | ✅ Connector | ❌ | Uses Replit connectors; use WhatsApp/LINE on Render |
+| **WhatsApp** | ✅ | ✅ | Works everywhere with proper env vars |
+| **LINE** | ✅ | ✅ | Works everywhere with proper env vars |
+| **Push Notifications** | ✅ | ✅ | FCM works everywhere |
+| **Database** | ✅ Neon | ✅ Neon | Same DATABASE_URL, separate DB recommended |
+| **Translations** | ✅ Auto-seed | 🔧 Manual | Run RUN_TRANSLATION_SEED=true once |
+
+## Render Deployment Requirements
+1. Set `PRODUCTION_URL=https://petsos.site` for OAuth callbacks
+2. Set `GCS_SERVICE_ACCOUNT_JSON` and `GCS_BUCKET_NAME` for file storage
+3. Run `RUN_TRANSLATION_SEED=true` on first deployment to seed translations
+4. Gmail notifications won't work; only WhatsApp/LINE for messaging
