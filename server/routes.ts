@@ -433,6 +433,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'API is working!' });
   });
   
+  // Check if object storage is available (used by frontend to show/hide upload buttons)
+  app.get('/api/storage/status', (req, res) => {
+    const privateObjectDir = process.env.PRIVATE_OBJECT_DIR;
+    const isAvailable = !!privateObjectDir && privateObjectDir.length > 0;
+    res.json({ 
+      available: isAvailable,
+      message: isAvailable 
+        ? 'Object storage is configured' 
+        : 'Object storage not available. Use URL-based uploads instead.'
+    });
+  });
+  
   // Apply general rate limiter to all API routes (100 req/15min)
   app.use('/api/', generalLimiter);
   
