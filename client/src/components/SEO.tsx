@@ -25,50 +25,64 @@ export function SEO({
   language = 'en',
   alternateLanguages,
 }: SEOProps) {
-  const [location] = useLocation();
+  const [location] = useLocation(); // Track route changes
 
   useEffect(() => {
-    const createOrUpdateMeta = (name: string, content: string, isProperty = false) => {
-      const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
-      let element = document.querySelector(selector) as HTMLMetaElement;
+    // Update title
+    if (title) {
+      document.title = title;
+    }
+
+    // Update or create meta tags
+    const updateMeta = (name: string, content: string) => {
+      let element = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement;
       if (!element) {
         element = document.createElement('meta');
-        if (isProperty) {
-          element.setAttribute('property', name);
-        } else {
-          element.name = name;
-        }
+        element.name = name;
         document.head.appendChild(element);
       }
       element.content = content;
     };
 
-    if (title) {
-      document.title = title;
-      createOrUpdateMeta('title', title);
-      createOrUpdateMeta('og:title', title, true);
-      createOrUpdateMeta('twitter:title', title, true);
-    }
+    const updateProperty = (property: string, content: string) => {
+      let element = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
+      if (!element) {
+        element = document.createElement('meta');
+        element.setAttribute('property', property);
+        document.head.appendChild(element);
+      }
+      element.content = content;
+    };
+
+    // Get current page URL (use canonical if provided, otherwise current location)
+    const pageUrl = canonical || window.location.href;
 
     if (description) {
-      createOrUpdateMeta('description', description);
-      createOrUpdateMeta('og:description', description, true);
-      createOrUpdateMeta('twitter:description', description, true);
+      updateMeta('description', description);
+      updateProperty('og:description', description);
+      updateProperty('twitter:description', description);
     }
 
     if (keywords) {
-      createOrUpdateMeta('keywords', keywords);
+      updateMeta('keywords', keywords);
+    }
+
+    if (title) {
+      updateMeta('title', title);
+      updateProperty('og:title', title);
+      updateProperty('twitter:title', title);
     }
 
     if (ogImage) {
-      createOrUpdateMeta('og:image', ogImage, true);
-      createOrUpdateMeta('twitter:image', ogImage, true);
+      updateProperty('og:image', ogImage);
+      updateProperty('twitter:image', ogImage);
     }
 
-    const pageUrl = canonical || window.location.href;
-    createOrUpdateMeta('og:url', pageUrl, true);
-    createOrUpdateMeta('twitter:url', pageUrl, true);
+    // Update URLs for social sharing
+    updateProperty('og:url', pageUrl);
+    updateProperty('twitter:url', pageUrl);
 
+    // Update canonical URL
     if (canonical) {
       let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
       if (!link) {
@@ -79,48 +93,48 @@ export function SEO({
       link.href = canonical;
     }
 
-    // Update hreflang tags by updating existing or creating new (no removal)
+    // Handle hreflang tags for multilingual SEO
+    const existingHreflangs = document.querySelectorAll('link[rel="alternate"][hreflang]');
+    existingHreflangs.forEach(el => el.remove());
+    
     if (alternateLanguages) {
       if (alternateLanguages.en) {
-        let enLink = document.querySelector('link[hreflang="en"]') as HTMLLinkElement;
-        if (!enLink) {
-          enLink = document.createElement('link');
-          enLink.rel = 'alternate';
-          enLink.hreflang = 'en';
-          document.head.appendChild(enLink);
-        }
+        const enLink = document.createElement('link');
+        enLink.rel = 'alternate';
+        enLink.hreflang = 'en';
         enLink.href = alternateLanguages.en;
+        document.head.appendChild(enLink);
       }
       if (alternateLanguages['zh-HK']) {
-        let zhLink = document.querySelector('link[hreflang="zh-HK"]') as HTMLLinkElement;
-        if (!zhLink) {
-          zhLink = document.createElement('link');
-          zhLink.rel = 'alternate';
-          zhLink.hreflang = 'zh-HK';
-          document.head.appendChild(zhLink);
-        }
+        const zhLink = document.createElement('link');
+        zhLink.rel = 'alternate';
+        zhLink.hreflang = 'zh-HK';
         zhLink.href = alternateLanguages['zh-HK'];
+        document.head.appendChild(zhLink);
       }
+      // Add x-default pointing to English version
       if (alternateLanguages.en) {
-        let defaultLink = document.querySelector('link[hreflang="x-default"]') as HTMLLinkElement;
-        if (!defaultLink) {
-          defaultLink = document.createElement('link');
-          defaultLink.rel = 'alternate';
-          defaultLink.hreflang = 'x-default';
-          document.head.appendChild(defaultLink);
-        }
+        const defaultLink = document.createElement('link');
+        defaultLink.rel = 'alternate';
+        defaultLink.hreflang = 'x-default';
         defaultLink.href = alternateLanguages.en;
+        document.head.appendChild(defaultLink);
       }
     }
 
+    // Handle noindex
     if (noindex) {
-      createOrUpdateMeta('robots', 'noindex, nofollow');
+      updateMeta('robots', 'noindex, nofollow');
+    } else {
+      const robotsMeta = document.querySelector('meta[name="robots"]');
+      if (robotsMeta) {
+        robotsMeta.remove();
+      }
     }
 
+    // Update HTML lang attribute to reflect current language
     document.documentElement.lang = language === 'zh-HK' ? 'zh-HK' : 'en';
-
-    // No cleanup - elements persist in head
-  }, [title, description, keywords, ogImage, canonical, noindex, language, location, alternateLanguages]);
+  }, [title, description, keywords, ogImage, canonical, noindex, language, location, alternateLanguages]); // Re-run on location change
 
   return null;
 }
