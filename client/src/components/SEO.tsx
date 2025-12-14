@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'wouter';
 
 interface SEOProps {
@@ -26,22 +26,8 @@ export function SEO({
   alternateLanguages,
 }: SEOProps) {
   const [location] = useLocation();
-  
-  const createdElementsRef = useRef<HTMLElement[]>([]);
 
   useEffect(() => {
-    const createdElements: HTMLElement[] = [];
-
-    const safeRemoveElement = (el: HTMLElement | null) => {
-      if (el && el.parentNode) {
-        try {
-          el.parentNode.removeChild(el);
-        } catch (e) {
-          // Ignore if already removed
-        }
-      }
-    };
-
     const createOrUpdateMeta = (name: string, content: string, isProperty = false) => {
       const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
       let element = document.querySelector(selector) as HTMLMetaElement;
@@ -53,7 +39,6 @@ export function SEO({
           element.name = name;
         }
         document.head.appendChild(element);
-        createdElements.push(element);
       }
       element.content = content;
     };
@@ -90,45 +75,41 @@ export function SEO({
         link = document.createElement('link');
         link.rel = 'canonical';
         document.head.appendChild(link);
-        createdElements.push(link);
       }
       link.href = canonical;
     }
 
-    // Remove only previously created hreflang elements by this component
-    createdElementsRef.current.forEach(el => {
-      if (el.tagName === 'LINK' && el.getAttribute('rel') === 'alternate') {
-        safeRemoveElement(el);
-      }
-    });
-
+    // Update hreflang tags by updating existing or creating new (no removal)
     if (alternateLanguages) {
       if (alternateLanguages.en) {
-        const enLink = document.createElement('link');
-        enLink.rel = 'alternate';
-        enLink.hreflang = 'en';
+        let enLink = document.querySelector('link[hreflang="en"]') as HTMLLinkElement;
+        if (!enLink) {
+          enLink = document.createElement('link');
+          enLink.rel = 'alternate';
+          enLink.hreflang = 'en';
+          document.head.appendChild(enLink);
+        }
         enLink.href = alternateLanguages.en;
-        enLink.setAttribute('data-seo-managed', 'true');
-        document.head.appendChild(enLink);
-        createdElements.push(enLink);
       }
       if (alternateLanguages['zh-HK']) {
-        const zhLink = document.createElement('link');
-        zhLink.rel = 'alternate';
-        zhLink.hreflang = 'zh-HK';
+        let zhLink = document.querySelector('link[hreflang="zh-HK"]') as HTMLLinkElement;
+        if (!zhLink) {
+          zhLink = document.createElement('link');
+          zhLink.rel = 'alternate';
+          zhLink.hreflang = 'zh-HK';
+          document.head.appendChild(zhLink);
+        }
         zhLink.href = alternateLanguages['zh-HK'];
-        zhLink.setAttribute('data-seo-managed', 'true');
-        document.head.appendChild(zhLink);
-        createdElements.push(zhLink);
       }
       if (alternateLanguages.en) {
-        const defaultLink = document.createElement('link');
-        defaultLink.rel = 'alternate';
-        defaultLink.hreflang = 'x-default';
+        let defaultLink = document.querySelector('link[hreflang="x-default"]') as HTMLLinkElement;
+        if (!defaultLink) {
+          defaultLink = document.createElement('link');
+          defaultLink.rel = 'alternate';
+          defaultLink.hreflang = 'x-default';
+          document.head.appendChild(defaultLink);
+        }
         defaultLink.href = alternateLanguages.en;
-        defaultLink.setAttribute('data-seo-managed', 'true');
-        document.head.appendChild(defaultLink);
-        createdElements.push(defaultLink);
       }
     }
 
@@ -138,16 +119,7 @@ export function SEO({
 
     document.documentElement.lang = language === 'zh-HK' ? 'zh-HK' : 'en';
 
-    createdElementsRef.current = createdElements;
-
-    return () => {
-      // Cleanup only elements created by this component
-      createdElements.forEach(el => {
-        if (el.getAttribute('data-seo-managed') === 'true') {
-          safeRemoveElement(el);
-        }
-      });
-    };
+    // No cleanup - elements persist in head
   }, [title, description, keywords, ogImage, canonical, noindex, language, location, alternateLanguages]);
 
   return null;
