@@ -95,7 +95,15 @@ export function SEO({
 
     // Handle hreflang tags for multilingual SEO
     const existingHreflangs = document.querySelectorAll('link[rel="alternate"][hreflang]');
-    existingHreflangs.forEach(el => el.remove());
+    existingHreflangs.forEach(el => {
+      try {
+        if (el.parentNode) {
+          el.parentNode.removeChild(el);
+        }
+      } catch (e) {
+        // Ignore if already removed
+      }
+    });
     
     if (alternateLanguages) {
       if (alternateLanguages.en) {
@@ -127,8 +135,12 @@ export function SEO({
       updateMeta('robots', 'noindex, nofollow');
     } else {
       const robotsMeta = document.querySelector('meta[name="robots"]');
-      if (robotsMeta) {
-        robotsMeta.remove();
+      if (robotsMeta && robotsMeta.parentNode) {
+        try {
+          robotsMeta.parentNode.removeChild(robotsMeta);
+        } catch (e) {
+          // Ignore if already removed
+        }
       }
     }
 
