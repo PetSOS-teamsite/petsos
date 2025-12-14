@@ -29,13 +29,13 @@ export function StructuredData({ data, id }: StructuredDataProps) {
     }
 
     return () => {
-      // Safe removal: only remove if the script is still in the DOM and is a child of head
+      // Safe removal: use contains() which is more reliable across environments
       const scriptToRemove = document.getElementById(scriptId);
-      if (scriptToRemove && scriptToRemove.parentNode === document.head) {
+      if (scriptToRemove && document.head.contains(scriptToRemove)) {
         try {
-          document.head.removeChild(scriptToRemove);
+          scriptToRemove.remove(); // Modern, safer method than removeChild
         } catch (e) {
-          // Silently ignore if already removed by another effect
+          // Silently ignore if already removed
         }
       }
     };
