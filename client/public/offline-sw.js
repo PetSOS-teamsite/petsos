@@ -1,10 +1,8 @@
-const CACHE_NAME = 'petsos-v1';
+const CACHE_NAME = 'petsos-v2';
 const EMERGENCY_QUEUE_DB = 'petsos-emergency-queue';
 const EMERGENCY_QUEUE_STORE = 'queued-requests';
 
 const URLS_TO_CACHE = [
-  '/',
-  '/emergency',
   '/manifest.json',
 ];
 
