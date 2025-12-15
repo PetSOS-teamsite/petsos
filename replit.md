@@ -159,10 +159,13 @@ Preferred communication style: Simple, everyday language.
 | **LINE** | ✅ | ✅ | Works everywhere with proper env vars |
 | **Push Notifications** | ✅ | ✅ | FCM works everywhere |
 | **Database** | ✅ Neon | ✅ Neon | Same DATABASE_URL, separate DB recommended |
-| **Translations** | ✅ Auto-seed | 🔧 Manual | Run RUN_TRANSLATION_SEED=true once |
+| **Translations** | ✅ Auto-seed | ✅ Auto-seed | Auto-seeds on startup if table empty |
+| **Countries** | ✅ Auto-seed | ✅ Auto-seed | Auto-seeds on startup if table empty |
 
 ## Render Deployment Requirements
 1. Set `PRODUCTION_URL=https://petsos.site` for OAuth callbacks
 2. Set `GCS_SERVICE_ACCOUNT_JSON` and `GCS_BUCKET_NAME` for file storage
-3. Run `RUN_TRANSLATION_SEED=true` on first deployment to seed translations
-4. Gmail notifications won't work; only WhatsApp/LINE for messaging
+3. Gmail notifications won't work; only WhatsApp/LINE for messaging
+
+## Auto-Seeding Behavior
+Both translations and countries are automatically seeded on server startup if their respective tables are empty. No manual intervention needed.

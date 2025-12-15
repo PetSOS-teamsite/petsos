@@ -5,6 +5,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initSentry, setupSentryMiddleware, setupSentryErrorHandler, captureException } from "./sentry";
 import { config } from "./config";
 import { ensureTranslationsExist } from "./seed-translations";
+import { ensureCountriesExist } from "./seed-countries";
 import { startNotificationScheduler } from "./services/notification-scheduler";
 import fs from "fs";
 import path from "path";
@@ -143,11 +144,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // COLD START OPTIMIZATION: Run translations seeding in background (non-blocking)
+  // COLD START OPTIMIZATION: Run seeding in background (non-blocking)
   // This allows the server to start accepting requests faster
   ensureTranslationsExist()
     .then(() => log('[Startup] Translations seeded successfully'))
     .catch((err) => log(`[Startup] Translation seeding error (non-critical): ${err.message}`));
+  
+  ensureCountriesExist()
+    .then(() => log('[Startup] Countries seeded successfully'))
+    .catch((err) => log(`[Startup] Country seeding error (non-critical): ${err.message}`));
   
   const server = await registerRoutes(app);
 
