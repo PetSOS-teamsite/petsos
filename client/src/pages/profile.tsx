@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,9 +46,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
+import { PhoneInput } from "@/components/PhoneInput";
 import { User, Phone, Mail, Globe, MapPin, Save, ArrowLeft, Download, Shield, Trash2, AlertTriangle, Edit, PawPrint, Bell, Megaphone, Sparkles, AlertCircle, Lightbulb, Lock, Key, Copy, Check, RefreshCw } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import type { User as UserType, Region, Pet, NotificationPreferences } from "@shared/schema";
+import type { User as UserType, Region, Pet, NotificationPreferences, Country } from "@shared/schema";
 
 const createProfileSchema = (t: (key: string, fallback: string) => string) => z.object({
   name: z.string().min(1, t("profile.validation.name", "Name is required")).optional().or(z.literal('')),
@@ -68,6 +69,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const { t, language } = useTranslation();
   const { setLanguage } = useLanguage();
+  const [countryCode, setCountryCode] = useState("+852"); // Default to Hong Kong
   
   const profileSchema = createProfileSchema(t);
 
@@ -78,6 +80,10 @@ export default function ProfilePage() {
 
   const { data: regions = [] } = useQuery<Region[]>({
     queryKey: ['/api/regions'],
+  });
+
+  const { data: countries = [] } = useQuery<Country[]>({
+    queryKey: ['/api/countries'],
   });
 
   const { data: pets = [], isLoading: petsLoading } = useQuery<Pet[]>({
@@ -248,21 +254,50 @@ export default function ProfilePage() {
       languagePreference: 'en',
       regionPreference: undefined,
     },
-    values: user ? {
-      name: user.name || '',
-      email: user.email || '',
-      phone: user.phone || '',
-      languagePreference: (user.languagePreference as 'en' | 'zh-HK') || 'en',
-      regionPreference: user.regionPreference || undefined,
-    } : undefined,
   });
+
+  // Parse phone number to extract country code when user data loads
+  useEffect(() => {
+    if (user && countries.length > 0) {
+      form.setValue('name', user.name || '');
+      form.setValue('email', user.email || '');
+      form.setValue('languagePreference', (user.languagePreference as 'en' | 'zh-HK') || 'en');
+      form.setValue('regionPreference', user.regionPreference || undefined);
+      
+      // Parse phone number to extract country code
+      if (user.phone) {
+        const phone = user.phone.trim();
+        if (phone.startsWith('+')) {
+          // Get all valid phone prefixes and sort by length (longest first)
+          const validPrefixes = countries
+            .map(c => c.phonePrefix)
+            .filter(Boolean)
+            .sort((a, b) => (b?.length || 0) - (a?.length || 0));
+          
+          // Find the first matching prefix
+          const matchingPrefix = validPrefixes.find(prefix => prefix && phone.startsWith(prefix));
+          
+          if (matchingPrefix) {
+            setCountryCode(matchingPrefix);
+            form.setValue('phone', phone.substring(matchingPrefix.length).trim());
+          } else {
+            form.setValue('phone', phone);
+          }
+        } else {
+          form.setValue('phone', phone);
+        }
+      }
+    }
+  }, [user, countries, form]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormData) => {
+      // Combine country code with phone number before saving
+      const phoneWithCountryCode = data.phone ? `${countryCode}${data.phone.replace(/\s/g, '')}` : '';
       const response = await apiRequest(
         'PATCH',
         `/api/users/${authUser?.id}`,
-        data
+        { ...data, phone: phoneWithCountryCode }
       );
       return await response.json();
     },
@@ -553,17 +588,13 @@ export default function ProfilePage() {
                           <span className="text-red-600 dark:text-red-500 ml-1">*</span>
                         </FormLabel>
                         <FormControl>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                            <Input
-                              {...field}
-                              type="tel"
-                              className="pl-10"
-                              placeholder={t("profile.phone_placeholder", "+852 1234 5678")}
-                              data-testid="input-phone"
-                              required
-                            />
-                          </div>
+                          <PhoneInput
+                            value={field.value}
+                            onChange={field.onChange}
+                            countryCode={countryCode}
+                            onCountryCodeChange={setCountryCode}
+                            testId="input-phone"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
