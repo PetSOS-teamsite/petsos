@@ -57,6 +57,12 @@ interface Hospital {
 // Status badge colors and labels
 const getStatusConfig = (status: string | null, t: any, language: string) => {
   switch (status) {
+    case 'normal':
+      return {
+        label: language === 'zh-HK' ? '正常服務' : 'Available',
+        className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-300',
+        icon: '✓'
+      };
     case 'busy':
       return {
         label: language === 'zh-HK' ? '繁忙' : 'Busy',
@@ -75,12 +81,12 @@ const getStatusConfig = (status: string | null, t: any, language: string) => {
         className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-300',
         icon: '🚫'
       };
-    case 'normal':
+    case null:
     default:
       return {
-        label: language === 'zh-HK' ? '正常服務' : 'Available',
-        className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-300',
-        icon: '✓'
+        label: language === 'zh-HK' ? '未知' : 'Unknown',
+        className: 'bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400 border-gray-300',
+        icon: '?'
       };
   }
 };
@@ -440,11 +446,13 @@ export default function ClinicResultsPage() {
       
       // Filter by live status
       if (statusFilter !== "all") {
-        const hospitalStatus = hospital.liveStatus || 'normal';
-        if (statusFilter === "available") {
-          // Show only normal/available hospitals
-          if (hospitalStatus !== 'normal') return false;
-        } else if (hospitalStatus !== statusFilter) {
+        if (statusFilter === "unknown") {
+          // Show only hospitals with null/unknown status
+          if (hospital.liveStatus !== null) return false;
+        } else if (statusFilter === "available") {
+          // Show only hospitals that explicitly set status to normal
+          if (hospital.liveStatus !== 'normal') return false;
+        } else if (hospital.liveStatus !== statusFilter) {
           return false;
         }
       }
@@ -999,6 +1007,7 @@ export default function ClinicResultsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{language === 'zh-HK' ? '全部狀態' : 'All Status'}</SelectItem>
+                      <SelectItem value="unknown">{language === 'zh-HK' ? '? 未知' : '? Unknown'}</SelectItem>
                       <SelectItem value="available">{language === 'zh-HK' ? '✓ 正常服務' : '✓ Available'}</SelectItem>
                       <SelectItem value="busy">{language === 'zh-HK' ? '⏳ 繁忙' : '⏳ Busy'}</SelectItem>
                       <SelectItem value="critical_only">{language === 'zh-HK' ? '⚠️ 只收緊急' : '⚠️ Critical Only'}</SelectItem>
