@@ -23,7 +23,7 @@ export function PhoneInput({
   onChange,
   countryCode,
   onCountryCodeChange,
-  placeholder = "Phone number",
+  placeholder = "1234 5678",
   testId,
 }: PhoneInputProps) {
   const { data: countries = [], isLoading } = useQuery<Country[]>({
