@@ -17,6 +17,25 @@ export function useOfflineEmergency() {
   });
   
   const hasInitialized = useRef(false);
+  const isMounted = useRef(true);
+  const pendingUpdate = useRef<number | null>(null);
+
+  // Safe setState that checks if component is still mounted
+  const safeSetState = useCallback((updater: (prev: OfflineEmergencyState) => OfflineEmergencyState) => {
+    if (isMounted.current) {
+      // Cancel any pending update
+      if (pendingUpdate.current !== null) {
+        cancelAnimationFrame(pendingUpdate.current);
+      }
+      // Debounce state updates using requestAnimationFrame
+      pendingUpdate.current = requestAnimationFrame(() => {
+        if (isMounted.current) {
+          setState(updater);
+        }
+        pendingUpdate.current = null;
+      });
+    }
+  }, []);
 
   const ensureServiceWorkerReady = useCallback(async (): Promise<ServiceWorkerRegistration | null> => {
     if (!('serviceWorker' in navigator)) {
@@ -43,12 +62,12 @@ export function useOfflineEmergency() {
 
     try {
       const registration = await navigator.serviceWorker.ready;
-      setState(prev => ({ ...prev, isServiceWorkerReady: true }));
+      safeSetState(prev => ({ ...prev, isServiceWorkerReady: true }));
       return registration;
     } catch {
       return null;
     }
-  }, []);
+  }, [safeSetState]);
 
   const getQueuedCount = useCallback(async (): Promise<number> => {
     if (!('serviceWorker' in navigator)) {
@@ -100,72 +119,102 @@ export function useOfflineEmergency() {
   }, []);
 
   useEffect(() => {
+    // Set mounted flag
+    isMounted.current = true;
+    
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
     ensureServiceWorkerReady().then(() => {
+      if (!isMounted.current) return;
+      
       if (navigator.onLine) {
         console.log('[useOfflineEmergency] Online at startup, processing any queued requests');
         processQueue();
         getQueuedCount().then(count => {
-          setState(prev => ({ ...prev, queuedCount: count }));
+          safeSetState(prev => ({ ...prev, queuedCount: count }));
         });
       }
     });
 
     const handleOnline = () => {
       console.log('[useOfflineEmergency] Back online');
-      setState(prev => ({ ...prev, isOnline: true }));
+      safeSetState(prev => ({ ...prev, isOnline: true }));
       processQueue();
     };
 
     const handleOffline = () => {
       console.log('[useOfflineEmergency] Gone offline');
-      setState(prev => ({ ...prev, isOnline: false }));
+      safeSetState(prev => ({ ...prev, isOnline: false }));
     };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
     const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (!isMounted.current) return;
+      
       if (event.data.type === 'OFFLINE_REQUEST_SYNCED') {
         console.log('[useOfflineEmergency] Request synced:', event.data.requestId);
         getQueuedCount().then(count => {
-          setState(prev => ({ ...prev, queuedCount: count }));
+          safeSetState(prev => ({ ...prev, queuedCount: count }));
         });
       }
       if (event.data.type === 'OFFLINE_REQUEST_FAILED') {
         console.log('[useOfflineEmergency] Request failed:', event.data.requestId, event.data.reason);
         getQueuedCount().then(count => {
-          setState(prev => ({ ...prev, queuedCount: count }));
+          safeSetState(prev => ({ ...prev, queuedCount: count }));
         });
       }
     };
 
+    let messageListenerAdded = false;
+    const handleControllerChange = () => {
+      console.log('[useOfflineEmergency] Controller changed');
+      safeSetState(prev => ({ ...prev, isServiceWorkerReady: true }));
+    };
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
-      
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('[useOfflineEmergency] Controller changed');
-        setState(prev => ({ ...prev, isServiceWorkerReady: true }));
-      });
+      navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+      messageListenerAdded = true;
     }
 
     const updateQueuedCount = async () => {
+      if (!isMounted.current) return;
       const count = await getQueuedCount();
-      setState(prev => ({ ...prev, queuedCount: count }));
+      safeSetState(prev => ({ ...prev, queuedCount: count }));
     };
 
-    const interval = setInterval(updateQueuedCount, 5000);
+    // Increase interval to reduce rapid updates (10 seconds instead of 5)
+    const interval = setInterval(updateQueuedCount, 10000);
     
-    setTimeout(updateQueuedCount, 1000);
+    // Delay initial count fetch
+    const initialTimeout = setTimeout(updateQueuedCount, 2000);
 
     return () => {
+      // Mark as unmounted first
+      isMounted.current = false;
+      
+      // Cancel any pending animation frame
+      if (pendingUpdate.current !== null) {
+        cancelAnimationFrame(pendingUpdate.current);
+      }
+      
+      // Clean up event listeners
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      
+      // Clean up service worker listeners
+      if (messageListenerAdded && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+        navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      }
+      
       clearInterval(interval);
+      clearTimeout(initialTimeout);
     };
-  }, [ensureServiceWorkerReady, processQueue, getQueuedCount]);
+  }, [ensureServiceWorkerReady, processQueue, getQueuedCount, safeSetState]);
 
   return {
     ...state,
