@@ -1168,7 +1168,7 @@ export default function ClinicResultsPage() {
 
       {/* Broadcast Confirmation Dialog */}
       <AlertDialog open={showBroadcastDialog} onOpenChange={setShowBroadcastDialog}>
-        <AlertDialogContent className="max-w-2xl">
+        <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle>
               {selectedClinics.size > 0 ? t('clinic_results.broadcast_to_selected', 'Broadcast to Selected Clinics') : t('clinic_results.broadcast_emergency', 'Broadcast Emergency Alert')}
@@ -1221,7 +1221,7 @@ export default function ClinicResultsPage() {
 
       {/* Edit Emergency Request Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {language === 'zh-HK' ? '編輯緊急求助資料' : 'Edit Emergency Request'}
