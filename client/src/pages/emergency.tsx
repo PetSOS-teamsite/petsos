@@ -796,24 +796,30 @@ export default function EmergencyPage() {
                           <FormLabel className="text-lg font-semibold">
                             {t("emergency.step2.select_district", "Select District")}
                           </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl>
-                              <SelectTrigger className="text-lg" data-testid="select-region">
-                                <SelectValue placeholder={t("emergency.step2.district_placeholder", "Choose your district...")} />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {regions.map((region: any) => (
-                                <SelectItem 
-                                  key={region.id} 
-                                  value={region.id}
-                                  data-testid={`region-option-${region.id}`}
-                                >
-                                  {language === 'zh-HK' ? region.nameZh : region.nameEn}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          {regions.length > 0 ? (
+                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                              <FormControl>
+                                <SelectTrigger className="text-lg" data-testid="select-region">
+                                  <SelectValue placeholder={t("emergency.step2.district_placeholder", "Choose your district...")} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {regions.map((region: any) => (
+                                  <SelectItem 
+                                    key={region.id} 
+                                    value={region.id}
+                                    data-testid={`region-option-${region.id}`}
+                                  >
+                                    {language === 'zh-HK' ? region.nameZh : region.nameEn}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <div className="h-10 flex items-center px-3 border rounded-md bg-muted text-muted-foreground text-sm">
+                              {t("emergency.step2.loading_districts", "Loading districts...")}
+                            </div>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )}
