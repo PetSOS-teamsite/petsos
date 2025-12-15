@@ -1,0 +1,200 @@
+     [GET]petsos-app.onrender.com/clientIP="35.230.74.10" requestID="21027c70-12d3-4d7f" responseTimeMS=4 responseBytes=1765 userAgent="Go-http-client/2.0"
+  routine: 'checkInsertTargets'
+}
+     [GET]petsos.site/assets/index-Dw4DWO5t.js?v=843802301d6c7830cb9e3b304ef28b7dbfdbc9c7clientIP="192.166.246.129" requestID="2657592e-a1d9-4ae2" responseTimeMS=1659 responseBytes=255836 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+getCountryByCode query failed: column "region" does not exist
+Error seeding country "JP": error: column "region" of relation "countries" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.createCountry (file:///opt/render/project/src/dist/index.js:825:20)
+    at async seedCountries (file:///opt/render/project/src/dist/index.js:8196:9)
+    at async ensureCountriesExist (file:///opt/render/project/src/dist/index.js:8213:7) {
+  length: 128,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '62',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
+getCountryByCode query failed: column "region" does not exist
+2:31:21 PM [express] GET /api/translations/en 304 in 1004ms :: [{"id":"a7961a6d-3a39-490b-9d9e-b1c74…
+Error seeding country "KR": error: column "region" of relation "countries" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.createCountry (file:///opt/render/project/src/dist/index.js:825:20)
+    at async seedCountries (file:///opt/render/project/src/dist/index.js:8196:9)
+    at async ensureCountriesExist (file:///opt/render/project/src/dist/index.js:8213:7) {
+  length: 128,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '62',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+     [GET]petsos.site/api/translations/enclientIP="192.166.246.129" requestID="7a283601-18ca-42c0" responseTimeMS=1005 responseBytes=280 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+     [GET]petsos.site/offline-sw.jsclientIP="192.166.246.129" requestID="50bcb408-46fe-47cf" responseTimeMS=514 responseBytes=2585 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
+getCountryByCode query failed: column "region" does not exist
+Error seeding country "US": error: column "region" of relation "countries" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.createCountry (file:///opt/render/project/src/dist/index.js:825:20)
+    at async seedCountries (file:///opt/render/project/src/dist/index.js:8196:9)
+    at async ensureCountriesExist (file:///opt/render/project/src/dist/index.js:8213:7) {
+  length: 128,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '62',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
+getCountryByCode query failed: column "region" does not exist
+Error seeding country "GB": error: column "region" of relation "countries" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.createCountry (file:///opt/render/project/src/dist/index.js:825:20)
+    at async seedCountries (file:///opt/render/project/src/dist/index.js:8196:9)
+    at async ensureCountriesExist (file:///opt/render/project/src/dist/index.js:8213:7) {
+  length: 128,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '62',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
+getCountryByCode query failed: column "region" does not exist
+Error seeding country "CA": error: column "region" of relation "countries" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.createCountry (file:///opt/render/project/src/dist/index.js:825:20)
+    at async seedCountries (file:///opt/render/project/src/dist/index.js:8196:9)
+    at async ensureCountriesExist (file:///opt/render/project/src/dist/index.js:8213:7) {
+  length: 128,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '62',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
+getCountryByCode query failed: column "region" does not exist
+Error seeding country "AU": error: column "region" of relation "countries" does not exist
+✅ Country seeding complete!
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.createCountry (file:///opt/render/project/src/dist/index.js:825:20)
+    at async seedCountries (file:///opt/render/project/src/dist/index.js:8196:9)
+    at async ensureCountriesExist (file:///opt/render/project/src/dist/index.js:8213:7) {
+  length: 128,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '62',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+   - Created: 0 countries
+   - Skipped: 0 existing
+}
+2:31:27 PM [express] [Startup] Countries seeded successfully
+     [GET]petsos.site/favicon.icoclientIP="192.166.246.129" requestID="c706581e-1b59-44ee" responseTimeMS=5 responseBytes=1367 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+     [GET]petsos.site/api/auth/userclientIP="192.166.246.129" requestID="ccfddfe3-b5d3-4024" responseTimeMS=6 responseBytes=329 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+2:31:31 PM [express] GET /api/auth/user 401 in 1ms :: {"message":"Not authenticated"}
+     [GET]petsos.site/api/translations/enclientIP="192.166.246.129" requestID="65a7e460-a8cc-4638" responseTimeMS=999 responseBytes=23906 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+2:31:32 PM [express] GET /api/translations/en 200 in 997ms :: [{"id":"a7961a6d-3a39-490b-9d9e-b1c74f…
+     [GET]petsos.site/clientIP="192.166.246.129" requestID="2cad19c5-44bc-43f8" responseTimeMS=5 responseBytes=1782 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+     [GET]petsos.site/assets/index-BOlVlIFV.css?v=2b526f1cd8e3b057244a23e8c6714192fb026974clientIP="192.166.246.129" requestID="cbf27cb3-85c1-4fec" responseTimeMS=9 responseBytes=15948 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+     [GET]petsos.site/assets/index-IGJCF8qn.js?v=2b526f1cd8e3b057244a23e8c6714192fb026974clientIP="192.166.246.129" requestID="c2e5ece0-e6c0-4ba2" responseTimeMS=295 responseBytes=256011 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+     [GET]petsos.site/icon-144.pngclientIP="192.166.246.129" requestID="69f17989-2460-44a8" responseTimeMS=3 responseBytes=8368 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+     [GET]petsos.site/offline-sw.jsclientIP="192.166.246.129" requestID="a52f0e70-bf8b-407d" responseTimeMS=3 responseBytes=2585 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+     [GET]petsos.site/manifest.jsonclientIP="192.166.246.129" requestID="0e70a80e-6798-48f8" responseTimeMS=2 responseBytes=266 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+     [GET]petsos.site/manifest.jsonclientIP="192.166.246.129" requestID="f6b928a4-6068-40dd" responseTimeMS=4 responseBytes=1168 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+     [GET]petsos.site/api/translations/enclientIP="192.166.246.129" requestID="6c61c09b-b166-4074" responseTimeMS=492 responseBytes=280 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+2:31:35 PM [express] GET /api/translations/en 304 in 491ms :: [{"id":"a7961a6d-3a39-490b-9d9e-b1c74f…
+     [GET]petsos.site/clientIP="192.166.246.129" requestID="7dac5a21-b106-475e" responseTimeMS=3 responseBytes=1782 userAgent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+     [GET]petsos.site/assets/circle-check-d0v01DtV.jsclientIP="192.166.246.129" requestID="e554a1b4-3321-4a16" responseTimeMS=3 responseBytes=664 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/assets/index-IGJCF8qn.jsclientIP="192.166.246.129" requestID="284f68ef-c3a8-4f19" responseTimeMS=22 responseBytes=256011 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/api/auth/userclientIP="192.166.246.129" requestID="7a9aa91c-df30-4e31" responseTimeMS=2 responseBytes=329 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/assets/loader-circle-BuXNQwl-.jsclientIP="192.166.246.129" requestID="a270f15f-7745-49ff" responseTimeMS=1 responseBytes=648 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/assets/index-C7sdeFQx.jsclientIP="192.166.246.129" requestID="fb6b8d20-2e58-44f5" responseTimeMS=4 responseBytes=1358 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/assets/BreedCombobox-CM4ETAtt.jsclientIP="192.166.246.129" requestID="f6a1e0ca-1bb9-4b8f" responseTimeMS=3 responseBytes=8347 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/assets/textarea-DcFxcWQq.jsclientIP="192.166.246.129" requestID="e4a0cb0f-e410-4479" responseTimeMS=1 responseBytes=715 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/assets/chevron-right-DNAbqlk6.jsclientIP="192.166.246.129" requestID="d221d6ca-f9c2-469d" responseTimeMS=2 responseBytes=635 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/assets/emergency-Bf3Y9GB8.jsclientIP="192.166.246.129" requestID="6f9b729a-066b-4bb1" responseTimeMS=2 responseBytes=14489 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/assets/useMutation-BxQTcciG.jsclientIP="192.166.246.129" requestID="281fe631-223b-4a9e" responseTimeMS=2 responseBytes=1610 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/assets/search-Cfl1mITU.jsclientIP="192.166.246.129" requestID="9c759d4d-5d9f-4f0a" responseTimeMS=2 responseBytes=660 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/assets/circle-check-big-DdpR4JOK.jsclientIP="192.166.246.129" requestID="a859da73-8d18-4e1f" responseTimeMS=2 responseBytes=671 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/assets/info-C6rQz28u.jsclientIP="192.166.246.129" requestID="14dc426e-a7b3-44b2" responseTimeMS=2 responseBytes=670 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2:31:58 PM [express] GET /api/auth/user 401 in 1ms :: {"message":"Not authenticated"}
+     [GET]petsos.site/api/pet-breedsclientIP="192.166.246.129" requestID="6dc4775e-6fa7-4601" responseTimeMS=857 responseBytes=2952 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+     [GET]petsos.site/api/translations/enclientIP="192.166.246.129" requestID="bf908974-474c-45cf" responseTimeMS=1026 responseBytes=280 userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+2:31:59 PM [express] GET /api/pet-breeds 200 in 856ms :: [{"id":"d878d60f-4b92-445b-abf1-a5c9e11f090…
+2:31:59 PM [express] GET /api/translations/en 304 in 1026ms :: [{"id":"a7961a6d-3a39-490b-9d9e-b1c74…

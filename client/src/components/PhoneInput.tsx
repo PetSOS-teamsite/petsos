@@ -18,6 +18,12 @@ interface PhoneInputProps {
   testId?: string;
 }
 
+const FALLBACK_COUNTRIES = [
+  { code: 'HK', nameEn: 'Hong Kong', phonePrefix: '+852', flag: '🇭🇰', active: true },
+  { code: 'US', nameEn: 'United States', phonePrefix: '+1', flag: '🇺🇸', active: true },
+  { code: 'GB', nameEn: 'United Kingdom', phonePrefix: '+44', flag: '🇬🇧', active: true },
+];
+
 export function PhoneInput({
   value,
   onChange,
@@ -26,12 +32,15 @@ export function PhoneInput({
   placeholder = "1234 5678",
   testId,
 }: PhoneInputProps) {
-  const { data: countries = [], isLoading } = useQuery<Country[]>({
+  const { data: countries = [], isLoading, isError } = useQuery<Country[]>({
     queryKey: ["/api/countries"],
   });
 
+  // Use fallback countries if API fails or returns empty
+  const countryList = (countries.length > 0 ? countries : FALLBACK_COUNTRIES) as Country[];
+
   // Filter to only active countries, remove duplicates by phone prefix, and sort by name
-  const activeCountries = countries
+  const activeCountries = countryList
     .filter((c) => c.active)
     .sort((a, b) => a.nameEn.localeCompare(b.nameEn));
 
@@ -49,20 +58,29 @@ export function PhoneInput({
     onChange(newValue);
   };
 
+  // Don't render Select with empty items - causes Radix UI crash
+  const hasCountries = uniqueCountries.length > 0;
+
   return (
     <div className="flex gap-2">
-      <Select value={countryCode} onValueChange={onCountryCodeChange} disabled={isLoading}>
-        <SelectTrigger className="w-[140px]" data-testid={`${testId}-country`}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {uniqueCountries.map((country) => (
-            <SelectItem key={country.code} value={country.phonePrefix || ""}>
-              {country.flag} {country.phonePrefix}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {hasCountries ? (
+        <Select value={countryCode} onValueChange={onCountryCodeChange} disabled={isLoading}>
+          <SelectTrigger className="w-[140px]" data-testid={`${testId}-country`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {uniqueCountries.map((country) => (
+              <SelectItem key={country.code} value={country.phonePrefix || ""}>
+                {country.flag} {country.phonePrefix}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        <div className="w-[140px] h-10 flex items-center px-3 border rounded-md bg-muted text-muted-foreground text-sm">
+          {isLoading ? "Loading..." : isError ? "+852" : "+852"}
+        </div>
+      )}
       <Input
         type="tel"
         value={value || ""}
