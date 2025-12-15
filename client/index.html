@@ -5,6 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <meta name="google" content="notranslate" />
     
+    <!-- Early Cache Recovery Script - catches stale bundle errors before React loads -->
+    <script>
+    (function() {
+      var recoveryKey = 'petsos_cache_recovery';
+      var hasRecovered = sessionStorage.getItem(recoveryKey) === 'true';
+      
+      function isStaleCacheError(msg) {
+        if (!msg) return false;
+        var m = msg.toLowerCase();
+        return m.indexOf('text/html') !== -1 && m.indexOf('mime') !== -1 ||
+               m.indexOf('loading chunk') !== -1 ||
+               m.indexOf('dynamically imported') !== -1 ||
+               m.indexOf('failed to fetch') !== -1 && m.indexOf('module') !== -1;
+      }
+      
+      function clearCachesAndReload() {
+        if (hasRecovered) return;
+        sessionStorage.setItem(recoveryKey, 'true');
+        
+        var promises = [];
+        if ('serviceWorker' in navigator) {
+          promises.push(navigator.serviceWorker.getRegistrations().then(function(regs) {
+            return Promise.all(regs.map(function(r) { return r.unregister(); }));
+          }).catch(function() {}));
+        }
+        if ('caches' in window) {
+          promises.push(caches.keys().then(function(names) {
+            return Promise.all(names.map(function(n) { return caches.delete(n); }));
+          }).catch(function() {}));
+        }
+        
+        Promise.all(promises).then(function() {
+          var url = new URL(window.location.href);
+          url.searchParams.set('_r', Date.now());
+          window.location.replace(url.toString());
+        }).catch(function() {
+          window.location.reload();
+        });
+      }
+      
+      window.addEventListener('error', function(e) {
+        if (e.message && isStaleCacheError(e.message)) {
+          e.preventDefault();
+          clearCachesAndReload();
+        }
+      });
+      
+      window.addEventListener('unhandledrejection', function(e) {
+        var msg = e.reason && (e.reason.message || String(e.reason));
+        if (isStaleCacheError(msg)) {
+          e.preventDefault();
+          clearCachesAndReload();
+        }
+      });
+    })();
+    </script>
+    
     <!-- Primary Meta Tags -->
     <title>PetSOS - Emergency 24-Hour Veterinary Care in Hong Kong | 香港寵物緊急求助</title>
     <meta name="title" content="PetSOS - Emergency 24-Hour Veterinary Care in Hong Kong | 香港寵物緊急求助" />
