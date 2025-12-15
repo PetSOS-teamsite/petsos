@@ -4016,6 +4016,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quick status update for hospital owners (verified with code)
+  app.patch("/api/hospitals/:id/status", async (req: any, res: any) => {
+    try {
+      const { verificationCode, liveStatus } = z.object({
+        verificationCode: z.string().length(6, "Code must be 6 digits"),
+        liveStatus: z.enum(['normal', 'busy', 'critical_only', 'full'], {
+          errorMap: () => ({ message: "Status must be one of: normal, busy, critical_only, full" })
+        }),
+      }).parse(req.body);
+
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      // Verify ownership with code
+      if (hospital.ownerVerificationCode !== verificationCode) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      // Check if code has expired
+      if (hospital.ownerVerificationCodeExpiresAt && new Date() > new Date(hospital.ownerVerificationCodeExpiresAt)) {
+        return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
+      }
+
+      // Update only the live status
+      const updatedHospital = await storage.updateHospital(req.params.id, { liveStatus });
+
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: hospital.id,
+        action: 'status_update',
+        changes: { liveStatus, previousStatus: hospital.liveStatus },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({ 
+        success: true, 
+        liveStatus: updatedHospital?.liveStatus,
+        message: `Status updated to ${liveStatus}` 
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error updating hospital status:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get hospital photo upload URL (for verified hospital owners)
   app.post("/api/hospitals/:id/photo-upload-url", async (req: any, res: any) => {
     try {

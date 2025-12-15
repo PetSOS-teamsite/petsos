@@ -50,8 +50,40 @@ interface Hospital {
   isPartner: boolean;
   latitude: string | null;
   longitude: string | null;
+  liveStatus: string | null; // normal | busy | critical_only | full
   distance?: number;
 }
+
+// Status badge colors and labels
+const getStatusConfig = (status: string | null, t: any, language: string) => {
+  switch (status) {
+    case 'busy':
+      return {
+        label: language === 'zh-HK' ? '繁忙' : 'Busy',
+        className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-300',
+        icon: '⏳'
+      };
+    case 'critical_only':
+      return {
+        label: language === 'zh-HK' ? '只收緊急' : 'Critical Only',
+        className: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-300',
+        icon: '⚠️'
+      };
+    case 'full':
+      return {
+        label: language === 'zh-HK' ? '已滿' : 'Full',
+        className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-300',
+        icon: '🚫'
+      };
+    case 'normal':
+    default:
+      return {
+        label: language === 'zh-HK' ? '正常服務' : 'Available',
+        className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-300',
+        icon: '✓'
+      };
+  }
+};
 
 interface Region {
   id: string;
@@ -280,6 +312,7 @@ export default function ClinicResultsPage() {
   const [distanceFilter, setDistanceFilter] = useState<string>("all");
   const [only24Hour, setOnly24Hour] = useState(true);
   const [onlyWhatsApp, setOnlyWhatsApp] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all"); // all | available | busy | critical_only | full
   const [selectedClinics, setSelectedClinics] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -404,6 +437,18 @@ export default function ClinicResultsPage() {
           return false;
         }
       }
+      
+      // Filter by live status
+      if (statusFilter !== "all") {
+        const hospitalStatus = hospital.liveStatus || 'normal';
+        if (statusFilter === "available") {
+          // Show only normal/available hospitals
+          if (hospitalStatus !== 'normal') return false;
+        } else if (hospitalStatus !== statusFilter) {
+          return false;
+        }
+      }
+      
       return true;
     })
     .sort((a, b) => {
@@ -895,7 +940,7 @@ export default function ClinicResultsPage() {
             </div>
 
             {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 pt-2">
                 {/* Region Filter */}
                 <div>
                   <Label className="text-sm mb-2 block">{t('clinic_results.region', 'Region')}</Label>
@@ -943,6 +988,23 @@ export default function ClinicResultsPage() {
                       </p>
                     </div>
                   )}
+                </div>
+
+                {/* Status Filter */}
+                <div>
+                  <Label className="text-sm mb-2 block">{language === 'zh-HK' ? '診所狀態' : 'Status'}</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger data-testid="select-status">
+                      <SelectValue placeholder={language === 'zh-HK' ? '全部狀態' : 'All Status'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{language === 'zh-HK' ? '全部狀態' : 'All Status'}</SelectItem>
+                      <SelectItem value="available">{language === 'zh-HK' ? '✓ 正常服務' : '✓ Available'}</SelectItem>
+                      <SelectItem value="busy">{language === 'zh-HK' ? '⏳ 繁忙' : '⏳ Busy'}</SelectItem>
+                      <SelectItem value="critical_only">{language === 'zh-HK' ? '⚠️ 只收緊急' : '⚠️ Critical Only'}</SelectItem>
+                      <SelectItem value="full">{language === 'zh-HK' ? '🚫 已滿' : '🚫 Full'}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* 24-Hour Toggle */}
@@ -1093,6 +1155,19 @@ export default function ClinicResultsPage() {
                         
                         {/* Additional Badges in Compact Row */}
                         <div className="flex flex-wrap gap-1.5">
+                          {/* Live Status Badge */}
+                          {(() => {
+                            const statusConfig = getStatusConfig(hospital.liveStatus, t, language);
+                            return (
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs border ${statusConfig.className}`}
+                                data-testid={`badge-status-${hospital.id}`}
+                              >
+                                {statusConfig.icon} {statusConfig.label}
+                              </Badge>
+                            );
+                          })()}
                           {hospital.whatsapp && (
                             <Badge variant="outline" className="bg-green-50 dark:bg-green-950 text-xs">
                               <MessageCircle className="h-3 w-3 mr-1" />
