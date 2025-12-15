@@ -95,7 +95,13 @@ export function SEO({
 
     // Handle hreflang tags for multilingual SEO
     const existingHreflangs = document.querySelectorAll('link[rel="alternate"][hreflang]');
-    existingHreflangs.forEach(el => el.remove());
+    existingHreflangs.forEach(el => {
+      try {
+        el.remove();
+      } catch (e) {
+        // Silently ignore if already removed
+      }
+    });
     
     if (alternateLanguages) {
       if (alternateLanguages.en) {
@@ -128,7 +134,11 @@ export function SEO({
     } else {
       const robotsMeta = document.querySelector('meta[name="robots"]');
       if (robotsMeta) {
-        robotsMeta.remove();
+        try {
+          robotsMeta.remove();
+        } catch (e) {
+          // Silently ignore if already removed
+        }
       }
     }
 

@@ -368,7 +368,11 @@ export default function ProfilePage() {
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      try {
+        a.remove(); // Modern, safer method
+      } catch (e) {
+        // Silently ignore
+      }
 
       toast({
         title: t("profile.export.success_title", "Data exported successfully"),
