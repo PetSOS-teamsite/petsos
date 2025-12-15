@@ -18,7 +18,7 @@ interface PhoneInputProps {
   testId?: string;
 }
 
-const FALLBACK_COUNTRIES = [
+const FALLBACK_COUNTRIES: Partial<Country>[] = [
   { code: 'HK', nameEn: 'Hong Kong', phonePrefix: '+852', flag: '🇭🇰', active: true },
   { code: 'US', nameEn: 'United States', phonePrefix: '+1', flag: '🇺🇸', active: true },
   { code: 'GB', nameEn: 'United Kingdom', phonePrefix: '+44', flag: '🇬🇧', active: true },
@@ -39,14 +39,14 @@ export function PhoneInput({
   // Use fallback countries if API fails or returns empty
   const countryList = (countries.length > 0 ? countries : FALLBACK_COUNTRIES) as Country[];
 
-  // Filter to only active countries, remove duplicates by phone prefix, and sort by name
+  // Filter to only active countries with valid phone prefix, remove duplicates, and sort by name
   const activeCountries = countryList
-    .filter((c) => c.active)
+    .filter((c) => c.active && c.phonePrefix) // Must have phonePrefix to avoid empty SelectItem values
     .sort((a, b) => a.nameEn.localeCompare(b.nameEn));
 
   // Remove duplicate phone prefixes - keep only first country for each prefix
   const uniqueCountries = activeCountries.reduce((acc, country) => {
-    if (!acc.find(c => c.phonePrefix === country.phonePrefix)) {
+    if (country.phonePrefix && !acc.find(c => c.phonePrefix === country.phonePrefix)) {
       acc.push(country);
     }
     return acc;
@@ -70,7 +70,7 @@ export function PhoneInput({
           </SelectTrigger>
           <SelectContent>
             {uniqueCountries.map((country) => (
-              <SelectItem key={country.code} value={country.phonePrefix || ""}>
+              <SelectItem key={country.code} value={country.phonePrefix!}>
                 {country.flag} {country.phonePrefix}
               </SelectItem>
             ))}
