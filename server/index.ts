@@ -87,11 +87,16 @@ app.use((req, res, next) => {
   // Vite uses mixed-case alphanumeric hashes, so we check for the /assets/ path pattern
   const isHashedAsset = reqPath.startsWith('/assets/') && /[-\.][A-Za-z0-9]{8,}\.(js|css|woff2?|ttf|eot)$/i.test(reqPath);
   
+  // Check if this is likely an SPA route (no file extension, not an API route, not an asset)
+  const isSpaRoute = !reqPath.startsWith('/api') && 
+                     !reqPath.startsWith('/assets/') && 
+                     !reqPath.match(/\.[a-zA-Z0-9]+$/);
+  
   if (isHashedAsset) {
     // Hashed assets can be cached for 1 year (immutable)
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-  } else if (reqPath === '/' || reqPath.endsWith('.html')) {
-    // HTML files should not be cached (to get latest JS/CSS references)
+  } else if (reqPath === '/' || reqPath.endsWith('.html') || isSpaRoute) {
+    // HTML files and SPA routes should not be cached (to get latest JS/CSS references)
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
