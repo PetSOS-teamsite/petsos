@@ -319,6 +319,36 @@ export default function VerificationProcessPage() {
           </CardContent>
         </Card>
 
+        <Card className="mb-8 border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/10">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <Building2 className="h-8 w-8 text-blue-600 flex-shrink-0" />
+              <div>
+                <h2 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-2" data-testid="text-hospital-update-title">
+                  {language === 'zh-HK' ? '醫院自助更新入口' : 'Hospital Self-Service Update Portal'}
+                </h2>
+                <p className="text-blue-800 dark:text-blue-200 mb-4">
+                  {language === 'zh-HK'
+                    ? '診所和醫院可透過專屬的驗證連結直接更新其資料。每間診所都獲發唯一的驗證碼，可隨時更新營業時間、聯絡方式及急診費用。'
+                    : 'Clinics and hospitals can directly update their own information through a dedicated verified link. Each clinic is issued a unique verification code to update operating hours, contact details, and emergency fees at any time.'
+                  }
+                </p>
+                <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1 mb-4">
+                  <li>• {language === 'zh-HK' ? '驗證碼有效期72小時' : 'Verification codes valid for 72 hours'}</li>
+                  <li>• {language === 'zh-HK' ? '診所負責人可隨時申請新驗證碼' : 'Clinic owners can request new codes anytime'}</li>
+                  <li>• {language === 'zh-HK' ? '所有更新均記錄在案' : 'All updates are logged and audited'}</li>
+                </ul>
+                <p className="text-sm text-blue-600 dark:text-blue-400 italic">
+                  {language === 'zh-HK' 
+                    ? '如果您是診所負責人並希望更新您的資料，請聯絡我們獲取驗證碼。'
+                    : 'If you are a clinic owner and wish to update your information, please contact us to receive your verification code.'
+                  }
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="mb-8 border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/10">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
