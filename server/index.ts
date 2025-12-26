@@ -6,7 +6,8 @@ import { initSentry, setupSentryMiddleware, setupSentryErrorHandler, captureExce
 import { config } from "./config";
 import { ensureTranslationsExist } from "./seed-translations";
 import { ensureCountriesExist } from "./seed-countries";
-import { startNotificationScheduler } from "./services/notification-scheduler";
+import { startNotificationScheduler, startTyphoonNotificationScheduler } from "./services/notification-scheduler";
+import { startTyphoonPolling } from "./services/typhoon-monitor";
 import fs from "fs";
 import path from "path";
 // Schema refresh trigger: 2025-12-03
@@ -223,11 +224,17 @@ app.use((req, res, next) => {
     const startupTime = Date.now() - startTime;
     log(`[Startup] Server ready in ${startupTime}ms`);
     
-    // COLD START OPTIMIZATION: Defer notification scheduler start by 2 seconds
+    // COLD START OPTIMIZATION: Defer background services start by 2 seconds
     // This allows the server to respond to initial requests faster
     setTimeout(() => {
       startNotificationScheduler();
       log('[Startup] Notification scheduler started (deferred)');
+      
+      startTyphoonNotificationScheduler();
+      log('[Startup] Typhoon notification queue scheduler started (every 30 seconds)');
+      
+      startTyphoonPolling();
+      log('[Startup] Typhoon polling started (every 5 minutes)');
     }, 2000);
   });
 })();

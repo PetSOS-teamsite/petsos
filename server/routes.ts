@@ -22,6 +22,8 @@ import {
   strictLimiter 
 } from "./middleware/rateLimiter";
 import { deepseekService } from "./services/deepseek";
+import { checkAndUpdateTyphoonStatus } from "./services/typhoon-monitor";
+import { fetchTyphoonWarning } from "./services/hko-api";
 import { 
   insertUserSchema, insertPetSchema, insertClinicSchema,
   insertMessageSchema, emergencyRequests,
@@ -5116,6 +5118,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error creating emergency subscription:", error);
       res.status(500).json({ error: error.message || "Failed to create subscription" });
+    }
+  });
+  
+  // Manually trigger typhoon sync (for testing/admin)
+  app.get("/api/typhoon/sync", async (req, res) => {
+    try {
+      console.log('[Typhoon Sync] Manual sync triggered');
+      const result = await checkAndUpdateTyphoonStatus();
+      
+      res.json({
+        success: true,
+        ...result,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error("Error syncing typhoon status:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Failed to sync typhoon status" 
+      });
+    }
+  });
+
+  // Fetch raw HKO data without database update (for debugging)
+  app.get("/api/typhoon/hko-raw", async (req, res) => {
+    try {
+      const data = await fetchTyphoonWarning();
+      res.json({
+        success: true,
+        hasActiveSignal: data !== null,
+        data,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error("Error fetching HKO data:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "Failed to fetch HKO data" 
+      });
     }
   });
   

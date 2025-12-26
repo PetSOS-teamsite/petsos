@@ -25,8 +25,9 @@ import {
   type HkHoliday, type InsertHkHoliday,
   type HospitalEmergencyStatus, type InsertHospitalEmergencyStatus,
   type UserEmergencySubscription, type InsertUserEmergencySubscription,
+  type TyphoonNotificationQueue, type InsertTyphoonNotificationQueue,
   users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents, pushSubscriptions, notificationBroadcasts, clinicReviews, whatsappConversations, whatsappChatMessages,
-  typhoonAlerts, hkHolidays, hospitalEmergencyStatus, userEmergencySubscriptions
+  typhoonAlerts, hkHolidays, hospitalEmergencyStatus, userEmergencySubscriptions, typhoonNotificationQueue
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -264,6 +265,12 @@ export interface IStorage {
   getHolidaysByYear(year: number): Promise<any[]>;
   createTyphoonAlert(data: any): Promise<any>;
   liftTyphoonAlert(alertId: string): Promise<any>;
+  
+  // Typhoon Notification Queue
+  getPendingTyphoonNotifications(): Promise<TyphoonNotificationQueue[]>;
+  createTyphoonNotification(data: InsertTyphoonNotificationQueue): Promise<TyphoonNotificationQueue>;
+  updateTyphoonNotification(id: string, data: Partial<TyphoonNotificationQueue>): Promise<TyphoonNotificationQueue | undefined>;
+  getActiveEmergencySubscriptions(subscriptionType?: string): Promise<UserEmergencySubscription[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -1732,6 +1739,18 @@ export class MemStorage implements IStorage {
   }
   async liftTyphoonAlert(alertId: string): Promise<any> {
     throw new Error("MemStorage does not support typhoon alerts - use DatabaseStorage");
+  }
+  async getPendingTyphoonNotifications(): Promise<TyphoonNotificationQueue[]> {
+    throw new Error("MemStorage does not support typhoon notifications - use DatabaseStorage");
+  }
+  async createTyphoonNotification(data: InsertTyphoonNotificationQueue): Promise<TyphoonNotificationQueue> {
+    throw new Error("MemStorage does not support typhoon notifications - use DatabaseStorage");
+  }
+  async updateTyphoonNotification(id: string, data: Partial<TyphoonNotificationQueue>): Promise<TyphoonNotificationQueue | undefined> {
+    throw new Error("MemStorage does not support typhoon notifications - use DatabaseStorage");
+  }
+  async getActiveEmergencySubscriptions(subscriptionType?: string): Promise<UserEmergencySubscription[]> {
+    throw new Error("MemStorage does not support emergency subscriptions - use DatabaseStorage");
   }
 
   // Analytics Methods - stub implementations for MemStorage
@@ -3293,6 +3312,50 @@ class DatabaseStorage implements IStorage {
       .where(eq(typhoonAlerts.id, alertId))
       .returning();
     return result[0] || null;
+  }
+
+  async getPendingTyphoonNotifications(): Promise<TyphoonNotificationQueue[]> {
+    const now = new Date();
+    return await db.select().from(typhoonNotificationQueue)
+      .where(and(
+        eq(typhoonNotificationQueue.status, 'pending'),
+        or(
+          sql`${typhoonNotificationQueue.scheduledFor} IS NULL`,
+          lte(typhoonNotificationQueue.scheduledFor, now)
+        )
+      ))
+      .orderBy(typhoonNotificationQueue.createdAt);
+  }
+
+  async createTyphoonNotification(data: InsertTyphoonNotificationQueue): Promise<TyphoonNotificationQueue> {
+    const result = await db.insert(typhoonNotificationQueue).values({
+      id: randomUUID(),
+      ...data
+    }).returning();
+    return result[0];
+  }
+
+  async updateTyphoonNotification(id: string, data: Partial<TyphoonNotificationQueue>): Promise<TyphoonNotificationQueue | undefined> {
+    const result = await db.update(typhoonNotificationQueue)
+      .set(data)
+      .where(eq(typhoonNotificationQueue.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getActiveEmergencySubscriptions(subscriptionType?: string): Promise<UserEmergencySubscription[]> {
+    if (subscriptionType) {
+      return await db.select().from(userEmergencySubscriptions)
+        .where(and(
+          eq(userEmergencySubscriptions.isActive, true),
+          or(
+            eq(userEmergencySubscriptions.subscriptionType, subscriptionType),
+            eq(userEmergencySubscriptions.subscriptionType, 'all')
+          )
+        ));
+    }
+    return await db.select().from(userEmergencySubscriptions)
+      .where(eq(userEmergencySubscriptions.isActive, true));
   }
 }
 

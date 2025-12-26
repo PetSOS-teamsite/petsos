@@ -775,6 +775,7 @@ export const typhoonNotificationQueue = pgTable("typhoon_notification_queue", {
   bodyEn: text("body_en").notNull(),
   bodyZh: text("body_zh").notNull(),
   status: text("status").notNull().default('pending'), // pending, sending, sent, failed
+  retryCount: integer("retry_count").notNull().default(0),
   scheduledFor: timestamp("scheduled_for"),
   sentAt: timestamp("sent_at"),
   recipientCount: integer("recipient_count"),
