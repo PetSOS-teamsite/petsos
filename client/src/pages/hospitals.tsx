@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Stethoscope, Building2, X, Navigation } from "lucide-react";
+import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Stethoscope, Building2, X, Navigation, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -341,6 +341,23 @@ export default function HospitalsPage() {
                         <CardTitle className="text-lg font-bold mb-1" data-testid={`text-hospital-name-${hospital.slug}`}>
                           {language === 'zh-HK' ? hospital.nameZh : hospital.nameEn}
                         </CardTitle>
+                        
+                        {/* Last Verified Date - Trust Signal */}
+                        {hospital.lastVerifiedAt && (
+                          <div 
+                            className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 mb-2"
+                            data-testid={`text-verified-${hospital.slug}`}
+                          >
+                            <CheckCircle2 className="h-3 w-3" />
+                            <span>
+                              {language === 'zh-HK' ? '已驗證 ' : 'Verified '}
+                              {new Date(hospital.lastVerifiedAt).toLocaleDateString(
+                                language === 'zh-HK' ? 'zh-HK' : 'en-HK',
+                                { year: 'numeric', month: 'short', day: 'numeric' }
+                              )}
+                            </span>
+                          </div>
+                        )}
                         
                         {/* Address */}
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-3">
