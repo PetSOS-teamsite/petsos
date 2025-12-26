@@ -1,0 +1,32 @@
+1. Revision for Phase 1: The "AI Triage" Layer
+Currently, your Phase 1 focuses on "Trust" (About Us, Medical Advisory). While essential for credibility, these don't capture panic traffic directly.
+
+Add: Emergency FAQ / Symptom "Micro-content."
+
+Why: AI engines like Gemini and Perplexity love "Knowledge Blocks." Instead of just a "Guidelines" page, create 10-15 Question-Focused Snippets (e.g., "What to do if your cat is panting?").
+
+Revision: Move "Symptom-based snippets" into Phase 1. These are your "SEO Hooks" that solve the user's immediate problem before they look for a clinic.
+
+2. Revision for Phase 2: "HK-Specific" Triage Data
+Hong Kong has unique geographic and environmental stressors that standard "Global" vet advice misses.
+
+Add: The "Typhoon & Holiday" Protocol.
+
+Detail: Research and document which clinics have historically stayed open during T8/T10 signals or Lunar New Year.
+
+GEO Value: This is "Rare Data." If PetSOS is the only site with a "Typhoon Emergency Vet Status" list, you will own 100% of the search share during every major storm in HK.
+
+Add: District "Panic Notes."
+
+Detail: For areas like Lamma Island or Discovery Bay, the "Friction" isn't just a taxi; it's the ferry schedule or restricted vehicle access. Adding a "Transport Warning" to these specific district pages is high-value information gain.
+
+3. Technical Revision: "Machine-Readiness" (Phase 1.5)
+Since you are on React + Vite, there is a risk that AI bots might miss your high-value data if it's only rendered on the client side.
+
+Revision: Pre-rendering / SSG (Static Site Generation).
+
+Action: Ensure your /district and /hospital routes are pre-rendered. This ensures that when a bot (like GPT-Bot or Googlebot) crawls your site, it sees the Hospital Schema and Fees immediately in the HTML source, without waiting for JavaScript.
+
+Revision: Explicit "MedicalBusiness" Schema.
+
+Action: In your "Hospital Support" section, ensure you are using the priceRange and medicalSpecialty schema fields. This is what allows AI to answer: "Where is the cheapest emergency vet in Kowloon?"
