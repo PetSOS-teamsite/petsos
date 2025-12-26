@@ -13,7 +13,10 @@ import {
   Thermometer,
   Clock,
   Phone,
-  ArrowRight
+  ArrowRight,
+  Ship,
+  MapPin,
+  Mountain
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { StructuredData } from "@/components/StructuredData";
@@ -348,6 +351,151 @@ export default function EmergencySymptomsPage() {
             </Card>
           ))}
         </div>
+
+        {/* District Transport Warnings */}
+        <Card className="mt-8 border-amber-500 bg-amber-50 dark:bg-amber-900/10">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Ship className="h-6 w-6 text-amber-600" />
+              <h2 className="text-xl font-bold text-amber-900 dark:text-amber-100">
+                {language === 'zh-HK' ? '⚠️ 偏遠地區交通警告' : '⚠️ Remote District Transport Warnings'}
+              </h2>
+            </div>
+            <p className="text-amber-800 dark:text-amber-200 mb-4">
+              {language === 'zh-HK'
+                ? '以下地區的寵物主人在緊急情況下可能面臨交通限制。請提前了解您所在地區的24小時獸醫選項和交通安排。'
+                : 'Pet owners in these areas may face transportation limitations during emergencies. Please familiarize yourself with 24-hour vet options and transport arrangements in your area.'
+              }
+            </p>
+            
+            <div className="space-y-4">
+              {/* Outlying Islands */}
+              <div className="p-4 rounded-lg bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-700">
+                <div className="flex items-center gap-2 mb-2">
+                  <Ship className="h-5 w-5 text-blue-600" />
+                  <h3 className="font-bold text-foreground">
+                    {language === 'zh-HK' ? '離島地區' : 'Outlying Islands'}
+                  </h3>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <span className="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm">
+                    {language === 'zh-HK' ? '長洲' : 'Cheung Chau'}
+                  </span>
+                  <span className="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm">
+                    {language === 'zh-HK' ? '南丫島' : 'Lamma Island'}
+                  </span>
+                  <span className="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm">
+                    {language === 'zh-HK' ? '坪洲' : 'Peng Chau'}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {language === 'zh-HK'
+                    ? '⚓ 渡輪服務在T8或以上信號時暫停。最後班次通常在發出信號前1-2小時開出。'
+                    : '⚓ Ferry services suspend during T8 or above signals. Last ferries typically depart 1-2 hours before signal issuance.'
+                  }
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  <strong>{language === 'zh-HK' ? '建議：' : 'Advice: '}</strong>
+                  {language === 'zh-HK'
+                    ? '颱風季節請儲備基本急救用品，並預先記下島上可能的緊急聯絡人。'
+                    : 'Stock basic first aid supplies during typhoon season and note emergency contacts on the island.'
+                  }
+                </p>
+              </div>
+
+              {/* Lantau Island */}
+              <div className="p-4 rounded-lg bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-700">
+                <div className="flex items-center gap-2 mb-2">
+                  <Mountain className="h-5 w-5 text-green-600" />
+                  <h3 className="font-bold text-foreground">
+                    {language === 'zh-HK' ? '大嶼山偏遠區域' : 'Remote Lantau Areas'}
+                  </h3>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <span className="px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-sm">
+                    {language === 'zh-HK' ? '大澳' : 'Tai O'}
+                  </span>
+                  <span className="px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-sm">
+                    {language === 'zh-HK' ? '梅窩' : 'Mui Wo'}
+                  </span>
+                  <span className="px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-sm">
+                    {language === 'zh-HK' ? '塘福' : 'Tong Fuk'}
+                  </span>
+                  <span className="px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-sm">
+                    {language === 'zh-HK' ? '貝澳' : 'Pui O'}
+                  </span>
+                  <span className="px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-sm">
+                    {language === 'zh-HK' ? '東涌部分地區' : 'Parts of Tung Chung'}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {language === 'zh-HK'
+                    ? '🚌 巴士服務在惡劣天氣下可能中斷。大澳和梅窩居民請確保有備用交通安排。'
+                    : '🚌 Bus services may be disrupted during severe weather. Tai O and Mui Wo residents should ensure backup transportation.'
+                  }
+                </p>
+              </div>
+
+              {/* North District */}
+              <div className="p-4 rounded-lg bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-700">
+                <div className="flex items-center gap-2 mb-2">
+                  <MapPin className="h-5 w-5 text-purple-600" />
+                  <h3 className="font-bold text-foreground">
+                    {language === 'zh-HK' ? '北區' : 'North District'}
+                  </h3>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <span className="px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 text-sm">
+                    {language === 'zh-HK' ? '上水鄉郊' : 'Sheung Shui Rural'}
+                  </span>
+                  <span className="px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 text-sm">
+                    {language === 'zh-HK' ? '沙頭角' : 'Sha Tau Kok'}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {language === 'zh-HK'
+                    ? '🚗 偏遠村落在惡劣天氣下道路可能受阻。建議提前確認最近的24小時獸醫診所位置。'
+                    : '🚗 Remote villages may have road access issues during severe weather. Confirm nearest 24-hour vet location in advance.'
+                  }
+                </p>
+              </div>
+
+              {/* Other Remote Areas */}
+              <div className="p-4 rounded-lg bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-700">
+                <div className="flex items-center gap-2 mb-2">
+                  <MapPin className="h-5 w-5 text-orange-600" />
+                  <h3 className="font-bold text-foreground">
+                    {language === 'zh-HK' ? '其他偏僻區域' : 'Other Remote Areas'}
+                  </h3>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <span className="px-2 py-1 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 text-sm">
+                    {language === 'zh-HK' ? '馬灣' : 'Ma Wan'}
+                  </span>
+                  <span className="px-2 py-1 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 text-sm">
+                    {language === 'zh-HK' ? '愉景灣' : 'Discovery Bay'}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {language === 'zh-HK'
+                    ? '🚢 愉景灣渡輪在颱風期間暫停。馬灣居民請確認青馬大橋通行狀況。'
+                    : '🚢 Discovery Bay ferries suspend during typhoons. Ma Wan residents should check Tsing Ma Bridge accessibility.'
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 p-3 rounded-lg bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-700">
+              <p className="text-sm text-red-800 dark:text-red-200">
+                <strong>{language === 'zh-HK' ? '緊急海上救援：' : 'Emergency Marine Rescue: '}</strong>
+                {language === 'zh-HK'
+                  ? '海事處緊急熱線 2233 7999（24小時）。注意：寵物緊急不在常規海上救援範圍內，但嚴重情況下可嘗試聯絡。'
+                  : 'Marine Department Emergency Hotline 2233 7999 (24-hour). Note: Pet emergencies are not within regular marine rescue scope, but may be contacted in severe situations.'
+                }
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="mt-8 bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-900">
           <CardContent className="p-8 text-center">
