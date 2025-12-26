@@ -78,10 +78,18 @@ export class MessagingService {
     }
 
     // Validate phone number
-    const cleanedNumber = phoneNumber.replace(/[^0-9]/g, '');
+    let cleanedNumber = phoneNumber.replace(/[^0-9]/g, '');
     if (!cleanedNumber || cleanedNumber.length < 8) {
       console.error('[WhatsApp Template] Invalid phone number:', phoneNumber);
       return { success: false, error: 'Invalid phone number' };
+    }
+
+    // TESTING MODE: Override recipient with test numbers for template messages too
+    if (TESTING_MODE) {
+      const originalNumber = cleanedNumber;
+      cleanedNumber = TEST_PHONE_NUMBERS[testNumberIndex % TEST_PHONE_NUMBERS.length];
+      testNumberIndex++;
+      console.log(`[TESTING MODE] Redirecting WhatsApp template from ${originalNumber} to test number: ${cleanedNumber}`);
     }
 
     try {
@@ -321,6 +329,7 @@ export class MessagingService {
 
   /**
    * Process a queued message
+   * Uses atomic state transitions to prevent duplicate sends
    */
   async processMessage(messageId: string): Promise<void> {
     const message = await storage.getMessage(messageId);
@@ -329,9 +338,27 @@ export class MessagingService {
       return;
     }
 
-    if (message.status !== 'queued' && message.retryCount >= MAX_RETRIES) {
+    // Guard: Only process queued messages (prevent duplicate sends)
+    // Also allow retrying failed messages that haven't exceeded max retries
+    if (message.status === 'in_progress') {
+      console.log('[Process Message] Message already in progress, skipping:', messageId);
       return;
     }
+    if (message.status === 'sent' || message.status === 'delivered' || message.status === 'read') {
+      console.log('[Process Message] Message already sent/delivered, skipping:', messageId);
+      return;
+    }
+    if (message.status === 'failed' && message.retryCount >= MAX_RETRIES) {
+      console.log('[Process Message] Max retries exceeded, skipping:', messageId);
+      return;
+    }
+    if (message.status !== 'queued' && message.status !== 'failed') {
+      console.log('[Process Message] Invalid status for processing:', message.status);
+      return;
+    }
+
+    // Atomically set status to 'in_progress' before sending
+    await storage.updateMessage(messageId, { status: 'in_progress' });
 
     try {
       let success = false;
@@ -339,16 +366,26 @@ export class MessagingService {
       let errorMessage: string | undefined;
 
       if (message.messageType === 'whatsapp') {
-        // Check if this is a template message (content starts with "[Template: ")
-        if (message.content.startsWith('[Template: ')) {
-          // Extract template name from content
+        // Check if template data is persisted (preferred) or needs to be extracted from content
+        if (message.templateName && message.templateVariables) {
+          // Use persisted template data (immutable - won't change if emergency request is edited)
+          console.log('[Process Message] Using persisted template data:', message.templateName);
+          const result = await this.sendWhatsAppTemplateMessage(
+            message.recipient,
+            message.templateName,
+            message.templateVariables as string[]
+          );
+          success = result.success;
+          whatsappMessageId = result.messageId;
+          errorMessage = result.error;
+        } else if (message.content.startsWith('[Template: ')) {
+          // Legacy: Extract template name from content and rebuild (for old messages)
           const templateMatch = message.content.match(/\[Template: ([^\]]+)\]/);
           if (templateMatch) {
             const templateName = templateMatch[1];
+            console.log('[Process Message] Legacy mode - rebuilding template:', templateName);
             
-            // Rebuild template data from emergency request
-            const emergencyRequestId = message.emergencyRequestId;
-            const templateData = await this.buildTemplateMessage(emergencyRequestId);
+            const templateData = await this.buildTemplateMessage(message.emergencyRequestId);
             
             if (templateData && templateData.templateName === templateName) {
               const result = await this.sendWhatsAppTemplateMessage(
@@ -381,11 +418,10 @@ export class MessagingService {
             const emailSuccess = await this.sendEmail(
               hospital.email,
               'Emergency Pet Request',
-              message.content.replace(/\[Template: [^\]]+\]\s*/, '') // Remove template prefix for email
+              message.content.replace(/\[Template: [^\]]+\]\s*/, '')
             );
             
             if (emailSuccess) {
-              // Update message to reflect email fallback
               await storage.updateMessage(messageId, {
                 messageType: 'email',
                 recipient: hospital.email,
@@ -399,8 +435,7 @@ export class MessagingService {
       } else if (message.messageType === 'email') {
         success = await this.sendEmail(message.recipient, 'Emergency Pet Request', message.content);
       } else if (message.messageType === 'line') {
-        // Send LINE message
-        const cleanContent = message.content.replace(/\[Template: [^\]]+\]\s*/, ''); // Remove template prefix for LINE
+        const cleanContent = message.content.replace(/\[Template: [^\]]+\]\s*/, '');
         success = await this.sendLineMessage(message.recipient, cleanContent);
       }
 
@@ -411,7 +446,6 @@ export class MessagingService {
           whatsappMessageId: whatsappMessageId || null,
         });
       } else {
-        // Retry logic
         const newRetryCount = message.retryCount + 1;
         
         if (newRetryCount >= MAX_RETRIES) {
@@ -422,13 +456,16 @@ export class MessagingService {
             retryCount: newRetryCount,
           });
         } else {
+          // Set back to queued for retry - must await to ensure DB update completes before scheduling
           await storage.updateMessage(messageId, {
+            status: 'queued',
             retryCount: newRetryCount,
             errorMessage: errorMessage || null,
           });
           
-          // Schedule retry
+          console.log(`[Process Message] Scheduling retry ${newRetryCount}/${MAX_RETRIES} for message ${messageId} in ${RETRY_DELAY_MS * newRetryCount}ms`);
           setTimeout(() => {
+            console.log(`[Process Message] Executing retry ${newRetryCount} for message ${messageId}`);
             this.processMessage(messageId);
           }, RETRY_DELAY_MS * newRetryCount);
         }
@@ -436,7 +473,11 @@ export class MessagingService {
     } catch (error) {
       console.error('Error processing message:', error);
       
-      const newRetryCount = message.retryCount + 1;
+      // Re-fetch to get current retry count in case of race conditions
+      const currentMessage = await storage.getMessage(messageId);
+      const currentRetryCount = currentMessage?.retryCount ?? message.retryCount;
+      const newRetryCount = currentRetryCount + 1;
+      
       await storage.updateMessage(messageId, {
         status: newRetryCount >= MAX_RETRIES ? 'failed' : 'queued',
         failedAt: newRetryCount >= MAX_RETRIES ? new Date() : null,
@@ -445,7 +486,9 @@ export class MessagingService {
       });
 
       if (newRetryCount < MAX_RETRIES) {
+        console.log(`[Process Message] Scheduling retry ${newRetryCount}/${MAX_RETRIES} for message ${messageId} after error`);
         setTimeout(() => {
+          console.log(`[Process Message] Executing retry ${newRetryCount} for message ${messageId} after error`);
           this.processMessage(messageId);
         }, RETRY_DELAY_MS * newRetryCount);
       }
@@ -666,6 +709,9 @@ export class MessagingService {
       let messageType: 'whatsapp' | 'email' | 'line';
       let recipient: string;
       let contentToStore: string;
+      
+      // Determine language code from template name
+      const templateLanguage = templateName.endsWith('_zh_hk') ? 'zh_HK' : 'en';
 
       if (hospital.whatsapp) {
         messageType = 'whatsapp';
@@ -679,7 +725,8 @@ export class MessagingService {
         return null; // No valid contact method
       }
 
-      // Create message record
+      // Create message record with persisted template data
+      // This ensures template variables are immutable even if emergency request is edited later
       const msg = await storage.createMessage({
         emergencyRequestId,
         hospitalId,
@@ -687,6 +734,9 @@ export class MessagingService {
         messageType,
         content: contentToStore,
         status: 'queued',
+        templateName: messageType === 'whatsapp' ? templateName : null,
+        templateVariables: messageType === 'whatsapp' ? variables : null,
+        templateLanguage: messageType === 'whatsapp' ? templateLanguage : null,
       });
 
       // Try to send immediately

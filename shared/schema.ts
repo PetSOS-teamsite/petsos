@@ -343,8 +343,11 @@ export const messages = pgTable("messages", {
   messageType: text("message_type").notNull(), // whatsapp, email, line
   recipient: text("recipient").notNull(),
   content: text("content").notNull(),
-  status: text("status").notNull().default('queued'), // queued, sent, delivered, read, failed
+  status: text("status").notNull().default('queued'), // queued, in_progress, sent, delivered, read, failed
   whatsappMessageId: text("whatsapp_message_id"), // Meta's wamid for tracking delivery status
+  templateName: text("template_name"), // WhatsApp template name (persisted at queue time)
+  templateVariables: jsonb("template_variables").$type<string[]>(), // Template variables (persisted at queue time)
+  templateLanguage: text("template_language"), // Template language code (en, zh_HK)
   sentAt: timestamp("sent_at"),
   deliveredAt: timestamp("delivered_at"),
   readAt: timestamp("read_at"), // When recipient opened/read the message
