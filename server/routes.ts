@@ -4069,6 +4069,173 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== HOSPITAL SELF-SERVICE PORTAL ENDPOINTS =====
+  
+  // Verify hospital access code and return hospital info (public - no auth needed)
+  app.post("/api/hospitals/verify-code", async (req: any, res: any) => {
+    try {
+      const { accessCode } = z.object({
+        accessCode: z.string().length(8, "Access code must be 8 characters")
+      }).parse(req.body);
+
+      const hospital = await storage.getHospitalByAccessCode(accessCode.toUpperCase());
+      if (!hospital) {
+        return res.status(401).json({ message: "Invalid access code" });
+      }
+
+      // Return hospital info (excluding sensitive data)
+      res.json({
+        id: hospital.id,
+        slug: hospital.slug,
+        nameEn: hospital.nameEn,
+        nameZh: hospital.nameZh,
+        addressEn: hospital.addressEn,
+        addressZh: hospital.addressZh,
+        phone: hospital.phone,
+        whatsapp: hospital.whatsapp,
+        email: hospital.email,
+        open247: hospital.open247,
+        lastConfirmedAt: hospital.lastConfirmedAt,
+        confirmedByName: hospital.confirmedByName,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error verifying access code:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update hospital info using access code (public - no auth needed)
+  app.post("/api/hospitals/update-by-code", async (req: any, res: any) => {
+    try {
+      const updateSchema = z.object({
+        accessCode: z.string().length(8, "Access code must be 8 characters"),
+        phone: z.string().optional(),
+        whatsapp: z.string().optional(),
+        email: z.string().email().optional().or(z.literal('')),
+        open247: z.boolean().optional(),
+        confirmedByName: z.string().min(1, "Name is required"),
+      });
+
+      const { accessCode, confirmedByName, ...updateData } = updateSchema.parse(req.body);
+
+      const hospital = await storage.getHospitalByAccessCode(accessCode.toUpperCase());
+      if (!hospital) {
+        return res.status(401).json({ message: "Invalid access code" });
+      }
+
+      // Update hospital with new data and set lastConfirmedAt
+      const updatedHospital = await storage.updateHospital(hospital.id, {
+        ...updateData,
+        confirmedByName,
+        lastConfirmedAt: new Date(),
+      } as any);
+
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: hospital.id,
+        action: 'self_service_update',
+        changes: { ...updateData, confirmedByName },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({
+        success: true,
+        message: "Hospital information updated successfully",
+        hospital: {
+          id: updatedHospital?.id,
+          nameEn: updatedHospital?.nameEn,
+          nameZh: updatedHospital?.nameZh,
+          lastConfirmedAt: updatedHospital?.lastConfirmedAt,
+          confirmedByName: updatedHospital?.confirmedByName,
+        }
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error updating hospital by code:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Mark hospital info as confirmed (simple confirmation without changes)
+  app.post("/api/hospitals/confirm-info", async (req: any, res: any) => {
+    try {
+      const { accessCode, confirmedByName } = z.object({
+        accessCode: z.string().length(8, "Access code must be 8 characters"),
+        confirmedByName: z.string().min(1, "Name is required"),
+      }).parse(req.body);
+
+      const hospital = await storage.getHospitalByAccessCode(accessCode.toUpperCase());
+      if (!hospital) {
+        return res.status(401).json({ message: "Invalid access code" });
+      }
+
+      // Update only the confirmation fields
+      const updatedHospital = await storage.updateHospital(hospital.id, {
+        confirmedByName,
+        lastConfirmedAt: new Date(),
+      } as any);
+
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: hospital.id,
+        action: 'self_service_confirm',
+        changes: { confirmedByName },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({
+        success: true,
+        message: "Hospital information confirmed",
+        hospital: {
+          id: updatedHospital?.id,
+          nameEn: updatedHospital?.nameEn,
+          nameZh: updatedHospital?.nameZh,
+          lastConfirmedAt: updatedHospital?.lastConfirmedAt,
+          confirmedByName: updatedHospital?.confirmedByName,
+        }
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error confirming hospital info:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Generate access codes for all hospitals (admin only)
+  app.post("/api/hospitals/generate-access-codes", isAuthenticated, isAdmin, async (req: any, res: any) => {
+    try {
+      const result = await storage.generateAccessCodesForAllHospitals();
+      
+      await storage.createAuditLog({
+        entityType: 'hospital',
+        entityId: 'all',
+        action: 'generate_access_codes',
+        changes: { updated: result.updated, errors: result.errors.length },
+        userId: req.user?.id,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({
+        success: true,
+        updated: result.updated,
+        errors: result.errors,
+      });
+    } catch (error) {
+      console.error("Error generating access codes:", error);
+      res.status(500).json({ message: "Failed to generate access codes" });
+    }
+  });
+
   // Get hospital photo upload URL (for verified hospital owners)
   app.post("/api/hospitals/:id/photo-upload-url", async (req: any, res: any) => {
     try {
@@ -4354,6 +4521,238 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error deleting hospital photo:", error);
       res.status(500).json({ error: error.message || "Failed to delete hospital photo" });
+    }
+  });
+
+  // ===== HOSPITAL OUTREACH ROUTES =====
+  
+  // Get all hospitals with outreach status for admin
+  app.get("/api/admin/hospitals/outreach-status", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const allHospitals = await storage.getAllHospitals();
+      
+      const outreachData = allHospitals.map(hospital => ({
+        id: hospital.id,
+        nameEn: hospital.nameEn,
+        nameZh: hospital.nameZh,
+        phone: hospital.phone,
+        whatsapp: hospital.whatsapp,
+        email: hospital.email,
+        accessCode: hospital.accessCode,
+        lastConfirmedAt: hospital.lastConfirmedAt,
+        confirmedByName: hospital.confirmedByName,
+        inviteSentAt: hospital.inviteSentAt,
+        isAvailable: hospital.isAvailable,
+        status: hospital.lastConfirmedAt ? 'confirmed' : 'pending',
+      }));
+      
+      res.json(outreachData);
+    } catch (error) {
+      console.error('Error fetching hospital outreach status:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Send WhatsApp invitation to a single hospital
+  app.post("/api/admin/hospitals/send-invite/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: 'Hospital not found' });
+      }
+      
+      if (!hospital.accessCode) {
+        return res.status(400).json({ message: 'Hospital has no access code. Please generate one first.' });
+      }
+      
+      const targetPhone = hospital.whatsapp || hospital.phone;
+      if (!targetPhone) {
+        return res.status(400).json({ message: 'Hospital has no phone or WhatsApp number' });
+      }
+      
+      // Build the bilingual invitation message
+      const hospitalName = hospital.nameEn || hospital.nameZh || 'Hospital';
+      const message = `🏥 PetSOS Hospital Information Update
+
+Dear ${hospitalName},
+
+We are launching PetSOS, a non-profit pet emergency platform connecting pet owners with 24-hour veterinary clinics in Hong Kong.
+
+Your clinic is listed on our platform. Please verify your information:
+
+👉 https://petsos.site/hospital-update
+📋 Access Code: ${hospital.accessCode}
+
+Please update within 7 days.
+
+Thank you,
+PetSOS Team
+
+---
+
+🏥 PetSOS 醫院資料更新
+
+${hospital.nameZh || hospitalName} 您好，
+
+我們正推出 PetSOS，一個連結寵物主人與香港24小時獸醫診所的非營利寵物急症平台。
+
+您的診所已列於我們平台。請驗證您的資料：
+
+👉 https://petsos.site/hospital-update
+📋 存取碼：${hospital.accessCode}
+
+請於7天內更新。
+
+謝謝，
+PetSOS 團隊`;
+
+      // Send via WhatsApp using messaging service
+      const result = await messagingService.sendDirectWhatsAppMessage(targetPhone, message);
+      
+      if (result.success) {
+        // Update the inviteSentAt timestamp
+        await storage.updateHospital(hospital.id, { inviteSentAt: new Date() });
+        
+        // Log the action
+        await storage.createAuditLog({
+          entityType: 'hospital',
+          entityId: hospital.id,
+          action: 'send_invite',
+          userId: (req.user as any).id,
+          changes: { inviteSentAt: new Date().toISOString(), phone: targetPhone },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+        
+        res.json({ 
+          success: true, 
+          message: 'Invitation sent successfully',
+          hospital: hospital.nameEn,
+          sentTo: targetPhone
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: 'Failed to send invitation',
+          error: result.error 
+        });
+      }
+    } catch (error) {
+      console.error('Error sending hospital invite:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Send WhatsApp invitations to all unconfirmed hospitals
+  app.post("/api/admin/hospitals/send-all-invites", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const allHospitals = await storage.getAllHospitals();
+      
+      // Filter to only pending (unconfirmed) hospitals with phone/whatsapp and access code
+      const pendingHospitals = allHospitals.filter(h => 
+        !h.lastConfirmedAt && 
+        h.accessCode && 
+        (h.whatsapp || h.phone)
+      );
+      
+      if (pendingHospitals.length === 0) {
+        return res.json({ 
+          success: true, 
+          message: 'No pending hospitals to invite',
+          sent: 0,
+          failed: 0
+        });
+      }
+      
+      const results = {
+        sent: 0,
+        failed: 0,
+        details: [] as Array<{ hospital: string; status: string; error?: string }>
+      };
+      
+      for (const hospital of pendingHospitals) {
+        const targetPhone = hospital.whatsapp || hospital.phone;
+        const hospitalName = hospital.nameEn || hospital.nameZh || 'Hospital';
+        
+        const message = `🏥 PetSOS Hospital Information Update
+
+Dear ${hospitalName},
+
+We are launching PetSOS, a non-profit pet emergency platform connecting pet owners with 24-hour veterinary clinics in Hong Kong.
+
+Your clinic is listed on our platform. Please verify your information:
+
+👉 https://petsos.site/hospital-update
+📋 Access Code: ${hospital.accessCode}
+
+Please update within 7 days.
+
+Thank you,
+PetSOS Team
+
+---
+
+🏥 PetSOS 醫院資料更新
+
+${hospital.nameZh || hospitalName} 您好，
+
+我們正推出 PetSOS，一個連結寵物主人與香港24小時獸醫診所的非營利寵物急症平台。
+
+您的診所已列於我們平台。請驗證您的資料：
+
+👉 https://petsos.site/hospital-update
+📋 存取碼：${hospital.accessCode}
+
+請於7天內更新。
+
+謝謝，
+PetSOS 團隊`;
+
+        try {
+          const result = await messagingService.sendDirectWhatsAppMessage(targetPhone!, message);
+          
+          if (result.success) {
+            await storage.updateHospital(hospital.id, { inviteSentAt: new Date() });
+            results.sent++;
+            results.details.push({ hospital: hospitalName, status: 'sent' });
+          } else {
+            results.failed++;
+            results.details.push({ hospital: hospitalName, status: 'failed', error: result.error });
+          }
+        } catch (err) {
+          results.failed++;
+          results.details.push({ 
+            hospital: hospitalName, 
+            status: 'failed', 
+            error: err instanceof Error ? err.message : 'Unknown error' 
+          });
+        }
+        
+        // Add a small delay between messages to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      // Log the bulk action
+      await storage.createAuditLog({
+        entityType: 'hospital_outreach',
+        entityId: 'bulk',
+        action: 'send_bulk_invites',
+        userId: (req.user as any).id,
+        changes: { sent: results.sent, failed: results.failed },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.json({
+        success: true,
+        message: `Sent ${results.sent} invitations, ${results.failed} failed`,
+        sent: results.sent,
+        failed: results.failed,
+        details: results.details
+      });
+    } catch (error) {
+      console.error('Error sending bulk hospital invites:', error);
+      res.status(500).json({ message: 'Internal server error' });
     }
   });
 

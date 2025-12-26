@@ -135,12 +135,14 @@ export interface IStorage {
   // Hospitals
   getHospital(id: string): Promise<Hospital | undefined>;
   getHospitalBySlug(slug: string): Promise<Hospital | undefined>;
+  getHospitalByAccessCode(accessCode: string): Promise<Hospital | undefined>;
   getHospitalsByRegion(region: string): Promise<Hospital[]>;
   getAllHospitals(): Promise<Hospital[]>;
   getNearbyHospitals(latitude: number, longitude: number, radiusMeters: number): Promise<(Hospital & { distance: number })[]>;
   createHospital(hospital: InsertHospital): Promise<Hospital>;
   updateHospital(id: string, hospital: Partial<InsertHospital>): Promise<Hospital | undefined>;
   deleteHospital(id: string): Promise<boolean>;
+  generateAccessCodesForAllHospitals(): Promise<{ updated: number; errors: string[] }>;
 
   // Hospital Consult Fees
   getConsultFeesByHospitalId(hospitalId: string): Promise<HospitalConsultFee[]>;
@@ -2455,6 +2457,45 @@ class DatabaseStorage implements IStorage {
       console.warn('getHospitalBySlug query failed:', error instanceof Error ? error.message : error);
       return undefined;
     }
+  }
+
+  async getHospitalByAccessCode(accessCode: string): Promise<Hospital | undefined> {
+    try {
+      const result = await db.select().from(hospitals).where(eq(hospitals.accessCode, accessCode));
+      return result[0];
+    } catch (error) {
+      console.warn('getHospitalByAccessCode query failed:', error instanceof Error ? error.message : error);
+      return undefined;
+    }
+  }
+
+  async generateAccessCodesForAllHospitals(): Promise<{ updated: number; errors: string[] }> {
+    const allHospitals = await this.getAllHospitals();
+    let updated = 0;
+    const errors: string[] = [];
+    
+    for (const hospital of allHospitals) {
+      if (!hospital.accessCode) {
+        try {
+          const code = this.generateUniqueAccessCode();
+          await this.updateHospital(hospital.id, { accessCode: code } as any);
+          updated++;
+        } catch (err) {
+          errors.push(`Failed to update ${hospital.nameEn}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        }
+      }
+    }
+    
+    return { updated, errors };
+  }
+
+  private generateUniqueAccessCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
   }
 
   async getHospitalsByRegion(regionId: string): Promise<Hospital[]> {

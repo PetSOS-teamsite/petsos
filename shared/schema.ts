@@ -318,11 +318,18 @@ export const hospitals = pgTable("hospitals", {
   ownerVerificationCodeExpiresAt: timestamp("owner_verification_code_expires_at"), // When the code expires
   verified: boolean("verified").notNull().default(false),
   
+  // Self-service portal fields
+  accessCode: varchar("access_code", { length: 8 }).unique(), // 8-character unique code for hospital self-service
+  lastConfirmedAt: timestamp("last_confirmed_at"), // When hospital last confirmed their info is correct
+  confirmedByName: text("confirmed_by_name"), // Name of person who confirmed the info
+  inviteSentAt: timestamp("invite_sent_at"), // When WhatsApp invitation was last sent
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
   index("idx_hospital_location").using("gist", table.location),
   index("idx_hospital_region").on(table.regionId),
+  uniqueIndex("idx_hospital_access_code").on(table.accessCode),
 ]);
 
 export const insertHospitalSchema = createInsertSchema(hospitals).omit({

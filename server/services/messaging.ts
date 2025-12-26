@@ -789,6 +789,14 @@ export class MessagingService {
 
     return messages;
   }
+
+  /**
+   * Send a direct WhatsApp message (not tied to an emergency request)
+   * Used for admin outreach, notifications, etc.
+   */
+  async sendDirectWhatsAppMessage(phoneNumber: string, content: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    return this.sendWhatsAppMessage(phoneNumber, content);
+  }
 }
 
 export const messagingService = new MessagingService();
