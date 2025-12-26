@@ -485,15 +485,6 @@ export default function EmergencySymptomsPage() {
               </div>
             </div>
 
-            <div className="mt-4 p-3 rounded-lg bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-700">
-              <p className="text-sm text-red-800 dark:text-red-200">
-                <strong>{language === 'zh-HK' ? '緊急海上救援：' : 'Emergency Marine Rescue: '}</strong>
-                {language === 'zh-HK'
-                  ? '海事處緊急熱線 2233 7999（24小時）。注意：寵物緊急不在常規海上救援範圍內，但嚴重情況下可嘗試聯絡。'
-                  : 'Marine Department Emergency Hotline 2233 7999 (24-hour). Note: Pet emergencies are not within regular marine rescue scope, but may be contacted in severe situations.'
-                }
-              </p>
-            </div>
           </CardContent>
         </Card>
 
