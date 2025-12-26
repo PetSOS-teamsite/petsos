@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Clock, Navigation, ExternalLink, Building2, Star } from "lucide-react";
+import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Clock, Navigation, ExternalLink, Building2, Star, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +43,7 @@ type VetProvider = {
   slug?: string | null;
   averageRating?: string | null;
   reviewCount?: number;
+  lastVerifiedAt?: Date | null;
 };
 
 export default function ClinicsPage() {
@@ -83,6 +84,7 @@ export default function ClinicsPage() {
       isPartner: h.isPartner === true,
       isAvailable: h.isAvailable === true,
       slug: h.slug,
+      lastVerifiedAt: h.lastVerifiedAt,
     })) || [];
   }, [hospitals]);
 
@@ -477,6 +479,23 @@ export default function ClinicsPage() {
                       <div className="text-xs text-gray-600 dark:text-gray-400 truncate" data-testid={`text-clinic-address-${provider.id}`}>
                         {language === 'zh-HK' && provider.addressZh ? provider.addressZh : provider.addressEn}
                       </div>
+
+                      {/* Last Verified Date - Trust Signal */}
+                      {provider.lastVerifiedAt && (
+                        <div 
+                          className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 mt-1"
+                          data-testid={`text-verified-${provider.id}`}
+                        >
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>
+                            {language === 'zh-HK' ? '已驗證 ' : 'Verified '}
+                            {new Date(provider.lastVerifiedAt).toLocaleDateString(
+                              language === 'zh-HK' ? 'zh-HK' : 'en-HK',
+                              { year: 'numeric', month: 'short', day: 'numeric' }
+                            )}
+                          </span>
+                        </div>
+                      )}
 
                       {/* Star Rating Display */}
                       {provider.averageRating && Number(provider.averageRating) > 0 && (
