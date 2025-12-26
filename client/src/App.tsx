@@ -32,6 +32,11 @@ const DistrictPage = lazy(() => import("@/pages/district"));
 const DistrictsIndexPage = lazy(() => import("@/pages/districts-index"));
 const ResourcesPage = lazy(() => import("@/pages/resources"));
 const FAQPage = lazy(() => import("@/pages/faq"));
+const AboutPage = lazy(() => import("@/pages/about"));
+const MedicalAdvisoryPage = lazy(() => import("@/pages/medical-advisory"));
+const VerificationProcessPage = lazy(() => import("@/pages/verification-process"));
+const EmergencySymptomsPage = lazy(() => import("@/pages/emergency-symptoms"));
+const TyphoonStatusPage = lazy(() => import("@/pages/typhoon-status"));
 const HospitalsPage = lazy(() => import("@/pages/hospitals"));
 const HospitalDetailPage = lazy(() => import("@/pages/hospital-detail"));
 const ClinicOwnerEditPage = lazy(() => import("@/pages/clinic-owner-edit"));
@@ -87,6 +92,11 @@ function PublicRouter() {
       <Route path="/district/:district" component={DistrictPage} />
       <Route path="/resources" component={ResourcesPage} />
       <Route path="/faq" component={FAQPage} />
+      <Route path="/about" component={AboutPage} />
+      <Route path="/medical-advisory" component={MedicalAdvisoryPage} />
+      <Route path="/verification-process" component={VerificationProcessPage} />
+      <Route path="/emergency-symptoms" component={EmergencySymptomsPage} />
+      <Route path="/typhoon-status" component={TyphoonStatusPage} />
       <Route path="/emergency" component={EmergencyPage} />
       <Route path="/emergency-results/:requestId" component={ClinicResultsPage} />
       <Route path="/emergency-results/:requestId/messages" component={MessageStatusPage} />

@@ -677,3 +677,147 @@ export const insertWhatsappChatMessageSchema = createInsertSchema(whatsappChatMe
 
 export type InsertWhatsappChatMessage = z.infer<typeof insertWhatsappChatMessageSchema>;
 export type WhatsappChatMessage = typeof whatsappChatMessages.$inferSelect;
+
+// =====================================================
+// TYPHOON & HOLIDAY PROTOCOL TABLES
+// =====================================================
+
+// Typhoon Alerts table - tracks current and historical typhoon signals
+export const typhoonAlerts = pgTable("typhoon_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  signalCode: text("signal_code").notNull(), // T1, T3, T8NW, T8NE, T8SW, T8SE, T9, T10
+  signalNameEn: text("signal_name_en").notNull(),
+  signalNameZh: text("signal_name_zh").notNull(),
+  issuedAt: timestamp("issued_at").notNull(),
+  liftedAt: timestamp("lifted_at"),
+  isActive: boolean("is_active").notNull().default(true),
+  observatoryBulletinId: text("observatory_bulletin_id"), // HKO bulletin reference
+  severityLevel: integer("severity_level").notNull(), // 1-10 based on signal
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_typhoon_alerts_active").on(table.isActive),
+  index("idx_typhoon_alerts_issued").on(table.issuedAt),
+]);
+
+export const insertTyphoonAlertSchema = createInsertSchema(typhoonAlerts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTyphoonAlert = z.infer<typeof insertTyphoonAlertSchema>;
+export type TyphoonAlert = typeof typhoonAlerts.$inferSelect;
+
+// HK Holiday Calendar table - pre-populated with Hong Kong public holidays
+export const hkHolidays = pgTable("hk_holidays", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: timestamp("date").notNull(),
+  nameEn: text("name_en").notNull(),
+  nameZh: text("name_zh").notNull(),
+  holidayType: text("holiday_type").notNull(), // public, bank, special
+  year: integer("year").notNull(),
+  isGazetted: boolean("is_gazetted").notNull().default(true),
+  notes: text("notes"),
+}, (table) => [
+  index("idx_hk_holidays_date").on(table.date),
+  index("idx_hk_holidays_year").on(table.year),
+  uniqueIndex("idx_hk_holidays_unique").on(table.date, table.nameEn),
+]);
+
+export const insertHkHolidaySchema = createInsertSchema(hkHolidays).omit({
+  id: true,
+});
+
+export type InsertHkHoliday = z.infer<typeof insertHkHolidaySchema>;
+export type HkHoliday = typeof hkHolidays.$inferSelect;
+
+// Hospital Emergency Status table - tracks hospital availability during emergencies
+export const hospitalEmergencyStatus = pgTable("hospital_emergency_status", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  hospitalId: varchar("hospital_id").notNull().references(() => hospitals.id, { onDelete: 'cascade' }),
+  statusType: text("status_type").notNull(), // typhoon, holiday, special
+  referenceId: varchar("reference_id"), // typhoon_alert ID or hk_holiday ID
+  isOpen: boolean("is_open").notNull(),
+  openingTime: text("opening_time"), // e.g., "09:00"
+  closingTime: text("closing_time"), // e.g., "18:00"
+  confirmedAt: timestamp("confirmed_at").notNull().defaultNow(),
+  confirmedBy: varchar("confirmed_by").references(() => users.id, { onDelete: 'set null' }),
+  confirmationMethod: text("confirmation_method"), // phone_call, whatsapp, self_report, auto
+  notes: text("notes"),
+  expiresAt: timestamp("expires_at"), // when this status should be considered stale
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_hospital_emergency_status_hospital").on(table.hospitalId),
+  index("idx_hospital_emergency_status_type").on(table.statusType),
+  index("idx_hospital_emergency_status_reference").on(table.referenceId),
+]);
+
+export const insertHospitalEmergencyStatusSchema = createInsertSchema(hospitalEmergencyStatus).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertHospitalEmergencyStatus = z.infer<typeof insertHospitalEmergencyStatusSchema>;
+export type HospitalEmergencyStatus = typeof hospitalEmergencyStatus.$inferSelect;
+
+// Typhoon Notification Queue table - tracks pending notifications to send
+export const typhoonNotificationQueue = pgTable("typhoon_notification_queue", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  typhoonAlertId: varchar("typhoon_alert_id").references(() => typhoonAlerts.id, { onDelete: 'cascade' }),
+  holidayId: varchar("holiday_id").references(() => hkHolidays.id, { onDelete: 'cascade' }),
+  notificationType: text("notification_type").notNull(), // typhoon_warning, holiday_reminder, status_update
+  targetAudience: text("target_audience").notNull(), // all_users, subscribed, hospitals
+  channel: text("channel").notNull(), // push, email, whatsapp
+  titleEn: text("title_en").notNull(),
+  titleZh: text("title_zh").notNull(),
+  bodyEn: text("body_en").notNull(),
+  bodyZh: text("body_zh").notNull(),
+  status: text("status").notNull().default('pending'), // pending, sending, sent, failed
+  scheduledFor: timestamp("scheduled_for"),
+  sentAt: timestamp("sent_at"),
+  recipientCount: integer("recipient_count"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_typhoon_notification_queue_status").on(table.status),
+  index("idx_typhoon_notification_queue_scheduled").on(table.scheduledFor),
+]);
+
+export const insertTyphoonNotificationQueueSchema = createInsertSchema(typhoonNotificationQueue).omit({
+  id: true,
+  createdAt: true,
+  sentAt: true,
+  recipientCount: true,
+});
+
+export type InsertTyphoonNotificationQueue = z.infer<typeof insertTyphoonNotificationQueueSchema>;
+export type TyphoonNotificationQueue = typeof typhoonNotificationQueue.$inferSelect;
+
+// User Emergency Alert Subscriptions - opt-in for typhoon/holiday notifications
+export const userEmergencySubscriptions = pgTable("user_emergency_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  email: text("email"),
+  phone: text("phone"),
+  pushToken: text("push_token"), // FCM token for anonymous users
+  subscriptionType: text("subscription_type").notNull(), // typhoon, holiday, all
+  notifyChannels: text("notify_channels").array().notNull().default(sql`ARRAY['push']::text[]`), // push, email, sms
+  preferredLanguage: text("preferred_language").notNull().default('en'),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_user_emergency_subscriptions_user").on(table.userId),
+  index("idx_user_emergency_subscriptions_active").on(table.isActive),
+]);
+
+export const insertUserEmergencySubscriptionSchema = createInsertSchema(userEmergencySubscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertUserEmergencySubscription = z.infer<typeof insertUserEmergencySubscriptionSchema>;
+export type UserEmergencySubscription = typeof userEmergencySubscriptions.$inferSelect;

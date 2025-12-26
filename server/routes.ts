@@ -5040,6 +5040,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // ===== TYPHOON & HOLIDAY PROTOCOL ROUTES =====
+  
+  // Get current typhoon/holiday status with hospital availability
+  app.get("/api/typhoon/status", async (req, res) => {
+    try {
+      // Get current active typhoon alert
+      const currentAlert = await storage.getActiveTyphoonAlert();
+      
+      // Get upcoming holiday (within next 7 days)
+      const upcomingHoliday = await storage.getUpcomingHoliday(7);
+      
+      // Get hospital emergency statuses
+      let hospitalStatuses: any[] = [];
+      if (currentAlert || upcomingHoliday) {
+        const referenceId = currentAlert?.id || upcomingHoliday?.id;
+        if (referenceId) {
+          hospitalStatuses = await storage.getHospitalEmergencyStatuses(referenceId);
+        }
+      }
+      
+      res.json({
+        currentAlert,
+        upcomingHoliday,
+        hospitalStatuses,
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error("Error fetching typhoon status:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch typhoon status" });
+    }
+  });
+  
+  // Hospital staff: Update emergency status
+  app.post("/api/typhoon/hospital-status", isAuthenticated, async (req: any, res) => {
+    try {
+      const { hospitalId, isOpen, openingTime, closingTime, notes, statusType, referenceId } = req.body;
+      
+      const status = await storage.updateHospitalEmergencyStatus({
+        hospitalId,
+        statusType: statusType || 'typhoon',
+        referenceId,
+        isOpen,
+        openingTime,
+        closingTime,
+        confirmedBy: req.user.id,
+        confirmationMethod: 'self_report',
+        notes,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Expires in 24 hours
+      });
+      
+      res.json({ success: true, status });
+    } catch (error: any) {
+      console.error("Error updating hospital emergency status:", error);
+      res.status(500).json({ error: error.message || "Failed to update status" });
+    }
+  });
+  
+  // Subscribe to emergency alerts
+  app.post("/api/typhoon/subscribe", async (req, res) => {
+    try {
+      const { email, phone, pushToken, subscriptionType, notifyChannels, preferredLanguage, userId } = req.body;
+      
+      const subscription = await storage.createEmergencySubscription({
+        userId: userId || null,
+        email,
+        phone,
+        pushToken,
+        subscriptionType: subscriptionType || 'all',
+        notifyChannels: notifyChannels || ['push'],
+        preferredLanguage: preferredLanguage || 'en',
+      });
+      
+      res.json({ success: true, subscription });
+    } catch (error: any) {
+      console.error("Error creating emergency subscription:", error);
+      res.status(500).json({ error: error.message || "Failed to create subscription" });
+    }
+  });
+  
+  // Get HK holidays for a year
+  app.get("/api/holidays", async (req, res) => {
+    try {
+      const year = parseInt(req.query.year as string) || new Date().getFullYear();
+      const holidays = await storage.getHolidaysByYear(year);
+      res.json(holidays);
+    } catch (error: any) {
+      console.error("Error fetching holidays:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch holidays" });
+    }
+  });
+  
+  // Admin: Create typhoon alert (usually triggered by HKO API integration)
+  app.post("/api/admin/typhoon/alert", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { signalCode, signalNameEn, signalNameZh, issuedAt, severityLevel, notes, observatoryBulletinId } = req.body;
+      
+      const alert = await storage.createTyphoonAlert({
+        signalCode,
+        signalNameEn,
+        signalNameZh,
+        issuedAt: new Date(issuedAt),
+        severityLevel,
+        notes,
+        observatoryBulletinId,
+        isActive: true,
+      });
+      
+      res.json({ success: true, alert });
+    } catch (error: any) {
+      console.error("Error creating typhoon alert:", error);
+      res.status(500).json({ error: error.message || "Failed to create alert" });
+    }
+  });
+  
+  // Admin: Lift typhoon alert
+  app.post("/api/admin/typhoon/lift/:alertId", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { alertId } = req.params;
+      const alert = await storage.liftTyphoonAlert(alertId);
+      res.json({ success: true, alert });
+    } catch (error: any) {
+      console.error("Error lifting typhoon alert:", error);
+      res.status(500).json({ error: error.message || "Failed to lift alert" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

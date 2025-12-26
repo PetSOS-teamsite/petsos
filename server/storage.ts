@@ -21,7 +21,12 @@ import {
   type ClinicReview, type InsertClinicReview,
   type WhatsappConversation, type InsertWhatsappConversation,
   type WhatsappChatMessage, type InsertWhatsappChatMessage,
-  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents, pushSubscriptions, notificationBroadcasts, clinicReviews, whatsappConversations, whatsappChatMessages
+  type TyphoonAlert, type InsertTyphoonAlert,
+  type HkHoliday, type InsertHkHoliday,
+  type HospitalEmergencyStatus, type InsertHospitalEmergencyStatus,
+  type UserEmergencySubscription, type InsertUserEmergencySubscription,
+  users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents, pushSubscriptions, notificationBroadcasts, clinicReviews, whatsappConversations, whatsappChatMessages,
+  typhoonAlerts, hkHolidays, hospitalEmergencyStatus, userEmergencySubscriptions
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -249,6 +254,16 @@ export interface IStorage {
 
   // Helper for WhatsApp
   findHospitalByPhone(phoneNumber: string): Promise<Hospital | undefined>;
+  
+  // Typhoon & Holiday Protocol
+  getActiveTyphoonAlert(): Promise<any | null>;
+  getUpcomingHoliday(days: number): Promise<any | null>;
+  getHospitalEmergencyStatuses(referenceId: string): Promise<any[]>;
+  updateHospitalEmergencyStatus(data: any): Promise<any>;
+  createEmergencySubscription(data: any): Promise<any>;
+  getHolidaysByYear(year: number): Promise<any[]>;
+  createTyphoonAlert(data: any): Promise<any>;
+  liftTyphoonAlert(alertId: string): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -1691,6 +1706,32 @@ export class MemStorage implements IStorage {
   // Helper for WhatsApp - stub implementation
   async findHospitalByPhone(phoneNumber: string): Promise<Hospital | undefined> {
     throw new Error("MemStorage does not support findHospitalByPhone - use DatabaseStorage");
+  }
+
+  // Typhoon & Holiday Protocol - stub implementations
+  async getActiveTyphoonAlert(): Promise<any | null> {
+    throw new Error("MemStorage does not support typhoon alerts - use DatabaseStorage");
+  }
+  async getUpcomingHoliday(days: number): Promise<any | null> {
+    throw new Error("MemStorage does not support holidays - use DatabaseStorage");
+  }
+  async getHospitalEmergencyStatuses(referenceId: string): Promise<any[]> {
+    throw new Error("MemStorage does not support hospital emergency statuses - use DatabaseStorage");
+  }
+  async updateHospitalEmergencyStatus(data: any): Promise<any> {
+    throw new Error("MemStorage does not support hospital emergency statuses - use DatabaseStorage");
+  }
+  async createEmergencySubscription(data: any): Promise<any> {
+    throw new Error("MemStorage does not support emergency subscriptions - use DatabaseStorage");
+  }
+  async getHolidaysByYear(year: number): Promise<any[]> {
+    throw new Error("MemStorage does not support holidays - use DatabaseStorage");
+  }
+  async createTyphoonAlert(data: any): Promise<any> {
+    throw new Error("MemStorage does not support typhoon alerts - use DatabaseStorage");
+  }
+  async liftTyphoonAlert(alertId: string): Promise<any> {
+    throw new Error("MemStorage does not support typhoon alerts - use DatabaseStorage");
   }
 
   // Analytics Methods - stub implementations for MemStorage
@@ -3164,6 +3205,94 @@ class DatabaseStorage implements IStorage {
       )
     );
     return result[0];
+  }
+
+  // Typhoon & Holiday Protocol
+  async getActiveTyphoonAlert(): Promise<TyphoonAlert | null> {
+    const result = await db.select().from(typhoonAlerts)
+      .where(eq(typhoonAlerts.isActive, true))
+      .orderBy(desc(typhoonAlerts.issuedAt))
+      .limit(1);
+    return result[0] || null;
+  }
+
+  async getUpcomingHoliday(days: number): Promise<HkHoliday | null> {
+    const now = new Date();
+    const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+    const result = await db.select().from(hkHolidays)
+      .where(and(
+        gte(hkHolidays.date, now),
+        lte(hkHolidays.date, futureDate)
+      ))
+      .orderBy(hkHolidays.date)
+      .limit(1);
+    return result[0] || null;
+  }
+
+  async getHospitalEmergencyStatuses(referenceId: string): Promise<HospitalEmergencyStatus[]> {
+    const now = new Date();
+    return await db.select().from(hospitalEmergencyStatus)
+      .where(and(
+        eq(hospitalEmergencyStatus.referenceId, referenceId),
+        or(
+          sql`${hospitalEmergencyStatus.expiresAt} IS NULL`,
+          gte(hospitalEmergencyStatus.expiresAt, now)
+        )
+      ));
+  }
+
+  async updateHospitalEmergencyStatus(data: InsertHospitalEmergencyStatus): Promise<HospitalEmergencyStatus> {
+    const existing = await db.select().from(hospitalEmergencyStatus)
+      .where(and(
+        eq(hospitalEmergencyStatus.hospitalId, data.hospitalId),
+        eq(hospitalEmergencyStatus.referenceId, data.referenceId || '')
+      ))
+      .limit(1);
+    
+    if (existing[0]) {
+      const result = await db.update(hospitalEmergencyStatus)
+        .set({ ...data, confirmedAt: new Date() })
+        .where(eq(hospitalEmergencyStatus.id, existing[0].id))
+        .returning();
+      return result[0];
+    }
+    
+    const result = await db.insert(hospitalEmergencyStatus).values({
+      id: randomUUID(),
+      ...data,
+      confirmedAt: new Date()
+    }).returning();
+    return result[0];
+  }
+
+  async createEmergencySubscription(data: InsertUserEmergencySubscription): Promise<UserEmergencySubscription> {
+    const result = await db.insert(userEmergencySubscriptions).values({
+      id: randomUUID(),
+      ...data
+    }).returning();
+    return result[0];
+  }
+
+  async getHolidaysByYear(year: number): Promise<HkHoliday[]> {
+    return await db.select().from(hkHolidays)
+      .where(eq(hkHolidays.year, year))
+      .orderBy(hkHolidays.date);
+  }
+
+  async createTyphoonAlert(data: InsertTyphoonAlert): Promise<TyphoonAlert> {
+    const result = await db.insert(typhoonAlerts).values({
+      id: randomUUID(),
+      ...data
+    }).returning();
+    return result[0];
+  }
+
+  async liftTyphoonAlert(alertId: string): Promise<TyphoonAlert | null> {
+    const result = await db.update(typhoonAlerts)
+      .set({ isActive: false, liftedAt: new Date() })
+      .where(eq(typhoonAlerts.id, alertId))
+      .returning();
+    return result[0] || null;
   }
 }
 

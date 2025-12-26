@@ -429,3 +429,141 @@ export function createAggregateRatingSchema(ratingValue: number, reviewCount: nu
     }
   };
 }
+
+// Enhanced Hospital schema with VeterinaryCare + LocalBusiness for maximum GEO visibility
+export function createEnhancedHospitalSchema(hospital: {
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameZh: string;
+  addressEn: string;
+  addressZh?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+  open247?: boolean;
+  regionName?: string;
+  specialistAvail?: string | null;
+  lastVerifiedAt?: string | Date | null;
+  minFee?: number | null;
+  maxFee?: number | null;
+  languages?: string[] | null;
+  speciesAccepted?: string[] | null;
+}, language: string = 'en') {
+  const schema: any = {
+    "@context": "https://schema.org",
+    "@type": ["VeterinaryCare", "LocalBusiness"],
+    "name": language === 'zh-HK' ? hospital.nameZh : hospital.nameEn,
+    "alternateName": language === 'zh-HK' ? hospital.nameEn : hospital.nameZh,
+    "url": `https://petsos.site/hospitals/${hospital.slug}`,
+    "telephone": hospital.phone || undefined,
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": language === 'zh-HK' && hospital.addressZh ? hospital.addressZh : hospital.addressEn,
+      "addressLocality": "Hong Kong",
+      "addressRegion": hospital.regionName || "Hong Kong",
+      "addressCountry": "HK"
+    },
+    "isAcceptingNewPatients": true,
+    "publishingPrinciples": "https://petsos.site/verification-process"
+  };
+
+  // Add geo coordinates
+  if (hospital.latitude && hospital.longitude) {
+    const lat = typeof hospital.latitude === 'string' ? parseFloat(hospital.latitude) : hospital.latitude;
+    const lng = typeof hospital.longitude === 'string' ? parseFloat(hospital.longitude) : hospital.longitude;
+    if (!isNaN(lat) && !isNaN(lng)) {
+      schema.geo = {
+        "@type": "GeoCoordinates",
+        "latitude": lat,
+        "longitude": lng
+      };
+    }
+  }
+
+  // Add 24/7 opening hours
+  if (hospital.open247) {
+    schema.openingHoursSpecification = {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      "opens": "00:00",
+      "closes": "23:59"
+    };
+  }
+
+  // Add price range if fees are available
+  if (hospital.minFee && hospital.maxFee) {
+    schema.priceRange = `${hospital.minFee} - ${hospital.maxFee} HKD`;
+  } else if (hospital.minFee) {
+    schema.priceRange = `From ${hospital.minFee} HKD`;
+  } else {
+    schema.priceRange = "$$-$$$";
+  }
+
+  // Add verification timestamp (key trust signal)
+  if (hospital.lastVerifiedAt) {
+    const verifiedDate = hospital.lastVerifiedAt instanceof Date 
+      ? hospital.lastVerifiedAt.toISOString().split('T')[0]
+      : new Date(hospital.lastVerifiedAt).toISOString().split('T')[0];
+    schema.dateModified = verifiedDate;
+  }
+
+  // Add description with specialty info
+  const specialties = hospital.specialistAvail || (language === 'zh-HK' ? '緊急護理' : 'Emergency Care');
+  schema.description = language === 'zh-HK'
+    ? `${hospital.regionName || '香港'}24小時動物醫院，提供${specialties}服務。`
+    : `24-hour emergency vet in ${hospital.regionName || 'Hong Kong'} specializing in ${specialties}.`;
+
+  // Add medical specialty array
+  if (hospital.specialistAvail) {
+    schema.medicalSpecialty = hospital.specialistAvail.split(',').map(s => s.trim());
+  }
+
+  // Add available languages
+  if (hospital.languages && hospital.languages.length > 0) {
+    schema.availableLanguage = hospital.languages;
+  } else {
+    schema.availableLanguage = ["en", "zh-HK"];
+  }
+
+  // Add species accepted
+  if (hospital.speciesAccepted && hospital.speciesAccepted.length > 0) {
+    schema.additionalProperty = hospital.speciesAccepted.map(species => ({
+      "@type": "PropertyValue",
+      "name": "Species Accepted",
+      "value": species
+    }));
+  }
+
+  return schema;
+}
+
+// Typhoon/Holiday emergency status schema
+export function createEmergencyStatusSchema(
+  status: 'normal' | 'typhoon' | 'holiday',
+  activeHospitals: Array<{ name: string; url: string }>,
+  language: string = 'en'
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "SpecialAnnouncement",
+    "name": language === 'zh-HK' 
+      ? `香港寵物緊急服務 - ${status === 'typhoon' ? '颱風警告' : status === 'holiday' ? '假日' : '正常'}狀態`
+      : `Hong Kong Pet Emergency - ${status === 'typhoon' ? 'Typhoon Warning' : status === 'holiday' ? 'Holiday' : 'Normal'} Status`,
+    "category": "https://www.wikidata.org/wiki/Q81068910",
+    "datePosted": new Date().toISOString(),
+    "text": language === 'zh-HK'
+      ? `目前有 ${activeHospitals.length} 間24小時動物醫院確認營業中。`
+      : `Currently ${activeHospitals.length} 24-hour veterinary hospitals confirmed open.`,
+    "spatialCoverage": {
+      "@type": "City",
+      "name": "Hong Kong"
+    },
+    "announcementLocation": activeHospitals.map(h => ({
+      "@type": "VeterinaryCare",
+      "name": h.name,
+      "url": h.url
+    }))
+  };
+}

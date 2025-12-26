@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, MessageCircle, Navigation, Clock, MapPin, ArrowLeft, ExternalLink } from "lucide-react";
+import { Phone, MessageCircle, Navigation, Clock, MapPin, ArrowLeft, ExternalLink, AlertTriangle, Ship } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { StructuredData } from "@/components/StructuredData";
 import { analytics } from "@/lib/analytics";
@@ -21,6 +21,9 @@ interface District {
   descriptionZh: string;
   keywordsEn: string;
   keywordsZh: string;
+  transportWarningEn?: string;
+  transportWarningZh?: string;
+  hasTransportRestriction?: boolean;
 }
 
 const HONG_KONG_DISTRICTS: District[] = [
@@ -95,6 +98,75 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "沙田或新界寵物緊急情況？快速獲得24小時獸醫護理可以拯救您寵物的生命。立即聯繫緊急獸醫。",
     keywordsEn: "Sha Tin vet, New Territories animal hospital, 24-hour pet clinic Sha Tin, emergency vet Ma On Shan",
     keywordsZh: "沙田獸醫, 新界動物醫院, 沙田24小時寵物診所, 馬鞍山緊急獸醫"
+  },
+  {
+    slug: "lamma-island",
+    nameEn: "Lamma Island",
+    nameZh: "南丫島",
+    regionCode: "ISL",
+    latitude: 22.2167,
+    longitude: 114.1167,
+    descriptionEn: "Pet emergency on Lamma Island requires special planning. There are NO veterinary clinics on Lamma Island. You must take the ferry to Central or Aberdeen, then proceed to a 24-hour vet on Hong Kong Island.",
+    descriptionZh: "南丫島寵物緊急情況需要特別計劃。南丫島上沒有獸醫診所。您必須乘渡輪到中環或香港仔，然後前往港島的24小時獸醫診所。",
+    keywordsEn: "Lamma Island vet, pet emergency Lamma, ferry pet transport, outlying islands vet",
+    keywordsZh: "南丫島獸醫, 南丫島寵物緊急, 渡輪寵物運輸, 離島獸醫",
+    hasTransportRestriction: true,
+    transportWarningEn: "⚠️ TRANSPORT ALERT: No veterinary clinics on Lamma Island. You must take the ferry to Central (Central Pier 4, ~30 min) or Aberdeen (Aberdeen Promenade Pier, ~25 min). Last ferries: Central ~11:30pm, Aberdeen ~10:30pm. After last ferry, contact emergency marine services. Plan your route to the nearest Hong Kong Island 24-hour vet before departing.",
+    transportWarningZh: "⚠️ 交通警示：南丫島上沒有獸醫診所。您必須乘渡輪到中環（中環4號碼頭，約30分鐘）或香港仔（香港仔海濱長廊碼頭，約25分鐘）。尾班船：中環約晚上11:30，香港仔約晚上10:30。尾班船後請聯繫緊急海上服務。出發前請先規劃到最近港島24小時獸醫診所的路線。"
+  },
+  {
+    slug: "discovery-bay",
+    nameEn: "Discovery Bay",
+    nameZh: "愉景灣",
+    regionCode: "ISL",
+    latitude: 22.2947,
+    longitude: 114.0147,
+    descriptionEn: "Pet emergency in Discovery Bay? Limited vehicle access means you need to plan your route carefully. The fastest way to a 24-hour vet is via ferry to Central, or Discovery Bay bus to Tung Chung MTR.",
+    descriptionZh: "愉景灣寵物緊急情況？受限的車輛通行意味著您需要仔細規劃路線。到24小時獸醫最快的方式是乘渡輪到中環，或乘愉景灣巴士到東涌港鐵站。",
+    keywordsEn: "Discovery Bay vet, pet emergency DB, Lantau Island vet, Discovery Bay ferry pet",
+    keywordsZh: "愉景灣獸醫, 愉景灣寵物緊急, 大嶼山獸醫, 愉景灣渡輪寵物",
+    hasTransportRestriction: true,
+    transportWarningEn: "⚠️ TRANSPORT ALERT: Discovery Bay has restricted vehicle access. Options: 1) Ferry to Central (24/7 service, ~25 min, pets allowed on deck), 2) DB Bus to Tung Chung MTR (~15 min), then taxi to nearest Kowloon vet. Private cars cannot enter DB—arrange taxi pickup at DB Plaza or ferry pier. After midnight: ferry service continues 24/7 but reduced frequency.",
+    transportWarningZh: "⚠️ 交通警示：愉景灣限制車輛進入。選項：1) 渡輪到中環（24小時服務，約25分鐘，寵物可在甲板），2) 愉景灣巴士到東涌港鐵站（約15分鐘），然後乘的士到最近的九龍獸醫。私家車不能進入愉景灣—請安排在愉景廣場或渡輪碼頭接載。午夜後：渡輪服務繼續24小時但班次減少。"
+  },
+  {
+    slug: "cheung-chau",
+    nameEn: "Cheung Chau",
+    nameZh: "長洲",
+    regionCode: "ISL",
+    latitude: 22.2100,
+    longitude: 114.0267,
+    descriptionEn: "Pet emergency on Cheung Chau? There are no 24-hour veterinary clinics on the island. You must take the ferry to Central for emergency vet care.",
+    descriptionZh: "長洲寵物緊急情況？島上沒有24小時獸醫診所。您必須乘渡輪到中環尋求緊急獸醫護理。",
+    keywordsEn: "Cheung Chau vet, pet emergency outlying islands, ferry pet transport Central",
+    keywordsZh: "長洲獸醫, 離島寵物緊急, 渡輪寵物運輸中環",
+    hasTransportRestriction: true,
+    transportWarningEn: "⚠️ TRANSPORT ALERT: No veterinary clinics on Cheung Chau. Take the ferry to Central (Central Pier 5, ~35-55 min depending on fast/slow ferry). Last fast ferry ~11:30pm, last slow ferry ~11:45pm. Pets are allowed on ferries. Plan your route to Hong Kong Island 24-hour vet before departing.",
+    transportWarningZh: "⚠️ 交通警示：長洲沒有獸醫診所。乘渡輪到中環（中環5號碼頭，約35-55分鐘，視快船/慢船而定）。尾班快船約晚上11:30，尾班慢船約晚上11:45。渡輪允許攜帶寵物。出發前請先規劃到港島24小時獸醫診所的路線。"
+  },
+  {
+    slug: "tuen-mun",
+    nameEn: "Tuen Mun",
+    nameZh: "屯門",
+    regionCode: "NTI",
+    latitude: 22.3908,
+    longitude: 113.9772,
+    descriptionEn: "Pet emergency in Tuen Mun? Connect with nearby 24-hour veterinary clinics in the New Territories West region. Fast access to emergency care when your pet needs it most.",
+    descriptionZh: "屯門寵物緊急情況？聯繫新界西區附近的24小時獸醫診所。在您的寵物最需要時快速獲得緊急護理。",
+    keywordsEn: "Tuen Mun vet, 24-hour animal hospital Tuen Mun, emergency pet care New Territories West",
+    keywordsZh: "屯門獸醫, 屯門24小時動物醫院, 新界西緊急寵物護理"
+  },
+  {
+    slug: "yuen-long",
+    nameEn: "Yuen Long",
+    nameZh: "元朗",
+    regionCode: "NTI",
+    latitude: 22.4445,
+    longitude: 114.0228,
+    descriptionEn: "Pet emergency in Yuen Long? Find 24-hour veterinary clinics in the New Territories ready to help your pet. Immediate access to emergency care.",
+    descriptionZh: "元朗寵物緊急情況？尋找新界24小時獸醫診所，隨時為您的寵物提供幫助。即時獲得緊急護理。",
+    keywordsEn: "Yuen Long vet, 24-hour pet clinic Yuen Long, emergency vet New Territories",
+    keywordsZh: "元朗獸醫, 元朗24小時寵物診所, 新界緊急獸醫"
   }
 ];
 
@@ -259,6 +331,51 @@ export default function DistrictPage() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Transport Warning for Remote Districts */}
+        {district.hasTransportRestriction && (
+          <Card className="mb-8 border-amber-500 bg-amber-50 dark:bg-amber-900/10" data-testid="card-transport-warning">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-amber-600 rounded-full flex-shrink-0">
+                  <Ship className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-700 dark:text-amber-300" />
+                    <h2 className="text-lg font-bold text-amber-900 dark:text-amber-100">
+                      {language === 'zh-HK' ? '重要交通資訊' : 'Important Transport Information'}
+                    </h2>
+                  </div>
+                  <p className="text-amber-800 dark:text-amber-200 text-sm leading-relaxed">
+                    {language === 'zh-HK' ? district.transportWarningZh : district.transportWarningEn}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="border-amber-600 text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/20"
+                      onClick={() => window.open('https://www.nwff.com.hk/route', '_blank')}
+                      data-testid="button-ferry-schedule"
+                    >
+                      <Ship className="h-4 w-4 mr-2" />
+                      {language === 'zh-HK' ? '渡輪時刻表' : 'Ferry Schedule'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-amber-600 text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/20"
+                      onClick={() => navigate('/hospitals')}
+                      data-testid="button-find-mainland-vet"
+                    >
+                      {language === 'zh-HK' ? '查看港島/九龍獸醫' : 'View HK Island/Kowloon Vets'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Emergency CTA */}
         <Card className="mb-8 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10">
           <CardContent className="p-6">

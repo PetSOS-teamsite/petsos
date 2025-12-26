@@ -43,6 +43,9 @@ Preferred communication style: Simple, everyday language.
 - **Clinic Reviews/Ratings**: Pet owner reviews with moderation.
 - **Admin Analytics Dashboard**: Visual analytics for trends and distribution.
 - **Two-Way WhatsApp Chat**: Admin interface for two-way messaging with hospitals, including search, filters, media previews, and read receipts.
+- **Generative Engine Optimization (GEO)**: Trust & authority pages (About Us, Medical Advisory, Verification Process), enhanced JSON-LD schema markup for hospital listings with VeterinaryCare+LocalBusiness dual-type, price transparency, verification timestamps, and medical specialties.
+- **Emergency Symptom Knowledge Blocks**: 10 detailed guides covering critical pet conditions (cat panting, dog bloat, poisoning, seizures, limping, not eating, eye injury, heatstroke, urinary blockage, breathing difficulty) with severity classifications and action steps for panic search traffic.
+- **Typhoon & Holiday Protocol**: Real-time tracking of 24-hour vet clinic availability during T8/T10 typhoon signals and public holidays (CNY, Christmas, Easter), with database tables for typhoon alerts, HK holidays (2024-2025 pre-seeded), hospital emergency status, and subscription management. API endpoints for status queries, hospital status updates, and emergency subscriptions.
 
 # External Dependencies
 

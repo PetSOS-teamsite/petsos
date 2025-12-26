@@ -34,7 +34,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { analytics } from "@/lib/analytics";
 import { SEO } from "@/components/SEO";
-import { StructuredData, createLocalBusinessSchema, createBreadcrumbSchema } from "@/components/StructuredData";
+import { StructuredData, createEnhancedHospitalSchema, createBreadcrumbSchema } from "@/components/StructuredData";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import type { Hospital, HospitalConsultFee } from "@shared/schema";
@@ -235,19 +235,26 @@ export default function HospitalDetailPage() {
         }}
       />
       <StructuredData
-        id={`hospital-${hospital.id}-local-business`}
-        data={createLocalBusinessSchema({
+        id={`hospital-${hospital.id}-enhanced-schema`}
+        data={createEnhancedHospitalSchema({
           id: hospital.id,
-          name: hospital.nameEn,
+          slug: hospital.slug,
+          nameEn: hospital.nameEn,
           nameZh: hospital.nameZh,
-          address: hospital.addressEn,
+          addressEn: hospital.addressEn,
           addressZh: hospital.addressZh,
-          phone: hospital.phone || '',
+          phone: hospital.phone,
           whatsapp: hospital.whatsapp,
-          latitude: hospital.latitude ? parseFloat(hospital.latitude) : null,
-          longitude: hospital.longitude ? parseFloat(hospital.longitude) : null,
-          is24Hour: hospital.open247 || false,
-          regionId: hospital.regionId,
+          latitude: hospital.latitude,
+          longitude: hospital.longitude,
+          open247: hospital.open247,
+          regionName: regions?.find(r => r.id === hospital.regionId)?.nameEn,
+          specialistAvail: hospital.specialistAvail,
+          lastVerifiedAt: hospital.lastVerifiedAt,
+          minFee: consultFees && consultFees.length > 0 ? Math.min(...consultFees.filter(f => f.minFee).map(f => parseFloat(f.minFee!))) : null,
+          maxFee: consultFees && consultFees.length > 0 ? Math.max(...consultFees.filter(f => f.maxFee).map(f => parseFloat(f.maxFee!))) : null,
+          languages: hospital.languages,
+          speciesAccepted: hospital.speciesAccepted,
         }, language)}
       />
       <StructuredData
