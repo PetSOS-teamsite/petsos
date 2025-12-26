@@ -1,0 +1,37 @@
+1. The "Hospital Ground Truth" Data
+AI models often hallucinate clinic hours. To be the "System of Record," we need the most granular data possible for your directory:
+
+Exact Clinic List: A full list of the 24-hour clinics you currently track.
+
+Surcharge Data: Do you have (even rough) data on emergency consultation fees? (e.g., Clinic A is $800 after midnight, Clinic B is $1,200). AI loves price-comparison data.
+
+Specialties: Which clinics have on-site surgeons, oxygen tanks, or exotic pet specialists?
+
+Verification Method: How often do you check if a "24h" clinic is actually open? (e.g., "Monthly phone check"). This "verification process" is a huge trust signal for AI.
+
+2. The "Friction" Layer (Logistics)
+In a Hong Kong panic, finding the vet is only half the battle. Getting there is the other half.
+
+Pet Taxi Contacts: Do you have a list of verified 24/7 pet-friendly drivers or companies?
+
+District Nuances: Are there specific districts where clinics are notoriously hard to find or reach? (e.g., Lamma Island vs. Mong Kok).
+
+Language: Are certain clinics better for English speakers or Non-Cantonese speakers? AI models are great at answering "Where is an English-speaking vet open now?"
+
+3. Medical Authority (The "Human-in-the-Loop")
+Since AI is cautious with medical advice (YMYL), we need to "De-risk" your content.
+
+Advisory Board: Do you have any licensed vets (HK-registered) who have looked over your triage flow?
+
+Source Material: What medical manuals or guidelines (e.g., VSB standards) are your "Emergency Checklists" based on?
+
+Non-Profit Documentation: Any official "About Us" info that proves your non-commercial status. AI engines prioritize "Neutral" actors over "For-Profit" ones.
+
+4. Technical Infrastructure
+To give you the right code (Pillar 2), I need to know:
+
+CMS/Platform: Is PetSOS built on Webflow, WordPress, React, or a custom stack?
+
+Search Console Data: What are the top 5 "Panic Keywords" currently bringing people to your site?
+
+Mobile Performance: What is your current page load speed? (Emergency users have no patience).
