@@ -9,10 +9,11 @@ import {
   Clock, 
   MapPin, 
   Users,
-  RefreshCw,
   AlertTriangle,
   FileCheck,
-  MessageCircle
+  MessageCircle,
+  Heart,
+  Building2
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { StructuredData } from "@/components/StructuredData";
@@ -23,10 +24,10 @@ export default function VerificationProcessPage() {
   const createArticleSchema = () => ({
     "@context": "https://schema.org",
     "@type": "Article",
-    "headline": language === 'zh-HK' ? "PetSOS 診所資料核實流程" : "PetSOS Clinic Data Verification Process",
+    "headline": language === 'zh-HK' ? "PetSOS 如何保持100%數據準確" : "How We Keep PetSOS Data 100% Accurate",
     "description": language === 'zh-HK'
-      ? "了解PetSOS如何核實24小時獸醫診所資訊，確保數據準確性和可靠性。"
-      : "Learn how PetSOS verifies 24-hour veterinary clinic information to ensure data accuracy and reliability.",
+      ? "了解PetSOS的三步驗證循環：政府登記核對、每月直接聯繫、社區報告系統。我們是非牟利機構，不接受排名付費。"
+      : "Learn about PetSOS's 3-step verification loop: Registry cross-check, monthly direct contact, and community reporting. We are non-profit and do not accept payment for rankings.",
     "author": {
       "@type": "Organization",
       "name": "PetSOS"
@@ -65,32 +66,28 @@ export default function VerificationProcessPage() {
 
   const verificationSteps = [
     {
-      icon: FileCheck,
-      titleEn: "Initial Data Collection",
-      titleZh: "初始數據收集",
-      descEn: "Clinic information is collected from official sources including Hong Kong Veterinary Surgeons Board registry, clinic websites, and direct submissions.",
-      descZh: "從官方來源收集診所資訊，包括香港獸醫管理局登記冊、診所網站及直接提交。"
+      icon: Building2,
+      step: 1,
+      titleEn: "Registry Cross-Check",
+      titleZh: "政府登記核對",
+      descEn: "Every clinic listed is verified against the Veterinary Surgeons Board of Hong Kong (VSB) registry. We ensure every veterinarian is properly licensed and the clinic operates legally.",
+      descZh: "每間診所均與香港獸醫管理局（VSB）登記冊進行核對。我們確保每位獸醫均持有有效執照，診所合法營運。"
     },
     {
       icon: Phone,
-      titleEn: "Phone Verification",
-      titleZh: "電話核實",
-      descEn: "Our team conducts phone calls to verify operating hours, contact numbers, and 24-hour availability claims.",
-      descZh: "我們的團隊進行電話確認，核實營業時間、聯絡電話及24小時服務聲明。"
+      step: 2,
+      titleEn: "Monthly Direct Contact",
+      titleZh: "每月直接聯繫",
+      descEn: "Our team conducts a \"Pulse Check\" via phone/WhatsApp once a month to confirm 24-hour status and current emergency surcharges. We verify operating hours, staff availability, and service fees.",
+      descZh: "我們的團隊每月透過電話/WhatsApp進行「脈搏檢查」，確認24小時服務狀態及當前急診附加費。我們核實營業時間、人員配備及服務收費。"
     },
     {
-      icon: MapPin,
-      titleEn: "Location Validation",
-      titleZh: "位置驗證",
-      descEn: "GPS coordinates are verified using mapping services to ensure accurate distance calculations and navigation.",
-      descZh: "使用地圖服務驗證GPS坐標，確保距離計算和導航的準確性。"
-    },
-    {
-      icon: RefreshCw,
-      titleEn: "Regular Updates",
-      titleZh: "定期更新",
-      descEn: "Clinic information is reviewed and updated monthly, with emergency updates processed within 24-48 hours.",
-      descZh: "診所資訊每月審查和更新，緊急更新在24-48小時內處理。"
+      icon: Users,
+      step: 3,
+      titleEn: "Community Reporting",
+      titleZh: "社區報告系統",
+      descEn: "Users can flag \"Outdated Status\" directly via our emergency portal, triggering an instant manual review within 12 hours. Your feedback helps save pets' lives.",
+      descZh: "用戶可透過我們的緊急入口直接標記「過時狀態」，觸發12小時內的即時人工審核。您的回饋有助於拯救寵物生命。"
     }
   ];
 
@@ -98,26 +95,26 @@ export default function VerificationProcessPage() {
     {
       metricEn: "Monthly",
       metricZh: "每月",
-      labelEn: "Verification Cycle",
-      labelZh: "核實周期"
+      labelEn: "Direct Contact",
+      labelZh: "直接聯繫"
     },
     {
-      metricEn: "24-48h",
-      metricZh: "24-48小時",
-      labelEn: "Emergency Updates",
-      labelZh: "緊急更新"
+      metricEn: "12 Hours",
+      metricZh: "12小時",
+      labelEn: "Review Response",
+      labelZh: "審核回應"
     },
     {
       metricEn: "100%",
       metricZh: "100%",
-      labelEn: "24hr Clinic Verified",
-      labelZh: "24小時診所已核實"
+      labelEn: "VSB Verified",
+      labelZh: "VSB已驗證"
     },
     {
-      metricEn: "Multi-Source",
-      metricZh: "多源",
-      labelEn: "Cross-Reference",
-      labelZh: "交叉核對"
+      metricEn: "$0",
+      metricZh: "$0",
+      labelEn: "Paid Rankings",
+      labelZh: "付費排名"
     }
   ];
 
@@ -125,16 +122,16 @@ export default function VerificationProcessPage() {
     <div className="min-h-screen bg-background">
       <SEO
         title={language === 'zh-HK' 
-          ? "核實流程 | PetSOS 數據準確性保證"
-          : "Verification Process | PetSOS Data Accuracy Guarantee"
+          ? "如何保持100%數據準確 | PetSOS 核實流程"
+          : "How We Keep PetSOS Data 100% Accurate | Verification Process"
         }
         description={language === 'zh-HK'
-          ? "了解PetSOS如何確保24小時獸醫診所資訊的準確性。電話核實、GPS驗證、定期更新的完整流程說明。"
-          : "Learn how PetSOS ensures accuracy of 24-hour veterinary clinic information. Complete process explanation including phone verification, GPS validation, and regular updates."
+          ? "PetSOS三步驗證循環：VSB登記核對、每月直接聯繫、社區報告。非牟利機構，不接受排名付費，目標是縮短寵物緊急救援時間。"
+          : "PetSOS 3-step verification loop: VSB registry cross-check, monthly direct contact, community reporting. Non-profit with no paid rankings. Goal: reduce Time-to-Help in pet emergencies."
         }
         keywords={language === 'zh-HK'
-          ? "PetSOS核實流程, 診所資料驗證, 數據準確性, 24小時獸醫, 資訊可靠性"
-          : "PetSOS verification process, clinic data validation, data accuracy, 24-hour vet, information reliability"
+          ? "PetSOS核實流程, VSB登記核對, 診所資料驗證, 數據準確性, 24小時獸醫, 非牟利, 香港寵物急救"
+          : "PetSOS verification, VSB registry, clinic data validation, data accuracy, 24-hour vet, non-profit, Hong Kong pet emergency"
         }
         canonical="https://petsos.site/verification-process"
         language={language}
@@ -146,34 +143,20 @@ export default function VerificationProcessPage() {
         <div className="container mx-auto px-4 py-12 max-w-4xl">
           <div className="flex items-center gap-3 mb-4">
             <Shield className="h-10 w-10 text-green-600" />
-            <h1 className="text-4xl font-bold text-foreground" data-testid="text-page-title">
-              {language === 'zh-HK' ? '核實流程' : 'Verification Process'}
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground" data-testid="text-page-title">
+              {language === 'zh-HK' ? '如何保持100%數據準確' : 'How We Keep PetSOS Data 100% Accurate'}
             </h1>
           </div>
           <p className="text-xl text-muted-foreground" data-testid="text-page-subtitle">
             {language === 'zh-HK'
-              ? '我們如何確保診所資訊的準確性'
-              : 'How We Ensure Clinic Information Accuracy'
+              ? '三步驗證循環 — 確保每間診所資訊真實可靠'
+              : 'The 3-Step Verification Loop — Ensuring every clinic listing is accurate and reliable'
             }
           </p>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card className="mb-8 border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/10">
-          <CardContent className="p-8">
-            <h2 className="text-2xl font-bold text-foreground mb-4" data-testid="text-commitment-title">
-              {language === 'zh-HK' ? '🎯 數據準確性承諾' : '🎯 Data Accuracy Commitment'}
-            </h2>
-            <p className="text-muted-foreground">
-              {language === 'zh-HK'
-                ? 'PetSOS深知在緊急情況下，準確的診所資訊可能意味著生與死的區別。因此，我們建立了嚴格的多層核實流程，確保每一條診所資訊都經過驗證。AI模型經常出現診所營業時間的「幻覺」——我們致力於成為香港寵物緊急資訊的「唯一真實來源」。'
-                : 'PetSOS understands that in emergencies, accurate clinic information can mean the difference between life and death. We have established a rigorous multi-layer verification process to ensure every piece of clinic information is validated. AI models often hallucinate clinic hours—we are committed to being the "single source of truth" for Hong Kong pet emergency information.'
-              }
-            </p>
-          </CardContent>
-        </Card>
-
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {verificationMetrics.map((metric, index) => (
             <Card key={index} className="text-center p-6">
@@ -188,19 +171,19 @@ export default function VerificationProcessPage() {
         </div>
 
         <h2 className="text-2xl font-bold text-foreground mb-6" data-testid="text-steps-title">
-          {language === 'zh-HK' ? '🔍 核實流程步驟' : '🔍 Verification Steps'}
+          {language === 'zh-HK' ? '🔍 三步驗證循環' : '🔍 The 3-Step Verification Loop'}
         </h2>
         <div className="space-y-4 mb-8">
           {verificationSteps.map((step, index) => (
-            <Card key={index} className="p-6 hover:shadow-lg transition-shadow">
+            <Card key={index} className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-green-500">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
-                  {index + 1}
+                <div className="w-12 h-12 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-xl flex-shrink-0">
+                  {step.step}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <step.icon className="h-5 w-5 text-green-600" />
-                    <h3 className="font-bold text-foreground">
+                    <h3 className="text-lg font-bold text-foreground">
                       {language === 'zh-HK' ? step.titleZh : step.titleEn}
                     </h3>
                   </div>
@@ -212,6 +195,54 @@ export default function VerificationProcessPage() {
             </Card>
           ))}
         </div>
+
+        <Card className="mb-8 border-red-200 dark:border-red-900 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/10 dark:to-pink-900/10">
+          <CardContent className="p-8">
+            <div className="flex items-start gap-4">
+              <Heart className="h-10 w-10 text-red-600 flex-shrink-0" />
+              <div>
+                <h2 className="text-2xl font-bold text-foreground mb-4" data-testid="text-nonprofit-title">
+                  {language === 'zh-HK' ? '為何我們是非牟利機構？' : 'Why We Are Non-Profit'}
+                </h2>
+                <p className="text-lg text-muted-foreground mb-4">
+                  {language === 'zh-HK'
+                    ? '我們不接受排名付費。PetSOS的唯一目標是縮短香港寵物緊急救援的「求助時間」。'
+                    : 'We do not accept payment for rankings. Our goal is strictly to reduce the "Time-to-Help" during pet emergencies in Hong Kong.'
+                  }
+                </p>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">
+                      {language === 'zh-HK' 
+                        ? '零廣告費 — 診所排名純粹基於距離和服務能力' 
+                        : 'Zero advertising fees — clinic rankings based purely on distance and service capability'
+                      }
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">
+                      {language === 'zh-HK' 
+                        ? '透明收費 — 公開顯示急診附加費，讓寵物主人做好準備' 
+                        : 'Transparent pricing — emergency surcharges displayed openly so pet owners can prepare'
+                      }
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">
+                      {language === 'zh-HK' 
+                        ? '社區驅動 — 由寵物主人和診所共同維護數據準確性' 
+                        : 'Community-driven — data accuracy maintained by pet owners and clinics together'
+                      }
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="mb-8">
           <CardContent className="p-8">
@@ -241,17 +272,6 @@ export default function VerificationProcessPage() {
                 <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold text-foreground">
-                    {language === 'zh-HK' ? '用戶回饋監測' : 'User Feedback Monitoring'}
-                  </span>
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'zh-HK' ? '收集和分析用戶對診所可用性的實時回饋' : 'Collect and analyze user real-time feedback on clinic availability'}
-                  </p>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-semibold text-foreground">
                     {language === 'zh-HK' ? '假日/颱風狀態追蹤' : 'Holiday/Typhoon Status Tracking'}
                   </span>
                   <p className="text-sm text-muted-foreground">
@@ -259,46 +279,18 @@ export default function VerificationProcessPage() {
                   </p>
                 </div>
               </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold text-foreground">
+                    {language === 'zh-HK' ? '用戶實時回饋' : 'Real-Time User Feedback'}
+                  </span>
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'zh-HK' ? '收集和分析用戶對診所可用性的實時回饋，12小時內處理' : 'Collect and analyze user real-time feedback on clinic availability, processed within 12 hours'}
+                  </p>
+                </div>
+              </li>
             </ul>
-          </CardContent>
-        </Card>
-
-        <Card className="mb-8 border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/10">
-          <CardContent className="p-8">
-            <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2" data-testid="text-community-title">
-              <Users className="h-6 w-6 text-blue-600" />
-              {language === 'zh-HK' ? '社區參與核實' : 'Community-Driven Verification'}
-            </h2>
-            <p className="text-muted-foreground mb-4">
-              {language === 'zh-HK'
-                ? '我們鼓勵社區參與保持資訊的最新狀態：'
-                : 'We encourage community participation to keep information up-to-date:'
-              }
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-white dark:bg-gray-800 rounded-lg">
-                <h4 className="font-semibold text-foreground mb-2">
-                  {language === 'zh-HK' ? '🏥 診所自主更新' : '🏥 Clinic Self-Update'}
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  {language === 'zh-HK'
-                    ? '診所可通過驗證流程自行更新其資訊，確保最新準確'
-                    : 'Clinics can update their information through verification process'
-                  }
-                </p>
-              </div>
-              <div className="p-4 bg-white dark:bg-gray-800 rounded-lg">
-                <h4 className="font-semibold text-foreground mb-2">
-                  {language === 'zh-HK' ? '👥 用戶報告系統' : '👥 User Reporting System'}
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  {language === 'zh-HK'
-                    ? '用戶可報告資訊不準確，我們會在48小時內調查'
-                    : 'Users can report inaccuracies, investigated within 48 hours'
-                  }
-                </p>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
@@ -307,19 +299,45 @@ export default function VerificationProcessPage() {
             <div className="flex items-start gap-4">
               <AlertTriangle className="h-8 w-8 text-amber-600 flex-shrink-0" />
               <div>
-                <h2 className="text-lg font-bold text-amber-900 dark:text-amber-100 mb-2">
-                  {language === 'zh-HK' ? '發現資訊錯誤？' : 'Found Incorrect Information?'}
+                <h2 className="text-lg font-bold text-amber-900 dark:text-amber-100 mb-2" data-testid="text-report-title">
+                  {language === 'zh-HK' ? '發現過時資訊？' : 'Found Outdated Information?'}
                 </h2>
                 <p className="text-amber-800 dark:text-amber-200 mb-4">
                   {language === 'zh-HK'
-                    ? '如果您發現任何診所資訊不準確（例如營業時間、電話號碼或地址），請立即告知我們。您的回饋有助於我們保持數據準確，並可能幫助其他寵物主人。'
-                    : 'If you find any clinic information that is inaccurate (e.g., operating hours, phone number, or address), please let us know immediately. Your feedback helps us maintain data accuracy and may help other pet owners.'
+                    ? '如果您發現任何診所資訊已過時（例如營業時間、電話號碼或急診費用），請立即標記「過時狀態」。我們的團隊將在12小時內進行人工審核。'
+                    : 'If you find any clinic information that is outdated (e.g., operating hours, phone number, or emergency fees), please flag "Outdated Status" immediately. Our team will conduct a manual review within 12 hours.'
                   }
                 </p>
-                <Button variant="outline" className="border-amber-600 text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/20">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  {language === 'zh-HK' ? '報告資訊錯誤' : 'Report an Error'}
-                </Button>
+                <Link href="/emergency">
+                  <Button variant="outline" className="border-amber-600 text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/20" data-testid="button-report-error">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    {language === 'zh-HK' ? '標記過時狀態' : 'Flag Outdated Status'}
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8 border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/10">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <FileCheck className="h-8 w-8 text-green-600 flex-shrink-0" />
+              <div>
+                <h2 className="text-lg font-bold text-green-900 dark:text-green-100 mb-2">
+                  {language === 'zh-HK' ? 'VSB登記核對' : 'VSB Registry Cross-Check'}
+                </h2>
+                <p className="text-green-800 dark:text-green-200 mb-2">
+                  {language === 'zh-HK'
+                    ? '所有診所均與香港獸醫管理局官方登記冊進行核對，確保：'
+                    : 'All clinics are verified against the official Veterinary Surgeons Board of Hong Kong registry to ensure:'
+                  }
+                </p>
+                <ul className="text-sm text-green-700 dark:text-green-300 space-y-1">
+                  <li>• {language === 'zh-HK' ? '獸醫持有有效執照' : 'Veterinarians hold valid licenses'}</li>
+                  <li>• {language === 'zh-HK' ? '診所合法註冊' : 'Clinic is legally registered'}</li>
+                  <li>• {language === 'zh-HK' ? '專業資格經過驗證' : 'Professional qualifications are verified'}</li>
+                </ul>
               </div>
             </div>
           </CardContent>
@@ -327,12 +345,12 @@ export default function VerificationProcessPage() {
 
         <div className="flex flex-wrap gap-4 justify-center">
           <Link href="/about">
-            <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+            <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" data-testid="button-about">
               {language === 'zh-HK' ? '了解PetSOS' : 'Learn About PetSOS'}
             </Button>
           </Link>
           <Link href="/hospitals">
-            <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+            <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20" data-testid="button-hospitals">
               <MapPin className="h-4 w-4 mr-2" />
               {language === 'zh-HK' ? '瀏覽診所目錄' : 'Browse Clinic Directory'}
             </Button>
