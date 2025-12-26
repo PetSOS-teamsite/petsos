@@ -16,7 +16,10 @@ import {
   Calendar,
   Trash2,
   CalendarClock,
-  AlertCircle
+  AlertCircle,
+  Rocket,
+  Mail,
+  Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -144,6 +147,49 @@ export default function AdminNotificationsPage() {
       });
     },
   });
+
+  const [showLaunchPreview, setShowLaunchPreview] = useState(false);
+
+  const launchNotificationMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/admin/send-launch-notification", {});
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "🚀 Launch Notification Sent!",
+        description: `Sent to ${data.results?.totalNotified || 0} pet owners (${data.results?.push?.success || 0} push, ${data.results?.email?.success || 0} email)`,
+      });
+      setShowLaunchPreview(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/notifications"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Send Launch Notification",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const launchMessageEn = `Dear Pet Owner,
+
+PetSOS is now ready to help you find 24-hour veterinary care for your pet in Hong Kong.
+
+✅ Find nearby 24-hour clinics
+✅ One-tap emergency broadcast
+✅ Real-time typhoon alerts
+
+Visit https://petsos.site now!`;
+
+  const launchMessageZh = `親愛的寵物主人，
+
+PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
+
+✅ 搜尋附近 24 小時診所
+✅ 一鍵緊急廣播
+✅ 即時颱風警報
+
+立即瀏覽 https://petsos.site！`;
 
   const resetForm = () => {
     setTitle("");
@@ -278,6 +324,100 @@ export default function AdminNotificationsPage() {
             </Badge>
           )}
         </div>
+
+        <Card className="mb-6 border-2 border-orange-300 dark:border-orange-700 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950 dark:to-amber-950" data-testid="card-launch-notification">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+              <Rocket className="h-5 w-5" />
+              Launch Notification
+            </CardTitle>
+            <CardDescription>
+              Send official launch announcement to all pet owners via push notifications and email (NO WhatsApp)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col lg:flex-row gap-4 items-start">
+              <div className="flex-1 flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowLaunchPreview(!showLaunchPreview)}
+                  data-testid="button-preview-launch"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  {showLaunchPreview ? 'Hide Preview' : 'Preview Message'}
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      className="bg-orange-600 hover:bg-orange-700"
+                      disabled={launchNotificationMutation.isPending}
+                      data-testid="button-send-launch"
+                    >
+                      {launchNotificationMutation.isPending ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Rocket className="h-4 w-4 mr-2" />
+                          Send Launch Announcement
+                        </>
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Send Launch Announcement?</AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-2">
+                        <p>This will send the bilingual launch announcement to <strong>ALL pet owners</strong> via:</p>
+                        <ul className="list-disc list-inside space-y-1 mt-2">
+                          <li className="flex items-center gap-2">
+                            <Bell className="h-4 w-4 text-blue-500" /> Push notifications (for users with enabled push)
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-green-500" /> Email (for users with email addresses)
+                          </li>
+                        </ul>
+                        <p className="text-sm text-orange-600 mt-3">
+                          ⚠️ This action cannot be undone. Make sure you're ready to launch!
+                        </p>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel data-testid="button-cancel-launch">Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => launchNotificationMutation.mutate()}
+                        className="bg-orange-600 hover:bg-orange-700"
+                        data-testid="button-confirm-launch"
+                      >
+                        <Rocket className="h-4 w-4 mr-2" />
+                        Yes, Send to All Pet Owners
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="flex items-center gap-1"><Bell className="h-3 w-3" /> Push + <Mail className="h-3 w-3" /> Email</p>
+                <p className="text-xs text-gray-500">No WhatsApp (to avoid spam)</p>
+              </div>
+            </div>
+            
+            {showLaunchPreview && (
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">🚀 PetSOS is Now Live!</h4>
+                  <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans">{launchMessageEn}</pre>
+                </div>
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">🚀 PetSOS 正式啟動！</h4>
+                  <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans">{launchMessageZh}</pre>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card data-testid="card-compose-notification">

@@ -5380,6 +5380,170 @@ PetSOS 團隊`;
     }
   });
   
+  // Admin: Send Launch Notification to all pet owners (Push + Email only, NO WhatsApp)
+  app.post("/api/admin/send-launch-notification", broadcastLimiter, isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const userId = (req.user as any).id;
+      
+      // Bilingual launch message template
+      const titleEn = "🚀 PetSOS is Now Live!";
+      const titleZh = "🚀 PetSOS 正式啟動！";
+      const messageEn = `Dear Pet Owner,
+
+PetSOS is now ready to help you find 24-hour veterinary care for your pet in Hong Kong.
+
+✅ Find nearby 24-hour clinics
+✅ One-tap emergency broadcast
+✅ Real-time typhoon alerts
+
+Visit https://petsos.site now!`;
+
+      const messageZh = `親愛的寵物主人，
+
+PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
+
+✅ 搜尋附近 24 小時診所
+✅ 一鍵緊急廣播
+✅ 即時颱風警報
+
+立即瀏覽 https://petsos.site！`;
+
+      const combinedMessage = `${messageEn}\n\n---\n\n${messageZh}`;
+      const combinedTitle = `${titleEn} / ${titleZh}`;
+      
+      // Create a broadcast record for tracking
+      const broadcast = await storage.createNotificationBroadcast({
+        title: combinedTitle,
+        message: combinedMessage,
+        targetLanguage: null,
+        targetRole: 'pet_owner',
+        url: 'https://petsos.site',
+        adminId: userId,
+        status: 'pending'
+      });
+      
+      const results = {
+        pushSuccessCount: 0,
+        pushFailureCount: 0,
+        emailSuccessCount: 0,
+        emailFailureCount: 0,
+        totalPetOwners: 0
+      };
+      
+      // 1. Send Push Notifications to pet owners with active tokens
+      const pushTokens = await storage.getPetOwnerPushTokens();
+      console.log(`[Launch Notification] Found ${pushTokens.length} pet owners with push tokens`);
+      
+      if (pushTokens.length > 0) {
+        const pushResult = await sendFCMBroadcast(pushTokens, {
+          title: titleEn,
+          message: `${messageEn.substring(0, 150)}...`,
+          url: 'https://petsos.site'
+        });
+        
+        results.pushSuccessCount = pushResult.successCount || 0;
+        results.pushFailureCount = pushResult.failureCount || 0;
+        
+        // Deactivate invalid tokens
+        if (pushResult.failedTokens && pushResult.failedTokens.length > 0) {
+          await storage.deactivatePushSubscriptions(pushResult.failedTokens);
+        }
+        
+        console.log(`[Launch Notification] Push: ${results.pushSuccessCount} success, ${results.pushFailureCount} failed`);
+      }
+      
+      // 2. Send Emails to pet owners with email addresses
+      const petOwnerEmails = await storage.getPetOwnerEmails();
+      console.log(`[Launch Notification] Found ${petOwnerEmails.length} pet owners with emails`);
+      results.totalPetOwners = petOwnerEmails.length;
+      
+      // Send emails in batches to avoid rate limits
+      const emailSubject = `${titleEn} - ${titleZh}`;
+      const emailContent = combinedMessage;
+      
+      for (const owner of petOwnerEmails) {
+        try {
+          const { sendGmailEmail } = await import('./gmail-client');
+          const success = await sendGmailEmail(
+            owner.email,
+            emailSubject,
+            emailContent,
+            process.env.EMAIL_FROM || 'noreply@petsos.site'
+          );
+          
+          if (success) {
+            results.emailSuccessCount++;
+          } else {
+            results.emailFailureCount++;
+          }
+        } catch (emailError) {
+          console.error(`[Launch Notification] Email error for ${owner.email}:`, emailError);
+          results.emailFailureCount++;
+        }
+      }
+      
+      console.log(`[Launch Notification] Email: ${results.emailSuccessCount} success, ${results.emailFailureCount} failed`);
+      
+      // Update broadcast record with results
+      const totalSuccess = results.pushSuccessCount + results.emailSuccessCount;
+      const totalFailure = results.pushFailureCount + results.emailFailureCount;
+      
+      await storage.updateNotificationBroadcast(broadcast.id, {
+        status: totalSuccess > 0 ? 'sent' : 'failed',
+        recipientCount: totalSuccess,
+        providerResponse: {
+          pushSuccessCount: results.pushSuccessCount,
+          pushFailureCount: results.pushFailureCount,
+          emailSuccessCount: results.emailSuccessCount,
+          emailFailureCount: results.emailFailureCount,
+          totalPetOwners: results.totalPetOwners,
+          note: 'Launch notification - Push + Email only (NO WhatsApp)'
+        },
+        sentAt: new Date()
+      });
+      
+      // Create audit log
+      await storage.createAuditLog({
+        entityType: 'notification_broadcast',
+        entityId: broadcast.id,
+        action: 'send_launch_notification',
+        userId: userId,
+        changes: {
+          type: 'launch_notification',
+          pushSuccessCount: results.pushSuccessCount,
+          pushFailureCount: results.pushFailureCount,
+          emailSuccessCount: results.emailSuccessCount,
+          emailFailureCount: results.emailFailureCount,
+          totalPetOwners: results.totalPetOwners
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      
+      res.status(201).json({
+        success: true,
+        broadcastId: broadcast.id,
+        results: {
+          push: {
+            success: results.pushSuccessCount,
+            failed: results.pushFailureCount,
+            total: pushTokens.length
+          },
+          email: {
+            success: results.emailSuccessCount,
+            failed: results.emailFailureCount,
+            total: petOwnerEmails.length
+          },
+          totalNotified: totalSuccess
+        },
+        message: `Launch notification sent to ${totalSuccess} pet owners (${results.pushSuccessCount} push, ${results.emailSuccessCount} email)`
+      });
+    } catch (error: any) {
+      console.error("[Launch Notification] Error:", error);
+      res.status(500).json({ error: error.message || "Failed to send launch notification" });
+    }
+  });
+  
   // Admin: Get recent notification broadcasts (legacy endpoint for backwards compatibility)
   app.get("/api/admin/notifications/history", isAuthenticated, isAdmin, async (req: any, res) => {
     try {

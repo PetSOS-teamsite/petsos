@@ -31,7 +31,7 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, or, inArray, sql, desc, lte, gte, count } from "drizzle-orm";
+import { eq, and, or, inArray, sql, desc, lte, gte, count, isNotNull } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -177,6 +177,10 @@ export interface IStorage {
   deactivatePushSubscriptions(tokens: string[]): Promise<number>;
   getAllActivePushSubscriptions(language?: string, role?: string): Promise<PushSubscription[]>;
   getActiveTokens(language?: string, role?: string): Promise<string[]>;
+  
+  // Launch Notification helpers
+  getPetOwnerEmails(): Promise<{ id: string; email: string }[]>;
+  getPetOwnerPushTokens(): Promise<string[]>;
 
   // Notification Broadcasts
   createNotificationBroadcast(broadcast: InsertNotificationBroadcast): Promise<NotificationBroadcast>;
@@ -1464,6 +1468,14 @@ export class MemStorage implements IStorage {
 
   async getActiveTokens(language?: string, role?: string): Promise<string[]> {
     throw new Error("MemStorage does not support push subscriptions - use DatabaseStorage");
+  }
+
+  async getPetOwnerEmails(): Promise<{ id: string; email: string }[]> {
+    throw new Error("MemStorage does not support getting pet owner emails - use DatabaseStorage");
+  }
+
+  async getPetOwnerPushTokens(): Promise<string[]> {
+    throw new Error("MemStorage does not support getting pet owner push tokens - use DatabaseStorage");
   }
 
   // Notification Broadcasts - in-memory implementations
@@ -2875,6 +2887,30 @@ class DatabaseStorage implements IStorage {
   async getActiveTokens(language?: string, role?: string): Promise<string[]> {
     const subscriptions = await this.getAllActivePushSubscriptions(language, role);
     return subscriptions.map(s => s.token);
+  }
+
+  async getPetOwnerEmails(): Promise<{ id: string; email: string }[]> {
+    const result = await db.select({
+      id: users.id,
+      email: users.email
+    })
+    .from(users)
+    .where(and(
+      eq(users.role, 'user'),
+      isNotNull(users.email)
+    ));
+    return result.filter(u => u.email !== null) as { id: string; email: string }[];
+  }
+
+  async getPetOwnerPushTokens(): Promise<string[]> {
+    const result = await db.select({ token: pushSubscriptions.token })
+      .from(pushSubscriptions)
+      .innerJoin(users, eq(pushSubscriptions.userId, users.id))
+      .where(and(
+        eq(pushSubscriptions.isActive, true),
+        eq(users.role, 'user')
+      ));
+    return result.map(r => r.token);
   }
 
   // Notification Broadcasts
