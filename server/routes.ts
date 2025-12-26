@@ -4533,12 +4533,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const outreachData = allHospitals.map(hospital => ({
         id: hospital.id,
+        slug: hospital.slug,
         nameEn: hospital.nameEn,
         nameZh: hospital.nameZh,
         phone: hospital.phone,
         whatsapp: hospital.whatsapp,
         email: hospital.email,
-        accessCode: hospital.accessCode,
+        verificationCode: hospital.ownerVerificationCode,
+        verificationCodeExpiresAt: hospital.ownerVerificationCodeExpiresAt,
         lastConfirmedAt: hospital.lastConfirmedAt,
         confirmedByName: hospital.confirmedByName,
         inviteSentAt: hospital.inviteSentAt,
@@ -4556,13 +4558,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Send WhatsApp invitation to a single hospital
   app.post("/api/admin/hospitals/send-invite/:id", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      const hospital = await storage.getHospital(req.params.id);
+      let hospital = await storage.getHospital(req.params.id);
       if (!hospital) {
         return res.status(404).json({ message: 'Hospital not found' });
-      }
-      
-      if (!hospital.accessCode) {
-        return res.status(400).json({ message: 'Hospital has no access code. Please generate one first.' });
       }
       
       const targetPhone = hospital.whatsapp || hospital.phone;
@@ -4570,8 +4568,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Hospital has no phone or WhatsApp number' });
       }
       
-      // Build the bilingual invitation message
+      // Generate a new 6-digit verification code with 72-hour expiry before sending
+      const code = Math.floor(Math.random() * 900000 + 100000).toString();
+      const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours from now
+      
+      hospital = await storage.updateHospital(req.params.id, { 
+        ownerVerificationCode: code,
+        ownerVerificationCodeExpiresAt: expiresAt
+      }) || hospital;
+      
+      // Build the bilingual invitation message with direct edit link
       const hospitalName = hospital.nameEn || hospital.nameZh || 'Hospital';
+      const editLink = `https://petsos.site/hospital/edit/${hospital.slug}`;
       const message = `🏥 PetSOS Hospital Information Update
 
 Dear ${hospitalName},
@@ -4580,10 +4588,10 @@ We are launching PetSOS, a non-profit pet emergency platform connecting pet owne
 
 Your clinic is listed on our platform. Please verify your information:
 
-👉 https://petsos.site/hospital-update
-📋 Access Code: ${hospital.accessCode}
+👉 ${editLink}
+📋 Verification Code: ${code}
 
-Please update within 7 days.
+This code expires in 72 hours.
 
 Thank you,
 PetSOS Team
@@ -4598,10 +4606,10 @@ ${hospital.nameZh || hospitalName} 您好，
 
 您的診所已列於我們平台。請驗證您的資料：
 
-👉 https://petsos.site/hospital-update
-📋 存取碼：${hospital.accessCode}
+👉 ${editLink}
+📋 驗證碼：${code}
 
-請於7天內更新。
+此驗證碼將於72小時後失效。
 
 謝謝，
 PetSOS 團隊`;
@@ -4619,7 +4627,7 @@ PetSOS 團隊`;
           entityId: hospital.id,
           action: 'send_invite',
           userId: (req.user as any).id,
-          changes: { inviteSentAt: new Date().toISOString(), phone: targetPhone },
+          changes: { inviteSentAt: new Date().toISOString(), phone: targetPhone, codeGenerated: true },
           ipAddress: req.ip,
           userAgent: req.get('user-agent')
         });
@@ -4648,10 +4656,9 @@ PetSOS 團隊`;
     try {
       const allHospitals = await storage.getAllHospitals();
       
-      // Filter to only pending (unconfirmed) hospitals with phone/whatsapp and access code
+      // Filter to only pending (unconfirmed) hospitals with phone/whatsapp
       const pendingHospitals = allHospitals.filter(h => 
         !h.lastConfirmedAt && 
-        h.accessCode && 
         (h.whatsapp || h.phone)
       );
       
@@ -4670,11 +4677,22 @@ PetSOS 團隊`;
         details: [] as Array<{ hospital: string; status: string; error?: string }>
       };
       
-      for (const hospital of pendingHospitals) {
+      for (let hospital of pendingHospitals) {
         const targetPhone = hospital.whatsapp || hospital.phone;
         const hospitalName = hospital.nameEn || hospital.nameZh || 'Hospital';
         
-        const message = `🏥 PetSOS Hospital Information Update
+        try {
+          // Generate a new 6-digit verification code with 72-hour expiry
+          const code = Math.floor(Math.random() * 900000 + 100000).toString();
+          const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours from now
+          
+          hospital = await storage.updateHospital(hospital.id, { 
+            ownerVerificationCode: code,
+            ownerVerificationCodeExpiresAt: expiresAt
+          }) || hospital;
+          
+          const editLink = `https://petsos.site/hospital/edit/${hospital.slug}`;
+          const message = `🏥 PetSOS Hospital Information Update
 
 Dear ${hospitalName},
 
@@ -4682,10 +4700,10 @@ We are launching PetSOS, a non-profit pet emergency platform connecting pet owne
 
 Your clinic is listed on our platform. Please verify your information:
 
-👉 https://petsos.site/hospital-update
-📋 Access Code: ${hospital.accessCode}
+👉 ${editLink}
+📋 Verification Code: ${code}
 
-Please update within 7 days.
+This code expires in 72 hours.
 
 Thank you,
 PetSOS Team
@@ -4700,15 +4718,14 @@ ${hospital.nameZh || hospitalName} 您好，
 
 您的診所已列於我們平台。請驗證您的資料：
 
-👉 https://petsos.site/hospital-update
-📋 存取碼：${hospital.accessCode}
+👉 ${editLink}
+📋 驗證碼：${code}
 
-請於7天內更新。
+此驗證碼將於72小時後失效。
 
 謝謝，
 PetSOS 團隊`;
 
-        try {
           const result = await messagingService.sendDirectWhatsAppMessage(targetPhone!, message);
           
           if (result.success) {

@@ -27,12 +27,14 @@ import { formatDistanceToNow, format } from "date-fns";
 
 interface HospitalOutreach {
   id: string;
+  slug: string;
   nameEn: string | null;
   nameZh: string | null;
   phone: string | null;
   whatsapp: string | null;
   email: string | null;
-  accessCode: string | null;
+  verificationCode: string | null;
+  verificationCodeExpiresAt: string | null;
   lastConfirmedAt: string | null;
   confirmedByName: string | null;
   inviteSentAt: string | null;
@@ -58,13 +60,6 @@ function getStatusBadge(hospital: HospitalOutreach) {
 }
 
 function getInviteStatus(hospital: HospitalOutreach) {
-  if (!hospital.accessCode) {
-    return (
-      <Badge variant="outline" className="text-gray-500" data-testid={`invite-no-code-${hospital.id}`}>
-        No Access Code
-      </Badge>
-    );
-  }
   if (!hospital.whatsapp && !hospital.phone) {
     return (
       <Badge variant="outline" className="text-gray-500" data-testid={`invite-no-phone-${hospital.id}`}>
@@ -82,13 +77,15 @@ function getInviteStatus(hospital: HospitalOutreach) {
   }
   return (
     <Badge variant="outline" data-testid={`invite-not-sent-${hospital.id}`}>
-      Not Sent
+      Ready to Send
     </Badge>
   );
 }
 
 function generatePreviewMessage(hospital: HospitalOutreach) {
   const hospitalName = hospital.nameEn || hospital.nameZh || "Hospital";
+  const editLink = `https://petsos.site/hospital/edit/${hospital.slug}`;
+  const code = hospital.verificationCode || "[Will be generated on send]";
   return `🏥 PetSOS Hospital Information Update
 
 Dear ${hospitalName},
@@ -97,10 +94,10 @@ We are launching PetSOS, a non-profit pet emergency platform connecting pet owne
 
 Your clinic is listed on our platform. Please verify your information:
 
-👉 https://petsos.site/hospital-update
-📋 Access Code: ${hospital.accessCode}
+👉 ${editLink}
+📋 Verification Code: ${code}
 
-Please update within 7 days.
+This code expires in 72 hours.
 
 Thank you,
 PetSOS Team
@@ -115,10 +112,10 @@ ${hospital.nameZh || hospitalName} 您好，
 
 您的診所已列於我們平台。請驗證您的資料：
 
-👉 https://petsos.site/hospital-update
-📋 存取碼：${hospital.accessCode}
+👉 ${editLink}
+📋 驗證碼：${code}
 
-請於7天內更新。
+此驗證碼將於72小時後失效。
 
 謝謝，
 PetSOS 團隊`;
@@ -183,13 +180,13 @@ export default function AdminHospitalOutreachPage() {
       !searchTerm ||
       hospital.nameEn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       hospital.nameZh?.includes(searchTerm) ||
-      hospital.accessCode?.toLowerCase().includes(searchTerm.toLowerCase());
+      hospital.verificationCode?.toLowerCase().includes(searchTerm.toLowerCase());
 
     if (activeTab === "all") return matchesSearch;
     if (activeTab === "confirmed") return matchesSearch && hospital.lastConfirmedAt;
     if (activeTab === "pending") return matchesSearch && !hospital.lastConfirmedAt;
     if (activeTab === "sent") return matchesSearch && hospital.inviteSentAt;
-    if (activeTab === "not-sent") return matchesSearch && !hospital.inviteSentAt && hospital.accessCode && (hospital.whatsapp || hospital.phone);
+    if (activeTab === "not-sent") return matchesSearch && !hospital.inviteSentAt && (hospital.whatsapp || hospital.phone);
     return matchesSearch;
   });
 
@@ -198,7 +195,7 @@ export default function AdminHospitalOutreachPage() {
     confirmed: hospitals?.filter((h) => h.lastConfirmedAt).length || 0,
     pending: hospitals?.filter((h) => !h.lastConfirmedAt).length || 0,
     sent: hospitals?.filter((h) => h.inviteSentAt).length || 0,
-    canSend: hospitals?.filter((h) => !h.inviteSentAt && h.accessCode && (h.whatsapp || h.phone) && !h.lastConfirmedAt).length || 0,
+    canSend: hospitals?.filter((h) => !h.inviteSentAt && (h.whatsapp || h.phone) && !h.lastConfirmedAt).length || 0,
   };
 
   if (isLoading) {
@@ -343,7 +340,7 @@ export default function AdminHospitalOutreachPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Hospital</TableHead>
-                      <TableHead>Access Code</TableHead>
+                      <TableHead>Verification Code</TableHead>
                       <TableHead>Contact</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Invite Status</TableHead>
@@ -362,12 +359,19 @@ export default function AdminHospitalOutreachPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {hospital.accessCode ? (
-                            <code className="bg-muted px-2 py-1 rounded text-sm" data-testid={`code-${hospital.id}`}>
-                              {hospital.accessCode}
-                            </code>
+                          {hospital.verificationCode ? (
+                            <div>
+                              <code className="bg-muted px-2 py-1 rounded text-sm" data-testid={`code-${hospital.id}`}>
+                                {hospital.verificationCode}
+                              </code>
+                              {hospital.verificationCodeExpiresAt && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  Expires {formatDistanceToNow(new Date(hospital.verificationCodeExpiresAt), { addSuffix: true })}
+                                </div>
+                              )}
+                            </div>
                           ) : (
-                            <span className="text-muted-foreground text-sm">No code</span>
+                            <span className="text-muted-foreground text-sm">Will generate on send</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -396,7 +400,6 @@ export default function AdminHospitalOutreachPage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => setPreviewHospital(hospital)}
-                                  disabled={!hospital.accessCode}
                                   data-testid={`button-preview-${hospital.id}`}
                                 >
                                   Preview
@@ -420,7 +423,6 @@ export default function AdminHospitalOutreachPage() {
                               size="sm"
                               onClick={() => sendInviteMutation.mutate(hospital.id)}
                               disabled={
-                                !hospital.accessCode ||
                                 (!hospital.whatsapp && !hospital.phone) ||
                                 sendInviteMutation.isPending
                               }
