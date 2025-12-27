@@ -932,3 +932,52 @@ export type ContentWithVerifier = VerifiedContentItem & {
   verifier: VetConsultant | null;
   verifiedAt: Date | null;
 };
+
+// Vet Applications table - applications from vets wanting to join advisory board
+export const vetApplications = pgTable("vet_applications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  // Applicant info
+  nameEn: text("name_en").notNull(),
+  nameZh: text("name_zh"),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  // Professional credentials
+  licenseNumber: text("license_number").notNull(), // VSB registration number
+  titleEn: text("title_en"), // e.g., "DVM, DACVECC"
+  titleZh: text("title_zh"),
+  specialtyEn: text("specialty_en"),
+  specialtyZh: text("specialty_zh"),
+  hospitalAffiliationEn: text("hospital_affiliation_en"),
+  hospitalAffiliationZh: text("hospital_affiliation_zh"),
+  yearsExperience: integer("years_experience").notNull(),
+  // Application details
+  motivationEn: text("motivation_en"), // Why they want to join
+  motivationZh: text("motivation_zh"),
+  cvUrl: text("cv_url"), // Optional CV upload
+  // Status tracking
+  status: text("status").notNull().default('pending'), // pending, approved, rejected
+  reviewedBy: varchar("reviewed_by").references(() => users.id, { onDelete: 'set null' }),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  // If approved, link to created consultant
+  createdConsultantId: varchar("created_consultant_id").references(() => vetConsultants.id, { onDelete: 'set null' }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_vet_applications_status").on(table.status),
+  index("idx_vet_applications_email").on(table.email),
+]);
+
+export const insertVetApplicationSchema = createInsertSchema(vetApplications).omit({
+  id: true,
+  status: true,
+  reviewedBy: true,
+  reviewedAt: true,
+  reviewNotes: true,
+  createdConsultantId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertVetApplication = z.infer<typeof insertVetApplicationSchema>;
+export type VetApplication = typeof vetApplications.$inferSelect;
