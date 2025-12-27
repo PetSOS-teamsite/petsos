@@ -26,8 +26,11 @@ import {
   type HospitalEmergencyStatus, type InsertHospitalEmergencyStatus,
   type UserEmergencySubscription, type InsertUserEmergencySubscription,
   type TyphoonNotificationQueue, type InsertTyphoonNotificationQueue,
+  type VetConsultant, type VerifiedContentItem, type ContentVerification,
+  type VetConsultantWithContent, type ContentWithVerifier,
   users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents, pushSubscriptions, notificationBroadcasts, clinicReviews, whatsappConversations, whatsappChatMessages,
-  typhoonAlerts, hkHolidays, hospitalEmergencyStatus, userEmergencySubscriptions, typhoonNotificationQueue
+  typhoonAlerts, hkHolidays, hospitalEmergencyStatus, userEmergencySubscriptions, typhoonNotificationQueue,
+  vetConsultants, verifiedContentItems, contentVerifications
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -277,6 +280,12 @@ export interface IStorage {
   createTyphoonNotification(data: InsertTyphoonNotificationQueue): Promise<TyphoonNotificationQueue>;
   updateTyphoonNotification(id: string, data: Partial<TyphoonNotificationQueue>): Promise<TyphoonNotificationQueue | undefined>;
   getActiveEmergencySubscriptions(subscriptionType?: string): Promise<UserEmergencySubscription[]>;
+
+  // Vet Consultants & Content Verification
+  getVetConsultants(): Promise<VetConsultant[]>;
+  getVetConsultantById(id: string): Promise<VetConsultant | undefined>;
+  getVetConsultantWithContent(id: string): Promise<VetConsultantWithContent | undefined>;
+  getContentVerification(contentSlug: string): Promise<ContentWithVerifier | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -1869,6 +1878,23 @@ export class MemStorage implements IStorage {
       totalActiveUsers: activeUserIds.size,
     };
   }
+
+  // Vet Consultants & Content Verification - stub implementations
+  async getVetConsultants(): Promise<VetConsultant[]> {
+    return [];
+  }
+
+  async getVetConsultantById(id: string): Promise<VetConsultant | undefined> {
+    return undefined;
+  }
+
+  async getVetConsultantWithContent(id: string): Promise<VetConsultantWithContent | undefined> {
+    return undefined;
+  }
+
+  async getContentVerification(contentSlug: string): Promise<ContentWithVerifier | undefined> {
+    return undefined;
+  }
 }
 
 // Database storage implementation using PostgreSQL
@@ -3433,6 +3459,80 @@ class DatabaseStorage implements IStorage {
     }
     return await db.select().from(userEmergencySubscriptions)
       .where(eq(userEmergencySubscriptions.isActive, true));
+  }
+
+  // Vet Consultants & Content Verification
+  async getVetConsultants(): Promise<VetConsultant[]> {
+    return await db.select().from(vetConsultants)
+      .where(and(
+        eq(vetConsultants.isActive, true),
+        eq(vetConsultants.isPublic, true)
+      ))
+      .orderBy(vetConsultants.nameEn);
+  }
+
+  async getVetConsultantById(id: string): Promise<VetConsultant | undefined> {
+    const result = await db.select().from(vetConsultants)
+      .where(eq(vetConsultants.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getVetConsultantWithContent(id: string): Promise<VetConsultantWithContent | undefined> {
+    const consultant = await this.getVetConsultantById(id);
+    if (!consultant) return undefined;
+
+    const verifications = await db.select({
+      content: verifiedContentItems,
+      verifiedAt: contentVerifications.verifiedAt,
+    })
+      .from(contentVerifications)
+      .innerJoin(verifiedContentItems, eq(contentVerifications.contentId, verifiedContentItems.id))
+      .where(and(
+        eq(contentVerifications.consultantId, id),
+        eq(contentVerifications.isVisible, true),
+        eq(verifiedContentItems.isPublished, true)
+      ))
+      .orderBy(desc(contentVerifications.verifiedAt));
+
+    const verifiedContent = verifications.map(v => ({
+      ...v.content,
+      verifiedAt: v.verifiedAt,
+    }));
+
+    return {
+      ...consultant,
+      verifiedContent,
+    };
+  }
+
+  async getContentVerification(contentSlug: string): Promise<ContentWithVerifier | undefined> {
+    const result = await db.select({
+      content: verifiedContentItems,
+      verifier: vetConsultants,
+      verifiedAt: contentVerifications.verifiedAt,
+    })
+      .from(verifiedContentItems)
+      .leftJoin(contentVerifications, and(
+        eq(contentVerifications.contentId, verifiedContentItems.id),
+        eq(contentVerifications.isVisible, true)
+      ))
+      .leftJoin(vetConsultants, and(
+        eq(vetConsultants.id, contentVerifications.consultantId),
+        eq(vetConsultants.isActive, true),
+        eq(vetConsultants.isPublic, true)
+      ))
+      .where(eq(verifiedContentItems.contentSlug, contentSlug))
+      .limit(1);
+
+    if (result.length === 0) return undefined;
+
+    const { content, verifier, verifiedAt } = result[0];
+    return {
+      ...content,
+      verifier: verifier || null,
+      verifiedAt: verifiedAt || null,
+    };
   }
 }
 

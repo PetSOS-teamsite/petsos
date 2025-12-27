@@ -204,32 +204,96 @@ export default function MedicalAdvisoryPage() {
           </CardContent>
         </Card>
 
-        <Card className="mb-8 bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900">
+        <Card id="apply" className="mb-8 bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900">
           <CardContent className="p-8">
             <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2" data-testid="text-advisory-title">
               <Users className="h-6 w-6 text-green-600" />
-              {language === 'zh-HK' ? '顧問團隊' : 'Advisory Board'}
+              {language === 'zh-HK' ? '成為我們的獸醫顧問' : 'Become a Vet Consultant'}
             </h2>
             <p className="text-muted-foreground mb-6">
               {language === 'zh-HK'
-                ? 'PetSOS正在建立正式的獸醫顧問委員會。我們歡迎香港註冊獸醫加入，協助確保平台內容的專業性和準確性。'
-                : 'PetSOS is establishing a formal veterinary advisory board. We welcome Hong Kong registered veterinarians to join and help ensure the professionalism and accuracy of platform content.'
+                ? 'PetSOS歡迎香港註冊獸醫加入我們的醫療顧問委員會，協助審核平台內容並確保專業性和準確性。'
+                : 'PetSOS welcomes Hong Kong registered veterinarians to join our Medical Advisory Board to help review platform content and ensure professionalism and accuracy.'
               }
             </p>
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-300 dark:border-green-800">
-              <h4 className="font-semibold text-foreground mb-2">
-                {language === 'zh-HK' ? '🏥 招募獸醫顧問' : '🏥 Recruiting Veterinary Advisors'}
+            
+            {/* Requirements */}
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-300 dark:border-green-800 mb-4">
+              <h4 className="font-semibold text-foreground mb-3">
+                {language === 'zh-HK' ? '📋 申請資格' : '📋 Requirements'}
               </h4>
-              <p className="text-sm text-muted-foreground mb-4">
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <span>{language === 'zh-HK' ? '必須為香港獸醫管理局 (VSB) 註冊獸醫' : 'Must be registered with Hong Kong Veterinary Surgeons Board (VSB)'}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <span>{language === 'zh-HK' ? '至少3年臨床經驗' : 'At least 3 years of clinical experience'}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <span>{language === 'zh-HK' ? '願意以專業身份公開審核內容' : 'Willing to publicly endorse verified content with professional identity'}</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Responsibilities */}
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-300 dark:border-green-800 mb-4">
+              <h4 className="font-semibold text-foreground mb-3">
+                {language === 'zh-HK' ? '🏥 顧問職責' : '🏥 Advisor Responsibilities'}
+              </h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <Stethoscope className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span>{language === 'zh-HK' ? '審閱緊急症狀指南和分診內容' : 'Review emergency symptom guides and triage content'}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Stethoscope className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span>{language === 'zh-HK' ? '提供專業建議以改善平台服務' : 'Provide professional advice to improve platform services'}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Stethoscope className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <span>{language === 'zh-HK' ? '協助確保內容符合最新獸醫標準' : 'Help ensure content meets latest veterinary standards'}</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Application Process */}
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-300 dark:border-green-800 mb-6">
+              <h4 className="font-semibold text-foreground mb-3">
+                {language === 'zh-HK' ? '✉️ 申請方法' : '✉️ How to Apply'}
+              </h4>
+              <p className="text-sm text-muted-foreground mb-3">
                 {language === 'zh-HK'
-                  ? '如果您是香港註冊獸醫，有興趣成為PetSOS顧問委員會成員，請聯絡我們。顧問職責包括：審閱緊急分診內容、提供專業建議、協助改善平台服務。'
-                  : 'If you are a Hong Kong registered veterinarian interested in becoming a PetSOS advisory board member, please contact us. Advisor responsibilities include: reviewing emergency triage content, providing professional advice, and helping improve platform services.'
+                  ? '請將以下資料發送至我們的電郵：'
+                  : 'Please send the following information to our email:'
                 }
               </p>
-              <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20">
-                <Stethoscope className="h-4 w-4 mr-2" />
-                {language === 'zh-HK' ? '申請成為顧問' : 'Apply to Become an Advisor'}
-              </Button>
+              <ul className="space-y-1 text-sm text-muted-foreground mb-4">
+                <li>• {language === 'zh-HK' ? '您的履歷 / CV' : 'Your CV'}</li>
+                <li>• {language === 'zh-HK' ? 'VSB 註冊編號' : 'VSB Registration Number'}</li>
+                <li>• {language === 'zh-HK' ? '專業領域（如有）' : 'Specialty (if applicable)'}</li>
+                <li>• {language === 'zh-HK' ? '簡短介紹為何有興趣加入' : 'Brief introduction on why you are interested'}</li>
+              </ul>
+              <a 
+                href="mailto:veterinary@petsos.site?subject=Vet%20Consultant%20Application%20獸醫顧問申請"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                data-testid="link-apply-email"
+              >
+                <FileText className="h-4 w-4" />
+                {language === 'zh-HK' ? '發送申請至 veterinary@petsos.site' : 'Email veterinary@petsos.site'}
+              </a>
+            </div>
+
+            {/* View Current Consultants */}
+            <div className="flex flex-wrap gap-3">
+              <Link href="/consultants">
+                <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20">
+                  <Users className="h-4 w-4 mr-2" />
+                  {language === 'zh-HK' ? '查看現有顧問' : 'View Current Consultants'}
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>

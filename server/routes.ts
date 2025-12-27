@@ -5787,6 +5787,85 @@ PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
     }
   });
 
+  // ===== VET CONSULTANTS & CONTENT VERIFICATION ENDPOINTS =====
+  
+  // List all public, active vet consultants with their verified content
+  app.get("/api/consultants", async (req, res) => {
+    try {
+      const consultants = await storage.getVetConsultants();
+      
+      // Fetch verified content for each consultant
+      const consultantsWithContent = await Promise.all(
+        consultants.map(async (consultant) => {
+          const withContent = await storage.getVetConsultantWithContent(consultant.id);
+          return withContent || { ...consultant, verifiedContent: [] };
+        })
+      );
+      
+      res.json(consultantsWithContent);
+    } catch (error: any) {
+      console.error("Error fetching consultants:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch consultants" });
+    }
+  });
+
+  // Get a single consultant with their verified content
+  app.get("/api/consultants/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const consultant = await storage.getVetConsultantWithContent(id);
+      
+      if (!consultant) {
+        return res.status(404).json({ error: "Consultant not found" });
+      }
+      
+      // Only return public, active consultants
+      if (!consultant.isActive || !consultant.isPublic) {
+        return res.status(404).json({ error: "Consultant not found" });
+      }
+      
+      res.json(consultant);
+    } catch (error: any) {
+      console.error("Error fetching consultant:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch consultant" });
+    }
+  });
+
+  // Get verification info for a specific content item by slug
+  app.get("/api/content/:slug/verification", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const verification = await storage.getContentVerification(slug);
+      
+      if (!verification) {
+        return res.status(404).json({ error: "Content not found" });
+      }
+      
+      // Return verification info
+      res.json({
+        contentSlug: verification.contentSlug,
+        contentType: verification.contentType,
+        titleEn: verification.titleEn,
+        titleZh: verification.titleZh,
+        isVerified: verification.verifier !== null,
+        verifier: verification.verifier ? {
+          id: verification.verifier.id,
+          nameEn: verification.verifier.nameEn,
+          nameZh: verification.verifier.nameZh,
+          titleEn: verification.verifier.titleEn,
+          titleZh: verification.verifier.titleZh,
+          specialtyEn: verification.verifier.specialtyEn,
+          specialtyZh: verification.verifier.specialtyZh,
+          photoUrl: verification.verifier.photoUrl,
+        } : null,
+        verifiedAt: verification.verifiedAt,
+      });
+    } catch (error: any) {
+      console.error("Error fetching content verification:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch verification info" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

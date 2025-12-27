@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 import { 
   AlertTriangle, 
   Heart, 
@@ -16,10 +17,101 @@ import {
   ArrowRight,
   Ship,
   MapPin,
-  Mountain
+  Mountain,
+  CheckCircle
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { StructuredData } from "@/components/StructuredData";
+
+interface VerificationData {
+  contentSlug: string;
+  contentType: string;
+  titleEn: string;
+  titleZh: string;
+  isVerified: boolean;
+  verifier: {
+    id: string;
+    nameEn: string;
+    nameZh: string;
+    titleEn: string;
+    titleZh: string;
+    specialtyEn: string;
+    specialtyZh: string;
+    photoUrl: string | null;
+  } | null;
+  verifiedAt: string | null;
+}
+
+function VerificationBadge({ contentSlug }: { contentSlug: string }) {
+  const { language } = useLanguage();
+  
+  const { data: verification, isLoading } = useQuery<VerificationData>({
+    queryKey: ['/api/content', contentSlug, 'verification'],
+    enabled: !!contentSlug,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="mt-4 pt-3 border-t border-border/50">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+          <div className="h-3 w-3 bg-muted rounded-full" />
+          <div className="h-3 w-32 bg-muted rounded" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!verification) {
+    return null;
+  }
+
+  if (verification.isVerified && verification.verifier) {
+    const verifierName = language === 'zh-HK' ? verification.verifier.nameZh : verification.verifier.nameEn;
+    const verifierTitle = language === 'zh-HK' ? verification.verifier.titleZh : verification.verifier.titleEn;
+    const verifiedDate = verification.verifiedAt 
+      ? new Date(verification.verifiedAt).toLocaleDateString(language === 'zh-HK' ? 'zh-HK' : 'en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        })
+      : null;
+
+    return (
+      <div className="mt-4 pt-3 border-t border-border/50">
+        <Link href="/consultants" data-testid={`link-verifier-${contentSlug}`}>
+          <div className="flex items-center gap-2 text-xs text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors cursor-pointer">
+            <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
+            <span>
+              {language === 'zh-HK' 
+                ? `已認證 by ${verifierTitle} ${verifierName}`
+                : `Verified by ${verifierTitle} ${verifierName}`
+              }
+              {verifiedDate && (
+                <span className="text-muted-foreground ml-1">
+                  ({verifiedDate})
+                </span>
+              )}
+            </span>
+          </div>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 pt-3 border-t border-border/50">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+        <span>
+          {language === 'zh-HK' 
+            ? '等待專業驗證'
+            : 'Pending expert verification'
+          }
+        </span>
+      </div>
+    </div>
+  );
+}
 
 interface SymptomSnippet {
   id: string;
@@ -345,6 +437,7 @@ export default function EmergencySymptomsPage() {
                         </span>
                       </div>
                     </div>
+                    <VerificationBadge contentSlug={`symptom-${symptom.id}`} />
                   </div>
                 </div>
               </CardContent>
