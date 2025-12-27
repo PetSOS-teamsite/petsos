@@ -60,6 +60,7 @@ const AdminNotificationsPage = lazy(() => import("@/pages/admin-notifications"))
 const AdminMessagesPage = lazy(() => import("@/pages/admin-messages"));
 const AdminChatsPage = lazy(() => import("@/pages/admin-chats"));
 const AdminHospitalOutreachPage = lazy(() => import("@/pages/admin-hospital-outreach"));
+const AdminConsultantsPage = lazy(() => import("@/pages/admin-consultants"));
 const AdminLoginPage = lazy(() => import("@/pages/admin-login"));
 const ClinicDashboardPage = lazy(() => import("@/pages/clinic-dashboard"));
 
@@ -133,6 +134,7 @@ function PublicRouter() {
       <Route path="/admin/messages" component={ProtectedAdminMessagesRoute} />
       <Route path="/admin/chats" component={ProtectedAdminChatsRoute} />
       <Route path="/admin/hospital-outreach" component={ProtectedAdminHospitalOutreachRoute} />
+      <Route path="/admin/consultants" component={ProtectedAdminConsultantsRoute} />
       
       <Route component={NotFound} />
     </Switch>
@@ -228,6 +230,12 @@ function ProtectedAdminHospitalOutreachRoute() {
   const { isAuthenticated, isLoading, user } = useAuth();
   if (isLoading) return <PageLoader />;
   return isAuthenticated && user?.role === 'admin' ? <AdminHospitalOutreachPage /> : <AdminLoginPage />;
+}
+
+function ProtectedAdminConsultantsRoute() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return isAuthenticated && user?.role === 'admin' ? <AdminConsultantsPage /> : <AdminLoginPage />;
 }
 
 // Class-based error boundary for non-critical components (silently hides errors)

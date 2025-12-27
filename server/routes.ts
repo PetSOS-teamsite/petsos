@@ -33,6 +33,7 @@ import {
   insertTranslationSchema, insertEmergencyRequestSchema,
   insertPetMedicalRecordSchema, insertPetMedicalSharingConsentSchema,
   insertPushSubscriptionSchema, insertNotificationBroadcastSchema,
+  insertVetApplicationSchema, insertVetConsultantSchema, insertContentVerificationSchema,
   STORAGE_QUOTA
 } from "@shared/schema";
 import { fcmService, sendBroadcastNotification as sendFCMBroadcast } from "./services/fcm";
@@ -5863,6 +5864,186 @@ PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
     } catch (error: any) {
       console.error("Error fetching content verification:", error);
       res.status(500).json({ error: error.message || "Failed to fetch verification info" });
+    }
+  });
+
+  // ===== VET APPLICATIONS ENDPOINTS =====
+
+  // Public: Create a new vet application
+  app.post("/api/vet-applications", async (req, res) => {
+    try {
+      const validatedData = insertVetApplicationSchema.parse(req.body);
+      const application = await storage.createVetApplication(validatedData);
+      res.status(201).json(application);
+    } catch (error: any) {
+      console.error("Error creating vet application:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid application data", details: error.errors });
+      }
+      res.status(500).json({ error: error.message || "Failed to create application" });
+    }
+  });
+
+  // Admin: List all vet applications
+  app.get("/api/admin/vet-applications", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { status } = req.query;
+      const applications = await storage.getVetApplications(status as string | undefined);
+      res.json(applications);
+    } catch (error: any) {
+      console.error("Error fetching vet applications:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch applications" });
+    }
+  });
+
+  // Admin: Get a single vet application
+  app.get("/api/admin/vet-applications/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const application = await storage.getVetApplicationById(id);
+      
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+      
+      res.json(application);
+    } catch (error: any) {
+      console.error("Error fetching vet application:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch application" });
+    }
+  });
+
+  // Admin: Update vet application status
+  app.patch("/api/admin/vet-applications/:id/status", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { status, reviewNotes } = req.body;
+      
+      if (!status || !['pending', 'approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: "Invalid status. Must be one of: pending, approved, rejected" });
+      }
+      
+      const application = await storage.updateVetApplicationStatus(
+        id, 
+        status, 
+        req.user.id, 
+        reviewNotes
+      );
+      
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+      
+      res.json(application);
+    } catch (error: any) {
+      console.error("Error updating vet application status:", error);
+      res.status(500).json({ error: error.message || "Failed to update application status" });
+    }
+  });
+
+  // Admin: Approve vet application and create consultant
+  app.post("/api/admin/vet-applications/:id/approve", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { reviewNotes } = req.body;
+      
+      const result = await storage.approveVetApplication(id, req.user.id, reviewNotes);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error approving vet application:", error);
+      res.status(500).json({ error: error.message || "Failed to approve application" });
+    }
+  });
+
+  // Admin: Create consultant manually
+  app.post("/api/admin/consultants", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const validatedData = insertVetConsultantSchema.parse(req.body);
+      const consultant = await storage.createVetConsultant(validatedData);
+      res.status(201).json(consultant);
+    } catch (error: any) {
+      console.error("Error creating consultant:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid consultant data", details: error.errors });
+      }
+      res.status(500).json({ error: error.message || "Failed to create consultant" });
+    }
+  });
+
+  // Admin: Update consultant
+  app.patch("/api/admin/consultants/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const consultant = await storage.updateVetConsultant(id, req.body);
+      
+      if (!consultant) {
+        return res.status(404).json({ error: "Consultant not found" });
+      }
+      
+      res.json(consultant);
+    } catch (error: any) {
+      console.error("Error updating consultant:", error);
+      res.status(500).json({ error: error.message || "Failed to update consultant" });
+    }
+  });
+
+  // Admin: Delete consultant
+  app.delete("/api/admin/consultants/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteVetConsultant(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Consultant not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting consultant:", error);
+      res.status(500).json({ error: error.message || "Failed to delete consultant" });
+    }
+  });
+
+  // Admin: Create content verification link
+  app.post("/api/admin/content-verifications", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const validatedData = insertContentVerificationSchema.parse(req.body);
+      const verification = await storage.createContentVerification(validatedData);
+      res.status(201).json(verification);
+    } catch (error: any) {
+      console.error("Error creating content verification:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid verification data", details: error.errors });
+      }
+      res.status(500).json({ error: error.message || "Failed to create verification" });
+    }
+  });
+
+  // Admin: Delete content verification
+  app.delete("/api/admin/content-verifications/:consultantId/:contentId", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { consultantId, contentId } = req.params;
+      const deleted = await storage.deleteContentVerification(consultantId, contentId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Verification link not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting content verification:", error);
+      res.status(500).json({ error: error.message || "Failed to delete verification" });
+    }
+  });
+
+  // Admin: List all verified content items
+  app.get("/api/admin/verified-content", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const contentItems = await storage.getVerifiedContentItems();
+      res.json(contentItems);
+    } catch (error: any) {
+      console.error("Error fetching verified content items:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch verified content items" });
     }
   });
 

@@ -26,11 +26,12 @@ import {
   type HospitalEmergencyStatus, type InsertHospitalEmergencyStatus,
   type UserEmergencySubscription, type InsertUserEmergencySubscription,
   type TyphoonNotificationQueue, type InsertTyphoonNotificationQueue,
-  type VetConsultant, type VerifiedContentItem, type ContentVerification,
+  type VetConsultant, type InsertVetConsultant, type VerifiedContentItem, type ContentVerification, type InsertContentVerification,
   type VetConsultantWithContent, type ContentWithVerifier,
+  type VetApplication, type InsertVetApplication,
   users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents, pushSubscriptions, notificationBroadcasts, clinicReviews, whatsappConversations, whatsappChatMessages,
   typhoonAlerts, hkHolidays, hospitalEmergencyStatus, userEmergencySubscriptions, typhoonNotificationQueue,
-  vetConsultants, verifiedContentItems, contentVerifications
+  vetConsultants, verifiedContentItems, contentVerifications, vetApplications
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -286,6 +287,23 @@ export interface IStorage {
   getVetConsultantById(id: string): Promise<VetConsultant | undefined>;
   getVetConsultantWithContent(id: string): Promise<VetConsultantWithContent | undefined>;
   getContentVerification(contentSlug: string): Promise<ContentWithVerifier | undefined>;
+
+  // Vet Applications
+  getVetApplications(status?: string): Promise<VetApplication[]>;
+  getVetApplicationById(id: string): Promise<VetApplication | undefined>;
+  createVetApplication(data: InsertVetApplication): Promise<VetApplication>;
+  updateVetApplicationStatus(id: string, status: string, reviewedBy: string, reviewNotes?: string): Promise<VetApplication | undefined>;
+  approveVetApplication(id: string, reviewedBy: string, reviewNotes?: string): Promise<{application: VetApplication, consultant: VetConsultant}>;
+
+  // Admin Vet Consultant Management
+  createVetConsultant(data: InsertVetConsultant): Promise<VetConsultant>;
+  updateVetConsultant(id: string, data: Partial<InsertVetConsultant>): Promise<VetConsultant | undefined>;
+  deleteVetConsultant(id: string): Promise<boolean>;
+
+  // Content Verification Management
+  createContentVerification(data: InsertContentVerification): Promise<ContentVerification>;
+  deleteContentVerification(consultantId: string, contentId: string): Promise<boolean>;
+  getVerifiedContentItems(): Promise<VerifiedContentItem[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -1894,6 +1912,53 @@ export class MemStorage implements IStorage {
 
   async getContentVerification(contentSlug: string): Promise<ContentWithVerifier | undefined> {
     return undefined;
+  }
+
+  // Vet Applications - stub implementations
+  async getVetApplications(status?: string): Promise<VetApplication[]> {
+    throw new Error("MemStorage does not support vet applications - use DatabaseStorage");
+  }
+
+  async getVetApplicationById(id: string): Promise<VetApplication | undefined> {
+    throw new Error("MemStorage does not support vet applications - use DatabaseStorage");
+  }
+
+  async createVetApplication(data: InsertVetApplication): Promise<VetApplication> {
+    throw new Error("MemStorage does not support vet applications - use DatabaseStorage");
+  }
+
+  async updateVetApplicationStatus(id: string, status: string, reviewedBy: string, reviewNotes?: string): Promise<VetApplication | undefined> {
+    throw new Error("MemStorage does not support vet applications - use DatabaseStorage");
+  }
+
+  async approveVetApplication(id: string, reviewedBy: string, reviewNotes?: string): Promise<{application: VetApplication, consultant: VetConsultant}> {
+    throw new Error("MemStorage does not support vet applications - use DatabaseStorage");
+  }
+
+  // Admin Vet Consultant Management - stub implementations
+  async createVetConsultant(data: InsertVetConsultant): Promise<VetConsultant> {
+    throw new Error("MemStorage does not support vet consultants - use DatabaseStorage");
+  }
+
+  async updateVetConsultant(id: string, data: Partial<InsertVetConsultant>): Promise<VetConsultant | undefined> {
+    throw new Error("MemStorage does not support vet consultants - use DatabaseStorage");
+  }
+
+  async deleteVetConsultant(id: string): Promise<boolean> {
+    throw new Error("MemStorage does not support vet consultants - use DatabaseStorage");
+  }
+
+  // Content Verification Management - stub implementations
+  async createContentVerification(data: InsertContentVerification): Promise<ContentVerification> {
+    throw new Error("MemStorage does not support content verifications - use DatabaseStorage");
+  }
+
+  async deleteContentVerification(consultantId: string, contentId: string): Promise<boolean> {
+    throw new Error("MemStorage does not support content verifications - use DatabaseStorage");
+  }
+
+  async getVerifiedContentItems(): Promise<VerifiedContentItem[]> {
+    throw new Error("MemStorage does not support verified content items - use DatabaseStorage");
   }
 }
 
@@ -3533,6 +3598,146 @@ class DatabaseStorage implements IStorage {
       verifier: verifier || null,
       verifiedAt: verifiedAt || null,
     };
+  }
+
+  // Vet Applications
+  async getVetApplications(status?: string): Promise<VetApplication[]> {
+    if (status) {
+      return await db.select().from(vetApplications)
+        .where(eq(vetApplications.status, status))
+        .orderBy(desc(vetApplications.createdAt));
+    }
+    return await db.select().from(vetApplications)
+      .orderBy(desc(vetApplications.createdAt));
+  }
+
+  async getVetApplicationById(id: string): Promise<VetApplication | undefined> {
+    const result = await db.select().from(vetApplications)
+      .where(eq(vetApplications.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async createVetApplication(data: InsertVetApplication): Promise<VetApplication> {
+    const result = await db.insert(vetApplications).values(data).returning();
+    return result[0];
+  }
+
+  async updateVetApplicationStatus(id: string, status: string, reviewedBy: string, reviewNotes?: string): Promise<VetApplication | undefined> {
+    const result = await db.update(vetApplications)
+      .set({
+        status,
+        reviewedBy,
+        reviewedAt: new Date(),
+        reviewNotes: reviewNotes || null,
+        updatedAt: new Date()
+      })
+      .where(eq(vetApplications.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async approveVetApplication(id: string, reviewedBy: string, reviewNotes?: string): Promise<{application: VetApplication, consultant: VetConsultant}> {
+    return await db.transaction(async (tx) => {
+      // Get the application
+      const appResult = await tx.select().from(vetApplications)
+        .where(eq(vetApplications.id, id))
+        .limit(1);
+      
+      if (!appResult[0]) {
+        throw new Error('Vet application not found');
+      }
+      
+      const application = appResult[0];
+      
+      // Validate required fields before creating consultant
+      if (!application.titleEn && !application.titleZh) {
+        throw new Error('Professional title is required to approve application');
+      }
+      
+      // Create the consultant from application data
+      // Note: Email is intentionally NOT copied to protect applicant privacy
+      // The consultant record is public, so we don't expose contact info
+      const consultantResult = await tx.insert(vetConsultants).values({
+        nameEn: application.nameEn,
+        nameZh: application.nameZh,
+        titleEn: application.titleEn || 'DVM', // Professional credential
+        titleZh: application.titleZh,
+        specialtyEn: application.specialtyEn,
+        specialtyZh: application.specialtyZh,
+        licenseNumber: application.licenseNumber,
+        hospitalAffiliationEn: application.hospitalAffiliationEn,
+        hospitalAffiliationZh: application.hospitalAffiliationZh,
+        yearsExperience: application.yearsExperience,
+        // Email is private - admin can view in application record if needed
+        // Do not expose to public consultant profile
+        isActive: true,
+        isPublic: true,
+        joinedAt: new Date()
+      }).returning();
+      
+      const consultant = consultantResult[0];
+      
+      // Update the application status
+      const updatedAppResult = await tx.update(vetApplications)
+        .set({
+          status: 'approved',
+          reviewedBy,
+          reviewedAt: new Date(),
+          reviewNotes: reviewNotes || null,
+          createdConsultantId: consultant.id,
+          updatedAt: new Date()
+        })
+        .where(eq(vetApplications.id, id))
+        .returning();
+      
+      return {
+        application: updatedAppResult[0],
+        consultant
+      };
+    });
+  }
+
+  // Admin Vet Consultant Management
+  async createVetConsultant(data: InsertVetConsultant): Promise<VetConsultant> {
+    const result = await db.insert(vetConsultants).values(data).returning();
+    return result[0];
+  }
+
+  async updateVetConsultant(id: string, data: Partial<InsertVetConsultant>): Promise<VetConsultant | undefined> {
+    const result = await db.update(vetConsultants)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(vetConsultants.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteVetConsultant(id: string): Promise<boolean> {
+    const result = await db.delete(vetConsultants)
+      .where(eq(vetConsultants.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  // Content Verification Management
+  async createContentVerification(data: InsertContentVerification): Promise<ContentVerification> {
+    const result = await db.insert(contentVerifications).values(data).returning();
+    return result[0];
+  }
+
+  async deleteContentVerification(consultantId: string, contentId: string): Promise<boolean> {
+    const result = await db.delete(contentVerifications)
+      .where(and(
+        eq(contentVerifications.consultantId, consultantId),
+        eq(contentVerifications.contentId, contentId)
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getVerifiedContentItems(): Promise<VerifiedContentItem[]> {
+    return await db.select().from(verifiedContentItems)
+      .orderBy(verifiedContentItems.titleEn);
   }
 }
 

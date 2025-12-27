@@ -233,6 +233,12 @@ export default function AdminDashboardPage() {
                   Analytics
                 </Button>
               </Link>
+              <Link href="/admin/consultants">
+                <Button variant="outline" size="sm" data-testid="button-admin-consultants">
+                  <Stethoscope className="h-4 w-4 mr-2" />
+                  Consultants
+                </Button>
+              </Link>
               <Link href="/admin/config">
                 <Button variant="outline" size="sm" data-testid="button-admin-config">
                   <Settings className="h-4 w-4 mr-2" />

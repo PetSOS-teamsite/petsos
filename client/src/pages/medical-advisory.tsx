@@ -1,7 +1,24 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { 
   Stethoscope, 
   Shield, 
@@ -11,13 +28,66 @@ import {
   AlertTriangle,
   FileText,
   GraduationCap,
-  Building2
+  Building2,
+  Loader2
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { StructuredData } from "@/components/StructuredData";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { z } from "zod";
+
+const vetApplicationFormSchema = z.object({
+  nameEn: z.string().min(1, "Full name is required"),
+  nameZh: z.string().optional(),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().optional(),
+  licenseNumber: z.string().min(1, "VSB License Number is required"),
+  titleEn: z.string().min(1, "Professional title/qualification is required (e.g., DVM, DACVECC)"),
+  specialtyEn: z.string().optional(),
+  hospitalAffiliationEn: z.string().optional(),
+  yearsExperience: z.coerce.number().min(3, "Minimum 3 years of experience required"),
+  motivationEn: z.string().optional(),
+});
+
+type VetApplicationFormData = z.infer<typeof vetApplicationFormSchema>;
 
 export default function MedicalAdvisoryPage() {
   const { language } = useLanguage();
+  const [submitted, setSubmitted] = useState(false);
+
+  const form = useForm<VetApplicationFormData>({
+    resolver: zodResolver(vetApplicationFormSchema),
+    defaultValues: {
+      nameEn: "",
+      nameZh: "",
+      email: "",
+      phone: "",
+      licenseNumber: "",
+      titleEn: "",
+      specialtyEn: "",
+      hospitalAffiliationEn: "",
+      yearsExperience: 3,
+      motivationEn: "",
+    },
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: async (data: VetApplicationFormData) => {
+      const response = await apiRequest("POST", "/api/vet-applications", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+      form.reset();
+    },
+  });
+
+  const onSubmit = (data: VetApplicationFormData) => {
+    submitMutation.mutate(data);
+  };
 
   const createMedicalOrganizationSchema = () => ({
     "@context": "https://schema.org",
@@ -259,31 +329,282 @@ export default function MedicalAdvisoryPage() {
               </ul>
             </div>
 
-            {/* Application Process */}
+            {/* Application Form - Collapsible */}
             <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-300 dark:border-green-800 mb-6">
-              <h4 className="font-semibold text-foreground mb-3">
-                {language === 'zh-HK' ? '✉️ 申請方法' : '✉️ How to Apply'}
-              </h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                {language === 'zh-HK'
-                  ? '請將以下資料發送至我們的電郵：'
-                  : 'Please send the following information to our email:'
-                }
-              </p>
-              <ul className="space-y-1 text-sm text-muted-foreground mb-4">
-                <li>• {language === 'zh-HK' ? '您的履歷 / CV' : 'Your CV'}</li>
-                <li>• {language === 'zh-HK' ? 'VSB 註冊編號' : 'VSB Registration Number'}</li>
-                <li>• {language === 'zh-HK' ? '專業領域（如有）' : 'Specialty (if applicable)'}</li>
-                <li>• {language === 'zh-HK' ? '簡短介紹為何有興趣加入' : 'Brief introduction on why you are interested'}</li>
-              </ul>
-              <a 
-                href="mailto:veterinary@petsos.site?subject=Vet%20Consultant%20Application%20獸醫顧問申請"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
-                data-testid="link-apply-email"
-              >
-                <FileText className="h-4 w-4" />
-                {language === 'zh-HK' ? '發送申請至 veterinary@petsos.site' : 'Email veterinary@petsos.site'}
-              </a>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="application-form" className="border-none">
+                  <AccordionTrigger className="hover:no-underline py-0" data-testid="button-toggle-application-form">
+                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-green-600" />
+                      {language === 'zh-HK' ? '✉️ 申請方法' : '✉️ How to Apply'}
+                    </h4>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-4">
+                    {submitted ? (
+                      <div className="p-6 bg-green-100 dark:bg-green-900/30 rounded-lg border border-green-400 dark:border-green-700" data-testid="text-success-message">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="h-6 w-6 text-green-600" />
+                          <p className="text-green-800 dark:text-green-200 font-medium">
+                            {language === 'zh-HK'
+                              ? '申請已提交！我們會盡快審核。'
+                              : 'Application submitted! We will review it soon.'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                          {submitMutation.isError && (
+                            <div className="p-4 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-400 dark:border-red-700" data-testid="text-error-message">
+                              <p className="text-red-800 dark:text-red-200 text-sm">
+                                {language === 'zh-HK'
+                                  ? '提交失敗，請稍後再試。'
+                                  : 'Submission failed. Please try again later.'
+                                }
+                              </p>
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="nameEn"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>
+                                    {language === 'zh-HK' ? '姓名（英文）' : 'Full Name (English)'} *
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      placeholder={language === 'zh-HK' ? '請輸入英文姓名' : 'Enter your full name'}
+                                      data-testid="input-name-en"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="nameZh"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>
+                                    {language === 'zh-HK' ? '姓名（中文）' : 'Full Name (Chinese)'}
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      placeholder={language === 'zh-HK' ? '請輸入中文姓名（選填）' : 'Enter Chinese name (optional)'}
+                                      data-testid="input-name-zh"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>
+                                    {language === 'zh-HK' ? '電郵' : 'Email'} *
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      type="email"
+                                      placeholder={language === 'zh-HK' ? '請輸入電郵地址' : 'Enter your email'}
+                                      data-testid="input-email"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="phone"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>
+                                    {language === 'zh-HK' ? '電話' : 'Phone'}
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      placeholder={language === 'zh-HK' ? '請輸入電話號碼（選填）' : 'Enter phone number (optional)'}
+                                      data-testid="input-phone"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="licenseNumber"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>
+                                    {language === 'zh-HK' ? 'VSB 註冊編號' : 'VSB License Number'} *
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      placeholder={language === 'zh-HK' ? '請輸入VSB註冊編號' : 'Enter VSB registration number'}
+                                      data-testid="input-license-number"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="yearsExperience"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>
+                                    {language === 'zh-HK' ? '臨床經驗年數' : 'Years of Clinical Experience'} *
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      type="number"
+                                      min={3}
+                                      placeholder={language === 'zh-HK' ? '最少3年' : 'Minimum 3 years'}
+                                      data-testid="input-years-experience"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="titleEn"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>
+                                    {language === 'zh-HK' ? '專業職銜' : 'Professional Title'}
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      placeholder={language === 'zh-HK' ? '例如：DVM, DACVECC' : 'e.g., DVM, DACVECC'}
+                                      data-testid="input-title"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="specialtyEn"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>
+                                    {language === 'zh-HK' ? '專業領域' : 'Specialty'}
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      placeholder={language === 'zh-HK' ? '例如：急診、內科' : 'e.g., Emergency, Internal Medicine'}
+                                      data-testid="input-specialty"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <FormField
+                            control={form.control}
+                            name="hospitalAffiliationEn"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>
+                                  {language === 'zh-HK' ? '現職醫院/診所' : 'Current Hospital/Clinic Affiliation'}
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    placeholder={language === 'zh-HK' ? '請輸入現職機構名稱（選填）' : 'Enter current workplace (optional)'}
+                                    data-testid="input-hospital-affiliation"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="motivationEn"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>
+                                  {language === 'zh-HK' ? '為何想加入我們的顧問委員會？' : 'Why do you want to join our advisory board?'}
+                                </FormLabel>
+                                <FormControl>
+                                  <Textarea
+                                    {...field}
+                                    rows={4}
+                                    placeholder={language === 'zh-HK' 
+                                      ? '請簡述您加入的動機（選填）'
+                                      : 'Brief introduction on why you are interested (optional)'
+                                    }
+                                    data-testid="input-motivation"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <Button
+                            type="submit"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                            disabled={submitMutation.isPending}
+                            data-testid="button-submit-application"
+                          >
+                            {submitMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                {language === 'zh-HK' ? '提交中...' : 'Submitting...'}
+                              </>
+                            ) : (
+                              <>
+                                <FileText className="mr-2 h-4 w-4" />
+                                {language === 'zh-HK' ? '提交申請' : 'Submit Application'}
+                              </>
+                            )}
+                          </Button>
+                        </form>
+                      </Form>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
 
             {/* View Current Consultants */}
