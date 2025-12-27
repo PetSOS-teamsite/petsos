@@ -829,3 +829,106 @@ export const insertUserEmergencySubscriptionSchema = createInsertSchema(userEmer
 
 export type InsertUserEmergencySubscription = z.infer<typeof insertUserEmergencySubscriptionSchema>;
 export type UserEmergencySubscription = typeof userEmergencySubscriptions.$inferSelect;
+
+// =====================================================
+// VET CONSULTANT & CONTENT VERIFICATION TABLES
+// =====================================================
+
+// Vet Consultants table - verified veterinary advisors
+export const vetConsultants = pgTable("vet_consultants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  nameEn: text("name_en").notNull(),
+  nameZh: text("name_zh"),
+  titleEn: text("title_en").notNull(), // e.g., "DVM, DACVECC"
+  titleZh: text("title_zh"),
+  specialtyEn: text("specialty_en"), // e.g., "Emergency & Critical Care"
+  specialtyZh: text("specialty_zh"),
+  bioEn: text("bio_en"),
+  bioZh: text("bio_zh"),
+  photoUrl: text("photo_url"),
+  licenseNumber: text("license_number"), // VSB registration number
+  hospitalAffiliationEn: text("hospital_affiliation_en"),
+  hospitalAffiliationZh: text("hospital_affiliation_zh"),
+  yearsExperience: integer("years_experience"),
+  email: text("email"),
+  isActive: boolean("is_active").notNull().default(true),
+  isPublic: boolean("is_public").notNull().default(true), // show on public consultant page
+  joinedAt: timestamp("joined_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_vet_consultants_active").on(table.isActive),
+  index("idx_vet_consultants_public").on(table.isPublic),
+]);
+
+export const insertVetConsultantSchema = createInsertSchema(vetConsultants).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertVetConsultant = z.infer<typeof insertVetConsultantSchema>;
+export type VetConsultant = typeof vetConsultants.$inferSelect;
+
+// Verified Content Items table - tracks all content that can be verified
+export const verifiedContentItems = pgTable("verified_content_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentType: text("content_type").notNull(), // emergency_symptom, blog, guide, faq
+  contentSlug: text("content_slug").notNull().unique(), // e.g., "cat-panting", "dog-bloat"
+  titleEn: text("title_en").notNull(),
+  titleZh: text("title_zh"),
+  descriptionEn: text("description_en"),
+  descriptionZh: text("description_zh"),
+  url: text("url"), // relative URL path, e.g., "/emergency-symptoms#cat-panting"
+  isPublished: boolean("is_published").notNull().default(true),
+  publishedAt: timestamp("published_at"),
+  lastUpdatedAt: timestamp("last_updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_verified_content_type").on(table.contentType),
+  index("idx_verified_content_slug").on(table.contentSlug),
+  index("idx_verified_content_published").on(table.isPublished),
+]);
+
+export const insertVerifiedContentItemSchema = createInsertSchema(verifiedContentItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertVerifiedContentItem = z.infer<typeof insertVerifiedContentItemSchema>;
+export type VerifiedContentItem = typeof verifiedContentItems.$inferSelect;
+
+// Content Verifications table - junction table linking consultants to verified content
+export const contentVerifications = pgTable("content_verifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  consultantId: varchar("consultant_id").notNull().references(() => vetConsultants.id, { onDelete: 'cascade' }),
+  contentId: varchar("content_id").notNull().references(() => verifiedContentItems.id, { onDelete: 'cascade' }),
+  verifiedAt: timestamp("verified_at").notNull().defaultNow(),
+  verificationNotes: text("verification_notes"),
+  isVisible: boolean("is_visible").notNull().default(true), // show this verification publicly
+  contentVersion: text("content_version"), // track which version was verified
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_content_verifications_consultant").on(table.consultantId),
+  index("idx_content_verifications_content").on(table.contentId),
+  uniqueIndex("idx_content_verifications_unique").on(table.consultantId, table.contentId),
+]);
+
+export const insertContentVerificationSchema = createInsertSchema(contentVerifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertContentVerification = z.infer<typeof insertContentVerificationSchema>;
+export type ContentVerification = typeof contentVerifications.$inferSelect;
+
+// Extended type for consultant with their verified content
+export type VetConsultantWithContent = VetConsultant & {
+  verifiedContent: (VerifiedContentItem & { verifiedAt: Date })[];
+};
+
+// Extended type for content with its verifier
+export type ContentWithVerifier = VerifiedContentItem & {
+  verifier: VetConsultant | null;
+  verifiedAt: Date | null;
+};

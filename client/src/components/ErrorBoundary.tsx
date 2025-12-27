@@ -216,21 +216,21 @@ export class ErrorBoundary extends Component<Props, State> {
                 Go Home 返回主頁
               </Button>
 
-              {/* Emergency alternative - Direct call */}
+              {/* Alternative - Find 24-hour clinics */}
               <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                 <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
-                  Need immediate help? Call a 24-hour clinic directly:
+                  Need immediate help? Find a 24-hour clinic:
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
-                  需要即時幫助？直接致電24小時診所：
+                  需要即時幫助？尋找24小時診所：
                 </p>
                 <a 
-                  href="tel:+85227300506"
+                  href="/clinics"
                   className="flex items-center justify-center gap-2 w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
-                  data-testid="link-emergency-call"
+                  data-testid="link-find-clinics"
                 >
-                  <Phone className="h-5 w-5" />
-                  Call 24hr Clinic 致電24小時診所
+                  <Home className="h-5 w-5" />
+                  Find 24hr Clinics 尋找24小時診所
                 </a>
               </div>
             </CardContent>

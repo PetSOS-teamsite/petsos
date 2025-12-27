@@ -454,8 +454,8 @@ export default function EmergencySymptomsPage() {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {language === 'zh-HK'
-                    ? '🚗 偏遠村落在惡劣天氣下道路可能受阻。建議提前確認最近的24小時獸醫診所位置。'
-                    : '🚗 Remote villages may have road access issues during severe weather. Confirm nearest 24-hour vet location in advance.'
+                    ? '🚗 偏遠地區在惡劣天氣下道路可能受阻。建議提前確認最近的24小時獸醫診所位置。'
+                    : '🚗 Remote areas may have road access issues during severe weather. Confirm nearest 24-hour vet location in advance.'
                   }
                 </p>
               </div>
