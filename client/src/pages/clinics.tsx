@@ -532,20 +532,29 @@ export default function ClinicsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  {/* Action Buttons - Compact Row */}
-                  <div className="flex gap-2">
+                  {/* Action Buttons - Compact Row (matches hospital card design) */}
+                  <div className="flex flex-wrap gap-2">
+                    {/* View Details button - for hospitals with slug */}
+                    {provider.type === 'hospital' && provider.slug && (
+                      <Link href={`/hospitals/${provider.slug}`}>
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={(e) => e.stopPropagation()}
+                          data-testid={`button-view-${provider.id}`}
+                        >
+                          {language === 'zh-HK' ? '查看詳情' : 'View Details'}
+                        </Button>
+                      </Link>
+                    )}
                     {provider.phone && (
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleCall(provider.phone!);
                         }}
+                        variant="outline"
                         size="sm"
-                        className={`flex-1 ${
-                          provider.type === 'hospital' 
-                            ? 'bg-red-600 hover:bg-red-700' 
-                            : 'bg-blue-600 hover:bg-blue-700'
-                        }`}
                         data-testid={`button-call-${provider.id}`}
                       >
                         <Phone className="h-4 w-4 mr-1" />
@@ -560,11 +569,7 @@ export default function ClinicsPage() {
                         }}
                         variant="outline"
                         size="sm"
-                        className={`flex-1 ${
-                          provider.type === 'hospital' 
-                            ? 'border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20' 
-                            : 'border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-                        }`}
+                        className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-950"
                         data-testid={`button-whatsapp-${provider.id}`}
                       >
                         <MessageCircle className="h-4 w-4 mr-1" />
@@ -579,15 +584,10 @@ export default function ClinicsPage() {
                         }}
                         variant="outline"
                         size="sm"
-                        className={`flex-1 ${
-                          provider.type === 'hospital' 
-                            ? 'border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20' 
-                            : 'border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-                        }`}
                         data-testid={`button-maps-${provider.id}`}
                       >
-                        <Navigation className="h-4 w-4 mr-1" />
-                        {language === 'zh-HK' ? '導航' : 'Maps'}
+                        <MapPin className="h-4 w-4 mr-1" />
+                        {language === 'zh-HK' ? '地圖' : 'Maps'}
                       </Button>
                     )}
                   </div>
