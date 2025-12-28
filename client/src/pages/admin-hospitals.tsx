@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, X, Activity, Image as ImageIcon, Upload, XCircle, Copy, ExternalLink, KeyRound, Star, Camera } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, X, Activity, Image as ImageIcon, Upload, XCircle, Copy, ExternalLink, KeyRound, Star, Camera, MessageCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useStorageStatus } from "@/hooks/useStorageStatus";
@@ -1143,6 +1143,53 @@ export default function AdminHospitalsPage() {
     queryKey: ["/api/hospitals"],
   });
 
+  // Fetch hospital ping states for availability tracking
+  interface HospitalPingState {
+    hospitalId: string;
+    pingEnabled: boolean;
+    pingStatus: 'active' | 'no_reply';
+    lastInboundReplyAt: string | null;
+    lastPingSentAt: string | null;
+    noReplySince: string | null;
+  }
+  
+  const { data: pingStates } = useQuery<HospitalPingState[]>({
+    queryKey: ["/api/admin/hospital-ping-states"],
+  });
+
+  // Helper to get ping state for a hospital
+  const getPingState = (hospitalId: string) => {
+    return pingStates?.find(ps => ps.hospitalId === hospitalId);
+  };
+
+  // Mutation to toggle ping settings
+  const togglePingMutation = useMutation({
+    mutationFn: async ({ hospitalId, pingEnabled }: { hospitalId: string; pingEnabled: boolean }) => {
+      await apiRequest("PATCH", `/api/hospitals/${hospitalId}/ping-settings`, { pingEnabled });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/hospital-ping-states"] });
+      toast({ title: "Ping settings updated" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error updating ping settings", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Mutation to reset ping status
+  const resetPingMutation = useMutation({
+    mutationFn: async (hospitalId: string) => {
+      await apiRequest("POST", `/api/hospitals/${hospitalId}/reset-ping-status`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/hospital-ping-states"] });
+      toast({ title: "Ping status reset to active" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error resetting ping status", description: error.message, variant: "destructive" });
+    },
+  });
+
   const stats = {
     total: hospitals?.length ?? 0,
     verified: (hospitals?.filter(h => h.lastVerifiedAt) ?? []).length,
@@ -1600,6 +1647,32 @@ export default function AdminHospitalsPage() {
                             {photos.length} {photos.length === 1 ? 'photo' : 'photos'}
                           </Badge>
                         )}
+                        {/* Ping Status Badge */}
+                        {(() => {
+                          const pingState = getPingState(hospital.id);
+                          if (!pingState) return null;
+                          
+                          if (pingState.pingStatus === 'no_reply') {
+                            return (
+                              <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                No Reply
+                              </Badge>
+                            );
+                          }
+                          if (pingState.lastInboundReplyAt) {
+                            const lastReply = new Date(pingState.lastInboundReplyAt);
+                            const hours = Math.floor((Date.now() - lastReply.getTime()) / (60 * 60 * 1000));
+                            const days = Math.floor(hours / 24);
+                            return (
+                              <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                                <MessageCircle className="h-3 w-3 mr-1" />
+                                {hours < 24 ? `${hours}h ago` : `${days}d ago`}
+                              </Badge>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                       <p className="text-sm text-muted-foreground mb-1">{hospital.nameZh}</p>
                       <p className="text-sm mb-1">{hospital.addressEn}</p>
@@ -1617,7 +1690,51 @@ export default function AdminHospitalsPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      {/* Ping Controls */}
+                      {(() => {
+                        const pingState = getPingState(hospital.id);
+                        const pingEnabled = pingState?.pingEnabled !== false;
+                        
+                        return (
+                          <>
+                            <Button
+                              variant={pingEnabled ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => togglePingMutation.mutate({ 
+                                hospitalId: hospital.id, 
+                                pingEnabled: !pingEnabled 
+                              })}
+                              data-testid={`button-toggle-ping-${hospital.id}`}
+                              title={pingEnabled ? "Disable Daily Pings" : "Enable Daily Pings"}
+                              disabled={togglePingMutation.isPending}
+                              className={pingEnabled ? "bg-blue-600 hover:bg-blue-700" : ""}
+                            >
+                              {togglePingMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MessageCircle className={`h-4 w-4 ${pingEnabled ? "fill-current" : ""}`} />
+                              )}
+                            </Button>
+                            {pingState?.pingStatus === 'no_reply' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => resetPingMutation.mutate(hospital.id)}
+                                data-testid={`button-reset-ping-${hospital.id}`}
+                                title="Reset No-Reply Status"
+                                disabled={resetPingMutation.isPending}
+                              >
+                                {resetPingMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <RotateCcw className="h-4 w-4 text-orange-500" />
+                                )}
+                              </Button>
+                            )}
+                          </>
+                        );
+                      })()}
                       <Button
                         variant={hospital.isPartner ? "default" : "outline"}
                         size="sm"

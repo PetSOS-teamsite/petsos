@@ -2290,11 +2290,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== HOSPITAL ROUTES =====
   
-  // Get all hospitals
+  // Get all hospitals (with minimal ping state data for availability display)
   app.get("/api/hospitals", async (req, res) => {
     try {
       const hospitals = await storage.getAllHospitals();
-      res.json(hospitals);
+      
+      // Fetch ping states and enrich hospitals with minimal safe data
+      const pingStates = await storage.getAllHospitalPingStates();
+      const pingStateMap = new Map(pingStates.map(ps => [ps.hospitalId, ps]));
+      
+      const hospitalsWithPingState = hospitals.map(h => {
+        const pingState = pingStateMap.get(h.id);
+        return {
+          ...h,
+          // Only expose last reply time for recency display - no internal admin details
+          lastInboundReplyAt: pingState?.lastInboundReplyAt || null,
+          replyStatus: pingState?.pingStatus === 'no_reply' ? 'unresponsive' : 'active',
+        };
+      });
+      
+      res.json(hospitalsWithPingState);
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -2540,11 +2555,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== HOSPITAL ROUTES =====
   
-  // Get all hospitals
+  // Get all hospitals (with minimal ping state data for availability display)
   app.get("/api/hospitals", async (req, res) => {
     try {
       const hospitals = await storage.getAllHospitals();
-      res.json(hospitals);
+      
+      // Fetch ping states and enrich hospitals with minimal safe data
+      const pingStates = await storage.getAllHospitalPingStates();
+      const pingStateMap = new Map(pingStates.map(ps => [ps.hospitalId, ps]));
+      
+      const hospitalsWithPingState = hospitals.map(h => {
+        const pingState = pingStateMap.get(h.id);
+        return {
+          ...h,
+          // Only expose last reply time for recency display - no internal admin details
+          lastInboundReplyAt: pingState?.lastInboundReplyAt || null,
+          replyStatus: pingState?.pingStatus === 'no_reply' ? 'unresponsive' : 'active',
+        };
+      });
+      
+      res.json(hospitalsWithPingState);
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
