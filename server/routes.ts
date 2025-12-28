@@ -2561,16 +2561,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get nearby hospitals using PostGIS (efficient server-side geo-query)
+  // Supports last_reply_window filter: 1h, 24h, 7d, none
   app.get("/api/hospitals/nearby", async (req, res) => {
     try {
-      const { latitude, longitude, radius } = z.object({
+      const { latitude, longitude, radius, last_reply_window } = z.object({
         latitude: z.string().transform(Number),
         longitude: z.string().transform(Number),
-        radius: z.string().transform(Number).default("10000"), // default 10km in meters
+        radius: z.string().transform(Number).default("10000"),
+        last_reply_window: z.enum(['1h', '24h', '7d', 'none', 'all']).optional(),
       }).parse(req.query);
 
-      const hospitals = await storage.getNearbyHospitals(latitude, longitude, radius);
-      res.json(hospitals);
+      let hospitals = await storage.getNearbyHospitals(latitude, longitude, radius);
+      
+      // Fetch ping states for all hospitals
+      const pingStates = await storage.getAllHospitalPingStates();
+      const pingStateMap = new Map(pingStates.map(ps => [ps.hospitalId, ps]));
+      
+      // Enrich hospitals with ping state data
+      const hospitalsWithPingState = hospitals.map(h => ({
+        ...h,
+        pingState: pingStateMap.get(h.id) || null,
+        lastInboundReplyAt: pingStateMap.get(h.id)?.lastInboundReplyAt || null,
+      }));
+      
+      // Apply last reply filter if specified
+      if (last_reply_window && last_reply_window !== 'all') {
+        const now = Date.now();
+        const filterHospitals = hospitalsWithPingState.filter(h => {
+          const lastReply = h.lastInboundReplyAt;
+          
+          if (last_reply_window === 'none') {
+            return !lastReply;
+          }
+          
+          if (!lastReply) return false;
+          
+          const replyTime = new Date(lastReply).getTime();
+          const ageMs = now - replyTime;
+          
+          switch (last_reply_window) {
+            case '1h': return ageMs <= 60 * 60 * 1000;
+            case '24h': return ageMs <= 24 * 60 * 60 * 1000;
+            case '7d': return ageMs <= 7 * 24 * 60 * 60 * 1000;
+            default: return true;
+          }
+        });
+        
+        res.json(filterHospitals);
+      } else {
+        res.json(hospitalsWithPingState);
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
@@ -2606,6 +2646,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Note: Using getEmergencyRequestsByClinicId which now uses hospitalId internally
       const requests = await storage.getEmergencyRequestsByClinicId(hospitalId);
       res.json(requests);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // ===== HOSPITAL PING STATE ROUTES (Admin) =====
+  
+  // Get ping state for a specific hospital
+  app.get("/api/hospitals/:hospitalId/ping-state", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const pingState = await storage.getHospitalPingState(req.params.hospitalId);
+      res.json(pingState || { hospitalId: req.params.hospitalId, pingEnabled: true, pingStatus: 'active' });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get all hospital ping states (admin dashboard)
+  app.get("/api/admin/hospital-ping-states", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const pingStates = await storage.getAllHospitalPingStates();
+      res.json(pingStates);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update hospital ping settings (toggle ping_enabled)
+  app.patch("/api/hospitals/:hospitalId/ping-settings", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { pingEnabled } = z.object({
+        pingEnabled: z.boolean(),
+      }).parse(req.body);
+
+      const hospitalId = req.params.hospitalId;
+      const hospital = await storage.getHospital(hospitalId);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      const existingState = await storage.getHospitalPingState(hospitalId);
+      const updatedState = await storage.upsertHospitalPingState({
+        hospitalId,
+        pingEnabled,
+        pingStatus: existingState?.pingStatus || 'active',
+        lastPingSentAt: existingState?.lastPingSentAt || null,
+        lastPingMessageId: existingState?.lastPingMessageId || null,
+        lastInboundReplyAt: existingState?.lastInboundReplyAt || null,
+        lastReplyLatencySeconds: existingState?.lastReplyLatencySeconds || null,
+        noReplySince: existingState?.noReplySince || null,
+      });
+
+      await storage.createAuditLog({
+        entityType: 'hospital_ping_state',
+        entityId: hospitalId,
+        action: 'update_ping_settings',
+        userId: req.user.id,
+        changes: { pingEnabled },
+        ipAddress: req.ip,
+      });
+
+      res.json(updatedState);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Reset hospital ping status from no_reply back to active
+  app.post("/api/hospitals/:hospitalId/reset-ping-status", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const hospitalId = req.params.hospitalId;
+      const hospital = await storage.getHospital(hospitalId);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+
+      const existingState = await storage.getHospitalPingState(hospitalId);
+      if (!existingState) {
+        return res.status(404).json({ message: "No ping state found for hospital" });
+      }
+
+      const updatedState = await storage.updateHospitalPingState(hospitalId, {
+        pingStatus: 'active',
+        noReplySince: null,
+      });
+
+      await storage.createHospitalPingLog({
+        hospitalId,
+        direction: 'outbound',
+        providerMessageId: null,
+        eventType: 'ping_sent',
+        sentAt: null,
+        receivedAt: null,
+        payload: { action: 'manual_reset', resetBy: req.user.id },
+      });
+
+      await storage.createAuditLog({
+        entityType: 'hospital_ping_state',
+        entityId: hospitalId,
+        action: 'reset_ping_status',
+        userId: req.user.id,
+        changes: { previousStatus: existingState.pingStatus, newStatus: 'active' },
+        ipAddress: req.ip,
+      });
+
+      res.json(updatedState);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get ping logs for a hospital (admin)
+  app.get("/api/hospitals/:hospitalId/ping-logs", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const logs = await storage.getHospitalPingLogs(req.params.hospitalId, limit);
+      res.json(logs);
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
