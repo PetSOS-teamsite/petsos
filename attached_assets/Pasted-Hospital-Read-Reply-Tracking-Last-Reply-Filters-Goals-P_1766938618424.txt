@@ -1,0 +1,353 @@
+Hospital Read/Reply Tracking + “Last Reply” Filters
+Goals
+
+Pet owner can see whether each hospital received / delivered / read the emergency broadcast message.
+
+System sends a daily “Hi” ping to hospitals, records reply time, and if no reply in 24h, marks as no reply and stops pinging.
+
+Show hospital last reply time on emergency-result page and provide filters:
+
+within 1 hour
+
+within 1 day
+
+within 1 week
+
+0) Assumptions & Constraints (Important)
+
+Messaging is done via WhatsApp Business API / provider (Twilio/WATI/360dialog/etc).
+
+Read tracking depends on provider capability:
+
+Many providers support message status callbacks: sent, delivered, read
+
+Some only support up to delivered
+
+Hospital “reply” detection requires inbound webhook support (messages from hospitals to PetSOS number).
+
+Implementation rule: system should work even if “read” is unavailable:
+
+If no read receipts → show “Delivered” / “Sent” instead of “Read”.
+
+1) Feature A — Broadcast Read Tracking (Per Hospital)
+UX Requirement
+
+On emergency-result page (per broadcast session), for each hospital result show:
+
+Status badge:
+
+Pending (not sent yet)
+
+Sent
+
+Delivered
+
+Read (if supported)
+
+Failed
+
+Timestamp of most recent status update (optional)
+
+Data Model
+Table: broadcast_sessions
+
+Stores each pet owner emergency event.
+
+Field	Type	Notes
+id	UUID/INT	PK
+user_id	FK	pet owner
+pet_id	FK	optional
+created_at	timestamp	
+message_template	text/json	message content snapshot
+status	enum	active/closed
+Table: broadcast_messages
+
+One row per hospital contacted in a session.
+
+Field	Type	Notes
+id	UUID/INT	PK
+session_id	FK	broadcast_sessions.id
+hospital_id	FK	hospitals.id
+provider_message_id	string	returned by WhatsApp provider
+status	enum	pending/sent/delivered/read/failed
+status_updated_at	timestamp	
+sent_at	timestamp	
+delivered_at	timestamp	nullable
+read_at	timestamp	nullable
+failed_reason	text	nullable
+
+Indexes
+
+(session_id)
+
+(hospital_id)
+
+(provider_message_id) unique if provider guarantees uniqueness
+
+Integrations / Webhooks
+Endpoint: POST /webhook/whatsapp/status
+
+Receives message status updates from provider.
+
+Input (provider-specific) → normalized
+
+provider_message_id
+
+status ∈ {sent, delivered, read, failed}
+
+timestamp
+
+Logic
+
+Find broadcast_messages by provider_message_id
+
+Update:
+
+status
+
+status_updated_at
+
+set sent_at/delivered_at/read_at accordingly
+
+If failed, store failed_reason if provided
+
+Status progression rule
+
+Only allow forward progression:
+
+pending → sent → delivered → read
+
+failed can overwrite any state if provider says failed
+
+API for Frontend
+GET /api/broadcast-sessions/{session_id}/results
+
+Returns list of hospitals + message status.
+
+Response fields per hospital:
+
+hospital_id
+
+hospital_name
+
+distance (if present)
+
+broadcast_status (pending/sent/delivered/read/failed)
+
+status_updated_at
+
+2) Feature B — Daily “Hi” Ping + Reply Time Tracking
+Definition
+
+A system process sends a short message “Hi 👋 Just checking availability” to hospitals once per day, but only to hospitals that are “eligible”. Then:
+
+If hospital replies → record reply timestamp
+
+If hospital does not reply within 24 hours → mark as no_reply and stop future pings
+
+Eligibility Logic
+
+A hospital is eligible for daily ping if:
+
+hospital.ping_enabled = true
+
+hospital.ping_status != no_reply
+
+(Optional) hospital is active + has WhatsApp number
+
+Data Model
+Table: hospital_ping_state
+
+Tracks the rolling state per hospital.
+
+Field	Type	Notes
+hospital_id	FK	PK (1 row per hospital)
+ping_enabled	boolean	default true
+ping_status	enum	active/no_reply/paused
+last_ping_sent_at	timestamp	nullable
+last_ping_message_id	string	nullable
+last_inbound_reply_at	timestamp	nullable
+last_reply_latency_seconds	int	nullable (reply_at - ping_sent_at)
+no_reply_since	timestamp	nullable
+Table: hospital_ping_logs (optional but recommended)
+
+Audit and debugging.
+
+Field	Type	Notes
+id	UUID/INT	PK
+hospital_id	FK	
+direction	enum	outbound/inbound
+provider_message_id	string	
+event_type	enum	ping_sent/reply_received/no_reply_marked
+sent_at	timestamp	nullable
+received_at	timestamp	nullable
+payload	json	raw provider payload (admin-only)
+Scheduling / Cron
+Job 1: Daily Ping Sender
+
+Runs daily at a fixed time (e.g. 10:00 HK time).
+
+Pseudo-logic
+For each hospital where:
+
+ping_enabled = true
+
+ping_status = active
+
+(AND either last_ping_sent_at is null OR now - last_ping_sent_at >= 24h)
+Send message “Hi 👋 …”
+Store:
+
+last_ping_sent_at = now
+
+last_ping_message_id = provider_message_id
+
+Add ping log ping_sent
+
+Job 2: No Reply Marker
+
+Runs hourly (or daily) to detect missed replies.
+
+For each hospital where:
+
+ping_status = active
+
+last_ping_sent_at not null
+
+last_inbound_reply_at is null OR last_inbound_reply_at < last_ping_sent_at
+
+now - last_ping_sent_at >= 24h
+
+Then:
+
+set ping_status = no_reply
+
+set no_reply_since = now
+
+add ping log no_reply_marked
+
+Important requirement from you:
+
+“if no reply within 1 day, mark as no reply and no need to send Hi the next day”
+→ That’s exactly ping_status = no_reply.
+
+Inbound Reply Detection
+Endpoint: POST /webhook/whatsapp/inbound
+
+Receives inbound messages from hospitals.
+
+Need mapping from inbound phone number → hospital.
+
+Logic
+
+Identify hospital_id by sender phone number (normalized E.164).
+
+Update hospital_ping_state:
+
+last_inbound_reply_at = now
+
+if last_ping_sent_at exists and last_inbound_reply_at > last_ping_sent_at:
+
+last_reply_latency_seconds = now - last_ping_sent_at
+
+(optional) keep ping_status = active
+
+Add ping log reply_received.
+
+Edge cases
+
+Hospital replies without a previous ping: still update last_inbound_reply_at (useful signal).
+
+Multiple replies: always keep latest timestamp.
+
+3) Feature C — Show “Last Reply Time” + Filter on emergency-result
+UX Requirements
+
+On emergency-result list:
+
+show “Last reply: X mins/hours/days ago”
+
+filter options:
+
+last reply within 1 hour
+
+last reply within 1 day
+
+last reply within 1 week
+
+(optional) “No data / Never replied”
+
+Source of Truth
+
+Use hospital_ping_state.last_inbound_reply_at as the main field.
+
+Backend API Changes
+GET /api/emergency-result?...filters
+
+Add filter parameter:
+
+last_reply_window ∈ {1h, 24h, 7d, none}
+
+Server interprets using now - last_inbound_reply_at
+
+SQL logic example
+
+1h: last_inbound_reply_at >= now() - interval '1 hour'
+
+24h: >= now() - interval '24 hours'
+
+7d: >= now() - interval '7 days'
+
+none: last_inbound_reply_at is null OR older than 7 days (depending on product choice)
+
+Frontend Display Rules
+
+If last_inbound_reply_at is null → show “Last reply: —”
+
+If exists → show relative time (e.g. “12m ago”, “3h ago”, “2d ago”)
+
+Ordering Suggestion (Optional but useful)
+
+When user selects a last-reply filter, sort hospitals by:
+
+last_inbound_reply_at desc
+
+distance asc
+
+4) Admin Controls (Recommended)
+
+Add a simple toggle under hospital admin page:
+
+ping_enabled (on/off)
+
+ability to reset from no_reply → active (manual override)
+
+This prevents permanently losing hospitals due to a one-off day.
+
+5) Product & Safety Notes (Non-blocking but important)
+
+The “daily Hi” is effectively a heartbeat / availability signal. Keep it short and respectful.
+
+Consider opt-out language when onboarding hospitals.
+
+Do not present “read” or “reply” as “availability guarantee”. Use neutral language like:
+
+“Last active” / “Last response to PetSOS” (choose one consistent wording)
+
+6) Implementation Checklist
+
+ DB migrations for 3 new tables
+
+ Status webhook + inbound webhook
+
+ Broadcast send function stores provider_message_id per hospital
+
+ Cron Job: daily ping sender
+
+ Cron Job: no reply marker
+
+ Emergency-result API supports last reply filtering
+
+ UI badges for sent/delivered/read
+
+ Admin toggle ping_enabled + reset status
