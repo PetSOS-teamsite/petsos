@@ -2577,12 +2577,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pingStates = await storage.getAllHospitalPingStates();
       const pingStateMap = new Map(pingStates.map(ps => [ps.hospitalId, ps]));
       
-      // Enrich hospitals with ping state data
-      const hospitalsWithPingState = hospitals.map(h => ({
-        ...h,
-        pingState: pingStateMap.get(h.id) || null,
-        lastInboundReplyAt: pingStateMap.get(h.id)?.lastInboundReplyAt || null,
-      }));
+      // Enrich hospitals with MINIMAL ping data (only what's safe for public display)
+      // Avoid exposing internal fields like lastPingMessageId, pingEnabled, etc.
+      const hospitalsWithPingState = hospitals.map(h => {
+        const pingState = pingStateMap.get(h.id);
+        return {
+          ...h,
+          // Only expose last reply time for recency display - no internal details
+          lastInboundReplyAt: pingState?.lastInboundReplyAt || null,
+          // Derive a simple availability status for display
+          replyStatus: pingState?.pingStatus === 'no_reply' ? 'unresponsive' : 'active',
+        };
+      });
       
       // Apply last reply filter if specified
       if (last_reply_window && last_reply_window !== 'all') {

@@ -52,6 +52,9 @@ interface Hospital {
   longitude: string | null;
   liveStatus: string | null; // normal | busy | critical_only | full
   distance?: number;
+  // Ping state fields for availability tracking
+  lastInboundReplyAt?: string | null;
+  replyStatus?: 'active' | 'unresponsive';
 }
 
 // Status badge colors and labels
@@ -319,6 +322,7 @@ export default function ClinicResultsPage() {
   const [only24Hour, setOnly24Hour] = useState(true);
   const [onlyWhatsApp, setOnlyWhatsApp] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all"); // all | available | busy | critical_only | full
+  const [replyFilter, setReplyFilter] = useState<string>("all"); // all | 1h | 24h | 7d | none
   const [selectedClinics, setSelectedClinics] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -454,6 +458,35 @@ export default function ClinicResultsPage() {
           if (hospital.liveStatus !== 'normal') return false;
         } else if (hospital.liveStatus !== statusFilter) {
           return false;
+        }
+      }
+      
+      // Filter by last reply time
+      if (replyFilter !== "all") {
+        const lastReply = hospital.lastInboundReplyAt;
+        
+        if (replyFilter === "none") {
+          // Show hospitals that never replied
+          if (lastReply) return false;
+        } else {
+          // Filter by recency
+          if (!lastReply) return false;
+          
+          const now = Date.now();
+          const replyTime = new Date(lastReply).getTime();
+          const ageMs = now - replyTime;
+          
+          switch (replyFilter) {
+            case '1h':
+              if (ageMs > 60 * 60 * 1000) return false;
+              break;
+            case '24h':
+              if (ageMs > 24 * 60 * 60 * 1000) return false;
+              break;
+            case '7d':
+              if (ageMs > 7 * 24 * 60 * 60 * 1000) return false;
+              break;
+          }
         }
       }
       
@@ -948,7 +981,7 @@ export default function ClinicResultsPage() {
             </div>
 
             {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2">
                 {/* Region Filter */}
                 <div>
                   <Label className="text-sm mb-2 block">{t('clinic_results.region', 'Region')}</Label>
@@ -1012,6 +1045,23 @@ export default function ClinicResultsPage() {
                       <SelectItem value="busy">{language === 'zh-HK' ? '⏳ 繁忙' : '⏳ Busy'}</SelectItem>
                       <SelectItem value="critical_only">{language === 'zh-HK' ? '⚠️ 只收緊急' : '⚠️ Critical Only'}</SelectItem>
                       <SelectItem value="full">{language === 'zh-HK' ? '🚫 已滿' : '🚫 Full'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Last Response Filter */}
+                <div>
+                  <Label className="text-sm mb-2 block">{language === 'zh-HK' ? '最近回覆' : 'Last Response'}</Label>
+                  <Select value={replyFilter} onValueChange={setReplyFilter}>
+                    <SelectTrigger data-testid="select-reply">
+                      <SelectValue placeholder={language === 'zh-HK' ? '全部' : 'Any'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{language === 'zh-HK' ? '全部' : 'Any'}</SelectItem>
+                      <SelectItem value="1h">{language === 'zh-HK' ? '1小時內' : 'Within 1 hour'}</SelectItem>
+                      <SelectItem value="24h">{language === 'zh-HK' ? '24小時內' : 'Within 24 hours'}</SelectItem>
+                      <SelectItem value="7d">{language === 'zh-HK' ? '7天內' : 'Within 7 days'}</SelectItem>
+                      <SelectItem value="none">{language === 'zh-HK' ? '從未回覆' : 'No Response'}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1181,6 +1231,36 @@ export default function ClinicResultsPage() {
                             <Badge variant="outline" className="bg-green-50 dark:bg-green-950 text-xs">
                               <MessageCircle className="h-3 w-3 mr-1" />
                               WhatsApp
+                            </Badge>
+                          )}
+                          {/* Last Reply Indicator */}
+                          {hospital.lastInboundReplyAt && (
+                            <Badge 
+                              variant="outline" 
+                              className="bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs"
+                              data-testid={`badge-last-reply-${hospital.id}`}
+                            >
+                              ✓ {language === 'zh-HK' ? '已回覆' : 'Replied'} {(() => {
+                                const replyDate = new Date(hospital.lastInboundReplyAt!);
+                                const now = Date.now();
+                                const ageMs = now - replyDate.getTime();
+                                const hours = Math.floor(ageMs / (60 * 60 * 1000));
+                                const days = Math.floor(ageMs / (24 * 60 * 60 * 1000));
+                                
+                                if (hours < 1) return language === 'zh-HK' ? '剛才' : 'just now';
+                                if (hours < 24) return language === 'zh-HK' ? `${hours}小時前` : `${hours}h ago`;
+                                if (days < 7) return language === 'zh-HK' ? `${days}天前` : `${days}d ago`;
+                                return replyDate.toLocaleDateString();
+                              })()}
+                            </Badge>
+                          )}
+                          {hospital.replyStatus === 'unresponsive' && (
+                            <Badge 
+                              variant="outline" 
+                              className="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs"
+                              data-testid={`badge-unresponsive-${hospital.id}`}
+                            >
+                              {language === 'zh-HK' ? '未回覆' : 'No reply'}
                             </Badge>
                           )}
                         </div>
