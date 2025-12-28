@@ -29,9 +29,11 @@ import {
   type VetConsultant, type InsertVetConsultant, type VerifiedContentItem, type ContentVerification, type InsertContentVerification,
   type VetConsultantWithContent, type ContentWithVerifier,
   type VetApplication, type InsertVetApplication,
+  type HospitalPingState, type InsertHospitalPingState, type HospitalPingLog, type InsertHospitalPingLog,
   users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents, pushSubscriptions, notificationBroadcasts, clinicReviews, whatsappConversations, whatsappChatMessages,
   typhoonAlerts, hkHolidays, hospitalEmergencyStatus, userEmergencySubscriptions, typhoonNotificationQueue,
-  vetConsultants, verifiedContentItems, contentVerifications, vetApplications
+  vetConsultants, verifiedContentItems, contentVerifications, vetApplications,
+  hospitalPingState, hospitalPingLogs
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -304,6 +306,18 @@ export interface IStorage {
   createContentVerification(data: InsertContentVerification): Promise<ContentVerification>;
   deleteContentVerification(consultantId: string, contentId: string): Promise<boolean>;
   getVerifiedContentItems(): Promise<VerifiedContentItem[]>;
+
+  // Hospital Ping State
+  getHospitalPingState(hospitalId: string): Promise<HospitalPingState | undefined>;
+  getAllHospitalPingStates(): Promise<HospitalPingState[]>;
+  getActiveHospitalPingStates(): Promise<HospitalPingState[]>;
+  upsertHospitalPingState(data: InsertHospitalPingState): Promise<HospitalPingState>;
+  updateHospitalPingState(hospitalId: string, data: Partial<InsertHospitalPingState>): Promise<HospitalPingState | undefined>;
+  getHospitalsNeedingNoReplyMarking(): Promise<HospitalPingState[]>;
+  
+  // Hospital Ping Logs
+  createHospitalPingLog(data: InsertHospitalPingLog): Promise<HospitalPingLog>;
+  getHospitalPingLogs(hospitalId: string, limit?: number): Promise<HospitalPingLog[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -1959,6 +1973,40 @@ export class MemStorage implements IStorage {
 
   async getVerifiedContentItems(): Promise<VerifiedContentItem[]> {
     throw new Error("MemStorage does not support verified content items - use DatabaseStorage");
+  }
+
+  // Hospital Ping State - stub implementations
+  async getHospitalPingState(hospitalId: string): Promise<HospitalPingState | undefined> {
+    throw new Error("MemStorage does not support hospital ping state - use DatabaseStorage");
+  }
+
+  async getAllHospitalPingStates(): Promise<HospitalPingState[]> {
+    throw new Error("MemStorage does not support hospital ping state - use DatabaseStorage");
+  }
+
+  async getActiveHospitalPingStates(): Promise<HospitalPingState[]> {
+    throw new Error("MemStorage does not support hospital ping state - use DatabaseStorage");
+  }
+
+  async upsertHospitalPingState(data: InsertHospitalPingState): Promise<HospitalPingState> {
+    throw new Error("MemStorage does not support hospital ping state - use DatabaseStorage");
+  }
+
+  async updateHospitalPingState(hospitalId: string, data: Partial<InsertHospitalPingState>): Promise<HospitalPingState | undefined> {
+    throw new Error("MemStorage does not support hospital ping state - use DatabaseStorage");
+  }
+
+  async getHospitalsNeedingNoReplyMarking(): Promise<HospitalPingState[]> {
+    throw new Error("MemStorage does not support hospital ping state - use DatabaseStorage");
+  }
+
+  // Hospital Ping Logs - stub implementations
+  async createHospitalPingLog(data: InsertHospitalPingLog): Promise<HospitalPingLog> {
+    throw new Error("MemStorage does not support hospital ping logs - use DatabaseStorage");
+  }
+
+  async getHospitalPingLogs(hospitalId: string, limit?: number): Promise<HospitalPingLog[]> {
+    throw new Error("MemStorage does not support hospital ping logs - use DatabaseStorage");
   }
 }
 
@@ -3747,6 +3795,71 @@ class DatabaseStorage implements IStorage {
   async getVerifiedContentItems(): Promise<VerifiedContentItem[]> {
     return await db.select().from(verifiedContentItems)
       .orderBy(verifiedContentItems.titleEn);
+  }
+
+  // Hospital Ping State
+  async getHospitalPingState(hospitalId: string): Promise<HospitalPingState | undefined> {
+    const result = await db.select().from(hospitalPingState)
+      .where(eq(hospitalPingState.hospitalId, hospitalId));
+    return result[0];
+  }
+
+  async getAllHospitalPingStates(): Promise<HospitalPingState[]> {
+    return await db.select().from(hospitalPingState);
+  }
+
+  async getActiveHospitalPingStates(): Promise<HospitalPingState[]> {
+    return await db.select().from(hospitalPingState)
+      .where(and(
+        eq(hospitalPingState.pingEnabled, true),
+        eq(hospitalPingState.pingStatus, 'active')
+      ));
+  }
+
+  async upsertHospitalPingState(data: InsertHospitalPingState): Promise<HospitalPingState> {
+    const result = await db.insert(hospitalPingState)
+      .values(data)
+      .onConflictDoUpdate({
+        target: hospitalPingState.hospitalId,
+        set: { ...data, updatedAt: new Date() }
+      })
+      .returning();
+    return result[0];
+  }
+
+  async updateHospitalPingState(hospitalId: string, data: Partial<InsertHospitalPingState>): Promise<HospitalPingState | undefined> {
+    const result = await db.update(hospitalPingState)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(hospitalPingState.hospitalId, hospitalId))
+      .returning();
+    return result[0];
+  }
+
+  async getHospitalsNeedingNoReplyMarking(): Promise<HospitalPingState[]> {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return await db.select().from(hospitalPingState)
+      .where(and(
+        eq(hospitalPingState.pingStatus, 'active'),
+        isNotNull(hospitalPingState.lastPingSentAt),
+        lte(hospitalPingState.lastPingSentAt, oneDayAgo),
+        or(
+          sql`${hospitalPingState.lastInboundReplyAt} IS NULL`,
+          sql`${hospitalPingState.lastInboundReplyAt} < ${hospitalPingState.lastPingSentAt}`
+        )
+      ));
+  }
+
+  // Hospital Ping Logs
+  async createHospitalPingLog(data: InsertHospitalPingLog): Promise<HospitalPingLog> {
+    const result = await db.insert(hospitalPingLogs).values(data).returning();
+    return result[0];
+  }
+
+  async getHospitalPingLogs(hospitalId: string, limit: number = 50): Promise<HospitalPingLog[]> {
+    return await db.select().from(hospitalPingLogs)
+      .where(eq(hospitalPingLogs.hospitalId, hospitalId))
+      .orderBy(desc(hospitalPingLogs.createdAt))
+      .limit(limit);
   }
 }
 

@@ -1037,3 +1037,49 @@ export const insertVetApplicationSchema = createInsertSchema(vetApplications).om
 
 export type InsertVetApplication = z.infer<typeof insertVetApplicationSchema>;
 export type VetApplication = typeof vetApplications.$inferSelect;
+
+// Hospital Ping State table - tracks daily ping/reply status per hospital
+export const hospitalPingState = pgTable("hospital_ping_state", {
+  hospitalId: varchar("hospital_id").primaryKey().references(() => hospitals.id, { onDelete: 'cascade' }),
+  pingEnabled: boolean("ping_enabled").notNull().default(true),
+  pingStatus: text("ping_status").notNull().default('active'), // active, no_reply, paused
+  lastPingSentAt: timestamp("last_ping_sent_at"),
+  lastPingMessageId: text("last_ping_message_id"),
+  lastInboundReplyAt: timestamp("last_inbound_reply_at"),
+  lastReplyLatencySeconds: integer("last_reply_latency_seconds"),
+  noReplySince: timestamp("no_reply_since"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertHospitalPingStateSchema = createInsertSchema(hospitalPingState).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertHospitalPingState = z.infer<typeof insertHospitalPingStateSchema>;
+export type HospitalPingState = typeof hospitalPingState.$inferSelect;
+
+// Hospital Ping Logs table - audit trail for ping events
+export const hospitalPingLogs = pgTable("hospital_ping_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  hospitalId: varchar("hospital_id").notNull().references(() => hospitals.id, { onDelete: 'cascade' }),
+  direction: text("direction").notNull(), // outbound, inbound
+  providerMessageId: text("provider_message_id"),
+  eventType: text("event_type").notNull(), // ping_sent, reply_received, no_reply_marked
+  sentAt: timestamp("sent_at"),
+  receivedAt: timestamp("received_at"),
+  payload: jsonb("payload"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_ping_logs_hospital").on(table.hospitalId),
+  index("idx_ping_logs_created").on(table.createdAt),
+]);
+
+export const insertHospitalPingLogSchema = createInsertSchema(hospitalPingLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertHospitalPingLog = z.infer<typeof insertHospitalPingLogSchema>;
+export type HospitalPingLog = typeof hospitalPingLogs.$inferSelect;
