@@ -42,6 +42,7 @@ import { ObjectPermission } from "./objectAcl";
 import path from "path";
 import { config } from "./config";
 import { encryptTotpSecret, decryptTotpSecret, isEncryptedSecret } from "./encryption";
+import { handleHospitalReply } from "./services/hospital-ping-scheduler";
 
 // WhatsApp webhook signature verification
 // Meta signs all webhook payloads with X-Hub-Signature-256 using your app secret
@@ -307,6 +308,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     });
                     
                     console.log(`[WhatsApp Webhook] Stored incoming message ${chatMessage.id} in conversation ${conversation.id}`);
+                    
+                    // Track hospital reply for ping/availability tracking
+                    if (conversation.hospitalId) {
+                      try {
+                        await handleHospitalReply(conversation.hospitalId, sanitizedPhone, whatsappMsgId);
+                        console.log(`[WhatsApp Webhook] Tracked hospital reply for ${conversation.hospitalId}`);
+                      } catch (pingError) {
+                        console.error('[WhatsApp Webhook] Error tracking hospital reply:', pingError);
+                      }
+                    }
                     
                   } catch (msgError) {
                     console.error('[WhatsApp Webhook] Error processing incoming message:', msgError);
