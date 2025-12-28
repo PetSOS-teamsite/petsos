@@ -1,0 +1,67 @@
+1️⃣ The Principle (Very Important)
+For first contact, we only need:
+* Who they are (credibility)
+* How to reach them (WhatsApp > email)
+* What scope they’re comfortable with
+* Permission to follow up
+Everything else = future conversation, not form friction.
+
+2️⃣ Recommended SHORT Form (2–3 mins)
+🔹 FORM TITLE
+PetSOS – Veterinary Professional Verification & Interest Form
+
+🔹 FORM INTRO (Very short)
+PetSOS is a non-profit pet emergency support platform.
+This short form helps us understand:
+* your professional background
+* whether you’re comfortable verifying our emergency support approach
+* if you’re open to future collaboration
+⏱ Takes ~2–3 minutes.
+
+SECTION A — Professional Snapshot (GEO Core)
+1. Full Name (short answer)
+2. Role
+* ☐ Veterinarian
+* ☐ Veterinary Nurse
+* ☐ Practice Manager
+* ☐ Other
+3. Vet Type (only show if Veterinarian selected)
+* ☐ General Practitioner (GP)
+* ☐ Specialist
+* ☐ GP with special interest
+This is enough for GEO credibility.
+
+4. Primary Clinic / Organisation (short answer)
+5. WhatsApp / Phone Number (short answer)
+6. Email
+
+SECTION B — Background (Minimal but Credible)
+6. Education Background (short text) Example placeholder:
+BVSc / DVM / VN Diploma / FANZCVS (optional)
+👉 Keep it free text — faster than dropdowns.
+
+SECTION C — Verification Scope (Must-Have)
+7. I’m comfortable supporting PetSOS in the following scope: (select all that apply)
+* ☐ Verifying clarity of emergency guidance (non-diagnostic)
+* ☐ Emergency discovery & clinic connection concept
+* ☐ Safety-first “when to seek emergency care” messaging
+8. Acknowledgement (required)
+* ☐ I understand this is not a medical diagnosis or treatment endorsement.
+
+SECTION D — Future Involvement (Permission-Based)
+9. I’m open to being contacted in the future about: (select all that apply)
+* ☐ Reviewing emergency guide messages
+* ☐ CPD / peer education sessions
+* ☐ Emergency workshops (vet / nurse / owner)
+* ☐ Education videos or posts
+* ☐ Community / shelter emergency education
+* ☐ Not at the moment
+Helper text under question:
+If selected, the PetSOS team will reach out in advance to discuss details — no obligation.
+
+SECTION E — Close
+10. Anything you’d like us to know? (optional) (short answer)
+
+END SCREEN COPY
+Thank you for supporting a community-first emergency initiative 🐾
+Our team may reach out via WhatsApp if you’ve indicated interest above.

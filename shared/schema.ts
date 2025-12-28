@@ -834,31 +834,45 @@ export type UserEmergencySubscription = typeof userEmergencySubscriptions.$infer
 // VET CONSULTANT & CONTENT VERIFICATION TABLES
 // =====================================================
 
-// Vet Consultants table - verified veterinary advisors
+// Vet Consultants table - verified veterinary professionals
 export const vetConsultants = pgTable("vet_consultants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  nameEn: text("name_en").notNull(),
+  // Core identity
+  fullName: text("full_name").notNull(), // Primary name field
+  nameEn: text("name_en"), // Legacy - for backward compatibility
   nameZh: text("name_zh"),
-  titleEn: text("title_en").notNull(), // e.g., "DVM, DACVECC"
+  // Role & type (per spec)
+  role: text("role").notNull().default('vet'), // vet, nurse, practice_manager, other
+  vetType: text("vet_type"), // GP, Specialist, GP_with_interest (only if role=vet)
+  // Professional info
+  clinicName: text("clinic_name"), // Primary clinic / organisation
+  educationBackground: text("education_background"), // Free text: BVSc / DVM / VN Diploma / FANZCVS
+  specialtyOrInterest: text("specialty_or_interest"), // Optional specialty or special interest
+  // Legacy fields (kept for backward compatibility)
+  titleEn: text("title_en"), // Legacy credential field
   titleZh: text("title_zh"),
-  specialtyEn: text("specialty_en"), // e.g., "Emergency & Critical Care"
+  specialtyEn: text("specialty_en"), // Legacy specialty field
   specialtyZh: text("specialty_zh"),
   bioEn: text("bio_en"),
   bioZh: text("bio_zh"),
   photoUrl: text("photo_url"),
-  licenseNumber: text("license_number"), // VSB registration number
-  hospitalAffiliationEn: text("hospital_affiliation_en"),
-  hospitalAffiliationZh: text("hospital_affiliation_zh"),
+  licenseNumber: text("license_number"), // Optional - not displayed publicly per GEO guidelines
+  hospitalAffiliationEn: text("hospital_affiliation_en"), // Legacy
+  hospitalAffiliationZh: text("hospital_affiliation_zh"), // Legacy
   yearsExperience: integer("years_experience"),
-  email: text("email"),
+  // Visibility & privacy (per spec - NO contact info stored)
+  visibilityPreference: text("visibility_preference").notNull().default('name_role'), // name_role, clinic_only, anonymous
+  internalNotes: text("internal_notes"), // Admin-only notes
+  // Status
   isActive: boolean("is_active").notNull().default(true),
-  isPublic: boolean("is_public").notNull().default(true), // show on public consultant page
+  isPublic: boolean("is_public").notNull().default(true),
   joinedAt: timestamp("joined_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
   index("idx_vet_consultants_active").on(table.isActive),
   index("idx_vet_consultants_public").on(table.isPublic),
+  index("idx_vet_consultants_role").on(table.role),
 ]);
 
 export const insertVetConsultantSchema = createInsertSchema(vetConsultants).omit({
@@ -903,8 +917,11 @@ export const contentVerifications = pgTable("content_verifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   consultantId: varchar("consultant_id").notNull().references(() => vetConsultants.id, { onDelete: 'cascade' }),
   contentId: varchar("content_id").notNull().references(() => verifiedContentItems.id, { onDelete: 'cascade' }),
+  // Verification scope per spec: what aspect was verified
+  verificationScope: text("verification_scope").notNull().default('clarity'), // clarity, safety, triage_language
   verifiedAt: timestamp("verified_at").notNull().defaultNow(),
   verificationNotes: text("verification_notes"),
+  adminNote: text("admin_note"), // Admin-only note about this verification
   isVisible: boolean("is_visible").notNull().default(true), // show this verification publicly
   contentVersion: text("content_version"), // track which version was verified
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -933,39 +950,62 @@ export type ContentWithVerifier = VerifiedContentItem & {
   verifiedAt: Date | null;
 };
 
-// Vet Applications table - applications from vets wanting to join advisory board
+// Vet Applications table - applications from veterinary professionals
 export const vetApplications = pgTable("vet_applications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  // Applicant info
-  nameEn: text("name_en").notNull(),
-  nameZh: text("name_zh"),
-  email: text("email").notNull(),
-  phone: text("phone"),
-  // Professional credentials
-  licenseNumber: text("license_number").notNull(), // VSB registration number
-  titleEn: text("title_en"), // e.g., "DVM, DACVECC"
-  titleZh: text("title_zh"),
-  specialtyEn: text("specialty_en"),
-  specialtyZh: text("specialty_zh"),
-  hospitalAffiliationEn: text("hospital_affiliation_en"),
-  hospitalAffiliationZh: text("hospital_affiliation_zh"),
-  yearsExperience: integer("years_experience").notNull(),
-  // Application details
-  motivationEn: text("motivation_en"), // Why they want to join
-  motivationZh: text("motivation_zh"),
-  cvUrl: text("cv_url"), // Optional CV upload
+  
+  // SECTION A - Professional Snapshot (per spec)
+  fullName: text("full_name").notNull(), // Required
+  role: text("role").notNull(), // vet, nurse, practice_manager, other
+  vetType: text("vet_type"), // GP, Specialist, GP_with_interest (only if role=vet)
+  clinicName: text("clinic_name").notNull(), // Primary Clinic / Organisation
+  phoneWhatsapp: text("phone_whatsapp").notNull(), // Private - admin only
+  email: text("email"), // Optional email
+  
+  // SECTION B - Background
+  educationBackground: text("education_background"), // Free text: BVSc / DVM / VN Diploma
+  
+  // SECTION C - Verification Scope (stored as JSON array)
+  verificationScope: text("verification_scope").array(), // clarity, emergency_discovery, safety_messaging
+  
+  // SECTION D - Future Involvement (stored as JSON array)
+  futureContactInterest: text("future_contact_interest").array(), // reviewing_guides, cpd_sessions, workshops, videos, community_education
+  
+  // SECTION E - Additional
+  additionalComments: text("additional_comments"), // Optional free text
+  
+  // Consent tracking (per spec)
+  consentAcknowledged: boolean("consent_acknowledged").notNull().default(false),
+  consentVersion: text("consent_version").notNull().default('v1'),
+  
+  // Legacy fields (kept for backward compatibility)
+  nameEn: text("name_en"), // Legacy
+  nameZh: text("name_zh"), // Legacy
+  phone: text("phone"), // Legacy
+  licenseNumber: text("license_number"), // Legacy
+  titleEn: text("title_en"), // Legacy
+  titleZh: text("title_zh"), // Legacy
+  specialtyEn: text("specialty_en"), // Legacy
+  specialtyZh: text("specialty_zh"), // Legacy
+  hospitalAffiliationEn: text("hospital_affiliation_en"), // Legacy
+  hospitalAffiliationZh: text("hospital_affiliation_zh"), // Legacy
+  yearsExperience: integer("years_experience"), // Legacy
+  motivationEn: text("motivation_en"), // Legacy
+  motivationZh: text("motivation_zh"), // Legacy
+  cvUrl: text("cv_url"), // Legacy
+  
   // Status tracking
   status: text("status").notNull().default('pending'), // pending, approved, rejected
   reviewedBy: varchar("reviewed_by").references(() => users.id, { onDelete: 'set null' }),
   reviewedAt: timestamp("reviewed_at"),
   reviewNotes: text("review_notes"),
-  // If approved, link to created consultant
   createdConsultantId: varchar("created_consultant_id").references(() => vetConsultants.id, { onDelete: 'set null' }),
+  submittedAt: timestamp("submitted_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
   index("idx_vet_applications_status").on(table.status),
-  index("idx_vet_applications_email").on(table.email),
+  index("idx_vet_applications_role").on(table.role),
 ]);
 
 export const insertVetApplicationSchema = createInsertSchema(vetApplications).omit({
@@ -975,8 +1015,24 @@ export const insertVetApplicationSchema = createInsertSchema(vetApplications).om
   reviewedAt: true,
   reviewNotes: true,
   createdConsultantId: true,
+  submittedAt: true,
   createdAt: true,
   updatedAt: true,
+  // Legacy fields - not used in new form
+  nameEn: true,
+  nameZh: true,
+  phone: true,
+  licenseNumber: true,
+  titleEn: true,
+  titleZh: true,
+  specialtyEn: true,
+  specialtyZh: true,
+  hospitalAffiliationEn: true,
+  hospitalAffiliationZh: true,
+  yearsExperience: true,
+  motivationEn: true,
+  motivationZh: true,
+  cvUrl: true,
 });
 
 export type InsertVetApplication = z.infer<typeof insertVetApplicationSchema>;

@@ -1,0 +1,312 @@
+Medical Advisory / Consultant Verification System
+Developer-Ready Specification (V1)
+1. Purpose & Scope
+Objective
+
+Build a system that allows veterinary professionals (vets, nurses) to:
+
+Submit a short professional verification form
+
+Be reviewed and approved by admins
+
+Be optionally linked to verified emergency content
+
+Key Constraints
+
+This system does NOT create medical endorsements
+
+Contact details are admin-only
+
+Public profiles show professional identity only, per consent
+
+System must support manual admin addition of consultants
+
+2. User Roles & Permissions
+Roles
+Admin
+
+View all applications
+
+Approve / reject applications
+
+Add consultants manually
+
+Edit consultant profiles
+
+Link consultants to verified content
+
+View private contact info
+
+Public User
+
+Submit application form
+
+View public consultant profiles (limited fields)
+
+(Future roles like “Editor” or “Consultant login” are out of scope for V1.)
+
+3. Routes & Pages
+Public
+
+/medical-advisory
+
+Collapsible professional application form
+
+Static trust content explaining scope
+
+Admin
+
+/admin/consultants
+
+Tabbed admin interface:
+
+Applications
+
+Consultants
+
+Content Verification
+
+4. Database Schema
+Table: vet_applications
+Field	Type	Notes
+id	UUID / INT	Primary key
+full_name	string	Required
+role	enum	vet / nurse / practice_manager / other
+vet_type	enum	GP / Specialist / GP_with_interest / null
+clinic_name	string	Required
+education_background	string	Free text
+phone_whatsapp	string	Private
+status	enum	pending / approved / rejected
+consent_version	string	Required
+submitted_at	timestamp	Auto
+reviewed_at	timestamp	Nullable
+reviewed_by	admin_id	Nullable
+Table: consultants
+Field	Type	Notes
+id	UUID / INT	Primary key
+full_name	string	Required
+role	enum	vet / nurse / other
+vet_type	enum	GP / Specialist / GP_with_interest
+clinic_name	string	Public
+specialty_or_interest	string	Optional
+visibility_preference	enum	name_role / clinic_only / anonymous
+status	enum	active / inactive
+internal_notes	text	Admin-only
+created_at	timestamp	Auto
+
+⚠️ No email or phone fields allowed here
+
+Table: consultant_content_verifications
+Field	Type	Notes
+id	UUID / INT	Primary key
+consultant_id	FK	consultants.id
+content_id	FK	content table
+verification_scope	enum	clarity / safety / triage_language
+verified_at	timestamp	Required
+admin_note	text	Optional
+5. Public Application Flow
+/medical-advisory Form
+Fields (in order)
+
+Full Name (required)
+
+Role (required)
+
+Vet Type (conditional: if role = vet)
+
+Clinic / Organisation (required)
+
+WhatsApp / Phone (required)
+
+Education Background (optional)
+
+Verification Scope (checkbox, required)
+
+Consent Checkbox (required)
+
+Future Contact Interest (checkbox, optional)
+
+Optional Comment
+
+On Submit
+
+Create record in vet_applications
+
+Set status = pending
+
+Store consent version + timestamp
+
+Show confirmation message only (no account created)
+
+6. Admin Interface Specification
+
+/admin/consultants
+
+Tab 1: Applications
+
+Table View Columns
+
+Name
+
+Role
+
+Vet Type
+
+Clinic
+
+Phone (masked by default)
+
+Submitted Date
+
+Status
+
+Actions
+
+Approve
+
+Reject
+
+View full application
+
+Add admin note
+
+Approve Action
+
+Create record in consultants
+
+Copy ONLY professional fields
+
+DO NOT copy phone / email
+
+Update application status → approved
+
+Set reviewed_at, reviewed_by
+
+Tab 2: Consultants
+
+Functions
+
+View consultant list
+
+Add consultant manually
+
+Edit consultant
+
+Deactivate consultant (soft delete)
+
+Manual Add
+
+Same fields as consultant table
+
+Contact info is never stored
+
+Tab 3: Content Verification
+
+Functions
+
+Select consultant
+
+Select content item
+
+Select verification scope
+
+Save verification record
+
+Rules
+
+One consultant can verify multiple content items
+
+One content item can have multiple consultants
+
+7. Public Consultant Profile Rendering
+Public Fields Only
+
+Name (if allowed)
+
+Role
+
+Vet Type
+
+Clinic (if allowed)
+
+Contribution Type (derived from verification records)
+
+Disclaimer (Required)
+
+Professional contributions relate to clarity and emergency appropriateness only.
+PetSOS does not provide medical diagnosis or treatment advice.
+
+8. Privacy & Data Protection Rules
+Hard Rules
+
+Phone / WhatsApp visible ONLY to Admin
+
+No public contact info rendered
+
+No data shared externally
+
+Consent
+
+Consent checkbox required
+
+Consent version stored per application
+
+Data Retention
+
+Rejected applications: deletable after configurable period
+
+Approved consultants: retained until deactivated or removal request
+
+9. Security & Logging (Minimum)
+
+Admin actions logged:
+
+approve
+
+reject
+
+edit
+
+deactivate
+
+Mask phone numbers in list views
+
+Admin authentication required for all /admin/* routes
+
+10. GEO / SEO Compliance Notes (Do Not Skip)
+
+Never label consultants as “medical advisors”
+
+Use language:
+
+“Reviewed for clarity and emergency safety”
+
+“Professional input”
+
+Never attach diagnoses or treatment recommendations
+
+Avoid listing licenses publicly unless explicitly added later
+
+11. Out of Scope (V1)
+
+Consultant login
+
+Messaging system
+
+CPD event management
+
+Public ratings / reviews
+
+Automated credential verification
+
+12. Success Criteria
+
+Form completion time ≤ 3 minutes
+
+Admin approval flow ≤ 2 clicks
+
+Zero public exposure of personal contact data
+
+Ability to truthfully claim:
+
+“Emergency guidance reviewed by veterinary professionals”
