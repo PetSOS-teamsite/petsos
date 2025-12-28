@@ -7,12 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
   Form,
   FormControl,
   FormField,
@@ -52,7 +46,7 @@ const vetApplicationFormSchema = z.object({
   vetType: z.enum(vetTypeOptions).optional(),
   clinicName: z.string().min(1, "Primary Clinic / Organisation is required"),
   phoneWhatsapp: z.string().min(1, "WhatsApp / Phone number is required"),
-  email: z.string().email("Please enter a valid email").or(z.literal("")).optional(),
+  email: z.string().email("Please enter a valid email").min(1, "Email is required"),
   educationBackground: z.string().optional(),
   verificationScope: z.array(z.enum(verificationScopeOptions)).min(1, "Please select at least one verification scope"),
   consentAcknowledged: z.literal(true, { errorMap: () => ({ message: "You must acknowledge this statement" }) }),
@@ -98,7 +92,6 @@ export default function MedicalAdvisoryPage() {
       const payload = {
         ...data,
         consentVersion: 'v1',
-        email: data.email || undefined,
       };
       const response = await apiRequest("POST", "/api/vet-applications", payload);
       return response.json();
@@ -465,384 +458,376 @@ export default function MedicalAdvisoryPage() {
             </p>
 
             <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-300 dark:border-green-800 mb-6">
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="application-form" className="border-none">
-                  <AccordionTrigger className="hover:no-underline py-0" data-testid="button-toggle-application-form">
-                    <h4 className="font-semibold text-foreground flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-green-600" />
-                      {t('formTitle')}
-                    </h4>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-6">
-                    {submitted ? (
-                      <div className="p-6 bg-green-100 dark:bg-green-900/30 rounded-lg border border-green-400 dark:border-green-700" data-testid="text-success-message">
-                        <div className="flex items-start gap-3">
-                          <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                          <p className="text-green-800 dark:text-green-200 font-medium">
-                            {t('successMessage')}
+              <h4 className="font-semibold text-foreground flex items-center gap-2 mb-6">
+                <FileText className="h-4 w-4 text-green-600" />
+                {t('formTitle')}
+              </h4>
+              {submitted ? (
+                <div className="p-6 bg-green-100 dark:bg-green-900/30 rounded-lg border border-green-400 dark:border-green-700" data-testid="text-success-message">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-green-800 dark:text-green-200 font-medium">
+                      {t('successMessage')}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-foreground mb-3">{t('formIntro')}</p>
+                    <p className="text-muted-foreground text-sm mb-2">
+                      {language === 'zh-HK' ? '這份簡短表格幫助我們了解：' : 'This short form helps us understand:'}
+                    </p>
+                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-3">
+                      {(language === 'zh-HK' ? labels.formIntroPoints.zh : labels.formIntroPoints.en).map((point, i) => (
+                        <li key={i}>• {point}</li>
+                      ))}
+                    </ul>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      ⏱ {t('formTime')}
+                    </p>
+                  </div>
+
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      {submitMutation.isError && (
+                        <div className="p-4 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-400 dark:border-red-700" data-testid="text-error-message">
+                          <p className="text-red-800 dark:text-red-200 text-sm">
+                            {t('errorMessage')}
                           </p>
                         </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                          <p className="text-foreground mb-3">{t('formIntro')}</p>
-                          <p className="text-muted-foreground text-sm mb-2">
-                            {language === 'zh-HK' ? '這份簡短表格幫助我們了解：' : 'This short form helps us understand:'}
-                          </p>
-                          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-3">
-                            {(language === 'zh-HK' ? labels.formIntroPoints.zh : labels.formIntroPoints.en).map((point, i) => (
-                              <li key={i}>• {point}</li>
-                            ))}
-                          </ul>
-                          <p className="text-sm text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            ⏱ {t('formTime')}
-                          </p>
-                        </div>
+                      )}
 
-                        <Form {...form}>
-                          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            {submitMutation.isError && (
-                              <div className="p-4 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-400 dark:border-red-700" data-testid="text-error-message">
-                                <p className="text-red-800 dark:text-red-200 text-sm">
-                                  {t('errorMessage')}
-                                </p>
-                              </div>
-                            )}
+                      {/* SECTION A - Professional Snapshot */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-a">
+                          {t('sectionA')}
+                        </h3>
 
-                            {/* SECTION A - Professional Snapshot */}
-                            <div className="space-y-4">
-                              <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-a">
-                                {t('sectionA')}
-                              </h3>
-
-                              <FormField
-                                control={form.control}
-                                name="fullName"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>{t('fullName')} *</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        {...field}
-                                        placeholder={language === 'zh-HK' ? '請輸入全名' : 'Enter your full name'}
-                                        data-testid="input-full-name"
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              <FormField
-                                control={form.control}
-                                name="role"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>{t('role')} *</FormLabel>
-                                    <FormControl>
-                                      <RadioGroup
-                                        onValueChange={field.onChange}
-                                        value={field.value}
-                                        className="flex flex-col space-y-2"
-                                        data-testid="radio-group-role"
-                                      >
-                                        {roleOptions.map((role) => (
-                                          <div key={role} className="flex items-center space-x-2">
-                                            <RadioGroupItem value={role} id={`role-${role}`} data-testid={`radio-role-${role}`} />
-                                            <label htmlFor={`role-${role}`} className="text-sm cursor-pointer">
-                                              {language === 'zh-HK' 
-                                                ? labels.roleOptions[role].zh 
-                                                : labels.roleOptions[role].en}
-                                            </label>
-                                          </div>
-                                        ))}
-                                      </RadioGroup>
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              {watchRole === 'vet' && (
-                                <FormField
-                                  control={form.control}
-                                  name="vetType"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>{t('vetType')} *</FormLabel>
-                                      <FormControl>
-                                        <RadioGroup
-                                          onValueChange={field.onChange}
-                                          value={field.value}
-                                          className="flex flex-col space-y-2"
-                                          data-testid="radio-group-vet-type"
-                                        >
-                                          {vetTypeOptions.map((vetType) => (
-                                            <div key={vetType} className="flex items-center space-x-2">
-                                              <RadioGroupItem value={vetType} id={`vetType-${vetType}`} data-testid={`radio-vet-type-${vetType}`} />
-                                              <label htmlFor={`vetType-${vetType}`} className="text-sm cursor-pointer">
-                                                {language === 'zh-HK' 
-                                                  ? labels.vetTypeOptions[vetType].zh 
-                                                  : labels.vetTypeOptions[vetType].en}
-                                              </label>
-                                            </div>
-                                          ))}
-                                        </RadioGroup>
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
+                        <FormField
+                          control={form.control}
+                          name="fullName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('fullName')} *</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder={language === 'zh-HK' ? '請輸入全名' : 'Enter your full name'}
+                                  data-testid="input-full-name"
                                 />
-                              )}
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                              <FormField
-                                control={form.control}
-                                name="clinicName"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>{t('clinicName')} *</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        {...field}
-                                        placeholder={language === 'zh-HK' ? '請輸入診所或機構名稱' : 'Enter clinic or organisation name'}
-                                        data-testid="input-clinic-name"
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              <FormField
-                                control={form.control}
-                                name="phoneWhatsapp"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>{t('phoneWhatsapp')} *</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        {...field}
-                                        placeholder={language === 'zh-HK' ? '例如：+852 9123 4567' : 'e.g., +852 9123 4567'}
-                                        data-testid="input-phone-whatsapp"
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>{t('email')}</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        {...field}
-                                        type="email"
-                                        placeholder={language === 'zh-HK' ? '請輸入電郵地址' : 'Enter your email address'}
-                                        data-testid="input-email"
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-
-                            {/* SECTION B - Background */}
-                            <div className="space-y-4">
-                              <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-b">
-                                {t('sectionB')}
-                              </h3>
-
-                              <FormField
-                                control={form.control}
-                                name="educationBackground"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>{t('educationBackground')} {t('optional')}</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        {...field}
-                                        placeholder={language === 'zh-HK' ? labels.educationPlaceholder.zh : labels.educationPlaceholder.en}
-                                        data-testid="input-education-background"
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-
-                            {/* SECTION C - Verification Scope */}
-                            <div className="space-y-4">
-                              <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-c">
-                                {t('sectionC')}
-                              </h3>
-
-                              <FormField
-                                control={form.control}
-                                name="verificationScope"
-                                render={() => (
-                                  <FormItem>
-                                    <FormLabel>{t('verificationScopeLabel')} *</FormLabel>
-                                    <div className="space-y-3 mt-2">
-                                      {verificationScopeOptions.map((option) => (
-                                        <FormField
-                                          key={option}
-                                          control={form.control}
-                                          name="verificationScope"
-                                          render={({ field }) => (
-                                            <FormItem className="flex items-start space-x-3 space-y-0">
-                                              <FormControl>
-                                                <Checkbox
-                                                  checked={field.value?.includes(option)}
-                                                  onCheckedChange={(checked) => {
-                                                    const newValue = checked
-                                                      ? [...(field.value || []), option]
-                                                      : field.value?.filter((v) => v !== option) || [];
-                                                    field.onChange(newValue);
-                                                  }}
-                                                  data-testid={`checkbox-verification-${option}`}
-                                                />
-                                              </FormControl>
-                                              <label className="text-sm cursor-pointer leading-relaxed">
-                                                {language === 'zh-HK' 
-                                                  ? labels.verificationScopeOptions[option].zh 
-                                                  : labels.verificationScopeOptions[option].en}
-                                              </label>
-                                            </FormItem>
-                                          )}
-                                        />
-                                      ))}
-                                    </div>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              <FormField
-                                control={form.control}
-                                name="consentAcknowledged"
-                                render={({ field }) => (
-                                  <FormItem className="flex items-start space-x-3 space-y-0 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value === true}
-                                        onCheckedChange={(checked) => field.onChange(checked === true ? true : undefined)}
-                                        data-testid="checkbox-consent"
-                                      />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none">
-                                      <label className="text-sm font-medium cursor-pointer">
-                                        {t('acknowledgement')} *
+                        <FormField
+                          control={form.control}
+                          name="role"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('role')} *</FormLabel>
+                              <FormControl>
+                                <RadioGroup
+                                  onValueChange={field.onChange}
+                                  value={field.value}
+                                  className="flex flex-col space-y-2"
+                                  data-testid="radio-group-role"
+                                >
+                                  {roleOptions.map((role) => (
+                                    <div key={role} className="flex items-center space-x-2">
+                                      <RadioGroupItem value={role} id={`role-${role}`} data-testid={`radio-role-${role}`} />
+                                      <label htmlFor={`role-${role}`} className="text-sm cursor-pointer">
+                                        {language === 'zh-HK' 
+                                          ? labels.roleOptions[role].zh 
+                                          : labels.roleOptions[role].en}
                                       </label>
-                                      <FormMessage />
                                     </div>
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
+                                  ))}
+                                </RadioGroup>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                            {/* SECTION D - Future Involvement */}
-                            <div className="space-y-4">
-                              <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-d">
-                                {t('sectionD')}
-                              </h3>
+                        {watchRole === 'vet' && (
+                          <FormField
+                            control={form.control}
+                            name="vetType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('vetType')} *</FormLabel>
+                                <FormControl>
+                                  <RadioGroup
+                                    onValueChange={field.onChange}
+                                    value={field.value}
+                                    className="flex flex-col space-y-2"
+                                    data-testid="radio-group-vet-type"
+                                  >
+                                    {vetTypeOptions.map((vetType) => (
+                                      <div key={vetType} className="flex items-center space-x-2">
+                                        <RadioGroupItem value={vetType} id={`vetType-${vetType}`} data-testid={`radio-vet-type-${vetType}`} />
+                                        <label htmlFor={`vetType-${vetType}`} className="text-sm cursor-pointer">
+                                          {language === 'zh-HK' 
+                                            ? labels.vetTypeOptions[vetType].zh 
+                                            : labels.vetTypeOptions[vetType].en}
+                                        </label>
+                                      </div>
+                                    ))}
+                                  </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
 
-                              <FormField
-                                control={form.control}
-                                name="futureContactInterest"
-                                render={() => (
-                                  <FormItem>
-                                    <FormLabel>{t('futureContactLabel')}</FormLabel>
-                                    <div className="space-y-3 mt-2">
-                                      {futureContactOptions.map((option) => (
-                                        <FormField
-                                          key={option}
-                                          control={form.control}
-                                          name="futureContactInterest"
-                                          render={({ field }) => (
-                                            <FormItem className="flex items-start space-x-3 space-y-0">
-                                              <FormControl>
-                                                <Checkbox
-                                                  checked={field.value?.includes(option)}
-                                                  onCheckedChange={(checked) => {
-                                                    const newValue = checked
-                                                      ? [...(field.value || []), option]
-                                                      : field.value?.filter((v) => v !== option) || [];
-                                                    field.onChange(newValue);
-                                                  }}
-                                                  data-testid={`checkbox-future-${option}`}
-                                                />
-                                              </FormControl>
-                                              <label className="text-sm cursor-pointer">
-                                                {language === 'zh-HK' 
-                                                  ? labels.futureContactOptions[option].zh 
-                                                  : labels.futureContactOptions[option].en}
-                                              </label>
-                                            </FormItem>
-                                          )}
-                                        />
-                                      ))}
-                                    </div>
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
+                        <FormField
+                          control={form.control}
+                          name="clinicName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('clinicName')} *</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder={language === 'zh-HK' ? '請輸入診所或機構名稱' : 'Enter clinic or organisation name'}
+                                  data-testid="input-clinic-name"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                            {/* SECTION E - Close */}
-                            <div className="space-y-4">
-                              <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-e">
-                                {t('sectionE')}
-                              </h3>
+                        <FormField
+                          control={form.control}
+                          name="phoneWhatsapp"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('phoneWhatsapp')} *</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder={language === 'zh-HK' ? '例如：+852 9123 4567' : 'e.g., +852 9123 4567'}
+                                  data-testid="input-phone-whatsapp"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                              <FormField
-                                control={form.control}
-                                name="additionalComments"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>{t('additionalComments')} {t('optional')}</FormLabel>
-                                    <FormControl>
-                                      <Textarea
-                                        {...field}
-                                        rows={4}
-                                        placeholder={language === 'zh-HK' ? '請在此分享任何想法或問題...' : 'Share any thoughts or questions here...'}
-                                        data-testid="textarea-additional-comments"
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('email')}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="email"
+                                  placeholder={language === 'zh-HK' ? '請輸入電郵地址' : 'Enter your email address'}
+                                  data-testid="input-email"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                            <Button
-                              type="submit"
-                              className="w-full bg-green-600 hover:bg-green-700"
-                              disabled={submitMutation.isPending}
-                              data-testid="button-submit-application"
-                            >
-                              {submitMutation.isPending ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  {language === 'zh-HK' ? '提交中...' : 'Submitting...'}
-                                </>
-                              ) : (
-                                t('submitButton')
-                              )}
-                            </Button>
-                          </form>
-                        </Form>
-                      </>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+                      {/* SECTION B - Background */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-b">
+                          {t('sectionB')}
+                        </h3>
+
+                        <FormField
+                          control={form.control}
+                          name="educationBackground"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('educationBackground')} {t('optional')}</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder={language === 'zh-HK' ? labels.educationPlaceholder.zh : labels.educationPlaceholder.en}
+                                  data-testid="input-education-background"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* SECTION C - Verification Scope */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-c">
+                          {t('sectionC')}
+                        </h3>
+
+                        <FormField
+                          control={form.control}
+                          name="verificationScope"
+                          render={() => (
+                            <FormItem>
+                              <FormLabel>{t('verificationScopeLabel')} *</FormLabel>
+                              <div className="space-y-3 mt-2">
+                                {verificationScopeOptions.map((option) => (
+                                  <FormField
+                                    key={option}
+                                    control={form.control}
+                                    name="verificationScope"
+                                    render={({ field }) => (
+                                      <FormItem className="flex items-start space-x-3 space-y-0">
+                                        <FormControl>
+                                          <Checkbox
+                                            checked={field.value?.includes(option)}
+                                            onCheckedChange={(checked) => {
+                                              const newValue = checked
+                                                ? [...(field.value || []), option]
+                                                : field.value?.filter((v) => v !== option) || [];
+                                              field.onChange(newValue);
+                                            }}
+                                            data-testid={`checkbox-verification-${option}`}
+                                          />
+                                        </FormControl>
+                                        <label className="text-sm cursor-pointer leading-relaxed">
+                                          {language === 'zh-HK' 
+                                            ? labels.verificationScopeOptions[option].zh 
+                                            : labels.verificationScopeOptions[option].en}
+                                        </label>
+                                      </FormItem>
+                                    )}
+                                  />
+                                ))}
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="consentAcknowledged"
+                          render={({ field }) => (
+                            <FormItem className="flex items-start space-x-3 space-y-0 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value === true}
+                                  onCheckedChange={(checked) => field.onChange(checked === true ? true : undefined)}
+                                  data-testid="checkbox-consent"
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <label className="text-sm font-medium cursor-pointer">
+                                  {t('acknowledgement')} *
+                                </label>
+                                <FormMessage />
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* SECTION D - Future Involvement */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-d">
+                          {t('sectionD')}
+                        </h3>
+
+                        <FormField
+                          control={form.control}
+                          name="futureContactInterest"
+                          render={() => (
+                            <FormItem>
+                              <FormLabel>{t('futureContactLabel')}</FormLabel>
+                              <div className="space-y-3 mt-2">
+                                {futureContactOptions.map((option) => (
+                                  <FormField
+                                    key={option}
+                                    control={form.control}
+                                    name="futureContactInterest"
+                                    render={({ field }) => (
+                                      <FormItem className="flex items-start space-x-3 space-y-0">
+                                        <FormControl>
+                                          <Checkbox
+                                            checked={field.value?.includes(option)}
+                                            onCheckedChange={(checked) => {
+                                              const newValue = checked
+                                                ? [...(field.value || []), option]
+                                                : field.value?.filter((v) => v !== option) || [];
+                                              field.onChange(newValue);
+                                            }}
+                                            data-testid={`checkbox-future-${option}`}
+                                          />
+                                        </FormControl>
+                                        <label className="text-sm cursor-pointer">
+                                          {language === 'zh-HK' 
+                                            ? labels.futureContactOptions[option].zh 
+                                            : labels.futureContactOptions[option].en}
+                                        </label>
+                                      </FormItem>
+                                    )}
+                                  />
+                                ))}
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* SECTION E - Close */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-e">
+                          {t('sectionE')}
+                        </h3>
+
+                        <FormField
+                          control={form.control}
+                          name="additionalComments"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('additionalComments')} {t('optional')}</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  {...field}
+                                  rows={4}
+                                  placeholder={language === 'zh-HK' ? '請在此分享任何想法或問題...' : 'Share any thoughts or questions here...'}
+                                  data-testid="textarea-additional-comments"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full bg-green-600 hover:bg-green-700"
+                        disabled={submitMutation.isPending}
+                        data-testid="button-submit-application"
+                      >
+                        {submitMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {language === 'zh-HK' ? '提交中...' : 'Submitting...'}
+                          </>
+                        ) : (
+                          t('submitButton')
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>

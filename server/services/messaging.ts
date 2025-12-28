@@ -797,6 +797,31 @@ export class MessagingService {
   async sendDirectWhatsAppMessage(phoneNumber: string, content: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
     return this.sendWhatsAppMessage(phoneNumber, content);
   }
+
+  /**
+   * Send a Thank You message to a vet consultant applicant
+   * Uses the consultant_thank_you WhatsApp template
+   */
+  async sendThankYouMessage(phoneNumber: string, applicantName: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    console.log('[Thank You Message] Sending to:', phoneNumber, 'Name:', applicantName);
+    
+    // Use the consultant_thank_you template with the applicant's name
+    // The template should be approved in Meta Business Manager
+    const templateName = 'consultant_thank_you';
+    const templateVariables = [applicantName];
+    
+    try {
+      const result = await this.sendWhatsAppTemplateMessage(phoneNumber, templateName, templateVariables);
+      return result;
+    } catch (error: any) {
+      console.error('[Thank You Message] Template failed, trying direct message:', error.message);
+      
+      // Fallback to direct message if template is not available
+      const fallbackMessage = `Dear ${applicantName},\n\nThank you for your interest in joining PetSOS as a veterinary consultant. We appreciate your commitment to helping pet owners during emergencies.\n\nWe will review your application and get back to you soon.\n\nBest regards,\nThe PetSOS Team`;
+      
+      return this.sendWhatsAppMessage(phoneNumber, fallbackMessage);
+    }
+  }
 }
 
 export const messagingService = new MessagingService();

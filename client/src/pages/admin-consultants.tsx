@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, CheckCircle, XCircle, Eye, Clock, Users, FileCheck, Loader2, EyeOff } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, CheckCircle, XCircle, Eye, Clock, Users, FileCheck, Loader2, EyeOff, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -191,6 +191,19 @@ export default function AdminConsultantsPage() {
     },
     onError: (error: any) => {
       toast({ title: language === 'zh-HK' ? "拒絕失敗" : "Failed to reject", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const sendThankYouMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('POST', `/api/admin/vet-applications/${id}/send-thank-you`, {});
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: language === 'zh-HK' ? "感謝信息已發送" : "Thank you message sent" });
+    },
+    onError: (error: any) => {
+      toast({ title: language === 'zh-HK' ? "發送失敗" : "Failed to send", description: error.message, variant: "destructive" });
     },
   });
 
@@ -724,23 +737,29 @@ export default function AdminConsultantsPage() {
                     <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '電郵' : 'Email'}</label>
                     <p className="text-foreground">{selectedApplication.email || '-'}</p>
                   </div>
-                  <div>
+                  <div className="col-span-2">
                     <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '電話 (WhatsApp)' : 'Phone (WhatsApp)'}</label>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-foreground font-mono">
-                        {showPhoneNumber 
-                          ? (selectedApplication.phoneWhatsapp || selectedApplication.phone || '-')
-                          : maskPhone(selectedApplication.phoneWhatsapp || selectedApplication.phone)
-                        }
+                        {selectedApplication.phoneWhatsapp || selectedApplication.phone || '-'}
                       </p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowPhoneNumber(!showPhoneNumber)}
-                        data-testid="button-toggle-phone"
-                      >
-                        {showPhoneNumber ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
+                      {(selectedApplication.phoneWhatsapp || selectedApplication.phone) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-green-600 hover:text-green-700"
+                          onClick={() => sendThankYouMutation.mutate(selectedApplication.id)}
+                          disabled={sendThankYouMutation.isPending}
+                          data-testid="button-send-thank-you"
+                        >
+                          {sendThankYouMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                          ) : (
+                            <MessageSquare className="h-4 w-4 mr-1" />
+                          )}
+                          {language === 'zh-HK' ? '發送感謝' : 'Send Thank You'}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -5955,6 +5955,37 @@ PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
     }
   });
 
+  // Admin: Send Thank You WhatsApp message to applicant
+  app.post("/api/admin/vet-applications/:id/send-thank-you", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Get application details
+      const application = await storage.getVetApplication(id);
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+      
+      const phoneNumber = application.phoneWhatsapp || application.phone;
+      if (!phoneNumber) {
+        return res.status(400).json({ error: "No phone number available for this applicant" });
+      }
+      
+      // Send Thank You message via WhatsApp using the messaging service
+      // Use the consultant_thank_you template
+      const result = await messagingService.sendThankYouMessage(phoneNumber, application.fullName || 'Valued Professional');
+      
+      res.json({ 
+        success: true, 
+        message: "Thank you message sent successfully",
+        messageId: result.messageId 
+      });
+    } catch (error: any) {
+      console.error("Error sending thank you message:", error);
+      res.status(500).json({ error: error.message || "Failed to send thank you message" });
+    }
+  });
+
   // Admin: Create consultant manually
   app.post("/api/admin/consultants", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
