@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Pencil, Trash2, CheckCircle, XCircle, Eye, Clock, Users, FileCheck, Stethoscope, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, CheckCircle, XCircle, Eye, Clock, Users, FileCheck, Loader2, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -64,10 +64,26 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { format } from "date-fns";
 import type { VetApplication, VetConsultant, VerifiedContentItem, ContentVerification } from "@shared/schema";
 
+function maskPhone(phone: string | null | undefined): string {
+  if (!phone) return '-';
+  if (phone.length <= 4) return phone;
+  return '*'.repeat(phone.length - 4) + phone.slice(-4);
+}
+
 const consultantFormSchema = z.object({
-  nameEn: z.string().min(1, "English name is required"),
+  fullName: z.string().min(1, "Full name is required"),
+  role: z.enum(['vet', 'nurse', 'practice_manager', 'other']),
+  vetType: z.enum(['GP', 'Specialist', 'GP_with_interest']).optional().nullable(),
+  clinicName: z.string().optional(),
+  educationBackground: z.string().optional(),
+  specialtyOrInterest: z.string().optional(),
+  visibilityPreference: z.enum(['name_role', 'clinic_only', 'anonymous']).default('name_role'),
+  internalNotes: z.string().optional(),
+  isActive: z.boolean().default(true),
+  isPublic: z.boolean().default(true),
+  nameEn: z.string().optional(),
   nameZh: z.string().optional(),
-  titleEn: z.string().min(1, "Title is required"),
+  titleEn: z.string().optional(),
   titleZh: z.string().optional(),
   specialtyEn: z.string().optional(),
   specialtyZh: z.string().optional(),
@@ -78,9 +94,6 @@ const consultantFormSchema = z.object({
   hospitalAffiliationEn: z.string().optional(),
   hospitalAffiliationZh: z.string().optional(),
   yearsExperience: z.coerce.number().optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  isActive: z.boolean().default(true),
-  isPublic: z.boolean().default(true),
 });
 
 type ConsultantFormData = z.infer<typeof consultantFormSchema>;
@@ -96,6 +109,7 @@ export default function AdminConsultantsPage() {
   
   const [selectedApplication, setSelectedApplication] = useState<VetApplication | null>(null);
   const [viewApplicationOpen, setViewApplicationOpen] = useState(false);
+  const [showPhoneNumber, setShowPhoneNumber] = useState(false);
   
   const [consultantDialogOpen, setConsultantDialogOpen] = useState(false);
   const [editingConsultant, setEditingConsultant] = useState<VetConsultant | null>(null);
@@ -105,6 +119,8 @@ export default function AdminConsultantsPage() {
   const [deleteVerificationData, setDeleteVerificationData] = useState<{ consultantId: string; contentId: string } | null>(null);
   const [selectedVerificationConsultant, setSelectedVerificationConsultant] = useState("");
   const [selectedVerificationContent, setSelectedVerificationContent] = useState("");
+  const [selectedVerificationScope, setSelectedVerificationScope] = useState("clarity");
+  const [verificationAdminNote, setVerificationAdminNote] = useState("");
 
   const { data: applications, isLoading: applicationsLoading } = useQuery<VetApplication[]>({
     queryKey: ["/api/admin/vet-applications"],
@@ -121,6 +137,16 @@ export default function AdminConsultantsPage() {
   const form = useForm<ConsultantFormData>({
     resolver: zodResolver(consultantFormSchema),
     defaultValues: {
+      fullName: "",
+      role: "vet",
+      vetType: null,
+      clinicName: "",
+      educationBackground: "",
+      specialtyOrInterest: "",
+      visibilityPreference: "name_role",
+      internalNotes: "",
+      isActive: true,
+      isPublic: true,
       nameEn: "",
       nameZh: "",
       titleEn: "",
@@ -134,11 +160,10 @@ export default function AdminConsultantsPage() {
       hospitalAffiliationEn: "",
       hospitalAffiliationZh: "",
       yearsExperience: undefined,
-      email: "",
-      isActive: true,
-      isPublic: true,
     },
   });
+
+  const watchRole = form.watch("role");
 
   const approveApplicationMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -218,7 +243,7 @@ export default function AdminConsultantsPage() {
   });
 
   const createVerificationMutation = useMutation({
-    mutationFn: async (data: { consultantId: string; contentId: string }) => {
+    mutationFn: async (data: { consultantId: string; contentId: string; verificationScope: string; adminNote?: string }) => {
       const response = await apiRequest('POST', '/api/admin/content-verifications', data);
       return response.json();
     },
@@ -227,6 +252,8 @@ export default function AdminConsultantsPage() {
       setVerificationDialogOpen(false);
       setSelectedVerificationConsultant("");
       setSelectedVerificationContent("");
+      setSelectedVerificationScope("clarity");
+      setVerificationAdminNote("");
       toast({ title: language === 'zh-HK' ? "驗證已添加" : "Verification added" });
     },
     onError: (error: any) => {
@@ -252,9 +279,19 @@ export default function AdminConsultantsPage() {
   const openEditConsultant = (consultant: VetConsultant) => {
     setEditingConsultant(consultant);
     form.reset({
-      nameEn: consultant.nameEn,
+      fullName: consultant.fullName || consultant.nameEn || "",
+      role: (consultant.role as 'vet' | 'nurse' | 'practice_manager' | 'other') || "vet",
+      vetType: consultant.vetType as 'GP' | 'Specialist' | 'GP_with_interest' | null,
+      clinicName: consultant.clinicName || "",
+      educationBackground: consultant.educationBackground || "",
+      specialtyOrInterest: consultant.specialtyOrInterest || "",
+      visibilityPreference: (consultant.visibilityPreference as 'name_role' | 'clinic_only' | 'anonymous') || "name_role",
+      internalNotes: consultant.internalNotes || "",
+      isActive: consultant.isActive,
+      isPublic: consultant.isPublic,
+      nameEn: consultant.nameEn || "",
       nameZh: consultant.nameZh || "",
-      titleEn: consultant.titleEn,
+      titleEn: consultant.titleEn || "",
       titleZh: consultant.titleZh || "",
       specialtyEn: consultant.specialtyEn || "",
       specialtyZh: consultant.specialtyZh || "",
@@ -265,9 +302,6 @@ export default function AdminConsultantsPage() {
       hospitalAffiliationEn: consultant.hospitalAffiliationEn || "",
       hospitalAffiliationZh: consultant.hospitalAffiliationZh || "",
       yearsExperience: consultant.yearsExperience || undefined,
-      email: consultant.email || "",
-      isActive: consultant.isActive,
-      isPublic: consultant.isPublic,
     });
     setConsultantDialogOpen(true);
   };
@@ -275,6 +309,16 @@ export default function AdminConsultantsPage() {
   const openNewConsultant = () => {
     setEditingConsultant(null);
     form.reset({
+      fullName: "",
+      role: "vet",
+      vetType: null,
+      clinicName: "",
+      educationBackground: "",
+      specialtyOrInterest: "",
+      visibilityPreference: "name_role",
+      internalNotes: "",
+      isActive: true,
+      isPublic: true,
       nameEn: "",
       nameZh: "",
       titleEn: "",
@@ -288,14 +332,14 @@ export default function AdminConsultantsPage() {
       hospitalAffiliationEn: "",
       hospitalAffiliationZh: "",
       yearsExperience: undefined,
-      email: "",
-      isActive: true,
-      isPublic: true,
     });
     setConsultantDialogOpen(true);
   };
 
   const onSubmitConsultant = (data: ConsultantFormData) => {
+    if (data.role !== 'vet') {
+      data.vetType = null;
+    }
     if (editingConsultant) {
       updateConsultantMutation.mutate({ id: editingConsultant.id, data });
     } else {
@@ -314,6 +358,48 @@ export default function AdminConsultantsPage() {
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
+  };
+
+  const getRoleBadge = (role: string) => {
+    const roleLabels: Record<string, { en: string; zh: string }> = {
+      'vet': { en: 'Vet', zh: '獸醫' },
+      'nurse': { en: 'Nurse', zh: '護士' },
+      'practice_manager': { en: 'Practice Manager', zh: '診所經理' },
+      'other': { en: 'Other', zh: '其他' },
+    };
+    const label = roleLabels[role] || { en: role, zh: role };
+    return <Badge variant="outline">{language === 'zh-HK' ? label.zh : label.en}</Badge>;
+  };
+
+  const getVetTypeBadge = (vetType: string | null) => {
+    if (!vetType) return '-';
+    const typeLabels: Record<string, { en: string; zh: string }> = {
+      'GP': { en: 'GP', zh: '全科' },
+      'Specialist': { en: 'Specialist', zh: '專科' },
+      'GP_with_interest': { en: 'GP with Interest', zh: '全科帶興趣' },
+    };
+    const label = typeLabels[vetType] || { en: vetType, zh: vetType };
+    return <Badge variant="secondary">{language === 'zh-HK' ? label.zh : label.en}</Badge>;
+  };
+
+  const getVisibilityBadge = (visibility: string) => {
+    const visibilityLabels: Record<string, { en: string; zh: string; color: string }> = {
+      'name_role': { en: 'Name & Role', zh: '名稱及角色', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
+      'clinic_only': { en: 'Clinic Only', zh: '僅顯示診所', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' },
+      'anonymous': { en: 'Anonymous', zh: '匿名', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' },
+    };
+    const info = visibilityLabels[visibility] || { en: visibility, zh: visibility, color: '' };
+    return <Badge variant="secondary" className={info.color}>{language === 'zh-HK' ? info.zh : info.en}</Badge>;
+  };
+
+  const getVerificationScopeBadge = (scope: string) => {
+    const scopeLabels: Record<string, { en: string; zh: string; color: string }> = {
+      'clarity': { en: 'Clarity', zh: '清晰度', color: 'bg-blue-100 text-blue-800' },
+      'safety': { en: 'Safety', zh: '安全', color: 'bg-green-100 text-green-800' },
+      'triage_language': { en: 'Triage Language', zh: '分診語言', color: 'bg-purple-100 text-purple-800' },
+    };
+    const info = scopeLabels[scope] || { en: scope, zh: scope, color: 'bg-gray-100 text-gray-800' };
+    return <Badge variant="secondary" className={info.color}>{language === 'zh-HK' ? info.zh : info.en}</Badge>;
   };
 
   const formatDate = (date: Date | string | null) => {
@@ -381,37 +467,39 @@ export default function AdminConsultantsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{language === 'zh-HK' ? '姓名' : 'Name'}</TableHead>
-                      <TableHead>{language === 'zh-HK' ? '電郵' : 'Email'}</TableHead>
-                      <TableHead>{language === 'zh-HK' ? '執照號碼' : 'License #'}</TableHead>
-                      <TableHead>{language === 'zh-HK' ? '經驗年資' : 'Years Exp'}</TableHead>
+                      <TableHead>{language === 'zh-HK' ? '姓名' : 'Full Name'}</TableHead>
+                      <TableHead>{language === 'zh-HK' ? '角色' : 'Role'}</TableHead>
+                      <TableHead>{language === 'zh-HK' ? '獸醫類型' : 'Vet Type'}</TableHead>
+                      <TableHead>{language === 'zh-HK' ? '診所' : 'Clinic'}</TableHead>
+                      <TableHead>{language === 'zh-HK' ? '電話' : 'Phone'}</TableHead>
+                      <TableHead>{language === 'zh-HK' ? '提交日期' : 'Submitted'}</TableHead>
                       <TableHead>{language === 'zh-HK' ? '狀態' : 'Status'}</TableHead>
-                      <TableHead>{language === 'zh-HK' ? '申請日期' : 'Applied Date'}</TableHead>
                       <TableHead>{language === 'zh-HK' ? '操作' : 'Actions'}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {applications?.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                           {language === 'zh-HK' ? '暫無申請' : 'No applications yet'}
                         </TableCell>
                       </TableRow>
                     )}
                     {applications?.map((app) => (
                       <TableRow key={app.id} data-testid={`row-application-${app.id}`}>
-                        <TableCell className="font-medium">{language === 'zh-HK' ? app.nameZh || app.nameEn : app.nameEn}</TableCell>
-                        <TableCell>{app.email}</TableCell>
-                        <TableCell>{app.licenseNumber}</TableCell>
-                        <TableCell>{app.yearsExperience}</TableCell>
+                        <TableCell className="font-medium">{app.fullName || app.nameEn || '-'}</TableCell>
+                        <TableCell>{getRoleBadge(app.role)}</TableCell>
+                        <TableCell>{app.role === 'vet' ? getVetTypeBadge(app.vetType) : '-'}</TableCell>
+                        <TableCell>{app.clinicName || '-'}</TableCell>
+                        <TableCell className="font-mono text-sm">{maskPhone(app.phoneWhatsapp || app.phone)}</TableCell>
+                        <TableCell>{formatDate(app.submittedAt || app.createdAt)}</TableCell>
                         <TableCell>{getStatusBadge(app.status)}</TableCell>
-                        <TableCell>{formatDate(app.createdAt)}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => { setSelectedApplication(app); setViewApplicationOpen(true); }}
+                              onClick={() => { setSelectedApplication(app); setViewApplicationOpen(true); setShowPhoneNumber(false); }}
                               data-testid={`button-view-${app.id}`}
                             >
                               <Eye className="h-4 w-4" />
@@ -470,27 +558,29 @@ export default function AdminConsultantsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>{language === 'zh-HK' ? '姓名' : 'Name'}</TableHead>
-                      <TableHead>{language === 'zh-HK' ? '職銜' : 'Title'}</TableHead>
-                      <TableHead>{language === 'zh-HK' ? '專長' : 'Specialty'}</TableHead>
-                      <TableHead>{language === 'zh-HK' ? '執照號碼' : 'License #'}</TableHead>
-                      <TableHead>{language === 'zh-HK' ? '狀態' : 'Active'}</TableHead>
+                      <TableHead>{language === 'zh-HK' ? '角色' : 'Role'}</TableHead>
+                      <TableHead>{language === 'zh-HK' ? '獸醫類型' : 'Vet Type'}</TableHead>
+                      <TableHead>{language === 'zh-HK' ? '診所' : 'Clinic'}</TableHead>
+                      <TableHead>{language === 'zh-HK' ? '顯示設定' : 'Visibility'}</TableHead>
+                      <TableHead>{language === 'zh-HK' ? '狀態' : 'Status'}</TableHead>
                       <TableHead>{language === 'zh-HK' ? '操作' : 'Actions'}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {consultants?.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                           {language === 'zh-HK' ? '暫無顧問' : 'No consultants yet'}
                         </TableCell>
                       </TableRow>
                     )}
                     {consultants?.map((consultant) => (
                       <TableRow key={consultant.id} data-testid={`row-consultant-${consultant.id}`}>
-                        <TableCell className="font-medium">{language === 'zh-HK' ? consultant.nameZh || consultant.nameEn : consultant.nameEn}</TableCell>
-                        <TableCell>{language === 'zh-HK' ? consultant.titleZh || consultant.titleEn : consultant.titleEn}</TableCell>
-                        <TableCell>{language === 'zh-HK' ? consultant.specialtyZh || consultant.specialtyEn || '-' : consultant.specialtyEn || '-'}</TableCell>
-                        <TableCell>{consultant.licenseNumber || '-'}</TableCell>
+                        <TableCell className="font-medium">{consultant.fullName || (language === 'zh-HK' ? consultant.nameZh || consultant.nameEn : consultant.nameEn) || '-'}</TableCell>
+                        <TableCell>{getRoleBadge(consultant.role)}</TableCell>
+                        <TableCell>{consultant.role === 'vet' ? getVetTypeBadge(consultant.vetType) : '-'}</TableCell>
+                        <TableCell>{consultant.clinicName || '-'}</TableCell>
+                        <TableCell>{getVisibilityBadge(consultant.visibilityPreference)}</TableCell>
                         <TableCell>
                           {consultant.isActive ? (
                             <Badge className="bg-green-100 text-green-800">{language === 'zh-HK' ? '啟用' : 'Active'}</Badge>
@@ -548,6 +638,7 @@ export default function AdminConsultantsPage() {
                     <TableRow>
                       <TableHead>{language === 'zh-HK' ? '內容標題' : 'Content Title'}</TableHead>
                       <TableHead>{language === 'zh-HK' ? '驗證者' : 'Verified By'}</TableHead>
+                      <TableHead>{language === 'zh-HK' ? '驗證範圍' : 'Verification Scope'}</TableHead>
                       <TableHead>{language === 'zh-HK' ? '驗證日期' : 'Verified Date'}</TableHead>
                       <TableHead>{language === 'zh-HK' ? '操作' : 'Actions'}</TableHead>
                     </TableRow>
@@ -555,7 +646,7 @@ export default function AdminConsultantsPage() {
                   <TableBody>
                     {verifiedContent?.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                           {language === 'zh-HK' ? '暫無驗證內容' : 'No verified content yet'}
                         </TableCell>
                       </TableRow>
@@ -565,7 +656,13 @@ export default function AdminConsultantsPage() {
                         <TableCell className="font-medium">{language === 'zh-HK' ? content.titleZh || content.titleEn : content.titleEn}</TableCell>
                         <TableCell>
                           {content.verification?.consultant 
-                            ? (language === 'zh-HK' ? content.verification.consultant.nameZh || content.verification.consultant.nameEn : content.verification.consultant.nameEn)
+                            ? (content.verification.consultant.fullName || (language === 'zh-HK' ? content.verification.consultant.nameZh || content.verification.consultant.nameEn : content.verification.consultant.nameEn))
+                            : '-'
+                          }
+                        </TableCell>
+                        <TableCell>
+                          {content.verification?.verificationScope 
+                            ? getVerificationScopeBadge(content.verification.verificationScope)
                             : '-'
                           }
                         </TableCell>
@@ -599,49 +696,98 @@ export default function AdminConsultantsPage() {
             <DialogTitle>{language === 'zh-HK' ? '申請詳情' : 'Application Details'}</DialogTitle>
           </DialogHeader>
           {selectedApplication && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '姓名 (英文)' : 'Name (English)'}</label>
-                  <p className="text-foreground">{selectedApplication.nameEn}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '姓名 (中文)' : 'Name (Chinese)'}</label>
-                  <p className="text-foreground">{selectedApplication.nameZh || '-'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '電郵' : 'Email'}</label>
-                  <p className="text-foreground">{selectedApplication.email}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '電話' : 'Phone'}</label>
-                  <p className="text-foreground">{selectedApplication.phone || '-'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '執照號碼' : 'License Number'}</label>
-                  <p className="text-foreground">{selectedApplication.licenseNumber}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '經驗年資' : 'Years Experience'}</label>
-                  <p className="text-foreground">{selectedApplication.yearsExperience}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '職銜' : 'Title'}</label>
-                  <p className="text-foreground">{selectedApplication.titleEn || '-'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '專長' : 'Specialty'}</label>
-                  <p className="text-foreground">{selectedApplication.specialtyEn || '-'}</p>
-                </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '醫院隸屬' : 'Hospital Affiliation'}</label>
-                  <p className="text-foreground">{selectedApplication.hospitalAffiliationEn || '-'}</p>
-                </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '申請動機' : 'Motivation'}</label>
-                  <p className="text-foreground whitespace-pre-wrap">{selectedApplication.motivationEn || '-'}</p>
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  {language === 'zh-HK' ? '專業資料' : 'Professional Info'}
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '姓名' : 'Full Name'}</label>
+                    <p className="text-foreground">{selectedApplication.fullName || selectedApplication.nameEn || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '角色' : 'Role'}</label>
+                    <p className="text-foreground">{getRoleBadge(selectedApplication.role)}</p>
+                  </div>
+                  {selectedApplication.role === 'vet' && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '獸醫類型' : 'Vet Type'}</label>
+                      <p className="text-foreground">{getVetTypeBadge(selectedApplication.vetType)}</p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '診所' : 'Clinic'}</label>
+                    <p className="text-foreground">{selectedApplication.clinicName || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '電郵' : 'Email'}</label>
+                    <p className="text-foreground">{selectedApplication.email || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">{language === 'zh-HK' ? '電話 (WhatsApp)' : 'Phone (WhatsApp)'}</label>
+                    <div className="flex items-center gap-2">
+                      <p className="text-foreground font-mono">
+                        {showPhoneNumber 
+                          ? (selectedApplication.phoneWhatsapp || selectedApplication.phone || '-')
+                          : maskPhone(selectedApplication.phoneWhatsapp || selectedApplication.phone)
+                        }
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowPhoneNumber(!showPhoneNumber)}
+                        data-testid="button-toggle-phone"
+                      >
+                        {showPhoneNumber ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  {language === 'zh-HK' ? '教育背景' : 'Education Background'}
+                </h3>
+                <p className="text-foreground">{selectedApplication.educationBackground || '-'}</p>
+              </div>
+
+              {selectedApplication.verificationScope && selectedApplication.verificationScope.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    {language === 'zh-HK' ? '驗證範圍' : 'Verification Scope'}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedApplication.verificationScope.map((scope, idx) => (
+                      <Badge key={idx} variant="secondary">{scope}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedApplication.futureContactInterest && selectedApplication.futureContactInterest.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    {language === 'zh-HK' ? '未來聯繫興趣' : 'Future Contact Interest'}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedApplication.futureContactInterest.map((interest, idx) => (
+                      <Badge key={idx} variant="outline">{interest}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedApplication.additionalComments && (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    {language === 'zh-HK' ? '附加評論' : 'Additional Comments'}
+                  </h3>
+                  <p className="text-foreground whitespace-pre-wrap">{selectedApplication.additionalComments}</p>
+                </div>
+              )}
+
               <div className="flex items-center justify-between pt-4 border-t">
                 <div>
                   <span className="text-sm text-muted-foreground mr-2">{language === 'zh-HK' ? '狀態:' : 'Status:'}</span>
@@ -689,172 +835,76 @@ export default function AdminConsultantsPage() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitConsultant)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{language === 'zh-HK' ? '全名 *' : 'Full Name *'}</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-fullname" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="nameEn"
+                  name="role"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{language === 'zh-HK' ? '姓名 (英文) *' : 'Name (English) *'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-name-en" />
-                      </FormControl>
+                      <FormLabel>{language === 'zh-HK' ? '角色 *' : 'Role *'}</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-role">
+                            <SelectValue placeholder={language === 'zh-HK' ? '選擇角色' : 'Select role'} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="vet">{language === 'zh-HK' ? '獸醫' : 'Vet'}</SelectItem>
+                          <SelectItem value="nurse">{language === 'zh-HK' ? '護士' : 'Nurse'}</SelectItem>
+                          <SelectItem value="practice_manager">{language === 'zh-HK' ? '診所經理' : 'Practice Manager'}</SelectItem>
+                          <SelectItem value="other">{language === 'zh-HK' ? '其他' : 'Other'}</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="nameZh"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'zh-HK' ? '姓名 (中文)' : 'Name (Chinese)'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-name-zh" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="titleEn"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'zh-HK' ? '職銜 (英文) *' : 'Title (English) *'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="DVM, DACVECC" data-testid="input-title-en" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="titleZh"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'zh-HK' ? '職銜 (中文)' : 'Title (Chinese)'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-title-zh" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="specialtyEn"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'zh-HK' ? '專長 (英文)' : 'Specialty (English)'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-specialty-en" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="specialtyZh"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'zh-HK' ? '專長 (中文)' : 'Specialty (Chinese)'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-specialty-zh" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="licenseNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'zh-HK' ? '執照號碼' : 'License Number'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-license" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="yearsExperience"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'zh-HK' ? '經驗年資' : 'Years Experience'}</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} data-testid="input-years" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="hospitalAffiliationEn"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'zh-HK' ? '醫院隸屬 (英文)' : 'Hospital Affiliation (English)'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-hospital-en" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="hospitalAffiliationZh"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'zh-HK' ? '醫院隸屬 (中文)' : 'Hospital Affiliation (Chinese)'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-hospital-zh" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'zh-HK' ? '電郵' : 'Email'}</FormLabel>
-                      <FormControl>
-                        <Input type="email" {...field} data-testid="input-email" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="photoUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{language === 'zh-HK' ? '照片網址' : 'Photo URL'}</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-photo" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {watchRole === 'vet' && (
+                  <FormField
+                    control={form.control}
+                    name="vetType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{language === 'zh-HK' ? '獸醫類型' : 'Vet Type'}</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-vet-type">
+                              <SelectValue placeholder={language === 'zh-HK' ? '選擇類型' : 'Select type'} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="GP">{language === 'zh-HK' ? '全科' : 'GP'}</SelectItem>
+                            <SelectItem value="Specialist">{language === 'zh-HK' ? '專科' : 'Specialist'}</SelectItem>
+                            <SelectItem value="GP_with_interest">{language === 'zh-HK' ? '全科帶興趣' : 'GP with Interest'}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
               <FormField
                 control={form.control}
-                name="bioEn"
+                name="clinicName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{language === 'zh-HK' ? '簡介 (英文)' : 'Bio (English)'}</FormLabel>
+                    <FormLabel>{language === 'zh-HK' ? '診所名稱' : 'Clinic Name'}</FormLabel>
                     <FormControl>
-                      <Textarea {...field} rows={3} data-testid="input-bio-en" />
+                      <Input {...field} data-testid="input-clinic" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -862,12 +912,60 @@ export default function AdminConsultantsPage() {
               />
               <FormField
                 control={form.control}
-                name="bioZh"
+                name="educationBackground"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{language === 'zh-HK' ? '簡介 (中文)' : 'Bio (Chinese)'}</FormLabel>
+                    <FormLabel>{language === 'zh-HK' ? '教育背景' : 'Education Background'}</FormLabel>
                     <FormControl>
-                      <Textarea {...field} rows={3} data-testid="input-bio-zh" />
+                      <Input {...field} placeholder="e.g., BVSc, DVM, VN Diploma" data-testid="input-education" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="specialtyOrInterest"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{language === 'zh-HK' ? '專長或興趣' : 'Specialty or Interest'}</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-specialty" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="visibilityPreference"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{language === 'zh-HK' ? '顯示偏好' : 'Visibility Preference'}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-visibility">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="name_role">{language === 'zh-HK' ? '顯示名稱及角色' : 'Name & Role'}</SelectItem>
+                        <SelectItem value="clinic_only">{language === 'zh-HK' ? '僅顯示診所' : 'Clinic Only'}</SelectItem>
+                        <SelectItem value="anonymous">{language === 'zh-HK' ? '匿名' : 'Anonymous'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="internalNotes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{language === 'zh-HK' ? '內部備註 (僅管理員可見)' : 'Internal Notes (Admin only)'}</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} rows={3} data-testid="input-internal-notes" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -966,7 +1064,7 @@ export default function AdminConsultantsPage() {
                 <SelectContent>
                   {consultants?.map(c => (
                     <SelectItem key={c.id} value={c.id}>
-                      {language === 'zh-HK' ? c.nameZh || c.nameEn : c.nameEn}
+                      {c.fullName || (language === 'zh-HK' ? c.nameZh || c.nameEn : c.nameEn)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -987,18 +1085,45 @@ export default function AdminConsultantsPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">{language === 'zh-HK' ? '驗證範圍' : 'Verification Scope'}</label>
+              <Select value={selectedVerificationScope} onValueChange={setSelectedVerificationScope}>
+                <SelectTrigger data-testid="select-scope">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="clarity">{language === 'zh-HK' ? '清晰度' : 'Clarity'}</SelectItem>
+                  <SelectItem value="safety">{language === 'zh-HK' ? '安全' : 'Safety'}</SelectItem>
+                  <SelectItem value="triage_language">{language === 'zh-HK' ? '分診語言' : 'Triage Language'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">{language === 'zh-HK' ? '管理員備註 (選填)' : 'Admin Note (optional)'}</label>
+              <Textarea 
+                value={verificationAdminNote} 
+                onChange={(e) => setVerificationAdminNote(e.target.value)}
+                placeholder={language === 'zh-HK' ? '備註...' : 'Notes...'}
+                data-testid="input-admin-note"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setVerificationDialogOpen(false)}>
               {language === 'zh-HK' ? '取消' : 'Cancel'}
             </Button>
             <Button
-              onClick={() => createVerificationMutation.mutate({ consultantId: selectedVerificationConsultant, contentId: selectedVerificationContent })}
+              onClick={() => createVerificationMutation.mutate({ 
+                consultantId: selectedVerificationConsultant, 
+                contentId: selectedVerificationContent,
+                verificationScope: selectedVerificationScope,
+                adminNote: verificationAdminNote || undefined
+              })}
               disabled={!selectedVerificationConsultant || !selectedVerificationContent || createVerificationMutation.isPending}
               data-testid="button-submit-verification"
             >
               {createVerificationMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {language === 'zh-HK' ? '添加' : 'Add'}
+              {language === 'zh-HK' ? '確認' : 'Confirm'}
             </Button>
           </DialogFooter>
         </DialogContent>

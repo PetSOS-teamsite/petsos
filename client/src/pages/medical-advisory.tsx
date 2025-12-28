@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Accordion,
   AccordionContent,
@@ -18,18 +19,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { 
   Stethoscope, 
   Shield, 
-  BookOpen, 
   Users, 
   CheckCircle,
   AlertTriangle,
   FileText,
   GraduationCap,
   Building2,
-  Loader2
+  Loader2,
+  Clock
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { StructuredData } from "@/components/StructuredData";
@@ -39,17 +41,31 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 
+const roleOptions = ['vet', 'nurse', 'practice_manager', 'other'] as const;
+const vetTypeOptions = ['GP', 'Specialist', 'GP_with_interest'] as const;
+const verificationScopeOptions = ['clarity', 'emergency_discovery', 'safety_messaging'] as const;
+const futureContactOptions = ['reviewing_guides', 'cpd_sessions', 'workshops', 'videos', 'community_education', 'not_now'] as const;
+
 const vetApplicationFormSchema = z.object({
-  nameEn: z.string().min(1, "Full name is required"),
-  nameZh: z.string().optional(),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z.string().optional(),
-  licenseNumber: z.string().min(1, "VSB License Number is required"),
-  titleEn: z.string().min(1, "Professional title/qualification is required (e.g., DVM, DACVECC)"),
-  specialtyEn: z.string().optional(),
-  hospitalAffiliationEn: z.string().optional(),
-  yearsExperience: z.coerce.number().min(3, "Minimum 3 years of experience required"),
-  motivationEn: z.string().optional(),
+  fullName: z.string().min(1, "Full name is required"),
+  role: z.enum(roleOptions, { required_error: "Please select your role" }),
+  vetType: z.enum(vetTypeOptions).optional(),
+  clinicName: z.string().min(1, "Primary Clinic / Organisation is required"),
+  phoneWhatsapp: z.string().min(1, "WhatsApp / Phone number is required"),
+  email: z.string().email("Please enter a valid email").or(z.literal("")).optional(),
+  educationBackground: z.string().optional(),
+  verificationScope: z.array(z.enum(verificationScopeOptions)).min(1, "Please select at least one verification scope"),
+  consentAcknowledged: z.literal(true, { errorMap: () => ({ message: "You must acknowledge this statement" }) }),
+  futureContactInterest: z.array(z.enum(futureContactOptions)).optional(),
+  additionalComments: z.string().optional(),
+}).refine((data) => {
+  if (data.role === 'vet' && !data.vetType) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Please select your vet type",
+  path: ["vetType"],
 });
 
 type VetApplicationFormData = z.infer<typeof vetApplicationFormSchema>;
@@ -61,22 +77,30 @@ export default function MedicalAdvisoryPage() {
   const form = useForm<VetApplicationFormData>({
     resolver: zodResolver(vetApplicationFormSchema),
     defaultValues: {
-      nameEn: "",
-      nameZh: "",
+      fullName: "",
+      role: undefined,
+      vetType: undefined,
+      clinicName: "",
+      phoneWhatsapp: "",
       email: "",
-      phone: "",
-      licenseNumber: "",
-      titleEn: "",
-      specialtyEn: "",
-      hospitalAffiliationEn: "",
-      yearsExperience: 3,
-      motivationEn: "",
+      educationBackground: "",
+      verificationScope: [],
+      consentAcknowledged: undefined as unknown as true,
+      futureContactInterest: [],
+      additionalComments: "",
     },
   });
 
+  const watchRole = form.watch("role");
+
   const submitMutation = useMutation({
     mutationFn: async (data: VetApplicationFormData) => {
-      const response = await apiRequest("POST", "/api/vet-applications", data);
+      const payload = {
+        ...data,
+        consentVersion: 'v1',
+        email: data.email || undefined,
+      };
+      const response = await apiRequest("POST", "/api/vet-applications", payload);
       return response.json();
     },
     onSuccess: () => {
@@ -87,6 +111,159 @@ export default function MedicalAdvisoryPage() {
 
   const onSubmit = (data: VetApplicationFormData) => {
     submitMutation.mutate(data);
+  };
+
+  const labels = {
+    formTitle: {
+      en: "PetSOS – Veterinary Professional Verification & Interest Form",
+      zh: "PetSOS – 獸醫專業驗證及意向表格"
+    },
+    formIntro: {
+      en: "PetSOS is a non-profit pet emergency support platform.",
+      zh: "PetSOS 是一個非牟利寵物緊急支援平台。"
+    },
+    formIntroPoints: {
+      en: [
+        "your professional background",
+        "whether you're comfortable verifying our emergency support approach",
+        "if you're open to future collaboration"
+      ],
+      zh: [
+        "您的專業背景",
+        "您是否願意驗證我們的緊急支援方式",
+        "您是否有興趣日後合作"
+      ]
+    },
+    formTime: {
+      en: "Takes ~2–3 minutes.",
+      zh: "約需 2–3 分鐘。"
+    },
+    sectionA: {
+      en: "Section A — Professional Snapshot",
+      zh: "第 A 部分 — 專業概況"
+    },
+    fullName: {
+      en: "Full Name",
+      zh: "全名"
+    },
+    role: {
+      en: "Role",
+      zh: "職位"
+    },
+    roleOptions: {
+      vet: { en: "Veterinarian", zh: "獸醫" },
+      nurse: { en: "Veterinary Nurse", zh: "獸醫護士" },
+      practice_manager: { en: "Practice Manager", zh: "診所經理" },
+      other: { en: "Other", zh: "其他" }
+    },
+    vetType: {
+      en: "Vet Type",
+      zh: "獸醫類型"
+    },
+    vetTypeOptions: {
+      GP: { en: "General Practitioner (GP)", zh: "普通科醫生 (GP)" },
+      Specialist: { en: "Specialist", zh: "專科醫生" },
+      GP_with_interest: { en: "GP with special interest", zh: "具特別興趣的 GP" }
+    },
+    clinicName: {
+      en: "Primary Clinic / Organisation",
+      zh: "主要診所 / 機構"
+    },
+    phoneWhatsapp: {
+      en: "WhatsApp / Phone Number",
+      zh: "WhatsApp / 電話號碼"
+    },
+    email: {
+      en: "Email (optional)",
+      zh: "電郵（選填）"
+    },
+    sectionB: {
+      en: "Section B — Background",
+      zh: "第 B 部分 — 背景"
+    },
+    educationBackground: {
+      en: "Education Background",
+      zh: "教育背景"
+    },
+    educationPlaceholder: {
+      en: "BVSc / DVM / VN Diploma / FANZCVS",
+      zh: "BVSc / DVM / VN 文憑 / FANZCVS"
+    },
+    sectionC: {
+      en: "Section C — Verification Scope (Must-Have)",
+      zh: "第 C 部分 — 驗證範圍（必填）"
+    },
+    verificationScopeLabel: {
+      en: "I'm comfortable supporting PetSOS in the following scope:",
+      zh: "我願意在以下範圍支持 PetSOS："
+    },
+    verificationScopeOptions: {
+      clarity: { 
+        en: "Verifying clarity of emergency guidance (non-diagnostic)", 
+        zh: "驗證緊急指引的清晰度（非診斷性）" 
+      },
+      emergency_discovery: { 
+        en: "Emergency discovery & clinic connection concept", 
+        zh: "緊急發現及診所連接概念" 
+      },
+      safety_messaging: { 
+        en: 'Safety-first "when to seek emergency care" messaging', 
+        zh: '以安全為先的「何時尋求緊急護理」訊息' 
+      }
+    },
+    acknowledgement: {
+      en: "I understand this is not a medical diagnosis or treatment endorsement.",
+      zh: "我明白這不是醫療診斷或治療背書。"
+    },
+    sectionD: {
+      en: "Section D — Future Involvement (Optional)",
+      zh: "第 D 部分 — 未來參與（選填）"
+    },
+    futureContactLabel: {
+      en: "I'm open to being contacted in the future about:",
+      zh: "我願意日後就以下事項聯繫："
+    },
+    futureContactOptions: {
+      reviewing_guides: { en: "Reviewing emergency guide messages", zh: "審閱緊急指引訊息" },
+      cpd_sessions: { en: "CPD / peer education sessions", zh: "CPD / 同儕教育課程" },
+      workshops: { en: "Emergency workshops (vet / nurse / owner)", zh: "緊急工作坊（獸醫 / 護士 / 主人）" },
+      videos: { en: "Education videos or posts", zh: "教育影片或貼文" },
+      community_education: { en: "Community / shelter emergency education", zh: "社區 / 收容所緊急教育" },
+      not_now: { en: "Not at the moment", zh: "暫時不需要" }
+    },
+    sectionE: {
+      en: "Section E — Close",
+      zh: "第 E 部分 — 結語"
+    },
+    additionalComments: {
+      en: "Anything you'd like us to know?",
+      zh: "有什麼想讓我們知道的嗎？"
+    },
+    submitButton: {
+      en: "Submit Application",
+      zh: "提交申請"
+    },
+    successMessage: {
+      en: "Thank you for supporting a community-first emergency initiative 🐾 Our team may reach out via WhatsApp if you've indicated interest above.",
+      zh: "感謝您支持以社區為先的緊急倡議 🐾 如果您在上方表示有興趣，我們的團隊可能會透過 WhatsApp 聯繫您。"
+    },
+    errorMessage: {
+      en: "Submission failed. Please try again later.",
+      zh: "提交失敗，請稍後再試。"
+    },
+    required: {
+      en: "(required)",
+      zh: "（必填）"
+    },
+    optional: {
+      en: "(optional)",
+      zh: "（選填）"
+    }
+  };
+
+  const t = (key: keyof typeof labels) => {
+    const label = labels[key];
+    return language === 'zh-HK' ? label.zh : label.en;
   };
 
   const createMedicalOrganizationSchema = () => ({
@@ -286,410 +463,418 @@ export default function MedicalAdvisoryPage() {
                 : 'PetSOS welcomes Hong Kong registered veterinarians to join our Medical Advisory Board to help review platform content and ensure professionalism and accuracy.'
               }
             </p>
-            
-            {/* Requirements */}
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-300 dark:border-green-800 mb-4">
-              <h4 className="font-semibold text-foreground mb-3">
-                {language === 'zh-HK' ? '📋 申請資格' : '📋 Requirements'}
-              </h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span>{language === 'zh-HK' ? '必須為香港獸醫管理局 (VSB) 註冊獸醫' : 'Must be registered with Hong Kong Veterinary Surgeons Board (VSB)'}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span>{language === 'zh-HK' ? '至少3年臨床經驗' : 'At least 3 years of clinical experience'}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span>{language === 'zh-HK' ? '願意以專業身份公開審核內容' : 'Willing to publicly endorse verified content with professional identity'}</span>
-                </li>
-              </ul>
-            </div>
 
-            {/* Responsibilities */}
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-300 dark:border-green-800 mb-4">
-              <h4 className="font-semibold text-foreground mb-3">
-                {language === 'zh-HK' ? '🏥 顧問職責' : '🏥 Advisor Responsibilities'}
-              </h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <Stethoscope className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <span>{language === 'zh-HK' ? '審閱緊急症狀指南和分診內容' : 'Review emergency symptom guides and triage content'}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Stethoscope className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <span>{language === 'zh-HK' ? '提供專業建議以改善平台服務' : 'Provide professional advice to improve platform services'}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Stethoscope className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <span>{language === 'zh-HK' ? '協助確保內容符合最新獸醫標準' : 'Help ensure content meets latest veterinary standards'}</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Application Form - Collapsible */}
             <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-300 dark:border-green-800 mb-6">
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="application-form" className="border-none">
                   <AccordionTrigger className="hover:no-underline py-0" data-testid="button-toggle-application-form">
                     <h4 className="font-semibold text-foreground flex items-center gap-2">
                       <FileText className="h-4 w-4 text-green-600" />
-                      {language === 'zh-HK' ? '✉️ 申請方法' : '✉️ How to Apply'}
+                      {t('formTitle')}
                     </h4>
                   </AccordionTrigger>
-                  <AccordionContent className="pt-4">
+                  <AccordionContent className="pt-6">
                     {submitted ? (
                       <div className="p-6 bg-green-100 dark:bg-green-900/30 rounded-lg border border-green-400 dark:border-green-700" data-testid="text-success-message">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="h-6 w-6 text-green-600" />
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
                           <p className="text-green-800 dark:text-green-200 font-medium">
-                            {language === 'zh-HK'
-                              ? '申請已提交！我們會盡快審核。'
-                              : 'Application submitted! We will review it soon.'
-                            }
+                            {t('successMessage')}
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                          {submitMutation.isError && (
-                            <div className="p-4 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-400 dark:border-red-700" data-testid="text-error-message">
-                              <p className="text-red-800 dark:text-red-200 text-sm">
-                                {language === 'zh-HK'
-                                  ? '提交失敗，請稍後再試。'
-                                  : 'Submission failed. Please try again later.'
-                                }
-                              </p>
+                      <>
+                        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <p className="text-foreground mb-3">{t('formIntro')}</p>
+                          <p className="text-muted-foreground text-sm mb-2">
+                            {language === 'zh-HK' ? '這份簡短表格幫助我們了解：' : 'This short form helps us understand:'}
+                          </p>
+                          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-3">
+                            {(language === 'zh-HK' ? labels.formIntroPoints.zh : labels.formIntroPoints.en).map((point, i) => (
+                              <li key={i}>• {point}</li>
+                            ))}
+                          </ul>
+                          <p className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            ⏱ {t('formTime')}
+                          </p>
+                        </div>
+
+                        <Form {...form}>
+                          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            {submitMutation.isError && (
+                              <div className="p-4 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-400 dark:border-red-700" data-testid="text-error-message">
+                                <p className="text-red-800 dark:text-red-200 text-sm">
+                                  {t('errorMessage')}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* SECTION A - Professional Snapshot */}
+                            <div className="space-y-4">
+                              <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-a">
+                                {t('sectionA')}
+                              </h3>
+
+                              <FormField
+                                control={form.control}
+                                name="fullName"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>{t('fullName')} *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        {...field}
+                                        placeholder={language === 'zh-HK' ? '請輸入全名' : 'Enter your full name'}
+                                        data-testid="input-full-name"
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
+                                name="role"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>{t('role')} *</FormLabel>
+                                    <FormControl>
+                                      <RadioGroup
+                                        onValueChange={field.onChange}
+                                        value={field.value}
+                                        className="flex flex-col space-y-2"
+                                        data-testid="radio-group-role"
+                                      >
+                                        {roleOptions.map((role) => (
+                                          <div key={role} className="flex items-center space-x-2">
+                                            <RadioGroupItem value={role} id={`role-${role}`} data-testid={`radio-role-${role}`} />
+                                            <label htmlFor={`role-${role}`} className="text-sm cursor-pointer">
+                                              {language === 'zh-HK' 
+                                                ? labels.roleOptions[role].zh 
+                                                : labels.roleOptions[role].en}
+                                            </label>
+                                          </div>
+                                        ))}
+                                      </RadioGroup>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              {watchRole === 'vet' && (
+                                <FormField
+                                  control={form.control}
+                                  name="vetType"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>{t('vetType')} *</FormLabel>
+                                      <FormControl>
+                                        <RadioGroup
+                                          onValueChange={field.onChange}
+                                          value={field.value}
+                                          className="flex flex-col space-y-2"
+                                          data-testid="radio-group-vet-type"
+                                        >
+                                          {vetTypeOptions.map((vetType) => (
+                                            <div key={vetType} className="flex items-center space-x-2">
+                                              <RadioGroupItem value={vetType} id={`vetType-${vetType}`} data-testid={`radio-vet-type-${vetType}`} />
+                                              <label htmlFor={`vetType-${vetType}`} className="text-sm cursor-pointer">
+                                                {language === 'zh-HK' 
+                                                  ? labels.vetTypeOptions[vetType].zh 
+                                                  : labels.vetTypeOptions[vetType].en}
+                                              </label>
+                                            </div>
+                                          ))}
+                                        </RadioGroup>
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              )}
+
+                              <FormField
+                                control={form.control}
+                                name="clinicName"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>{t('clinicName')} *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        {...field}
+                                        placeholder={language === 'zh-HK' ? '請輸入診所或機構名稱' : 'Enter clinic or organisation name'}
+                                        data-testid="input-clinic-name"
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
+                                name="phoneWhatsapp"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>{t('phoneWhatsapp')} *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        {...field}
+                                        placeholder={language === 'zh-HK' ? '例如：+852 9123 4567' : 'e.g., +852 9123 4567'}
+                                        data-testid="input-phone-whatsapp"
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>{t('email')}</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        {...field}
+                                        type="email"
+                                        placeholder={language === 'zh-HK' ? '請輸入電郵地址' : 'Enter your email address'}
+                                        data-testid="input-email"
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
                             </div>
-                          )}
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                              control={form.control}
-                              name="nameEn"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>
-                                    {language === 'zh-HK' ? '姓名（英文）' : 'Full Name (English)'} *
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      placeholder={language === 'zh-HK' ? '請輸入英文姓名' : 'Enter your full name'}
-                                      data-testid="input-name-en"
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={form.control}
-                              name="nameZh"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>
-                                    {language === 'zh-HK' ? '姓名（中文）' : 'Full Name (Chinese)'}
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      placeholder={language === 'zh-HK' ? '請輸入中文姓名（選填）' : 'Enter Chinese name (optional)'}
-                                      data-testid="input-name-zh"
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                              control={form.control}
-                              name="email"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>
-                                    {language === 'zh-HK' ? '電郵' : 'Email'} *
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      type="email"
-                                      placeholder={language === 'zh-HK' ? '請輸入電郵地址' : 'Enter your email'}
-                                      data-testid="input-email"
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={form.control}
-                              name="phone"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>
-                                    {language === 'zh-HK' ? '電話' : 'Phone'}
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      placeholder={language === 'zh-HK' ? '請輸入電話號碼（選填）' : 'Enter phone number (optional)'}
-                                      data-testid="input-phone"
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
+                            {/* SECTION B - Background */}
+                            <div className="space-y-4">
+                              <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-b">
+                                {t('sectionB')}
+                              </h3>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                              control={form.control}
-                              name="licenseNumber"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>
-                                    {language === 'zh-HK' ? 'VSB 註冊編號' : 'VSB License Number'} *
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      placeholder={language === 'zh-HK' ? '請輸入VSB註冊編號' : 'Enter VSB registration number'}
-                                      data-testid="input-license-number"
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={form.control}
-                              name="yearsExperience"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>
-                                    {language === 'zh-HK' ? '臨床經驗年數' : 'Years of Clinical Experience'} *
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      type="number"
-                                      min={3}
-                                      placeholder={language === 'zh-HK' ? '最少3年' : 'Minimum 3 years'}
-                                      data-testid="input-years-experience"
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
+                              <FormField
+                                control={form.control}
+                                name="educationBackground"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>{t('educationBackground')} {t('optional')}</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        {...field}
+                                        placeholder={language === 'zh-HK' ? labels.educationPlaceholder.zh : labels.educationPlaceholder.en}
+                                        data-testid="input-education-background"
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                              control={form.control}
-                              name="titleEn"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>
-                                    {language === 'zh-HK' ? '專業職銜' : 'Professional Title'}
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      placeholder={language === 'zh-HK' ? '例如：DVM, DACVECC' : 'e.g., DVM, DACVECC'}
-                                      data-testid="input-title"
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
+                            {/* SECTION C - Verification Scope */}
+                            <div className="space-y-4">
+                              <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-c">
+                                {t('sectionC')}
+                              </h3>
+
+                              <FormField
+                                control={form.control}
+                                name="verificationScope"
+                                render={() => (
+                                  <FormItem>
+                                    <FormLabel>{t('verificationScopeLabel')} *</FormLabel>
+                                    <div className="space-y-3 mt-2">
+                                      {verificationScopeOptions.map((option) => (
+                                        <FormField
+                                          key={option}
+                                          control={form.control}
+                                          name="verificationScope"
+                                          render={({ field }) => (
+                                            <FormItem className="flex items-start space-x-3 space-y-0">
+                                              <FormControl>
+                                                <Checkbox
+                                                  checked={field.value?.includes(option)}
+                                                  onCheckedChange={(checked) => {
+                                                    const newValue = checked
+                                                      ? [...(field.value || []), option]
+                                                      : field.value?.filter((v) => v !== option) || [];
+                                                    field.onChange(newValue);
+                                                  }}
+                                                  data-testid={`checkbox-verification-${option}`}
+                                                />
+                                              </FormControl>
+                                              <label className="text-sm cursor-pointer leading-relaxed">
+                                                {language === 'zh-HK' 
+                                                  ? labels.verificationScopeOptions[option].zh 
+                                                  : labels.verificationScopeOptions[option].en}
+                                              </label>
+                                            </FormItem>
+                                          )}
+                                        />
+                                      ))}
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
+                                name="consentAcknowledged"
+                                render={({ field }) => (
+                                  <FormItem className="flex items-start space-x-3 space-y-0 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value === true}
+                                        onCheckedChange={(checked) => field.onChange(checked === true ? true : undefined)}
+                                        data-testid="checkbox-consent"
+                                      />
+                                    </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                      <label className="text-sm font-medium cursor-pointer">
+                                        {t('acknowledgement')} *
+                                      </label>
+                                      <FormMessage />
+                                    </div>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            {/* SECTION D - Future Involvement */}
+                            <div className="space-y-4">
+                              <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-d">
+                                {t('sectionD')}
+                              </h3>
+
+                              <FormField
+                                control={form.control}
+                                name="futureContactInterest"
+                                render={() => (
+                                  <FormItem>
+                                    <FormLabel>{t('futureContactLabel')}</FormLabel>
+                                    <div className="space-y-3 mt-2">
+                                      {futureContactOptions.map((option) => (
+                                        <FormField
+                                          key={option}
+                                          control={form.control}
+                                          name="futureContactInterest"
+                                          render={({ field }) => (
+                                            <FormItem className="flex items-start space-x-3 space-y-0">
+                                              <FormControl>
+                                                <Checkbox
+                                                  checked={field.value?.includes(option)}
+                                                  onCheckedChange={(checked) => {
+                                                    const newValue = checked
+                                                      ? [...(field.value || []), option]
+                                                      : field.value?.filter((v) => v !== option) || [];
+                                                    field.onChange(newValue);
+                                                  }}
+                                                  data-testid={`checkbox-future-${option}`}
+                                                />
+                                              </FormControl>
+                                              <label className="text-sm cursor-pointer">
+                                                {language === 'zh-HK' 
+                                                  ? labels.futureContactOptions[option].zh 
+                                                  : labels.futureContactOptions[option].en}
+                                              </label>
+                                            </FormItem>
+                                          )}
+                                        />
+                                      ))}
+                                    </div>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            {/* SECTION E - Close */}
+                            <div className="space-y-4">
+                              <h3 className="text-lg font-semibold text-foreground border-b pb-2" data-testid="text-section-e">
+                                {t('sectionE')}
+                              </h3>
+
+                              <FormField
+                                control={form.control}
+                                name="additionalComments"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>{t('additionalComments')} {t('optional')}</FormLabel>
+                                    <FormControl>
+                                      <Textarea
+                                        {...field}
+                                        rows={4}
+                                        placeholder={language === 'zh-HK' ? '請在此分享任何想法或問題...' : 'Share any thoughts or questions here...'}
+                                        data-testid="textarea-additional-comments"
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            <Button
+                              type="submit"
+                              className="w-full bg-green-600 hover:bg-green-700"
+                              disabled={submitMutation.isPending}
+                              data-testid="button-submit-application"
+                            >
+                              {submitMutation.isPending ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  {language === 'zh-HK' ? '提交中...' : 'Submitting...'}
+                                </>
+                              ) : (
+                                t('submitButton')
                               )}
-                            />
-                            
-                            <FormField
-                              control={form.control}
-                              name="specialtyEn"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>
-                                    {language === 'zh-HK' ? '專業領域' : 'Specialty'}
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      placeholder={language === 'zh-HK' ? '例如：急診、內科' : 'e.g., Emergency, Internal Medicine'}
-                                      data-testid="input-specialty"
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-
-                          <FormField
-                            control={form.control}
-                            name="hospitalAffiliationEn"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>
-                                  {language === 'zh-HK' ? '現職醫院/診所' : 'Current Hospital/Clinic Affiliation'}
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    {...field}
-                                    placeholder={language === 'zh-HK' ? '請輸入現職機構名稱（選填）' : 'Enter current workplace (optional)'}
-                                    data-testid="input-hospital-affiliation"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="motivationEn"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>
-                                  {language === 'zh-HK' ? '為何想加入我們的顧問委員會？' : 'Why do you want to join our advisory board?'}
-                                </FormLabel>
-                                <FormControl>
-                                  <Textarea
-                                    {...field}
-                                    rows={4}
-                                    placeholder={language === 'zh-HK' 
-                                      ? '請簡述您加入的動機（選填）'
-                                      : 'Brief introduction on why you are interested (optional)'
-                                    }
-                                    data-testid="input-motivation"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <Button
-                            type="submit"
-                            className="w-full bg-green-600 hover:bg-green-700 text-white"
-                            disabled={submitMutation.isPending}
-                            data-testid="button-submit-application"
-                          >
-                            {submitMutation.isPending ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                {language === 'zh-HK' ? '提交中...' : 'Submitting...'}
-                              </>
-                            ) : (
-                              <>
-                                <FileText className="mr-2 h-4 w-4" />
-                                {language === 'zh-HK' ? '提交申請' : 'Submit Application'}
-                              </>
-                            )}
-                          </Button>
-                        </form>
-                      </Form>
+                            </Button>
+                          </form>
+                        </Form>
+                      </>
                     )}
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
             </div>
-
-            {/* View Current Consultants */}
-            <div className="flex flex-wrap gap-3">
-              <Link href="/consultants">
-                <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20">
-                  <Users className="h-4 w-4 mr-2" />
-                  {language === 'zh-HK' ? '查看現有顧問' : 'View Current Consultants'}
-                </Button>
-              </Link>
-            </div>
           </CardContent>
         </Card>
-
-        <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2" data-testid="text-sources-title">
-          <BookOpen className="h-6 w-6 text-blue-600" />
-          {language === 'zh-HK' ? '參考來源' : 'Reference Sources'}
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {medicalSources.map((source, index) => (
-            <Card key={index} className="p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full flex-shrink-0">
-                  <source.icon className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-foreground mb-1">
-                    {language === 'zh-HK' ? source.nameZh : source.nameEn}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'zh-HK' ? source.descZh : source.descEn}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
 
         <Card className="mb-8">
           <CardContent className="p-8">
-            <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2" data-testid="text-triage-title">
-              <FileText className="h-6 w-6 text-red-600" />
-              {language === 'zh-HK' ? '緊急分診流程基礎' : 'Emergency Triage Flow Basis'}
+            <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2" data-testid="text-sources-title">
+              <GraduationCap className="h-6 w-6 text-blue-600" />
+              {language === 'zh-HK' ? '專業來源' : 'Professional Sources'}
             </h2>
-            <p className="text-muted-foreground mb-4">
-              {language === 'zh-HK'
-                ? 'PetSOS的緊急症狀分類和優先級評估基於以下標準：'
-                : 'PetSOS emergency symptom classification and priority assessment is based on the following standards:'
-              }
-            </p>
-            <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-start gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <span>{language === 'zh-HK' ? 'WSAVA 獸醫急診分診指南' : 'WSAVA Veterinary Emergency Triage Guidelines'}</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <span>{language === 'zh-HK' ? 'AVMA 寵物急救優先級協議' : 'AVMA Pet First Aid Priority Protocols'}</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <span>{language === 'zh-HK' ? 'RECOVER CPR 倡議指南（心肺復甦）' : 'RECOVER CPR Initiative Guidelines'}</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <span>{language === 'zh-HK' ? 'VSB 香港獸醫執業標準' : 'VSB Hong Kong Veterinary Practice Standards'}</span>
-              </li>
-            </ul>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {medicalSources.map((source, index) => {
+                const IconComponent = source.icon;
+                return (
+                  <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border" data-testid={`card-source-${index}`}>
+                    <div className="flex items-start gap-3">
+                      <IconComponent className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-foreground text-sm">
+                          {language === 'zh-HK' ? source.nameZh : source.nameEn}
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {language === 'zh-HK' ? source.descZh : source.descEn}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
-
-        <div className="flex flex-wrap gap-4 justify-center">
-          <Link href="/verification-process">
-            <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-              <Shield className="h-4 w-4 mr-2" />
-              {language === 'zh-HK' ? '了解核實流程' : 'Learn About Verification'}
-            </Button>
-          </Link>
-          <Link href="/emergency-symptoms">
-            <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              {language === 'zh-HK' ? '緊急症狀指南' : 'Emergency Symptom Guide'}
-            </Button>
-          </Link>
-        </div>
       </main>
     </div>
   );

@@ -3650,26 +3650,35 @@ class DatabaseStorage implements IStorage {
       
       const application = appResult[0];
       
-      // Validate required fields before creating consultant
-      if (!application.titleEn && !application.titleZh) {
-        throw new Error('Professional title is required to approve application');
+      // Validate required fields for new schema
+      if (!application.fullName && !application.nameEn) {
+        throw new Error('Full name is required to approve application');
       }
       
       // Create the consultant from application data
-      // Note: Email is intentionally NOT copied to protect applicant privacy
+      // Note: Phone/Email is intentionally NOT copied to protect applicant privacy
       // The consultant record is public, so we don't expose contact info
       const consultantResult = await tx.insert(vetConsultants).values({
-        nameEn: application.nameEn,
+        // New schema fields
+        fullName: application.fullName || application.nameEn || 'Unknown',
+        role: application.role || 'vet',
+        vetType: application.vetType,
+        clinicName: application.clinicName || application.hospitalAffiliationEn,
+        educationBackground: application.educationBackground,
+        // Legacy fields for backward compatibility
+        nameEn: application.nameEn || application.fullName,
         nameZh: application.nameZh,
-        titleEn: application.titleEn || 'DVM', // Professional credential
+        titleEn: application.titleEn || application.educationBackground || 'Veterinary Professional',
         titleZh: application.titleZh,
         specialtyEn: application.specialtyEn,
         specialtyZh: application.specialtyZh,
         licenseNumber: application.licenseNumber,
-        hospitalAffiliationEn: application.hospitalAffiliationEn,
+        hospitalAffiliationEn: application.hospitalAffiliationEn || application.clinicName,
         hospitalAffiliationZh: application.hospitalAffiliationZh,
         yearsExperience: application.yearsExperience,
-        // Email is private - admin can view in application record if needed
+        // Privacy & visibility defaults
+        visibilityPreference: 'name_role',
+        // Phone/Email is private - admin can view in application record if needed
         // Do not expose to public consultant profile
         isActive: true,
         isPublic: true,
