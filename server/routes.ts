@@ -2338,7 +2338,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get hospital by ID
+  // Get nearby hospitals using PostGIS (efficient server-side geo-query)
+  // Supports last_reply_window filter: 1h, 24h, 7d, none
+  app.get("/api/hospitals/nearby", async (req, res) => {
+    try {
+      const { latitude, longitude, radius, last_reply_window } = z.object({
+        latitude: z.string().transform(Number),
+        longitude: z.string().transform(Number),
+        radius: z.string().transform(Number).default("10000"),
+        last_reply_window: z.enum(['1h', '24h', '7d', 'none', 'all']).optional(),
+      }).parse(req.query);
+
+      let hospitals = await storage.getNearbyHospitals(latitude, longitude, radius);
+      
+      // Fetch ping states for all hospitals
+      const pingStates = await storage.getAllHospitalPingStates();
+      const pingStateMap = new Map(pingStates.map(ps => [ps.hospitalId, ps]));
+      
+      // Enrich hospitals with MINIMAL ping data (only what's safe for public display)
+      const hospitalsWithPingState = hospitals.map(h => {
+        const pingState = pingStateMap.get(h.id);
+        return {
+          ...h,
+          lastInboundReplyAt: pingState?.lastInboundReplyAt || null,
+          replyStatus: pingState?.pingStatus === 'no_reply' ? 'unresponsive' : 'active',
+        };
+      });
+      
+      // Apply last reply filter if specified
+      if (last_reply_window && last_reply_window !== 'all') {
+        const now = Date.now();
+        const filterHospitals = hospitalsWithPingState.filter(h => {
+          const lastReply = h.lastInboundReplyAt;
+          
+          if (last_reply_window === 'none') {
+            return !lastReply;
+          }
+          
+          if (!lastReply) return false;
+          
+          const replyTime = new Date(lastReply).getTime();
+          const ageMs = now - replyTime;
+          
+          switch (last_reply_window) {
+            case '1h': return ageMs <= 60 * 60 * 1000;
+            case '24h': return ageMs <= 24 * 60 * 60 * 1000;
+            case '7d': return ageMs <= 7 * 24 * 60 * 60 * 1000;
+            default: return true;
+          }
+        });
+        
+        res.json(filterHospitals);
+      } else {
+        res.json(hospitalsWithPingState);
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get hospital by ID (must come AFTER /nearby to avoid matching "nearby" as ID)
   app.get("/api/hospitals/:id", async (req, res) => {
     try {
       const hospital = await storage.getHospital(req.params.id);
@@ -2549,121 +2611,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // ===== HOSPITAL ROUTES =====
-  
-  // Get all hospitals (with minimal ping state data for availability display)
-  app.get("/api/hospitals", async (req, res) => {
-    try {
-      const hospitals = await storage.getAllHospitals();
-      
-      // Fetch ping states and enrich hospitals with minimal safe data
-      const pingStates = await storage.getAllHospitalPingStates();
-      const pingStateMap = new Map(pingStates.map(ps => [ps.hospitalId, ps]));
-      
-      const hospitalsWithPingState = hospitals.map(h => {
-        const pingState = pingStateMap.get(h.id);
-        return {
-          ...h,
-          // Only expose last reply time for recency display - no internal admin details
-          lastInboundReplyAt: pingState?.lastInboundReplyAt || null,
-          replyStatus: pingState?.pingStatus === 'no_reply' ? 'unresponsive' : 'active',
-        };
-      });
-      
-      res.json(hospitalsWithPingState);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get hospitals by region
-  app.get("/api/hospitals/region/:regionId", async (req, res) => {
-    try {
-      const hospitals = await storage.getHospitalsByRegion(req.params.regionId);
-      res.json(hospitals);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get nearby hospitals using PostGIS (efficient server-side geo-query)
-  // Supports last_reply_window filter: 1h, 24h, 7d, none
-  app.get("/api/hospitals/nearby", async (req, res) => {
-    try {
-      const { latitude, longitude, radius, last_reply_window } = z.object({
-        latitude: z.string().transform(Number),
-        longitude: z.string().transform(Number),
-        radius: z.string().transform(Number).default("10000"),
-        last_reply_window: z.enum(['1h', '24h', '7d', 'none', 'all']).optional(),
-      }).parse(req.query);
-
-      let hospitals = await storage.getNearbyHospitals(latitude, longitude, radius);
-      
-      // Fetch ping states for all hospitals
-      const pingStates = await storage.getAllHospitalPingStates();
-      const pingStateMap = new Map(pingStates.map(ps => [ps.hospitalId, ps]));
-      
-      // Enrich hospitals with MINIMAL ping data (only what's safe for public display)
-      // Avoid exposing internal fields like lastPingMessageId, pingEnabled, etc.
-      const hospitalsWithPingState = hospitals.map(h => {
-        const pingState = pingStateMap.get(h.id);
-        return {
-          ...h,
-          // Only expose last reply time for recency display - no internal details
-          lastInboundReplyAt: pingState?.lastInboundReplyAt || null,
-          // Derive a simple availability status for display
-          replyStatus: pingState?.pingStatus === 'no_reply' ? 'unresponsive' : 'active',
-        };
-      });
-      
-      // Apply last reply filter if specified
-      if (last_reply_window && last_reply_window !== 'all') {
-        const now = Date.now();
-        const filterHospitals = hospitalsWithPingState.filter(h => {
-          const lastReply = h.lastInboundReplyAt;
-          
-          if (last_reply_window === 'none') {
-            return !lastReply;
-          }
-          
-          if (!lastReply) return false;
-          
-          const replyTime = new Date(lastReply).getTime();
-          const ageMs = now - replyTime;
-          
-          switch (last_reply_window) {
-            case '1h': return ageMs <= 60 * 60 * 1000;
-            case '24h': return ageMs <= 24 * 60 * 60 * 1000;
-            case '7d': return ageMs <= 7 * 24 * 60 * 60 * 1000;
-            default: return true;
-          }
-        });
-        
-        res.json(filterHospitals);
-      } else {
-        res.json(hospitalsWithPingState);
-      }
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get hospital by ID
-  app.get("/api/hospitals/:id", async (req, res) => {
-    try {
-      const hospital = await storage.getHospital(req.params.id);
-      if (!hospital) {
-        return res.status(404).json({ message: "Hospital not found" });
-      }
-      res.json(hospital);
-    } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
   });
