@@ -225,7 +225,7 @@ export const emergencyRequests = pgTable("emergency_requests", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id, { onDelete: 'set null' }),
   petId: varchar("pet_id").references(() => pets.id, { onDelete: 'set null' }),
-  symptom: text("symptom"), // single symptom field
+  symptom: text("symptom").notNull(), // single symptom field - required
   locationLatitude: decimal("location_latitude"),
   locationLongitude: decimal("location_longitude"),
   manualLocation: text("manual_location"),
@@ -236,10 +236,10 @@ export const emergencyRequests = pgTable("emergency_requests", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   petSpecies: text("pet_species"),
   petBreed: text("pet_breed"),
-  petAge: text("pet_age"),
+  petAge: integer("pet_age"), // integer to match database
   voiceTranscript: text("voice_transcript"),
   aiAnalyzedSymptoms: text("ai_analyzed_symptoms"),
-  isVoiceRecording: boolean("is_voice_recording"),
+  isVoiceRecording: boolean("is_voice_recording").notNull().default(false),
 });
 
 export const insertEmergencyRequestSchema = createInsertSchema(emergencyRequests).omit({

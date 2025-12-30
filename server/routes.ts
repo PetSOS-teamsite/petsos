@@ -2759,9 +2759,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create emergency request
   app.post("/api/emergency-requests", async (req: any, res) => {
     try {
-      // Extend schema to ensure petAge is a string
+      // Extend schema to handle petAge as number or null
       const emergencyRequestSchemaWithCoercion = insertEmergencyRequestSchema.extend({
-        petAge: z.union([z.string(), z.null()]).optional(),
+        petAge: z.union([z.number(), z.null()]).optional(),
       });
       
       // Get logged-in user's ID if authenticated
@@ -2777,6 +2777,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[Emergency Request] session.passport.user:', req.session?.passport?.user);
       console.log('[Emergency Request] loggedInUserId:', loggedInUserId);
       
+      // Parse petAge as integer if provided
+      let parsedPetAge: number | null = null;
+      if (req.body.petAge != null) {
+        const age = parseInt(req.body.petAge, 10);
+        parsedPetAge = isNaN(age) ? null : age;
+      }
+      
       // Validate and parse request body with proper schema
       const validatedData = emergencyRequestSchemaWithCoercion.parse({
         userId: req.body.userId ?? loggedInUserId ?? null,
@@ -2784,7 +2791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         symptom: req.body.symptom,
         petSpecies: req.body.petSpecies ?? null,
         petBreed: req.body.petBreed ?? null,
-        petAge: req.body.petAge != null ? String(req.body.petAge) : null,
+        petAge: parsedPetAge,
         locationLatitude: req.body.locationLatitude ? String(req.body.locationLatitude) : null,
         locationLongitude: req.body.locationLongitude ? String(req.body.locationLongitude) : null,
         manualLocation: req.body.manualLocation ?? null,
@@ -2794,7 +2801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         regionId: req.body.regionId ?? null,
         voiceTranscript: req.body.voiceTranscript ?? null,
         aiAnalyzedSymptoms: req.body.aiAnalyzedSymptoms ?? null,
-        isVoiceRecording: req.body.isVoiceRecording ?? null,
+        isVoiceRecording: req.body.isVoiceRecording ?? false,
       });
       
       const emergencyRequest = await storage.createEmergencyRequest(validatedData);
