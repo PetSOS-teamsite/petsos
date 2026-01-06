@@ -2815,7 +2815,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('user-agent')
       });
       
-      res.json(emergencyRequest);
+      res.status(201).json(emergencyRequest);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
@@ -6122,7 +6122,7 @@ PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
       const { id } = req.params;
       
       // Get application details
-      const application = await storage.getVetApplication(id);
+      const application = await storage.getVetApplicationById(id);
       if (!application) {
         return res.status(404).json({ error: "Application not found" });
       }
