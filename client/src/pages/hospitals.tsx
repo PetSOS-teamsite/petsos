@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Stethoscope, Building2, X, Navigation, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Search, Phone, MessageCircle, MapPin, Stethoscope, Building2, X, Navigation, CheckCircle2, Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,11 +9,52 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { analytics } from "@/lib/analytics";
 import { SEO } from "@/components/SEO";
 import type { Hospital } from "@shared/schema";
+
+type FacilityFilter = {
+  key: keyof Hospital;
+  labelEn: string;
+  labelZh: string;
+  category: 'imaging' | 'emergency' | 'surgery' | 'other';
+  type: 'boolean' | 'string';
+};
+
+const FACILITY_FILTERS: FacilityFilter[] = [
+  { key: 'imagingCT', labelEn: 'CT Scan', labelZh: 'CT掃描', category: 'imaging', type: 'boolean' },
+  { key: 'imagingMRI', labelEn: 'MRI', labelZh: 'MRI磁力共振', category: 'imaging', type: 'boolean' },
+  { key: 'imagingXray', labelEn: 'X-Ray', labelZh: 'X光', category: 'imaging', type: 'boolean' },
+  { key: 'imagingUS', labelEn: 'Ultrasound', labelZh: '超聲波', category: 'imaging', type: 'boolean' },
+  { key: 'bloodBankAccess', labelEn: 'Blood Bank', labelZh: '血庫', category: 'emergency', type: 'string' },
+  { key: 'bloodTransfusion', labelEn: 'Blood Transfusion', labelZh: '輸血服務', category: 'emergency', type: 'boolean' },
+  { key: 'icuLevel', labelEn: 'ICU', labelZh: '深切治療部', category: 'emergency', type: 'string' },
+  { key: 'ventilator', labelEn: 'Ventilator', labelZh: '呼吸機', category: 'emergency', type: 'boolean' },
+  { key: 'oxygenTherapy', labelEn: 'Oxygen Therapy', labelZh: '氧氣治療', category: 'emergency', type: 'boolean' },
+  { key: 'sxEmergencySoft', labelEn: 'Emergency Surgery', labelZh: '緊急手術', category: 'surgery', type: 'boolean' },
+  { key: 'sxEmergencyOrtho', labelEn: 'Ortho Surgery', labelZh: '骨科手術', category: 'surgery', type: 'boolean' },
+  { key: 'inHouseLab', labelEn: 'In-House Lab', labelZh: '院內化驗', category: 'other', type: 'boolean' },
+  { key: 'endoscopy', labelEn: 'Endoscopy', labelZh: '內窺鏡', category: 'other', type: 'boolean' },
+  { key: 'dialysis', labelEn: 'Dialysis', labelZh: '洗腎服務', category: 'other', type: 'boolean' },
+  { key: 'parking', labelEn: 'Parking', labelZh: '停車場', category: 'other', type: 'boolean' },
+  { key: 'wheelchairAccess', labelEn: 'Wheelchair Access', labelZh: '輪椅通道', category: 'other', type: 'boolean' },
+];
+
+const NEGATIVE_VALUES = ['no', 'not_available', 'none', 'false', '0', 'unavailable'];
+
+function hasFacility(hospital: Hospital, facilityKey: keyof Hospital): boolean {
+  const value = hospital[facilityKey];
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const lowerValue = value.toLowerCase().trim();
+    return lowerValue.length > 0 && !NEGATIVE_VALUES.includes(lowerValue);
+  }
+  return false;
+}
 
 type Region = {
   id: string;
@@ -46,6 +87,24 @@ export default function HospitalsPage() {
   const [sortBy, setSortBy] = useState<string>("distance");
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [selectedFacilities, setSelectedFacilities] = useState<Set<keyof Hospital>>(new Set());
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const toggleFacility = (facility: keyof Hospital) => {
+    setSelectedFacilities(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(facility)) {
+        newSet.delete(facility);
+      } else {
+        newSet.add(facility);
+      }
+      return newSet;
+    });
+  };
+
+  const clearAllFilters = () => {
+    setSelectedFacilities(new Set());
+  };
 
   const { data: regions, isLoading: regionsLoading } = useQuery<Region[]>({
     queryKey: ["/api/regions"],
@@ -113,7 +172,10 @@ export default function HospitalsPage() {
 
       const matchesRegion = selectedRegion === "all" || hospital.regionId === selectedRegion;
 
-      return matchesSearch && matchesRegion;
+      const matchesFacilities = selectedFacilities.size === 0 || 
+        Array.from(selectedFacilities).every(facility => hasFacility(hospital, facility));
+
+      return matchesSearch && matchesRegion && matchesFacilities;
     });
 
     // Sort
@@ -134,7 +196,7 @@ export default function HospitalsPage() {
     }
 
     return filtered;
-  }, [hospitalsWithDistance, searchQuery, selectedRegion, sortBy, language, userLocation]);
+  }, [hospitalsWithDistance, searchQuery, selectedRegion, sortBy, language, userLocation, selectedFacilities]);
 
   const handleCall = (hospital: Hospital) => {
     if (hospital.phone) {
@@ -282,6 +344,146 @@ export default function HospitalsPage() {
                   </p>
                 )}
               </div>
+
+              <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full md:w-auto flex items-center gap-2"
+                    data-testid="button-toggle-filters"
+                  >
+                    <Filter className="h-4 w-4" />
+                    {language === 'zh-HK' ? '設施篩選' : 'Filter by Facilities'}
+                    {selectedFacilities.size > 0 && (
+                      <Badge variant="secondary" className="ml-1" data-testid="badge-filter-count">
+                        {selectedFacilities.size}
+                      </Badge>
+                    )}
+                    {filtersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {language === 'zh-HK' ? '選擇需要的設施：' : 'Select required facilities:'}
+                      </span>
+                      {selectedFacilities.size > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearAllFilters}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                          data-testid="button-clear-filters"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          {language === 'zh-HK' ? '清除全部' : 'Clear All'}
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                          {language === 'zh-HK' ? '影像診斷' : 'Imaging'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {FACILITY_FILTERS.filter(f => f.category === 'imaging').map(filter => (
+                            <button
+                              key={filter.key}
+                              onClick={() => toggleFacility(filter.key)}
+                              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                                selectedFacilities.has(filter.key)
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:border-red-400 hover:text-red-600'
+                              }`}
+                              data-testid={`filter-${filter.key}`}
+                            >
+                              {language === 'zh-HK' ? filter.labelZh : filter.labelEn}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                          {language === 'zh-HK' ? '急症護理' : 'Emergency Care'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {FACILITY_FILTERS.filter(f => f.category === 'emergency').map(filter => (
+                            <button
+                              key={filter.key}
+                              onClick={() => toggleFacility(filter.key)}
+                              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                                selectedFacilities.has(filter.key)
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:border-red-400 hover:text-red-600'
+                              }`}
+                              data-testid={`filter-${filter.key}`}
+                            >
+                              {language === 'zh-HK' ? filter.labelZh : filter.labelEn}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                          {language === 'zh-HK' ? '手術' : 'Surgery'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {FACILITY_FILTERS.filter(f => f.category === 'surgery').map(filter => (
+                            <button
+                              key={filter.key}
+                              onClick={() => toggleFacility(filter.key)}
+                              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                                selectedFacilities.has(filter.key)
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:border-red-400 hover:text-red-600'
+                              }`}
+                              data-testid={`filter-${filter.key}`}
+                            >
+                              {language === 'zh-HK' ? filter.labelZh : filter.labelEn}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                          {language === 'zh-HK' ? '其他設施' : 'Other Facilities'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {FACILITY_FILTERS.filter(f => f.category === 'other').map(filter => (
+                            <button
+                              key={filter.key}
+                              onClick={() => toggleFacility(filter.key)}
+                              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                                selectedFacilities.has(filter.key)
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:border-red-400 hover:text-red-600'
+                              }`}
+                              data-testid={`filter-${filter.key}`}
+                            >
+                              {language === 'zh-HK' ? filter.labelZh : filter.labelEn}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {selectedFacilities.size > 0 && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 italic" data-testid="text-filter-note">
+                        {language === 'zh-HK' 
+                          ? '只顯示已確認具備所選設施的醫院。如需更多選項，可減少篩選條件。'
+                          : 'Only showing hospitals with confirmed facilities. Remove filters for more options.'
+                        }
+                      </p>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </div>
         </div>
