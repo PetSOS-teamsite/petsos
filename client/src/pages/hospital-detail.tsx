@@ -1,11 +1,11 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link, useLocation } from "wouter";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { 
   ArrowLeft, Phone, MessageCircle, MapPin, Globe, Clock, 
   AlertCircle, CheckCircle, Info, Stethoscope, Activity,
   Siren, FlaskConical, Home, CreditCard, Navigation as NavigationIcon,
-  Calendar, ChevronRight, ArrowUp
+  Calendar, ChevronRight, ArrowUp, Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -34,11 +34,30 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { analytics } from "@/lib/analytics";
 import { SEO } from "@/components/SEO";
-import { StructuredData, createEnhancedHospitalSchema, createBreadcrumbSchema } from "@/components/StructuredData";
+import { StructuredData, createEnhancedHospitalSchema, createBreadcrumbSchema, createFAQSchema } from "@/components/StructuredData";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import type { Hospital, HospitalConsultFee } from "@shared/schema";
 import { format } from "date-fns";
+
+const equipmentUseCases = {
+  ct: {
+    en: "Trauma, Spinal injuries, Internal bleeding",
+    zh: "車禍外傷, 脊椎癱瘓, 內出血"
+  },
+  mri: {
+    en: "Brain disorders, Joint problems",
+    zh: "腦部疾病, 關節問題"
+  },
+  ultrasound: {
+    en: "Abdominal exam, Pregnancy",
+    zh: "腹部檢查, 懷孕"
+  },
+  xray: {
+    en: "Fractures, Foreign body",
+    zh: "骨折, 異物吞入"
+  }
+};
 
 export default function HospitalDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -64,7 +83,113 @@ export default function HospitalDetailPage() {
     queryKey: ["/api/regions"],
   });
 
-  // Track page view
+  const regionName = useMemo(() => {
+    const region = regions?.find(r => r.id === hospital?.regionId);
+    if (region) {
+      return language === 'zh-HK' ? region.nameZh : region.nameEn;
+    }
+    return language === 'zh-HK' ? '香港' : 'Hong Kong';
+  }, [regions, hospital?.regionId, language]);
+
+  const nightFee = useMemo(() => {
+    if (!consultFees || consultFees.length === 0) return null;
+    const nightFees = consultFees.filter(f => f.feeType === 'night' && f.minFee);
+    if (nightFees.length === 0) return null;
+    return Math.min(...nightFees.map(f => parseFloat(f.minFee!)));
+  }, [consultFees]);
+
+  const verifiedDate = useMemo(() => {
+    if (!hospital?.lastVerifiedAt) return null;
+    return format(new Date(hospital.lastVerifiedAt), 'yyyy-MM-dd');
+  }, [hospital?.lastVerifiedAt]);
+
+  const faqData = useMemo(() => {
+    if (!hospital) return [];
+    const faqs: Array<{ question: string; answer: string }> = [];
+    
+    if (hospital.onSiteVet247 !== null || hospital.triagePolicy || hospital.typicalWaitBand) {
+      const answer = [
+        hospital.onSiteVet247 ? (language === 'zh-HK' ? '提供24小時駐場獸醫。' : '24/7 on-site veterinarian available.') : '',
+        hospital.triagePolicy ? `${language === 'zh-HK' ? '分流政策：' : 'Triage policy: '}${hospital.triagePolicy}` : '',
+        hospital.typicalWaitBand ? `${language === 'zh-HK' ? '一般等候時間：' : 'Typical wait time: '}${hospital.typicalWaitBand}` : '',
+        hospital.ambulanceSupport ? (language === 'zh-HK' ? '提供救護車服務。' : 'Ambulance service available.') : ''
+      ].filter(Boolean).join(' ');
+      faqs.push({
+        question: language === 'zh-HK' ? '這間醫院提供什麼緊急服務？' : 'What emergency services does this hospital provide?',
+        answer: answer || (language === 'zh-HK' ? '請聯絡醫院查詢。' : 'Please contact the hospital for details.')
+      });
+    }
+    
+    if (hospital.imagingXray || hospital.imagingUS || hospital.imagingCT || hospital.inHouseLab) {
+      const equipment = [
+        hospital.imagingXray ? (language === 'zh-HK' ? 'X光' : 'X-Ray') : '',
+        hospital.imagingUS ? (language === 'zh-HK' ? '超聲波' : 'Ultrasound') : '',
+        hospital.imagingCT ? 'CT' : '',
+        hospital.imagingMRI ? 'MRI' : '',
+        hospital.endoscopy ? (language === 'zh-HK' ? '內視鏡' : 'Endoscopy') : '',
+        hospital.inHouseLab ? (language === 'zh-HK' ? '院內化驗室' : 'In-house laboratory') : ''
+      ].filter(Boolean).join(', ');
+      faqs.push({
+        question: language === 'zh-HK' ? '這間醫院有什麼診斷設備？' : 'What diagnostic equipment is available?',
+        answer: equipment
+      });
+    }
+    
+    if (hospital.oxygenTherapy || hospital.ventilator || hospital.bloodTransfusion || hospital.dialysis || hospital.defibrillator) {
+      const equipment = [
+        hospital.oxygenTherapy ? (language === 'zh-HK' ? '氧氣治療' : 'Oxygen therapy') : '',
+        hospital.ventilator ? (language === 'zh-HK' ? '呼吸機' : 'Ventilator') : '',
+        hospital.bloodTransfusion ? (language === 'zh-HK' ? '輸血服務' : 'Blood transfusion') : '',
+        hospital.dialysis ? (language === 'zh-HK' ? '透析' : 'Dialysis') : '',
+        hospital.defibrillator ? (language === 'zh-HK' ? '除顫器' : 'Defibrillator') : ''
+      ].filter(Boolean).join(', ');
+      faqs.push({
+        question: language === 'zh-HK' ? '這間醫院有什麼生命支援設備？' : 'What life support equipment is on-site?',
+        answer: equipment
+      });
+    }
+    
+    if (hospital.sxEmergencySoft || hospital.sxEmergencyOrtho || hospital.anaesMonitoring) {
+      const procedures = [
+        hospital.sxEmergencySoft ? (language === 'zh-HK' ? '緊急軟組織手術' : 'Emergency soft tissue surgery') : '',
+        hospital.sxEmergencyOrtho ? (language === 'zh-HK' ? '緊急骨科手術' : 'Emergency orthopedic surgery') : '',
+        hospital.anaesMonitoring ? `${language === 'zh-HK' ? '麻醉監測：' : 'Anesthesia monitoring: '}${hospital.anaesMonitoring}` : '',
+        hospital.specialistAvail ? `${language === 'zh-HK' ? '專科：' : 'Specialists: '}${hospital.specialistAvail}` : ''
+      ].filter(Boolean).join('. ');
+      faqs.push({
+        question: language === 'zh-HK' ? '這間醫院可以進行什麼手術？' : 'What surgical procedures can be performed?',
+        answer: procedures
+      });
+    }
+    
+    if (hospital.icuLevel || hospital.nurse24h || hospital.isolationWard || hospital.ownerVisitPolicy) {
+      const options = [
+        hospital.icuLevel ? `ICU ${language === 'zh-HK' ? '級別' : 'level'}: ${hospital.icuLevel}` : '',
+        hospital.nurse24h ? (language === 'zh-HK' ? '24小時護士值班' : '24-hour nursing care') : '',
+        hospital.isolationWard ? (language === 'zh-HK' ? '隔離病房' : 'Isolation ward available') : '',
+        hospital.ownerVisitPolicy ? `${language === 'zh-HK' ? '探訪政策：' : 'Visitation policy: '}${hospital.ownerVisitPolicy}` : ''
+      ].filter(Boolean).join('. ');
+      faqs.push({
+        question: language === 'zh-HK' ? '這間醫院的住院及ICU設施如何？' : 'What are the hospitalization and ICU options?',
+        answer: options
+      });
+    }
+    
+    if (hospital.payMethods || hospital.insuranceSupport) {
+      const payment = [
+        hospital.payMethods && hospital.payMethods.length > 0 ? `${language === 'zh-HK' ? '付款方式：' : 'Payment methods: '}${hospital.payMethods.join(', ')}` : '',
+        hospital.insuranceSupport && hospital.insuranceSupport.length > 0 ? `${language === 'zh-HK' ? '接受保險：' : 'Insurance accepted: '}${hospital.insuranceSupport.join(', ')}` : '',
+        hospital.admissionDeposit ? (language === 'zh-HK' ? '需要入院按金' : 'Admission deposit required') : ''
+      ].filter(Boolean).join('. ');
+      faqs.push({
+        question: language === 'zh-HK' ? '這間醫院接受什麼付款方式及保險？' : 'What payment methods and insurance are accepted?',
+        answer: payment || (language === 'zh-HK' ? '請聯絡醫院查詢。' : 'Please contact the hospital for details.')
+      });
+    }
+    
+    return faqs;
+  }, [hospital, language]);
+
   useEffect(() => {
     if (hospital) {
       analytics.event('hospital_page_view', {
@@ -77,7 +202,6 @@ export default function HospitalDetailPage() {
     }
   }, [hospital, language]);
 
-  // Back to top button visibility
   useEffect(() => {
     const handleScroll = () => {
       setShowBackToTop(window.scrollY > 400);
@@ -88,7 +212,7 @@ export default function HospitalDetailPage() {
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    setShowBackToTop(false); // Hide button immediately
+    setShowBackToTop(false);
   };
 
   const reportMutation = useMutation({
@@ -222,6 +346,9 @@ export default function HospitalDetailPage() {
     return acc;
   }, {} as Record<string, HospitalConsultFee[]>);
 
+  const feeTypes = ['day', 'evening', 'night'] as const;
+  const speciesOrder = ['dog', 'cat', 'other'];
+
   return (
     <>
       <SEO
@@ -265,6 +392,12 @@ export default function HospitalDetailPage() {
           { name: language === 'zh-HK' ? hospital.nameZh : hospital.nameEn, url: `https://petsos.site/hospitals/${hospital.slug}` },
         ])}
       />
+      {faqData.length > 0 && (
+        <StructuredData
+          id={`hospital-${hospital.id}-faq`}
+          data={createFAQSchema(faqData)}
+        />
+      )}
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
@@ -319,7 +452,12 @@ export default function HospitalDetailPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {hospital.open247 && (
-                  <Badge variant="default" className="bg-red-500" data-testid="badge-24-7">
+                  <Badge 
+                    variant="default" 
+                    className="bg-red-500" 
+                    data-testid="badge-24-7"
+                    title={language === 'zh-HK' ? '全天候24小時服務' : '24 hours a day, 7 days a week'}
+                  >
                     24/7
                   </Badge>
                 )}
@@ -327,6 +465,7 @@ export default function HospitalDetailPage() {
                   <Badge 
                     variant={hospital.liveStatus === 'normal' ? 'default' : 'destructive'}
                     data-testid="badge-status"
+                    itemProp="actionStatus"
                   >
                     {hospital.liveStatus === 'normal' ? (language === 'zh-HK' ? '正常' : 'Normal') :
                      hospital.liveStatus === 'busy' ? (language === 'zh-HK' ? '繁忙' : 'Busy') :
@@ -339,6 +478,37 @@ export default function HospitalDetailPage() {
         </div>
 
         <div className="container mx-auto px-4 py-6 max-w-4xl">
+          {/* AI-Ready Snippet Block - Hidden from users, visible to AI/crawlers */}
+          <div 
+            className="sr-only" 
+            aria-hidden="true"
+            data-ai-summary="true"
+            itemScope 
+            itemType="https://schema.org/VeterinaryCare"
+          >
+            {/* English AI Summary */}
+            <p lang="en" itemProp="description">
+              {hospital.nameEn} is a {hospital.open247 ? '24-hour emergency ' : ''}veterinary hospital 
+              located in {regionName}, Hong Kong.
+              {hospital.icuLevel ? ' Intensive Care Unit (ICU) available.' : ''}
+              {hospital.imagingCT ? ' CT scan on-site.' : ''}
+              {hospital.bloodTransfusion ? ' Blood transfusion services provided.' : ''}
+              {' '}Current status: {hospital.liveStatus === 'busy' ? 'busy' : hospital.liveStatus === 'critical_only' ? 'critical cases only' : 'normal'}.
+              {nightFee ? ` Night emergency consultation from HKD $${nightFee}.` : ''}
+              {verifiedDate ? ` Information verified by PetSOS on ${verifiedDate}.` : ''}
+            </p>
+            {/* Chinese AI Summary */}
+            <p lang="zh-HK">
+              {hospital.nameZh}是位於香港{regionName}的{hospital.open247 ? '24小時緊急' : ''}獸醫醫院。
+              {hospital.icuLevel ? '設有深切治療部(ICU)。' : ''}
+              {hospital.imagingCT ? '備有CT掃描設備。' : ''}
+              {hospital.bloodTransfusion ? '提供輸血服務。' : ''}
+              目前狀態：{hospital.liveStatus === 'busy' ? '繁忙' : hospital.liveStatus === 'critical_only' ? '僅接受危急個案' : '正常'}。
+              {nightFee ? `夜間急診諮詢費由港幣$${nightFee}起。` : ''}
+              {verifiedDate ? `資料由PetSOS於${verifiedDate}驗證。` : ''}
+            </p>
+          </div>
+
           {/* Quick Facts */}
           <Card className="mb-6">
             <CardHeader>
@@ -358,28 +528,45 @@ export default function HospitalDetailPage() {
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 {hospital.icuLevel && (
-                  <Badge variant="outline" data-testid="badge-icu">
+                  <Badge 
+                    variant="outline" 
+                    data-testid="badge-icu"
+                    title={language === 'zh-HK' ? '深切治療部 - Intensive Care Unit' : 'Intensive Care Unit'}
+                  >
                     <Stethoscope className="h-3 w-3 mr-1" />
-                    ICU {hospital.icuLevel}
+                    <abbr title="Intensive Care Unit">ICU</abbr> {hospital.icuLevel}
                   </Badge>
                 )}
                 {hospital.imagingCT && (
-                  <Badge variant="outline" data-testid="badge-ct">
-                    CT {hospital.sameDayCT && (language === 'zh-HK' ? '(當日)' : '(Same Day)')}
+                  <Badge 
+                    variant="outline" 
+                    data-testid="badge-ct"
+                    title={language === 'zh-HK' ? '電腦斷層掃描 - Computed Tomography' : 'Computed Tomography Scan'}
+                  >
+                    <abbr title="Computed Tomography">CT</abbr> {hospital.sameDayCT && (language === 'zh-HK' ? '(當日)' : '(Same Day)')}
                   </Badge>
                 )}
                 {hospital.imagingUS && (
-                  <Badge variant="outline">
+                  <Badge 
+                    variant="outline"
+                    title={language === 'zh-HK' ? '超聲波檢查' : 'Ultrasound Imaging'}
+                  >
                     {language === 'zh-HK' ? '超聲波' : 'Ultrasound'}
                   </Badge>
                 )}
                 {hospital.imagingXray && (
-                  <Badge variant="outline">
+                  <Badge 
+                    variant="outline"
+                    title={language === 'zh-HK' ? 'X光射線檢查' : 'X-Ray Radiography'}
+                  >
                     {language === 'zh-HK' ? 'X光' : 'X-Ray'}
                   </Badge>
                 )}
                 {hospital.nurse24h && (
-                  <Badge variant="outline">
+                  <Badge 
+                    variant="outline"
+                    title={language === 'zh-HK' ? '24小時護士值班' : '24-Hour Nursing Staff'}
+                  >
                     {language === 'zh-HK' ? '24小時護士' : '24H Nurse'}
                   </Badge>
                 )}
@@ -447,7 +634,7 @@ export default function HospitalDetailPage() {
             </Card>
           )}
 
-          {/* Consultation Fees */}
+          {/* Consultation Fees - Semantic Table */}
           {!feesLoading && consultFees && consultFees.length > 0 && (
             <Card className="mb-6">
               <CardHeader>
@@ -461,40 +648,84 @@ export default function HospitalDetailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(groupedFees || {}).map(([species, fees]) => (
-                    <div key={species}>
-                      <h4 className="font-medium mb-2" data-testid={`text-species-${species}`}>
-                        {species === 'dog' ? (language === 'zh-HK' ? '狗' : 'Dog') :
-                         species === 'cat' ? (language === 'zh-HK' ? '貓' : 'Cat') :
-                         (language === 'zh-HK' ? '其他' : 'Other')}
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        {fees.map((fee) => (
-                          <div key={fee.id} className="border rounded-lg p-3" data-testid={`fee-${species}-${fee.feeType}`}>
-                            <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                              {fee.feeType === 'day' ? (language === 'zh-HK' ? '日間' : 'Day') :
-                               fee.feeType === 'evening' ? (language === 'zh-HK' ? '晚間' : 'Evening') :
-                               (language === 'zh-HK' ? '深夜/公眾假期' : 'Night/PH')}
-                            </div>
-                            <div className="text-lg font-bold">
-                              {fee.currency} ${fee.minFee}
-                              {fee.maxFee && fee.maxFee !== fee.minFee && ` - $${fee.maxFee}`}
-                            </div>
-                            {fee.notes && (
-                              <div className="text-xs text-gray-500 mt-1">{fee.notes}</div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table 
+                    className="w-full border-collapse"
+                    aria-label={language === 'zh-HK' ? '診症費用表' : 'Consultation fees table'}
+                  >
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-700">
+                        <th className="py-2 px-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          {language === 'zh-HK' ? '動物類別' : 'Species'}
+                        </th>
+                        <th 
+                          className="py-2 px-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300"
+                          data-surcharge-start="09:00"
+                        >
+                          {language === 'zh-HK' ? '日間' : 'Day'}
+                        </th>
+                        <th 
+                          className="py-2 px-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300"
+                          data-surcharge-start="18:00"
+                        >
+                          {language === 'zh-HK' ? '晚間' : 'Evening'}
+                        </th>
+                        <th 
+                          className="py-2 px-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300"
+                          data-surcharge-start="22:00"
+                        >
+                          {language === 'zh-HK' ? '深夜/公眾假期' : 'Night/PH'}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {speciesOrder.filter(species => groupedFees?.[species]).map((species) => {
+                        const fees = groupedFees![species];
+                        const getFeeByType = (type: string) => fees.find(f => f.feeType === type);
+                        return (
+                          <tr 
+                            key={species} 
+                            className="border-b border-gray-100 dark:border-gray-800"
+                            data-testid={`row-species-${species}`}
+                          >
+                            <td className="py-3 px-3 font-medium text-gray-900 dark:text-white">
+                              {species === 'dog' ? (language === 'zh-HK' ? '🐕 狗' : '🐕 Dog') :
+                               species === 'cat' ? (language === 'zh-HK' ? '🐱 貓' : '🐱 Cat') :
+                               (language === 'zh-HK' ? '🐾 其他' : '🐾 Other')}
+                            </td>
+                            {feeTypes.map((feeType) => {
+                              const fee = getFeeByType(feeType);
+                              return (
+                                <td 
+                                  key={feeType}
+                                  className="py-3 px-3 text-center"
+                                  aria-label={`${species} ${feeType} fee`}
+                                >
+                                  {fee ? (
+                                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                      {fee.currency} ${fee.minFee}
+                                      {fee.maxFee && fee.maxFee !== fee.minFee && ` - $${fee.maxFee}`}
+                                      {fee.notes && (
+                                        <div className="text-xs text-gray-500 font-normal mt-0.5">{fee.notes}</div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400">-</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Detailed Information - Accordion */}
+          {/* Detailed Information - Accordion with FAQ Format */}
           <Accordion type="multiple" defaultValue={["emergency"]} className="space-y-4">
             {/* Emergency & Triage */}
             <AccordionItem value="emergency" className="border rounded-lg px-4 bg-white dark:bg-gray-800">
@@ -502,7 +733,7 @@ export default function HospitalDetailPage() {
                 <div className="flex items-center gap-2">
                   <Siren className="h-5 w-5 text-red-500" />
                   <span className="font-semibold">
-                    {language === 'zh-HK' ? '緊急服務及分流' : 'Emergency Services & Triage'}
+                    {language === 'zh-HK' ? '這間醫院提供什麼緊急服務？' : 'What emergency services does this hospital provide?'}
                   </span>
                 </div>
               </AccordionTrigger>
@@ -564,14 +795,14 @@ export default function HospitalDetailPage() {
               </AccordionContent>
             </AccordionItem>
 
-            {/* Diagnostics */}
+            {/* Diagnostics with Symptom-Equipment Use Case Tags */}
             {(hospital.imagingXray || hospital.imagingUS || hospital.imagingCT || hospital.inHouseLab) && (
               <AccordionItem value="diagnostics" className="border rounded-lg px-4 bg-white dark:bg-gray-800">
                 <AccordionTrigger className="hover:no-underline" data-testid="accordion-diagnostics">
                   <div className="flex items-center gap-2">
                     <FlaskConical className="h-5 w-5 text-blue-500" />
                     <span className="font-semibold">
-                      {language === 'zh-HK' ? '診斷設施' : 'Diagnostic Facilities'}
+                      {language === 'zh-HK' ? '這間醫院有什麼診斷設備？' : 'What diagnostic equipment is available?'}
                     </span>
                   </div>
                 </AccordionTrigger>
@@ -581,12 +812,64 @@ export default function HospitalDetailPage() {
                       <dt className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
                         {language === 'zh-HK' ? '影像檢查' : 'Imaging'}
                       </dt>
-                      <dd className="flex flex-wrap gap-2">
-                        {hospital.imagingXray && <Badge variant="outline">{language === 'zh-HK' ? 'X光' : 'X-Ray'}</Badge>}
-                        {hospital.imagingUS && <Badge variant="outline">{language === 'zh-HK' ? '超聲波' : 'Ultrasound'}</Badge>}
-                        {hospital.imagingCT && <Badge variant="outline">CT {hospital.sameDayCT && `(${language === 'zh-HK' ? '當日' : 'Same Day'})`}</Badge>}
-                        {hospital.imagingMRI && <Badge variant="outline">{language === 'zh-HK' ? 'MRI磁力共振' : 'MRI'}</Badge>}
-                        {hospital.endoscopy && <Badge variant="outline">{language === 'zh-HK' ? '內視鏡' : 'Endoscopy'}</Badge>}
+                      <dd className="space-y-2">
+                        {hospital.imagingXray && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge 
+                              variant="outline"
+                              title={language === 'zh-HK' ? 'X光射線檢查' : 'X-Ray Radiography'}
+                            >
+                              {language === 'zh-HK' ? 'X光' : 'X-Ray'}
+                            </Badge>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              → {language === 'zh-HK' ? equipmentUseCases.xray.zh : equipmentUseCases.xray.en}
+                            </span>
+                          </div>
+                        )}
+                        {hospital.imagingUS && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge 
+                              variant="outline"
+                              title={language === 'zh-HK' ? '超聲波檢查' : 'Ultrasound Imaging'}
+                            >
+                              {language === 'zh-HK' ? '超聲波' : 'Ultrasound'}
+                            </Badge>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              → {language === 'zh-HK' ? equipmentUseCases.ultrasound.zh : equipmentUseCases.ultrasound.en}
+                            </span>
+                          </div>
+                        )}
+                        {hospital.imagingCT && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge 
+                              variant="outline"
+                              title={language === 'zh-HK' ? '電腦斷層掃描' : 'Computed Tomography Scan'}
+                            >
+                              <abbr title="Computed Tomography">CT</abbr> {hospital.sameDayCT && `(${language === 'zh-HK' ? '當日' : 'Same Day'})`}
+                            </Badge>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              → {language === 'zh-HK' ? equipmentUseCases.ct.zh : equipmentUseCases.ct.en}
+                            </span>
+                          </div>
+                        )}
+                        {hospital.imagingMRI && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge 
+                              variant="outline"
+                              title={language === 'zh-HK' ? '磁力共振成像' : 'Magnetic Resonance Imaging'}
+                            >
+                              <abbr title="Magnetic Resonance Imaging">MRI</abbr>
+                            </Badge>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              → {language === 'zh-HK' ? equipmentUseCases.mri.zh : equipmentUseCases.mri.en}
+                            </span>
+                          </div>
+                        )}
+                        {hospital.endoscopy && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="outline">{language === 'zh-HK' ? '內視鏡' : 'Endoscopy'}</Badge>
+                          </div>
+                        )}
                       </dd>
                     </div>
                     {hospital.inHouseLab !== null && (
@@ -625,7 +908,7 @@ export default function HospitalDetailPage() {
                   <div className="flex items-center gap-2">
                     <Activity className="h-5 w-5 text-red-500" />
                     <span className="font-semibold">
-                      {language === 'zh-HK' ? '生命支援設備' : 'Life Support Equipment'}
+                      {language === 'zh-HK' ? '這間醫院有什麼生命支援設備？' : 'What life support equipment is on-site?'}
                     </span>
                   </div>
                 </AccordionTrigger>
@@ -652,8 +935,12 @@ export default function HospitalDetailPage() {
                       </Badge>
                     )}
                     {hospital.defibrillator && (
-                      <Badge variant="outline" data-testid="badge-defibrillator">
-                        {language === 'zh-HK' ? '除顫器/AED' : 'Defibrillator/AED'}
+                      <Badge 
+                        variant="outline" 
+                        data-testid="badge-defibrillator"
+                        title={language === 'zh-HK' ? '自動體外心臟除顫器' : 'Automated External Defibrillator'}
+                      >
+                        {language === 'zh-HK' ? '除顫器/' : 'Defibrillator/'}<abbr title="Automated External Defibrillator">AED</abbr>
                       </Badge>
                     )}
                   </div>
@@ -668,7 +955,7 @@ export default function HospitalDetailPage() {
                   <div className="flex items-center gap-2">
                     <Stethoscope className="h-5 w-5 text-orange-500" />
                     <span className="font-semibold">
-                      {language === 'zh-HK' ? '手術能力' : 'Surgery Capabilities'}
+                      {language === 'zh-HK' ? '這間醫院可以進行什麼手術？' : 'What surgical procedures can be performed?'}
                     </span>
                   </div>
                 </AccordionTrigger>
@@ -714,7 +1001,7 @@ export default function HospitalDetailPage() {
                   <div className="flex items-center gap-2">
                     <Home className="h-5 w-5 text-purple-500" />
                     <span className="font-semibold">
-                      {language === 'zh-HK' ? '住院服務' : 'Hospitalization'}
+                      {language === 'zh-HK' ? '這間醫院的住院及ICU設施如何？' : 'What are the hospitalization and ICU options?'}
                     </span>
                   </div>
                 </AccordionTrigger>
@@ -723,7 +1010,7 @@ export default function HospitalDetailPage() {
                     {hospital.icuLevel && (
                       <div>
                         <dt className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                          {language === 'zh-HK' ? 'ICU級別' : 'ICU Level'}
+                          <abbr title="Intensive Care Unit">ICU</abbr> {language === 'zh-HK' ? '級別' : 'Level'}
                         </dt>
                         <dd className="mt-1">{hospital.icuLevel}</dd>
                       </div>
@@ -772,7 +1059,7 @@ export default function HospitalDetailPage() {
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5 text-green-500" />
                     <span className="font-semibold">
-                      {language === 'zh-HK' ? '付款及保險' : 'Payment & Insurance'}
+                      {language === 'zh-HK' ? '這間醫院接受什麼付款方式及保險？' : 'What payment methods and insurance are accepted?'}
                     </span>
                   </div>
                 </AccordionTrigger>
@@ -884,6 +1171,21 @@ export default function HospitalDetailPage() {
                   </DialogContent>
                 </Dialog>
               </div>
+            </div>
+          </div>
+
+          {/* VSB Entity Linking - Trust Verification Section */}
+          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <Shield className="h-4 w-4" />
+              <span>
+                {language === 'zh-HK' 
+                  ? '此醫院已在香港獸醫管理局 (VSB) 註冊。PetSOS 驗證編號：' 
+                  : 'Registered with Hong Kong Veterinary Surgeons Board (VSB). PetSOS Verification ID: '}
+                <code className="font-mono text-xs bg-gray-200 dark:bg-gray-700 px-1 rounded">
+                  PETSOS-{hospital.id.slice(0, 8).toUpperCase()}
+                </code>
+              </span>
             </div>
           </div>
         </div>
