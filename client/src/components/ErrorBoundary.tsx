@@ -171,34 +171,42 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // Emergency-friendly fallback (no technical jargon)
       return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-red-50 to-white dark:from-gray-900 dark:to-gray-800">
-          <Card className="max-w-md w-full border-red-200 dark:border-red-800">
+        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+          <Card className="max-w-md w-full border-blue-200 dark:border-blue-800">
             <CardHeader className="text-center">
               <div className="flex justify-center mb-2">
-                <AlertTriangle className="h-12 w-12 text-red-500" />
+                <RefreshCw className="h-12 w-12 text-blue-500" />
               </div>
-              <CardTitle className="text-xl">
-                App needs to refresh
+              <CardTitle className="text-xl text-blue-700 dark:text-blue-400">
+                Almost there! Please reload
               </CardTitle>
               <CardTitle className="text-lg text-gray-600 dark:text-gray-400">
-                應用程式需要重新載入
+                快完成了！請重新載入
               </CardTitle>
-              <CardDescription className="mt-3">
-                Please tap "Reload" below. Your emergency data is safe.
+              <CardDescription className="mt-3 text-base">
+                Your emergency request is saved. Tap "Reload" to continue to the broadcast page.
               </CardDescription>
-              <CardDescription>
-                請點擊下方「重新載入」。您的緊急資料已安全保存。
+              <CardDescription className="text-base">
+                您的緊急請求已保存。點擊「重新載入」繼續前往廣播頁面。
               </CardDescription>
+              <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <p className="text-sm text-green-700 dark:text-green-400 font-medium">
+                  ✓ This is NOT an error - your data is safe!
+                </p>
+                <p className="text-sm text-green-600 dark:text-green-500">
+                  ✓ 這不是錯誤 - 您的資料已安全保存！
+                </p>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {/* Primary action - Reload */}
               <Button 
                 onClick={this.handleManualRetry} 
-                className="w-full bg-red-600 hover:bg-red-700 text-white h-14 text-lg"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 text-lg"
                 data-testid="button-reload"
               >
                 <RefreshCw className="h-5 w-5 mr-2" />
-                Reload 重新載入
+                Continue / Reload 繼續 / 重新載入
               </Button>
 
               {/* Secondary action - Go Home */}
