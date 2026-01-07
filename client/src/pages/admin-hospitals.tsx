@@ -259,12 +259,14 @@ function HospitalForm({ form, onSubmit, submitLabel, hospitalId }: {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="basic">Basic Info</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-7 text-xs">
+            <TabsTrigger value="basic">Basic</TabsTrigger>
             <TabsTrigger value="photos">Photos</TabsTrigger>
             <TabsTrigger value="facilities">Facilities</TabsTrigger>
-            <TabsTrigger value="medical">Medical Services</TabsTrigger>
-            <TabsTrigger value="operational">Operational</TabsTrigger>
+            <TabsTrigger value="medical">Medical</TabsTrigger>
+            <TabsTrigger value="operational">Ops</TabsTrigger>
+            <TabsTrigger value="deepmedical">Deep Medical</TabsTrigger>
+            <TabsTrigger value="policies">Policies</TabsTrigger>
           </TabsList>
 
           {/* Basic Info Tab */}
@@ -1112,6 +1114,635 @@ function HospitalForm({ form, onSubmit, submitLabel, hospitalId }: {
               testId="input-insurance-support"
             />
           </TabsContent>
+
+          {/* Deep Medical Tab - Advanced Medical Capabilities */}
+          <TabsContent value="deepmedical" className="space-y-4">
+            <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-md">
+              <p className="text-sm text-purple-800 dark:text-purple-300"><strong>Advanced Data:</strong> Detailed medical capabilities for search matching and emergency triage.</p>
+            </div>
+
+            {/* Blood Bank Details */}
+            <h3 className="text-lg font-semibold">Blood Bank Details</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="bloodBankCanine"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Canine Blood Stock</FormLabel>
+                      <FormDescription>On-site canine blood available</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="bloodBankFeline"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Feline Blood Stock</FormLabel>
+                      <FormDescription>On-site feline blood available</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            <CommaArrayField
+              control={form.control}
+              name="bloodTypesAvailable"
+              label="Blood Types Available"
+              placeholder="e.g., DEA 1.1+, DEA 1.1-, Type A, Type B"
+              description="Comma-separated list of blood types in stock"
+              testId="input-blood-types"
+            />
+
+            {/* ICU/Oxygen Capacity */}
+            <h3 className="text-lg font-semibold mt-6">ICU/Oxygen Capacity</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="oxygenCageCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Oxygen Cages</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="e.g., 5" 
+                        data-testid="input-oxygen-cages"
+                      />
+                    </FormControl>
+                    <FormDescription>Number of oxygen cages</FormDescription>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="icuBedCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ICU Beds</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="e.g., 10" 
+                        data-testid="input-icu-beds"
+                      />
+                    </FormControl>
+                    <FormDescription>Number of ICU beds</FormDescription>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="icuNurseCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ICU Nurses</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="e.g., 3" 
+                        data-testid="input-icu-nurses"
+                      />
+                    </FormControl>
+                    <FormDescription>ICU-specific nurse count</FormDescription>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="overnightVetNurseRatio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Overnight Vet:Nurse Ratio</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="e.g., 1:3" data-testid="input-vet-nurse-ratio" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Exotic Species Support */}
+            <h3 className="text-lg font-semibold mt-6">Exotic Species Support</h3>
+            <FormField
+              control={form.control}
+              name="exoticVet247"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Exotic Vet 24/7</FormLabel>
+                    <FormDescription>Specialized exotic vet on-site around the clock</FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <CommaArrayField
+              control={form.control}
+              name="exoticSpecies247"
+              label="Exotic Species Seen 24/7"
+              placeholder="e.g., rabbit, bird, reptile, small_mammal"
+              description="Comma-separated list of exotic species treated 24/7"
+              testId="input-exotic-species"
+            />
+
+            {/* Advanced Imaging Details */}
+            <h3 className="text-lg font-semibold mt-6">Advanced Imaging Details</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="imagingTech247"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Imaging Tech 24/7</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="ctScanOnSite"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">CT On-Site</FormLabel>
+                      <FormDescription>vs. mobile/referral</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="mriOnSite"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">MRI On-Site</FormLabel>
+                      <FormDescription>vs. referral</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Toxin/Antidote Readiness */}
+            <h3 className="text-lg font-semibold mt-6">Toxin/Antidote Readiness</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="antivenomStock"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Snake Antivenom</FormLabel>
+                      <FormDescription>Antivenom in stock</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="ratPoisonAntidote"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Rat Poison Antidote</FormLabel>
+                      <FormDescription>Vitamin K available</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="gastricLavageKit"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Gastric Lavage Kit</FormLabel>
+                      <FormDescription>Stomach pump equipment</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="activatedCharcoal"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Activated Charcoal</FormLabel>
+                      <FormDescription>For poisoning treatment</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Surgical Readiness Details */}
+            <h3 className="text-lg font-semibold mt-6">Surgical Readiness</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="surgeon247"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Surgeon Availability 24/7</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-surgeon-247">
+                          <SelectValue placeholder="Select availability" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="on_site">On-Site</SelectItem>
+                        <SelectItem value="on_call">On-Call</SelectItem>
+                        <SelectItem value="referral_only">Referral Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="surgeonCalloutTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Surgeon Callout Time</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="e.g., 30 mins" data-testid="input-surgeon-callout" />
+                    </FormControl>
+                    <FormDescription>Time for on-call surgeon to arrive</FormDescription>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </TabsContent>
+
+          {/* Policies Tab - Emergency Fees, Logistics, and Weather Policies */}
+          <TabsContent value="policies" className="space-y-4">
+            <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+              <p className="text-sm text-amber-800 dark:text-amber-300"><strong>Emergency Policies:</strong> Fee structure, visitor info, and extreme weather operating policies.</p>
+            </div>
+
+            {/* Emergency Fee Structure */}
+            <h3 className="text-lg font-semibold">Emergency Fee Structure</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="consultFeeDay"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Daytime Consult Fee ($)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="e.g., 500" 
+                        data-testid="input-fee-day"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="consultFeeEvening"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Evening Consult Fee ($)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="e.g., 800" 
+                        data-testid="input-fee-evening"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="consultFeeMidnight"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Midnight Consult Fee ($)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="e.g., 1200" 
+                        data-testid="input-fee-midnight"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="eveningSurchargeStart"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Evening Surcharge Start</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="e.g., 18:00" data-testid="input-evening-start" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="midnightSurchargeStart"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Midnight Surcharge Start</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="e.g., 00:00" data-testid="input-midnight-start" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="holidaySurchargePercent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Holiday Surcharge (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="e.g., 50" 
+                        data-testid="input-holiday-surcharge"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* In-Patient Quality */}
+            <h3 className="text-lg font-semibold mt-6">In-Patient Quality</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="cctvMonitoring"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">CCTV Monitoring</FormLabel>
+                      <FormDescription>Remote viewing for owners</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="visitationHours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Visitation Hours</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="e.g., 10:00-20:00 or 24h" data-testid="input-visitation-hours" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Panic Logistics */}
+            <h3 className="text-lg font-semibold mt-6">Panic Logistics</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="emergencyEntranceEn"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Emergency Entrance (English)</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="e.g., Side door on Smith St" data-testid="input-emergency-entrance-en" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="emergencyEntranceZh"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Emergency Entrance (Chinese)</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="e.g., 史密斯街側門" data-testid="input-emergency-entrance-zh" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="parkingDetailsEn"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parking Details (English)</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="e.g., Free 30-min parking at ABC Lot" data-testid="input-parking-en" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="parkingDetailsZh"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parking Details (Chinese)</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="e.g., ABC停車場免費30分鐘" data-testid="input-parking-zh" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="taxiDropoffEn"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Taxi Dropoff (English)</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="e.g., Ask for Happy Valley entrance" data-testid="input-taxi-en" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="taxiDropoffZh"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Taxi Dropoff (Chinese)</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} placeholder="e.g., 請的士司機往跑馬地入口" data-testid="input-taxi-zh" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Typhoon/Holiday Policies */}
+            <h3 className="text-lg font-semibold mt-6">Typhoon/Holiday Policies</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="openT8"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Open T8</FormLabel>
+                      <FormDescription>Typhoon Signal 8</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="openT10"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Open T10</FormLabel>
+                      <FormDescription>Typhoon Signal 10</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="openBlackRainstorm"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Open Black Rain</FormLabel>
+                      <FormDescription>Black Rainstorm</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="lunarNewYearOpen"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">LNY Open</FormLabel>
+                      <FormDescription>Lunar New Year</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lunarNewYearSurcharge"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>LNY Surcharge (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        value={field.value ?? ""} 
+                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="e.g., 50" 
+                        data-testid="input-lny-surcharge"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="christmasOpen"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Christmas Open</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </TabsContent>
         </Tabs>
 
         <DialogFooter>
@@ -1283,6 +1914,45 @@ export default function AdminHospitalsPage() {
       languages: null,
       payMethods: null,
       insuranceSupport: null,
+      // Deep data fields
+      bloodBankCanine: null,
+      bloodBankFeline: null,
+      bloodTypesAvailable: null,
+      consultFeeDay: null,
+      consultFeeEvening: null,
+      consultFeeMidnight: null,
+      eveningSurchargeStart: null,
+      midnightSurchargeStart: null,
+      holidaySurchargePercent: null,
+      oxygenCageCount: null,
+      icuBedCount: null,
+      icuNurseCount: null,
+      overnightVetNurseRatio: null,
+      exoticVet247: null,
+      exoticSpecies247: null,
+      imagingTech247: null,
+      ctScanOnSite: null,
+      mriOnSite: null,
+      antivenomStock: null,
+      ratPoisonAntidote: null,
+      gastricLavageKit: null,
+      activatedCharcoal: null,
+      surgeon247: null,
+      surgeonCalloutTime: null,
+      cctvMonitoring: null,
+      visitationHours: null,
+      emergencyEntranceEn: null,
+      emergencyEntranceZh: null,
+      parkingDetailsEn: null,
+      parkingDetailsZh: null,
+      taxiDropoffEn: null,
+      taxiDropoffZh: null,
+      openT8: null,
+      openT10: null,
+      openBlackRainstorm: null,
+      lunarNewYearOpen: null,
+      lunarNewYearSurcharge: null,
+      christmasOpen: null,
     },
   });
 
@@ -1353,6 +2023,45 @@ export default function AdminHospitalsPage() {
       languages: hospital.languages ?? null,
       payMethods: hospital.payMethods ?? null,
       insuranceSupport: hospital.insuranceSupport ?? null,
+      // Deep data fields
+      bloodBankCanine: hospital.bloodBankCanine ?? null,
+      bloodBankFeline: hospital.bloodBankFeline ?? null,
+      bloodTypesAvailable: hospital.bloodTypesAvailable ?? null,
+      consultFeeDay: hospital.consultFeeDay ?? null,
+      consultFeeEvening: hospital.consultFeeEvening ?? null,
+      consultFeeMidnight: hospital.consultFeeMidnight ?? null,
+      eveningSurchargeStart: hospital.eveningSurchargeStart ?? null,
+      midnightSurchargeStart: hospital.midnightSurchargeStart ?? null,
+      holidaySurchargePercent: hospital.holidaySurchargePercent ?? null,
+      oxygenCageCount: hospital.oxygenCageCount ?? null,
+      icuBedCount: hospital.icuBedCount ?? null,
+      icuNurseCount: hospital.icuNurseCount ?? null,
+      overnightVetNurseRatio: hospital.overnightVetNurseRatio ?? null,
+      exoticVet247: hospital.exoticVet247 ?? null,
+      exoticSpecies247: hospital.exoticSpecies247 ?? null,
+      imagingTech247: hospital.imagingTech247 ?? null,
+      ctScanOnSite: hospital.ctScanOnSite ?? null,
+      mriOnSite: hospital.mriOnSite ?? null,
+      antivenomStock: hospital.antivenomStock ?? null,
+      ratPoisonAntidote: hospital.ratPoisonAntidote ?? null,
+      gastricLavageKit: hospital.gastricLavageKit ?? null,
+      activatedCharcoal: hospital.activatedCharcoal ?? null,
+      surgeon247: hospital.surgeon247 ?? null,
+      surgeonCalloutTime: hospital.surgeonCalloutTime ?? null,
+      cctvMonitoring: hospital.cctvMonitoring ?? null,
+      visitationHours: hospital.visitationHours ?? null,
+      emergencyEntranceEn: hospital.emergencyEntranceEn ?? null,
+      emergencyEntranceZh: hospital.emergencyEntranceZh ?? null,
+      parkingDetailsEn: hospital.parkingDetailsEn ?? null,
+      parkingDetailsZh: hospital.parkingDetailsZh ?? null,
+      taxiDropoffEn: hospital.taxiDropoffEn ?? null,
+      taxiDropoffZh: hospital.taxiDropoffZh ?? null,
+      openT8: hospital.openT8 ?? null,
+      openT10: hospital.openT10 ?? null,
+      openBlackRainstorm: hospital.openBlackRainstorm ?? null,
+      lunarNewYearOpen: hospital.lunarNewYearOpen ?? null,
+      lunarNewYearSurcharge: hospital.lunarNewYearSurcharge ?? null,
+      christmasOpen: hospital.christmasOpen ?? null,
     });
     setIsEditDialogOpen(true);
   };
