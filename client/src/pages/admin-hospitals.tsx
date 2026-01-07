@@ -166,7 +166,9 @@ function HospitalForm({ form, onSubmit, submitLabel, hospitalId }: {
     mutationFn: async (file: File) => {
       if (!hospitalId) throw new Error("Hospital ID required for photo upload");
       
-      const urlResponse = await apiRequest('POST', `/api/admin/hospitals/${hospitalId}/photo-upload-url`, {});
+      const urlResponse = await apiRequest('POST', `/api/admin/hospitals/${hospitalId}/photo-upload-url`, {
+        contentType: file.type
+      });
       const { uploadURL } = await urlResponse.json();
       
       const uploadResponse = await fetch(uploadURL, {

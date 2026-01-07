@@ -234,8 +234,10 @@ export default function PetsPage() {
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async ({ petId, file }: { petId: string; file: File }) => {
-      // Get upload URL (signed URL for PUT)
-      const urlResponse = await apiRequest('POST', `/api/pets/${petId}/photo-upload-url`, {});
+      // Get upload URL (signed URL for PUT) with content type for proper CORS handling
+      const urlResponse = await apiRequest('POST', `/api/pets/${petId}/photo-upload-url`, {
+        contentType: file.type
+      });
       const { uploadURL } = await urlResponse.json();
       
       // Upload file directly to object storage via PUT

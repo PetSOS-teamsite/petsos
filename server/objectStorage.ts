@@ -18,7 +18,7 @@ export interface StorageProvider {
   readonly bucketName: string;
   getStorageClient(): Storage;
   getBucket(): Bucket;
-  signUploadUrl(objectName: string, ttlSec: number): Promise<string>;
+  signUploadUrl(objectName: string, ttlSec: number, contentType?: string): Promise<string>;
   getPublicUrl(objectName: string): string;
   getUploadsPrefix(): string;
 }
@@ -79,13 +79,16 @@ class ReplitStorageProvider implements StorageProvider {
     return this.storage.bucket(this.bucketName);
   }
 
-  async signUploadUrl(objectName: string, ttlSec: number): Promise<string> {
-    const request = {
+  async signUploadUrl(objectName: string, ttlSec: number, contentType?: string): Promise<string> {
+    const request: Record<string, any> = {
       bucket_name: this.bucketName,
       object_name: objectName,
       method: "PUT",
       expires_at: new Date(Date.now() + ttlSec * 1000).toISOString(),
     };
+    if (contentType) {
+      request.content_type = contentType;
+    }
     const response = await fetch(
       `${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`,
       {
@@ -156,13 +159,13 @@ class GCSStorageProvider implements StorageProvider {
     return this.storage.bucket(this.bucketName);
   }
 
-  async signUploadUrl(objectName: string, ttlSec: number): Promise<string> {
+  async signUploadUrl(objectName: string, ttlSec: number, contentType?: string): Promise<string> {
     const file = this.getBucket().file(objectName);
     const [url] = await file.getSignedUrl({
       version: "v4",
       action: "write",
       expires: Date.now() + ttlSec * 1000,
-      contentType: "application/octet-stream",
+      contentType: contentType || "application/octet-stream",
     });
     return url;
   }
@@ -188,7 +191,7 @@ class UnavailableStorageProvider implements StorageProvider {
     throw new Error("Storage is not available");
   }
 
-  async signUploadUrl(_objectName: string, _ttlSec: number): Promise<string> {
+  async signUploadUrl(_objectName: string, _ttlSec: number, _contentType?: string): Promise<string> {
     throw new Error("Storage is not available");
   }
 
@@ -354,7 +357,7 @@ export class ObjectStorageService {
     }
   }
 
-  async getObjectEntityUploadURL(): Promise<string> {
+  async getObjectEntityUploadURL(contentType?: string): Promise<string> {
     if (this.provider.type === "unavailable") {
       throw new Error("Storage provider not available");
     }
@@ -363,7 +366,7 @@ export class ObjectStorageService {
     const uploadsPrefix = this.provider.getUploadsPrefix();
     const objectName = `${uploadsPrefix}/${objectId}`;
 
-    return this.provider.signUploadUrl(objectName, 900);
+    return this.provider.signUploadUrl(objectName, 900, contentType);
   }
 
   async getObjectEntityFile(objectPath: string): Promise<File> {

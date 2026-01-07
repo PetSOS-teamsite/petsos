@@ -299,7 +299,8 @@ export default function HospitalOwnerEditVerifiedPage() {
       const code = verifyForm.getValues("verificationCode");
       
       const urlResponse = await apiRequest('POST', `/api/hospitals/${hospital.id}/photo-upload-url`, { 
-        verificationCode: code 
+        verificationCode: code,
+        contentType: file.type
       });
       const { uploadURL } = await urlResponse.json();
       

@@ -1373,8 +1373,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
       
+      const { contentType } = req.body || {};
       const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL(contentType);
       res.json({ uploadURL });
     } catch (error: any) {
       console.error("Error getting pet photo upload URL:", error);
@@ -4401,8 +4402,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get hospital photo upload URL (for verified hospital owners)
   app.post("/api/hospitals/:id/photo-upload-url", async (req: any, res: any) => {
     try {
-      const { verificationCode } = z.object({
+      const { verificationCode, contentType } = z.object({
         verificationCode: z.string().length(6, "Code must be 6 digits"),
+        contentType: z.string().optional(),
       }).parse(req.body);
 
       const hospital = await storage.getHospital(req.params.id);
@@ -4421,7 +4423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL(contentType);
       res.json({ uploadURL });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -4568,8 +4570,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Hospital not found" });
       }
 
+      const { contentType } = req.body || {};
       const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL(contentType);
       res.json({ uploadURL });
     } catch (error: any) {
       console.error("Error getting hospital photo upload URL:", error);
