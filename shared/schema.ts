@@ -318,6 +318,66 @@ export const hospitals = pgTable("hospitals", {
   ownerVerificationCodeExpiresAt: timestamp("owner_verification_code_expires_at"), // When the code expires
   verified: boolean("verified").notNull().default(false),
   
+  // ========== DEEP DATA FIELDS FOR GEO & SEARCH ==========
+  
+  // 1. Blood Bank Details
+  bloodBankCanine: boolean("blood_bank_canine"), // On-site canine blood stock
+  bloodBankFeline: boolean("blood_bank_feline"), // On-site feline blood stock
+  bloodTypesAvailable: text("blood_types_available").array(), // e.g., ["DEA 1.1+", "DEA 1.1-", "Type A", "Type B"]
+  
+  // 2. Emergency Fee Structure
+  consultFeeDay: integer("consult_fee_day"), // Daytime consultation fee ($)
+  consultFeeEvening: integer("consult_fee_evening"), // Evening consultation fee ($)
+  consultFeeMidnight: integer("consult_fee_midnight"), // Midnight/late night fee ($)
+  eveningSurchargeStart: text("evening_surcharge_start"), // e.g., "18:00"
+  midnightSurchargeStart: text("midnight_surcharge_start"), // e.g., "00:00"
+  holidaySurchargePercent: integer("holiday_surcharge_percent"), // e.g., 50 for 50%
+  
+  // 3. ICU/Oxygen Capacity
+  oxygenCageCount: integer("oxygen_cage_count"), // Number of oxygen cages
+  icuBedCount: integer("icu_bed_count"), // Number of ICU beds
+  icuNurseCount: integer("icu_nurse_count"), // ICU-specific nurse count
+  overnightVetNurseRatio: text("overnight_vet_nurse_ratio"), // e.g., "1:3"
+  
+  // 4. Exotic Species Support
+  exoticVet247: boolean("exotic_vet_247"), // Specialized exotic vet on-site 24/7
+  exoticSpecies247: text("exotic_species_247").array(), // Species seen 24/7: ["rabbit", "bird", "reptile", "small_mammal"]
+  
+  // 5. Advanced Imaging Details
+  imagingTech247: boolean("imaging_tech_247"), // 24/7 imaging technician available
+  ctScanOnSite: boolean("ct_scan_on_site"), // On-site CT (vs. mobile/referral)
+  mriOnSite: boolean("mri_on_site"), // On-site MRI (vs. referral)
+  
+  // 6. Toxin/Antidote Readiness
+  antivenomStock: boolean("antivenom_stock"), // Snake antivenom available
+  ratPoisonAntidote: boolean("rat_poison_antidote"), // Vitamin K / rat poison antidote
+  gastricLavageKit: boolean("gastric_lavage_kit"), // Stomach pump equipment
+  activatedCharcoal: boolean("activated_charcoal"), // Activated charcoal for poisoning
+  
+  // 7. Surgical Readiness Details
+  surgeon247: text("surgeon_247"), // "on_site" | "on_call" | "referral_only"
+  surgeonCalloutTime: text("surgeon_callout_time"), // e.g., "30 mins"
+  
+  // 8. In-Patient Quality
+  cctvMonitoring: boolean("cctv_monitoring"), // Remote CCTV monitoring for owners
+  visitationHours: text("visitation_hours"), // e.g., "10:00-20:00" or "24h"
+  
+  // 9. Panic Logistics
+  emergencyEntranceEn: text("emergency_entrance_en"), // e.g., "Side door on Smith St"
+  emergencyEntranceZh: text("emergency_entrance_zh"),
+  parkingDetailsEn: text("parking_details_en"), // e.g., "Free 30-min parking at ABC Lot"
+  parkingDetailsZh: text("parking_details_zh"),
+  taxiDropoffEn: text("taxi_dropoff_en"), // e.g., "Ask for Happy Valley Road entrance"
+  taxiDropoffZh: text("taxi_dropoff_zh"),
+  
+  // 10. Typhoon/Holiday Policies
+  openT8: boolean("open_t8"), // Open during Typhoon Signal 8
+  openT10: boolean("open_t10"), // Open during Typhoon Signal 10
+  openBlackRainstorm: boolean("open_black_rainstorm"), // Open during Black Rainstorm
+  lunarNewYearOpen: boolean("lunar_new_year_open"), // Open during Lunar New Year
+  lunarNewYearSurcharge: integer("lunar_new_year_surcharge"), // Surcharge % during CNY
+  christmasOpen: boolean("christmas_open"), // Open during Christmas
+  
   // Self-service portal fields
   accessCode: varchar("access_code", { length: 8 }).unique(), // 8-character unique code for hospital self-service
   lastConfirmedAt: timestamp("last_confirmed_at"), // When hospital last confirmed their info is correct
