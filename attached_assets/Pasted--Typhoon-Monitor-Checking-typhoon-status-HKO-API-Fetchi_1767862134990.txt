@@ -1,0 +1,37 @@
+[Typhoon Monitor] Checking typhoon status...
+[HKO API] Fetching typhoon warning data...
+[HKO API] Response received: {"WCOLD":{"name":"Cold Weather Warning","code":"WCOLD","actionCode":"REISSUE","issueTime":"2026-01-05T16:20:00+08:00","updateTime":"2026-01-08T16:20:00+08:00"},"WFIRE":{"name":"Fire Danger Warning","code":"WFIRER","type":"Red","actionCode":"ISSUE","issueTime":"2026-01-05T06:00:00+08:00","updateTime":"2026-01-05T06:00:00+08:00"}}
+[HKO API] No WTCSGNL field - no typhoon signal active
+[Typhoon Monitor] No typhoon signal active, no alert in DB
+[Typhoon Monitor] Checking typhoon status...
+[HKO API] Fetching typhoon warning data...
+[HKO API] Response received: {"WCOLD":{"name":"Cold Weather Warning","code":"WCOLD","actionCode":"REISSUE","issueTime":"2026-01-05T16:20:00+08:00","updateTime":"2026-01-08T16:20:00+08:00"},"WFIRE":{"name":"Fire Danger Warning","code":"WFIRER","type":"Red","actionCode":"ISSUE","issueTime":"2026-01-05T06:00:00+08:00","updateTime":"2026-01-05T06:00:00+08:00"}}
+[HKO API] No WTCSGNL field - no typhoon signal active
+[Typhoon Monitor] No typhoon signal active, no alert in DB
+[Typhoon Monitor] Checking typhoon status...
+[HKO API] Fetching typhoon warning data...
+[HKO API] Response received: {"WFROST":{"name":"Frost Warning","code":"WFROST","actionCode":"ISSUE","issueTime":"2026-01-08T16:30:00+08:00","updateTime":"2026-01-08T16:30:00+08:00"},"WCOLD":{"name":"Cold Weather Warning","code":"WCOLD","actionCode":"REISSUE","issueTime":"2026-01-05T16:20:00+08:00","updateTime":"2026-01-08T16:20:00+08:00"},"WFIRE":{"name":"Fire Danger Warning","code":"WFIRER","type":"Red","actionCode":"ISSUE","issueTime":"2026-01-05T06:00:00+08:00","updateTime":"2026-01-05T06:00:00+08:00"}}
+[HKO API] No WTCSGNL field - no typhoon signal active
+[Typhoon Monitor] No typhoon signal active, no alert in DB
+[GET]
+petsos.site/robots.txt clientIP="142.44.220.137" requestID="9db68475-8b1b-49a2" responseTimeMS=8 responseBytes=706 userAgent="Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)"
+[GET]
+petsos.site/district/causeway-bay clientIP="51.195.215.69" requestID="bc66db33-faa3-4940" responseTimeMS=4 responseBytes=2442 userAgent="Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)"
+[Typhoon Monitor] Checking typhoon status...
+[HKO API] Fetching typhoon warning data...
+[HKO API] Response received: {"WFROST":{"name":"Frost Warning","code":"WFROST","actionCode":"ISSUE","issueTime":"2026-01-08T16:30:00+08:00","updateTime":"2026-01-08T16:30:00+08:00"},"WCOLD":{"name":"Cold Weather Warning","code":"WCOLD","actionCode":"REISSUE","issueTime":"2026-01-05T16:20:00+08:00","updateTime":"2026-01-08T16:20:00+08:00"},"WFIRE":{"name":"Fire Danger Warning","code":"WFIRER","type":"Red","actionCode":"ISSUE","issueTime":"2026-01-05T06:00:00+08:00","updateTime":"2026-01-05T06:00:00+08:00"}}
+[HKO API] No WTCSGNL field - no typhoon signal active
+[Typhoon Monitor] No typhoon signal active, no alert in DB
+[Typhoon Monitor] Checking typhoon status...
+[HKO API] Fetching typhoon warning data...
+[HKO API] Response received: {"WFROST":{"name":"Frost Warning","code":"WFROST","actionCode":"ISSUE","issueTime":"2026-01-08T16:30:00+08:00","updateTime":"2026-01-08T16:30:00+08:00"},"WCOLD":{"name":"Cold Weather Warning","code":"WCOLD","actionCode":"REISSUE","issueTime":"2026-01-05T16:20:00+08:00","updateTime":"2026-01-08T16:20:00+08:00"},"WFIRE":{"name":"Fire Danger Warning","code":"WFIRER","type":"Red","actionCode":"ISSUE","issueTime":"2026-01-05T06:00:00+08:00","updateTime":"2026-01-05T06:00:00+08:00"}}
+[HKO API] No WTCSGNL field - no typhoon signal active
+[Typhoon Monitor] No typhoon signal active, no alert in DB
+[GET]
+petsos.site/wp-admin/setup-config.php clientIP="162.159.113.105" requestID="6a376ff3-9d40-43ad" responseTimeMS=6 responseBytes=2335 userAgent="https://petsos.site/wp-admin/setup-config.php"
+[GET]
+petsos.site/wordpress/wp-admin/setup-config.php clientIP="104.23.221.132" requestID="b355c394-31eb-4e21" responseTimeMS=6 responseBytes=2335 userAgent="http://petsos.site/wordpress/wp-admin/setup-config.php"
+[GET]
+petsos.site/wordpress/wp-admin/setup-config.php clientIP="104.23.223.50" requestID="66244cde-9e23-44d6" responseTimeMS=4 responseBytes=2335 userAgent="https://petsos.site/wordpress/wp-admin/setup-config.php"
+[GET]
+petsos.site/wp-admin/setup-config.php clientIP="104.23.217.9" requestID="d6183ab1-19fa-49a3" responseTimeMS=5 responseBytes=2335 userAgent="http://petsos.site/wp-admin/setup-config.php"
