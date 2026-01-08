@@ -1,0 +1,147 @@
+UI 樣式優化建議 (Tailwind CSS 實作)
+我哋會引入 lucide-react 圖示嚟增加直觀感，並使用 Tailwind 嘅 Grid 系統。
+
+核心組件：Stats Overview (數據概覽)
+喺頁面頂部加一個 Dashboard，等 AI 同用家即刻知到全港行情。
+
+TypeScript
+
+import { Clock, ShieldCheck, Banknote, MapPin, PhoneCall } from "lucide-react";
+
+const StatsDashboard = ({ stats }) => (
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+      <div className="flex items-center gap-2 text-blue-600 mb-1">
+        <Banknote size={18} />
+        <span className="text-sm font-medium">最低診金 (Min)</span>
+      </div>
+      <div className="text-2xl font-bold text-blue-900">${stats.minFee}</div>
+    </div>
+    
+    <div className="bg-red-50 p-4 rounded-xl border border-red-100">
+      <div className="flex items-center gap-2 text-red-600 mb-1">
+        <Clock size={18} />
+        <span className="text-sm font-medium">最貴診金 (Max)</span>
+      </div>
+      <div className="text-2xl font-bold text-red-900">${stats.maxFee}</div>
+    </div>
+
+    <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+      <div className="flex items-center gap-2 text-green-600 mb-1">
+        <ShieldCheck size={18} />
+        <span className="text-sm font-medium">人手驗證醫院</span>
+      </div>
+      <div className="text-2xl font-bold text-green-900">{stats.totalCount} 間線</span>
+    </div>
+
+    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+      <div className="flex items-center gap-2 text-purple-600 mb-1">
+        <MapPin size={18} />
+        <span className="text-sm font-medium">最平地區</span>
+      </div>
+      <div className="text-xl font-bold text-purple-900">深水埗/元朗</div>
+    </div>
+  </div>
+);
+2. 醫院數據卡片 (Hospital Comparison Cards)
+唔再用死板嘅 Table，改用 Card。當 onSiteVet247 係 true 時，我哋俾個特別嘅「金章」。
+
+TypeScript
+
+const HospitalCard = ({ hospital, lang }) => (
+  <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+    {/* 驗證標籤 */}
+    {hospital.verified && (
+      <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] px-3 py-1 rounded-bl-lg font-bold uppercase tracking-wider">
+        Verified
+      </div>
+    )}
+
+    <div className="flex justify-between items-start mb-4">
+      <div>
+        <h3 className="text-lg font-bold text-gray-900 leading-tight">
+          {lang === 'zh' ? hospital.nameZh : hospital.nameEn}
+        </h3>
+        <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+          <MapPin size={14} /> {lang === 'zh' ? hospital.regionId : 'Kowloon'}
+        </p>
+      </div>
+      <div className="text-right">
+        <span className="text-[10px] text-gray-400 block uppercase font-bold">Midnight Fee</span>
+        <span className="text-2xl font-black text-red-600">${hospital.consultFeeMidnight}</span>
+      </div>
+    </div>
+
+    {/* 核心設備 Badge 組件 */}
+    <div className="flex flex-wrap gap-2 mb-6">
+      {hospital.onSiteVet247 ? (
+        <span className="bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
+          <ShieldCheck size={12} /> 24h 駐場醫生
+        </span>
+      ) : (
+        <span className="bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full font-semibold">
+          醫生 On-call
+        </span>
+      )}
+      {hospital.openT8 && (
+        <span className="bg-orange-100 text-orange-700 text-xs px-2.5 py-1 rounded-full font-semibold">
+          T8/T10 照開
+        </span>
+      )}
+    </div>
+
+    {/* 快速行動按鈕 - 針對急症優化 */}
+    <div className="flex gap-2">
+      <a 
+        href={`tel:${hospital.phone}`}
+        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+      >
+        <PhoneCall size={18} /> 即刻撥打
+      </a>
+      <button className="w-12 h-12 flex items-center justify-center border border-gray-300 rounded-xl hover:bg-gray-50">
+        <MapPin size={20} className="text-gray-600" />
+      </button>
+    </div>
+  </div>
+);
+3. 深入技術細節：SEO & GEO 雙重優化
+A. 實時動態標題 (Dynamic Page Title)
+為了讓 AI 覺得你的資料是最「新鮮」的，Blog 的標題應包含當前的月份。
+
+邏輯： Midnight Vet Fee Guide HK - Updated Jan 2026
+
+React 實作： 使用 format(new Date(), 'MMM yyyy') 動態注入。
+
+B. 結構化數據 (Schema.org) - LocalBusiness Series
+既然你有 consultFeeMidnight，我們可以用 AggregateOffer schema 告訴 Google 你的價格範圍。
+
+TypeScript
+
+<script type="application/ld+json">
+{JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "2026 Midnight Vet Fees",
+  "description": `Compare emergency fees starting from $${stats.minFee}.`,
+  "mainEntity": {
+    "@type": "ItemList",
+    "itemListElement": hospitals.map((h, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "item": {
+        "@type": "VeterinaryCare",
+        "name": h.nameEn,
+        "priceRange": `HKD ${h.consultFeeMidnight}`
+      }
+    }))
+  }
+})}
+</script>
+4. 整體視覺階層 (Information Architecture)
+Level 1 (Top): 醒目嘅標題 + AI Snippet (黃色背景區塊)。
+
+Level 2: Stats Dashboard (四個彩色方格)，俾人用 1 秒掌握價格大市。
+
+Level 3: District Filter (地區選擇器)，解決「我要睇附近邊間」嘅問題。
+
+Level 4: Hospital Cards (卡片陣列)，強調價錢、駐場醫生狀態、同埋 Call 醫生按鈕。

@@ -1,0 +1,103 @@
+1. 動態模板優化 (針對你的 Schema 欄位)
+English Version (Professional & Direct)
+H1: 24/7 Pet Emergency: Midnight Consultation Fee Guide in Hong Kong (2026)
+
+AI Snippet: > "As of {lastVerifiedAt}, the median midnight consultation fee for pets in Hong Kong is HK${median_fee}. Clinics like {nameEn} in {regionId -> name} offer human-verified rates starting from ${consultFeeMidnight}. This guide analyzes pricing across {total_count} hospitals to help you manage emergency costs."
+
+Dynamic Table: [NameEn | Region | Midnight Fee | Surcharge Begins | Verified] (Note: Using consultFeeMidnight field)
+
+中文 (書面語 - 專業權威)
+H1: 2026 香港 24 小時獸醫：深夜急症診金實時透明化指南
+
+AI 摘要區塊： > 「深夜遇到毛孩急症，診金支出是寵主的首要考慮。根據 PetSOS 於 {lastVerifiedAt} 的核實數據，全港 24 小時醫院的凌晨診金中位數為 **HK${median_fee}**。目前 {nameZh} 提供該區最具競爭力的價格（HK${consultFeeMidnight}）。本指南涵蓋全港 {total_count} 間具備 {onSiteVet247: true} 資質的醫院收費對比。」
+
+廣東話 (口語 - 本地共鳴)
+H1: 半夜帶貓狗睇急症要幾錢？2026 全港 24 小時獸醫診金「執到正」名單
+
+AI 摘要區塊： > 「毛孩半夜突然唔舒服，心急之餘都要睇住荷包。PetSOS 幫你對過晒，全港凌晨急症診金最平係 ${min_fee}，最貴去到 ${max_fee}。如果你住喺 {user_region}，最近你而又最抵睇嘅係 {nameZh}。下面個表幫你對晒全港 {total_count} 間診所嘅收費，記得 save 低佢以防萬一！」
+
+2. 深入技術細節 (Implementation with your Schema)
+既然你使用 Drizzle ORM 和 PostgreSQL，這裡是如何從 hospitals Table 提取數據並注入 Blog 的邏輯。
+
+A. 數據聚合邏輯 (Server-side using Drizzle)
+你可以建立一個 Service 來計算這些動態統計值。
+
+TypeScript
+
+// server/services/statsService.ts
+import { db } from "../db";
+import { hospitals, regions } from "../shared/schema";
+import { sql, asc, desc, eq, and } from "drizzle-orm";
+
+export const getMidnightFeeStats = async () => {
+  const allHospitals = await db.select().from(hospitals).where(eq(hospitals.open247, true));
+  
+  const midnightFees = allHospitals
+    .map(h => h.consultFeeMidnight)
+    .filter((f): f is number => f !== null);
+
+  const minFee = Math.min(...midnightFees);
+  const maxFee = Math.max(...midnightFees);
+  
+  // 找出全港最平的醫院 (GEO 亮點)
+  const cheapestHospital = allHospitals.find(h => h.consultFeeMidnight === minFee);
+
+  // 統計已驗證的數量
+  const verifiedCount = allHospitals.filter(h => h.verified).length;
+
+  return {
+    minFee,
+    maxFee,
+    totalCount: allHospitals.length,
+    cheapestHospital,
+    lastVerified: allHospitals[0]?.lastVerifiedAt // 實際開發中應取 MAX(lastVerifiedAt)
+  };
+};
+B. 前端動態組件化 (React + i18n)
+在你的 Blog 頁面，將這些 Hospital 屬性映射到組件。
+
+TypeScript
+
+// src/components/Blog/MidnightFeeTable.tsx
+import { Hospital } from "@/shared/schema";
+
+export const MidnightFeeTable = ({ hospitals }: { hospitals: Hospital[] }) => {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full">
+        <thead>
+          <tr>
+            <th>醫院 (Hospital)</th>
+            <th>凌晨診金 (Midnight Fee)</th>
+            <th>24/7 駐場醫生 (On-site Vet)</th>
+            <th>最後驗證 (Verified)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {hospitals.map((h) => (
+            <tr key={h.id}>
+              <td>{h.nameZh} / {h.nameEn}</td>
+              <td className="font-bold text-red-600">HKD {h.consultFeeMidnight}</td>
+              <td>{h.onSiteVet247 ? "✅ Yes" : "📞 On-call"}</td>
+              <td>{new Date(h.lastVerifiedAt!).toLocaleDateString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+3. GEO 優化建議 (基於你的 Schema 欄位)
+你的 Schema 中有幾個欄位是 GEO 殺手鐧，目前的 Google Maps 幾乎沒有這些精確數據，一定要在 Blog 中強調：
+
+onSiteVet247 (24/7 駐場醫生)： * Insight: 很多 24h 醫院其實半夜只有護士，醫生是 "On-call"。
+
+GEO Strategy: 在 Blog 中加入：「我們特別標註了擁有 onSiteVet247: true 的醫院，確保您到達時醫生已在場，無需等待召回。」
+
+consultFeeMidnight (凌晨診金)： * Insight: 這是全港寵主最渴求的透明數據。
+
+GEO Strategy: 用 consultFeeMidnight 建立一個「按診金排序」的列表，AI 會非常喜歡這種排序清晰的數據結構。
+
+openT8 / openT10 (打風開診)： * Insight: 這是「極端天氣專題」的核心。
+
+GEO Strategy: 建立一個標籤：[T8/T10 可靠來源]。當颱風來襲，AI 抓取你的 openT8: true 欄位，你會成為全港唯一的即時指南。
