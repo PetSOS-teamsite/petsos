@@ -6242,6 +6242,132 @@ PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
     }
   });
 
+  // ===== BLOG API ENDPOINTS =====
+  // Public API for blog statistics - midnight emergency fee guide
+  app.get("/api/blog/midnight-fees", async (req, res) => {
+    try {
+      const allHospitalsRaw = await storage.getAllHospitals();
+      // Filter to only 24-hour hospitals
+      const allHospitals = allHospitalsRaw.filter(h => h.open247);
+      
+      // Filter hospitals with valid midnight fees and sort by fee
+      const hospitalsWithFees = allHospitals
+        .filter(h => h.consultFeeMidnight !== null && h.consultFeeMidnight !== undefined)
+        .sort((a, b) => (a.consultFeeMidnight || 0) - (b.consultFeeMidnight || 0));
+      
+      // Get all regions for lookup (HK only)
+      const regions = await storage.getRegionsByCountry('HK');
+      const regionMap = new Map(regions.map(r => [r.id, r]));
+      
+      // Calculate statistics
+      const fees = hospitalsWithFees.map(h => h.consultFeeMidnight!);
+      const minFee = fees.length > 0 ? Math.min(...fees) : null;
+      const maxFee = fees.length > 0 ? Math.max(...fees) : null;
+      
+      // Calculate correct median (average of two middle values for even count)
+      let medianFee: number | null = null;
+      if (fees.length > 0) {
+        const mid = Math.floor(fees.length / 2);
+        if (fees.length % 2 === 0) {
+          medianFee = Math.round((fees[mid - 1] + fees[mid]) / 2);
+        } else {
+          medianFee = fees[mid];
+        }
+      }
+      
+      // Find cheapest hospital
+      const cheapestHospital = hospitalsWithFees[0] || null;
+      const cheapestRegion = cheapestHospital ? regionMap.get(cheapestHospital.regionId) : null;
+      
+      // Calculate verified count and get latest verification date
+      const verifiedHospitals = hospitalsWithFees.filter(h => h.verified);
+      const verificationDates = hospitalsWithFees
+        .filter(h => h.lastVerifiedAt)
+        .map(h => new Date(h.lastVerifiedAt!).getTime());
+      const lastVerified = verificationDates.length > 0 
+        ? new Date(Math.max(...verificationDates)).toISOString()
+        : new Date().toISOString();
+      
+      // Group hospitals by region for district filtering
+      const hospitalsByRegion: Record<string, typeof hospitalsWithFees> = {};
+      for (const hospital of hospitalsWithFees) {
+        const region = regionMap.get(hospital.regionId);
+        const regionName = region?.nameEn || 'Other';
+        if (!hospitalsByRegion[regionName]) {
+          hospitalsByRegion[regionName] = [];
+        }
+        hospitalsByRegion[regionName].push(hospital);
+      }
+      
+      // Find cheapest region (by average fee)
+      let cheapestDistrictName = null;
+      let cheapestDistrictAvg = Infinity;
+      for (const [regionName, hospitals] of Object.entries(hospitalsByRegion)) {
+        const avgFee = hospitals.reduce((sum, h) => sum + (h.consultFeeMidnight || 0), 0) / hospitals.length;
+        if (avgFee < cheapestDistrictAvg) {
+          cheapestDistrictAvg = avgFee;
+          cheapestDistrictName = regionName;
+        }
+      }
+      
+      const stats = {
+        minFee,
+        maxFee,
+        medianFee,
+        totalCount: hospitalsWithFees.length,
+        verifiedCount: verifiedHospitals.length,
+        lastVerified,
+        cheapestHospital: cheapestHospital ? {
+          nameEn: cheapestHospital.nameEn,
+          nameZh: cheapestHospital.nameZh,
+          fee: cheapestHospital.consultFeeMidnight,
+          region: cheapestRegion?.nameEn || null,
+          regionZh: cheapestRegion?.nameZh || null
+        } : null,
+        cheapestDistrict: cheapestDistrictName,
+        depositRange: "$5,000 - $10,000"
+      };
+      
+      // Enrich hospitals with region data
+      const enrichedHospitals = hospitalsWithFees.map(h => {
+        const region = regionMap.get(h.regionId);
+        return {
+          id: h.id,
+          slug: h.slug,
+          nameEn: h.nameEn,
+          nameZh: h.nameZh,
+          regionId: h.regionId,
+          regionNameEn: region?.nameEn || null,
+          regionNameZh: region?.nameZh || null,
+          consultFeeMidnight: h.consultFeeMidnight,
+          consultFeeEvening: h.consultFeeEvening,
+          consultFeeDay: h.consultFeeDay,
+          midnightSurchargeStart: h.midnightSurchargeStart,
+          eveningSurchargeStart: h.eveningSurchargeStart,
+          onSiteVet247: h.onSiteVet247,
+          open247: h.open247,
+          openT8: h.openT8,
+          openT10: h.openT10,
+          verified: h.verified,
+          lastVerifiedAt: h.lastVerifiedAt,
+          phone: h.phone,
+          whatsapp: h.whatsapp,
+          depositBand: h.depositBand,
+          admissionDeposit: h.admissionDeposit
+        };
+      });
+      
+      res.json({ 
+        stats, 
+        hospitals: enrichedHospitals,
+        regions: regions.map(r => ({ id: r.id, nameEn: r.nameEn, nameZh: r.nameZh }))
+      });
+    } catch (error: any) {
+      console.error("Error fetching midnight fee blog data:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch blog data" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
