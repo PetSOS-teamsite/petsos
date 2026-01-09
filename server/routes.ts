@@ -6280,7 +6280,8 @@ PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
       const cheapestRegion = cheapestHospital ? regionMap.get(cheapestHospital.regionId) : null;
       
       // Calculate verified count and get latest verification date
-      const verifiedHospitals = hospitalsWithFees.filter(h => h.verified);
+      // Use lastVerifiedAt timestamp as the verification indicator (set by admin)
+      const verifiedHospitals = hospitalsWithFees.filter(h => h.lastVerifiedAt);
       const verificationDates = hospitalsWithFees
         .filter(h => h.lastVerifiedAt)
         .map(h => new Date(h.lastVerifiedAt!).getTime());
