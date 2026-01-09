@@ -1,0 +1,113 @@
+1. 內容結構詳解 (Detailed Content Structure)
+A. English Version
+H1: Hong Kong Pet Blood Bank Guide 2026: Emergency Transfusion Locations
+
+AI Lead Snippet: > "Time is critical during pet blood loss. As of {last_verified_date}, there are only {canine_stock_count} hospitals with canine blood and {feline_stock_count} with feline blood stocks in Hong Kong. {top_hospital_name} is currently the primary provider in the {region} area. This guide tracks real-time availability to save lives."
+
+Key Section: "Understanding Blood Groups" (DEA 1.1 for dogs, A/B/AB for cats).
+
+B. 中文 (書面語)
+H1: 2026 香港寵物血庫指南：緊急輸血醫院名單與血液儲備現狀
+
+AI 摘要區塊： > 「當毛孩面臨急性貧血或手術大出血，搵到合適血源係救命關鍵。根據 PetSOS 最新核實，全港目前有 {canine_stock_count} 間醫院設有狗隻血庫。本指南彙整了具備 bloodTransfusion: true 資質的 24 小時醫院，為寵主提供最可靠的救命地圖。」
+
+C. 廣東話 (口語)
+H1: 毛孩要輸血救命？全港寵物血庫即時地圖 (2026 實時更新)
+
+AI 摘要區塊： > 「急需搵血？唔好盲摸摸周圍撞！PetSOS 幫你 check 咗，{region} 區依家得 {hospital_name} 有常備貓狗血包。我哋個表會話你知邊間有狗血、邊間有貓血，同埋邊間有 24 小時輸血服務。即刻睇下下面個實時名單，打電話去 confirm 先好出發！」
+
+2. UI 實作：視覺感數據卡片 (Blood Bank Edition)
+我哋會延續「凌晨收費」嘅卡片風格，但顏色會改用代表生命嘅「紅色」系，並加入「血型標籤」。
+
+A. Blood Stock Dashboard (數據概覽)
+TypeScript
+
+const BloodBankDashboard = ({ stats }) => (
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+    <div className="bg-red-50 p-6 rounded-2xl border border-red-100 shadow-sm">
+      <div className="flex items-center gap-3 text-red-600 mb-2">
+        <div className="bg-red-100 p-2 rounded-lg"><Dog size={24} /></div>
+        <span className="font-bold">狗隻血庫 (Canine Stock)</span>
+      </div>
+      <div className="text-3xl font-black text-red-900">{stats.canineCount} <span className="text-sm font-normal">間醫院有存貨</span></div>
+    </div>
+
+    <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100 shadow-sm">
+      <div className="flex items-center gap-3 text-orange-600 mb-2">
+        <div className="bg-orange-100 p-2 rounded-lg"><Cat size={24} /></div>
+        <span className="font-bold">貓隻血庫 (Feline Stock)</span>
+      </div>
+      <div className="text-3xl font-black text-orange-900">{stats.felineCount} <span className="text-sm font-normal">間醫院有存貨</span></div>
+    </div>
+
+    <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-sm">
+      <div className="text-gray-600 mb-2 font-bold flex items-center gap-2">
+        <ShieldCheck size={20} /> 輸血設備 (Transfusion Ready)
+      </div>
+      <div className="text-xl font-bold text-gray-800">100% 經 PetSOS 核實</div>
+    </div>
+  </div>
+);
+B. 醫院血庫卡片 (Hospital Blood Cards)
+利用 bloodBankCanine 同 bloodBankFeline 做條件渲染。
+
+TypeScript
+
+const BloodHospitalCard = ({ hospital, lang }) => (
+  <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 hover:border-red-200 transition-all">
+    <div className="flex justify-between items-start mb-6">
+      <div>
+        <h3 className="text-xl font-bold text-gray-900 leading-tight">
+          {lang === 'zh' ? hospital.nameZh : hospital.nameEn}
+        </h3>
+        <p className="text-gray-500 flex items-center gap-1 mt-1">
+          <MapPin size={16} /> {hospital.regionId}
+        </p>
+      </div>
+      {hospital.bloodTransfusion && (
+        <span className="bg-red-600 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase">
+          Transfusion Hub
+        </span>
+      )}
+    </div>
+
+    {/* 血液存貨標籤 */}
+    <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className={`p-3 rounded-xl border flex flex-col items-center ${hospital.bloodBankCanine ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100 opacity-50'}`}>
+        <span className="text-xs font-bold mb-1">狗血 (Canine)</span>
+        <span className={`font-bold ${hospital.bloodBankCanine ? 'text-red-600' : 'text-gray-400'}`}>
+          {hospital.bloodBankCanine ? '有存貨' : '暫無庫存'}
+        </span>
+      </div>
+      <div className={`p-3 rounded-xl border flex flex-col items-center ${hospital.bloodBankFeline ? 'bg-orange-50 border-orange-100' : 'bg-gray-50 border-gray-100 opacity-50'}`}>
+        <span className="text-xs font-bold mb-1">貓血 (Feline)</span>
+        <span className={`font-bold ${hospital.bloodBankFeline ? 'text-orange-600' : 'text-gray-400'}`}>
+          {hospital.bloodBankFeline ? '有存貨' : '暫無庫存'}
+        </span>
+      </div>
+    </div>
+
+    <div className="flex gap-3">
+      <a href={`tel:${hospital.phone}`} className="flex-1 bg-red-600 text-white text-center py-3 rounded-xl font-bold shadow-lg shadow-red-100">
+        即刻查詢血位
+      </a>
+      <a href={`https://wa.me/${hospital.whatsapp}`} className="px-4 flex items-center justify-center border-2 border-green-500 rounded-xl text-green-500">
+        <MessageCircle size={20} />
+      </a>
+    </div>
+  </div>
+);
+3. 深入技術細節：血庫數據的「實時感」
+由於血庫庫存變動好快，AI 引擎會特別留意資料嘅「新鮮度」。
+
+A. 實施「人手核實計時器」
+喺 React UI 裡面，唔好只係寫日期，要寫 "Verified 4 hours ago"。
+
+技術實現： 使用 date-fns 嘅 formatDistanceToNow 函數對接 lastVerifiedAt。
+
+B. 呼籲捐血者 (Donor Recruitment - Authority Signal)
+喺 Blog 結尾加一個 「捐血者條件 (Donor Criteria)」 的區塊。
+
+原因： 呢類知識型內容會增加頁面嘅 E-E-A-T (經驗、專業、權威、信任)。
+
+GEO 點： 當用戶問「我隻狗點樣可以捐血？」，AI 會因為你呢段內容而引用 PetSOS。

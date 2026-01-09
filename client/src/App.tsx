@@ -47,6 +47,7 @@ const HospitalUpdatePage = lazy(() => import("@/pages/hospital-update"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/privacy-policy"));
 const TermsOfServicePage = lazy(() => import("@/pages/terms-of-service"));
 const MidnightFeeBlogPage = lazy(() => import("@/pages/blog-midnight-fees"));
+const BloodBankBlogPage = lazy(() => import("@/pages/blog-blood-bank"));
 
 // Admin pages - lazy loaded (heavy bundle)
 const AdminHospitalsPage = lazy(() => import("@/pages/admin-hospitals"));
@@ -111,6 +112,7 @@ function PublicRouter() {
       <Route path="/privacy" component={PrivacyPolicyPage} />
       <Route path="/terms" component={TermsOfServicePage} />
       <Route path="/blog/midnight-fees" component={MidnightFeeBlogPage} />
+      <Route path="/blog/blood-bank" component={BloodBankBlogPage} />
       
       {/* Home route - show landing page for everyone */}
       <Route path="/" component={LandingPage} />

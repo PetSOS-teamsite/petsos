@@ -6368,6 +6368,87 @@ PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
     }
   });
 
+  // Public API for blog statistics - blood bank guide
+  app.get("/api/blog/blood-bank", async (req, res) => {
+    try {
+      const allHospitalsRaw = await storage.getAllHospitals();
+      
+      // Filter hospitals with blood bank capabilities
+      const hospitalsWithBlood = allHospitalsRaw.filter(h => 
+        h.bloodTransfusion || h.bloodBankCanine || h.bloodBankFeline
+      );
+      
+      // Get all regions for lookup (HK only)
+      const regions = await storage.getRegionsByCountry('HK');
+      const regionMap = new Map(regions.map(r => [r.id, r]));
+      
+      // Calculate statistics
+      const canineCount = hospitalsWithBlood.filter(h => h.bloodBankCanine).length;
+      const felineCount = hospitalsWithBlood.filter(h => h.bloodBankFeline).length;
+      const transfusionCount = hospitalsWithBlood.filter(h => h.bloodTransfusion).length;
+      
+      // Calculate verified count and get latest verification date
+      const verificationDates = hospitalsWithBlood
+        .filter(h => h.lastVerifiedAt)
+        .map(h => new Date(h.lastVerifiedAt!).getTime());
+      const lastVerified = verificationDates.length > 0 
+        ? new Date(Math.max(...verificationDates)).toISOString()
+        : new Date().toISOString();
+      
+      // Find top hospital (has both canine AND feline blood banks)
+      const fullServiceHospitals = hospitalsWithBlood.filter(h => 
+        h.bloodBankCanine && h.bloodBankFeline
+      );
+      const topHospital = fullServiceHospitals[0] || null;
+      const topHospitalRegion = topHospital ? regionMap.get(topHospital.regionId) : null;
+      
+      const stats = {
+        canineCount,
+        felineCount,
+        transfusionCount,
+        totalCount: hospitalsWithBlood.length,
+        lastVerified,
+        topHospital: topHospital ? {
+          nameEn: topHospital.nameEn,
+          nameZh: topHospital.nameZh,
+          region: topHospitalRegion?.nameEn || null,
+          regionZh: topHospitalRegion?.nameZh || null
+        } : null
+      };
+      
+      // Enrich hospitals with region data
+      const enrichedHospitals = hospitalsWithBlood.map(h => {
+        const region = regionMap.get(h.regionId);
+        return {
+          id: h.id,
+          slug: h.slug,
+          nameEn: h.nameEn,
+          nameZh: h.nameZh,
+          regionId: h.regionId,
+          regionNameEn: region?.nameEn || null,
+          regionNameZh: region?.nameZh || null,
+          bloodTransfusion: h.bloodTransfusion,
+          bloodBankCanine: h.bloodBankCanine,
+          bloodBankFeline: h.bloodBankFeline,
+          open247: h.open247,
+          verified: h.verified,
+          lastVerifiedAt: h.lastVerifiedAt,
+          phone: h.phone,
+          whatsapp: h.whatsapp
+        };
+      });
+      
+      res.json({ 
+        stats, 
+        hospitals: enrichedHospitals,
+        regions: regions.map(r => ({ id: r.id, nameEn: r.nameEn, nameZh: r.nameZh }))
+      });
+    } catch (error: any) {
+      console.error("Error fetching blood bank blog data:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch blog data" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
