@@ -387,20 +387,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ? path.resolve(import.meta.dirname, '../client/public')
     : path.resolve(import.meta.dirname, 'public');
     
-  app.get('/sitemap.xml', (req, res) => {
-    // Disable all caching to force Google to fetch fresh copy
-    res.set({
-      'Content-Type': 'application/xml; charset=UTF-8',
-      'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    });
-    res.removeHeader('ETag');
-    res.sendFile('sitemap.xml', { 
-      root: publicDir,
-      etag: false,
-      lastModified: false
-    });
+  // Dynamic sitemap.xml generation from database
+  app.get('/sitemap.xml', async (req, res) => {
+    try {
+      const baseUrl = 'https://petsos.site';
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Fetch active regions
+      const regions = await storage.getRegions();
+      const activeRegions = regions.filter(r => r.active);
+      
+      // Fetch indexable hospitals (available AND (verified OR open247) AND has slug)
+      const allHospitals = await storage.getAllHospitals();
+      const indexableHospitals = allHospitals.filter(h => 
+        h.slug && h.isAvailable && (h.verified || h.open247)
+      );
+      
+      // Static pages with priorities
+      const staticPages = [
+        { path: '/', priority: '1.0', changefreq: 'daily' },
+        { path: '/emergency', priority: '1.0', changefreq: 'weekly' },
+        { path: '/emergency-symptoms', priority: '0.9', changefreq: 'monthly' },
+        { path: '/hospitals', priority: '0.9', changefreq: 'daily' },
+        { path: '/clinics', priority: '0.9', changefreq: 'daily' },
+        { path: '/districts', priority: '0.8', changefreq: 'weekly' },
+        { path: '/resources', priority: '0.7', changefreq: 'weekly' },
+        { path: '/faq', priority: '0.7', changefreq: 'monthly' },
+        { path: '/about', priority: '0.7', changefreq: 'monthly' },
+        { path: '/medical-advisory', priority: '0.6', changefreq: 'monthly' },
+        { path: '/verification-process', priority: '0.6', changefreq: 'monthly' },
+        { path: '/consultants', priority: '0.6', changefreq: 'monthly' },
+        { path: '/typhoon-status', priority: '0.7', changefreq: 'daily' },
+        { path: '/privacy', priority: '0.4', changefreq: 'monthly' },
+        { path: '/terms', priority: '0.4', changefreq: 'monthly' },
+      ];
+      
+      // Blog pages
+      const blogPages = [
+        { path: '/blog/midnight-fees', priority: '0.8', changefreq: 'weekly' },
+        { path: '/blog/blood-bank', priority: '0.8', changefreq: 'weekly' },
+        { path: '/blog/typhoon-guide', priority: '0.8', changefreq: 'weekly' },
+        { path: '/blog/imaging-diagnostics', priority: '0.8', changefreq: 'weekly' },
+        { path: '/blog/exotic-emergency', priority: '0.8', changefreq: 'weekly' },
+      ];
+      
+      // Build XML
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+      
+      // Static pages
+      for (const page of staticPages) {
+        xml += `  <url>\n`;
+        xml += `    <loc>${baseUrl}${page.path}</loc>\n`;
+        xml += `    <changefreq>${page.changefreq}</changefreq>\n`;
+        xml += `    <priority>${page.priority}</priority>\n`;
+        xml += `    <lastmod>${today}</lastmod>\n`;
+        xml += `  </url>\n`;
+      }
+      
+      // Blog pages
+      for (const page of blogPages) {
+        xml += `  <url>\n`;
+        xml += `    <loc>${baseUrl}${page.path}</loc>\n`;
+        xml += `    <changefreq>${page.changefreq}</changefreq>\n`;
+        xml += `    <priority>${page.priority}</priority>\n`;
+        xml += `    <lastmod>${today}</lastmod>\n`;
+        xml += `  </url>\n`;
+      }
+      
+      // Active region pages
+      for (const region of activeRegions) {
+        xml += `  <url>\n`;
+        xml += `    <loc>${baseUrl}/district/${region.code}</loc>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.8</priority>\n`;
+        xml += `    <lastmod>${today}</lastmod>\n`;
+        xml += `  </url>\n`;
+      }
+      
+      // Hospital detail pages with lastmod from updatedAt/lastVerifiedAt
+      for (const hospital of indexableHospitals) {
+        const lastmod = hospital.lastVerifiedAt 
+          ? new Date(hospital.lastVerifiedAt).toISOString().split('T')[0]
+          : hospital.updatedAt 
+            ? new Date(hospital.updatedAt).toISOString().split('T')[0]
+            : today;
+        xml += `  <url>\n`;
+        xml += `    <loc>${baseUrl}/hospitals/${hospital.slug}</loc>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.8</priority>\n`;
+        xml += `    <lastmod>${lastmod}</lastmod>\n`;
+        xml += `  </url>\n`;
+      }
+      
+      xml += '</urlset>';
+      
+      // Set headers and send
+      res.set({
+        'Content-Type': 'application/xml; charset=UTF-8',
+        'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+      });
+      res.send(xml);
+    } catch (error) {
+      console.error('[Sitemap] Error generating sitemap:', error);
+      // Fallback to static sitemap on error
+      res.set({
+        'Content-Type': 'application/xml; charset=UTF-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+      });
+      res.sendFile('sitemap.xml', { 
+        root: publicDir,
+        etag: false,
+        lastModified: false
+      });
+    }
   });
   
   app.get('/sitemap-2025.xml', (req, res) => {

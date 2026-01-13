@@ -56,10 +56,15 @@ export function SEO({
 
     // Get current page URL - strip query params for canonical (especially ?lang=)
     const getCleanCanonical = () => {
-      if (canonical) return canonical;
-      // Strip query params from current URL for canonical
-      const url = new URL(window.location.href);
-      return `${url.origin}${url.pathname}`;
+      // Always strip query params, even from explicit canonical prop
+      const baseUrl = canonical || window.location.href;
+      try {
+        const url = new URL(baseUrl);
+        return `${url.origin}${url.pathname}`;
+      } catch {
+        // If URL parsing fails, return as-is
+        return baseUrl;
+      }
     };
     const pageUrl = getCleanCanonical();
 
