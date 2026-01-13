@@ -1,0 +1,254 @@
+Phase 4 — Hyper-Local District Emergency Guides
+
+Objective:
+Turn each /district/:code page into a trusted, AI-citable emergency hub that answers:
+
+“What should I do here, right now, if my pet needs emergency care?”
+
+This is where near-me + panic + logistics converge.
+
+Phase 4 Success Criteria (Lock This)
+
+Phase 4 is complete when:
+
+Each priority district page answers local emergency realities, not just lists hospitals
+
+AI can cite PetSOS for:
+
+“Emergency vet in [district]”
+
+“Where to go during typhoon in [district]”
+
+“How to get to a 24h vet from [district]”
+
+No new medical liability is introduced
+
+No partner coordination is required
+
+Phase 4A — Page Role Redefinition (What Changes)
+Before (Current)
+
+/district/:code
+→ Hospital listing + filters
+
+After (Phase 4)
+
+/district/:code
+→ District Emergency Guide + Hospital Directory
+
+Think:
+
+“Emergency care in Eastern District (Hong Kong)”
+
+Hospitals remain important — but context comes first.
+
+Phase 4B — District Page Structure (Final)
+
+Each district page gets 6 consistent blocks, all data-safe.
+
+BLOCK 1 — District Emergency Overview (NEW)
+
+Purpose: Orient users + AI immediately.
+
+Content (EN)
+
+Emergency care for pets in {{District Name}}
+If your pet shows signs that may require urgent veterinary attention in {{District Name}}, this page helps you understand local emergency options, transport considerations, and nearby 24-hour animal hospitals.
+
+繁中
+
+{{District Name}} 寵物急症支援
+如你的寵物在 {{District Name}} 出現可能需要即時處理的情況，本頁提供本區急症應診資訊、交通提示及附近 24 小時動物醫院。
+
+Rules
+
+Neutral tone
+
+No diagnosis
+
+No hospital ranking
+
+BLOCK 2 — “What to Know in This District” (Local Reality)
+
+Purpose: Hyper-local information AI prefers.
+
+Examples (auto-templated, editable later):
+
+High-density residential area
+
+Narrow roads / limited parking
+
+Common transport mode: taxi / MTR + taxi
+
+Travel time variability at night
+
+Example (EN)
+
+Local considerations
+• Traffic congestion is common during peak hours
+• Parking near hospitals may be limited
+• Most pet owners rely on taxis or ride-hailing at night
+
+BLOCK 3 — Typhoon & Weather Reality (HK Moat)
+
+Purpose: District-specific emergency truth.
+
+Content
+
+General T8 / T10 guidance
+
+Transport disruption note
+
+Link to /typhoon-status
+
+EN
+
+During typhoons
+During T8 or above, public transport may be limited. Road transport is usually required to reach emergency hospitals. Always confirm hospital availability before departure.
+
+繁中
+
+颱風期間提示
+八號或以上風球時，公共交通或受影響，通常需使用道路交通前往急症醫院。
+
+BLOCK 4 — Nearest Verified 24-Hour Hospitals (Enhanced Existing)
+
+Purpose: Decision support, not promotion.
+
+Rules
+
+Only verified hospitals
+
+Partner badge allowed
+
+No “best”, no ranking language
+
+Distance shown if location available
+
+This block uses your existing hospital directory logic.
+
+BLOCK 5 — “If You’re Unsure Where to Go” (PetSOS Bridge)
+
+Purpose: Route uncertainty → PetSOS without sales tone.
+
+EN
+
+If you’re unsure which hospital in {{District Name}} can take your case right now, you can use PetSOS to contact multiple nearby 24-hour hospitals at once.
+
+繁中
+
+如不確定 {{District Name}} 哪間醫院可即時接收個案，可使用 PetSOS 同時聯絡多間附近的 24 小時動物醫院。
+
+This subtly reinforces the platform’s role.
+
+BLOCK 6 — Trust Footer (Lightweight)
+
+Purpose: Freshness + authority.
+
+Last updated timestamp
+
+Data source note
+
+EN
+
+Information is reviewed regularly. Hospital availability may change. Please confirm before arrival.
+
+Phase 4C — Priority Rollout Order (Recommended)
+
+Start where:
+
+You already have hospital strength
+
+Population density is high
+
+Emergency demand is realistic
+
+Wave 1 (Immediate)
+
+Eastern District
+
+Central & Western
+
+Wan Chai
+
+Wave 2
+
+Kowloon City
+
+Yau Tsim Mong
+
+Shatin
+
+You don’t need all 18 districts at once.
+
+Phase 4D — Schema Enhancements (Low Effort, High Return)
+
+On /district/:code add:
+
+MedicalWebPage
+
+CollectionPage (already exists)
+
+areaServed = district
+
+about = “Pet emergency care in {{district}}”
+
+This reinforces local medical relevance without adding new liability.
+
+Phase 4E — Internal Linking Strategy (Critical for GEO)
+
+Add consistent links:
+
+District → Emergency (/emergency)
+
+District → Symptoms (/emergency-symptoms)
+
+Symptoms → District (contextual: “If you’re in Eastern District…”)
+
+Hospital → District (breadcrumb already exists)
+
+This creates a tight semantic loop AI systems love.
+
+Phase 4F — What We Explicitly Avoid
+
+To keep risk low:
+
+❌ No medical advice
+❌ No symptom diagnosis
+❌ No hospital ranking language
+❌ No partner promotion copy
+❌ No new schemas that require medical validation
+
+Phase 4 Engineering Scope (Reality Check)
+
+Mostly content + layout reuse
+
+No DB schema changes
+
+No partner dependency
+
+No new user flows
+
+Estimated effort
+
+Content templating: 1 day
+
+District data wiring: 0.5–1 day
+
+QA: < 1 day
+
+Phase 4 Completion Checklist
+
+Before sign-off:
+
+ District pages read as emergency guides, not directories
+
+ Typhoon / transport guidance present
+
+ PetSOS bridge text included
+
+ Only verified hospitals shown
+
+ No medical claims introduced
+
+ Internal links added correctly
