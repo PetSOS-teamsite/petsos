@@ -54,8 +54,14 @@ export function SEO({
       element.content = content;
     };
 
-    // Get current page URL (use canonical if provided, otherwise current location)
-    const pageUrl = canonical || window.location.href;
+    // Get current page URL - strip query params for canonical (especially ?lang=)
+    const getCleanCanonical = () => {
+      if (canonical) return canonical;
+      // Strip query params from current URL for canonical
+      const url = new URL(window.location.href);
+      return `${url.origin}${url.pathname}`;
+    };
+    const pageUrl = getCleanCanonical();
 
     if (description) {
       updateMeta('description', description);
@@ -82,16 +88,14 @@ export function SEO({
     updateProperty('og:url', pageUrl);
     updateProperty('twitter:url', pageUrl);
 
-    // Update canonical URL
-    if (canonical) {
-      let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'canonical';
-        document.head.appendChild(link);
-      }
-      link.href = canonical;
+    // Always set canonical URL (stripped of query params)
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'canonical';
+      document.head.appendChild(link);
     }
+    link.href = pageUrl;
 
     // Handle hreflang tags for multilingual SEO
     const existingHreflangs = document.querySelectorAll('link[rel="alternate"][hreflang]');
