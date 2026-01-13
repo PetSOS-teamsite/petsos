@@ -384,6 +384,16 @@ export const hospitals = pgTable("hospitals", {
   confirmedByName: text("confirmed_by_name"), // Name of person who confirmed the info
   inviteSentAt: timestamp("invite_sent_at"), // When WhatsApp invitation was last sent
   
+  // 11. Data Source & Confidence (for transparency + legal safety)
+  feeSource: text("fee_source"), // self_reported | verified_call | website | unknown
+  waitTimeSource: text("wait_time_source"), // self_reported | verified_call | website | unknown
+  statusSource: text("status_source"), // self_reported | verified_call | website | unknown
+  dataConfidenceScore: integer("data_confidence_score"), // 0-100 confidence score
+  
+  // 12. Responsiveness Tracking (for GEO moat)
+  lastReplyAt: timestamp("last_reply_at"), // Last time hospital responded to any communication
+  replyChannel: text("reply_channel"), // whatsapp | api | manual
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
