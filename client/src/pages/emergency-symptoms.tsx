@@ -125,6 +125,7 @@ interface SymptomSnippet {
   icon: typeof AlertTriangle;
   actionEn: string;
   actionZh: string;
+  infoToShare: { en: string[], zh: string[] };
 }
 
 const SYMPTOM_SNIPPETS: SymptomSnippet[] = [
@@ -139,7 +140,11 @@ const SYMPTOM_SNIPPETS: SymptomSnippet[] = [
     severity: 'urgent',
     icon: Wind,
     actionEn: "Keep cat cool, minimize stress, call 24hr vet immediately",
-    actionZh: "保持貓涼爽，減少壓力，立即致電24小時獸醫"
+    actionZh: "保持貓涼爽，減少壓力，立即致電24小時獸醫",
+    infoToShare: {
+      en: ["Breathing rate per minute", "Duration of panting", "Gum color (pink/blue/gray)", "Recent activity or stress"],
+      zh: ["每分鐘呼吸次數", "喘氣持續時間", "牙齦顏色（粉紅/藍/灰）", "最近活動或壓力"]
+    }
   },
   {
     id: "dog-bloat",
@@ -152,7 +157,11 @@ const SYMPTOM_SNIPPETS: SymptomSnippet[] = [
     severity: 'critical',
     icon: AlertTriangle,
     actionEn: "Do NOT wait - drive to nearest 24hr emergency vet immediately",
-    actionZh: "不要等待 - 立即駕車前往最近的24小時緊急獸醫"
+    actionZh: "不要等待 - 立即駕車前往最近的24小時緊急獸醫",
+    infoToShare: {
+      en: ["Time symptoms started", "Last meal time", "Attempted vomiting count", "Abdomen size change"],
+      zh: ["症狀開始時間", "最後進食時間", "嘗試嘔吐次數", "腹部大小變化"]
+    }
   },
   {
     id: "pet-poisoning",
@@ -165,7 +174,11 @@ const SYMPTOM_SNIPPETS: SymptomSnippet[] = [
     severity: 'critical',
     icon: Droplets,
     actionEn: "Identify poison, do NOT induce vomiting, call 24hr vet NOW",
-    actionZh: "識別毒物，不要催吐，立即致電24小時獸醫"
+    actionZh: "識別毒物，不要催吐，立即致電24小時獸醫",
+    infoToShare: {
+      en: ["Substance ingested", "Amount eaten", "Pet's weight", "Time of ingestion"],
+      zh: ["攝入物質", "攝入量", "寵物體重", "攝入時間"]
+    }
   },
   {
     id: "pet-seizure",
@@ -178,7 +191,11 @@ const SYMPTOM_SNIPPETS: SymptomSnippet[] = [
     severity: 'urgent',
     icon: Brain,
     actionEn: "Keep pet safe, time the seizure, call vet if prolonged",
-    actionZh: "保護寵物安全，記錄發作時間，如持續時間長請致電獸醫"
+    actionZh: "保護寵物安全，記錄發作時間，如持續時間長請致電獸醫",
+    infoToShare: {
+      en: ["Seizure duration", "Number of seizures", "Time between seizures", "Pet's behavior after"],
+      zh: ["發作持續時間", "發作次數", "發作間隔時間", "發作後行為"]
+    }
   },
   {
     id: "dog-limping",
@@ -191,7 +208,11 @@ const SYMPTOM_SNIPPETS: SymptomSnippet[] = [
     severity: 'moderate',
     icon: Bone,
     actionEn: "Assess severity, limit movement, seek care based on symptoms",
-    actionZh: "評估嚴重程度，限制活動，根據症狀決定就醫"
+    actionZh: "評估嚴重程度，限制活動，根據症狀決定就醫",
+    infoToShare: {
+      en: ["Which leg affected", "When injury occurred", "Weight bearing ability", "Visible swelling or wound"],
+      zh: ["受傷的腿", "受傷時間", "承重能力", "可見腫脹或傷口"]
+    }
   },
   {
     id: "pet-not-eating",
@@ -204,7 +225,11 @@ const SYMPTOM_SNIPPETS: SymptomSnippet[] = [
     severity: 'urgent',
     icon: Clock,
     actionEn: "Monitor closely, seek vet care if 24+ hours or other symptoms",
-    actionZh: "密切監測，如超過24小時或有其他症狀請就醫"
+    actionZh: "密切監測，如超過24小時或有其他症狀請就醫",
+    infoToShare: {
+      en: ["Hours since last meal", "Water intake", "Vomiting or diarrhea", "Energy level changes"],
+      zh: ["距上次進食時間", "飲水量", "嘔吐或腹瀉", "精力變化"]
+    }
   },
   {
     id: "pet-eye-injury",
@@ -217,7 +242,11 @@ const SYMPTOM_SNIPPETS: SymptomSnippet[] = [
     severity: 'urgent',
     icon: Eye,
     actionEn: "Prevent rubbing, don't remove objects, see vet within 1-2 hours",
-    actionZh: "防止揉眼，不要取出異物，1-2小時內就醫"
+    actionZh: "防止揉眼，不要取出異物，1-2小時內就醫",
+    infoToShare: {
+      en: ["When injury occurred", "Cause if known", "Discharge color", "Vision affected"],
+      zh: ["受傷時間", "原因（如知道）", "分泌物顏色", "視力是否受影響"]
+    }
   },
   {
     id: "pet-heatstroke",
@@ -230,7 +259,11 @@ const SYMPTOM_SNIPPETS: SymptomSnippet[] = [
     severity: 'critical',
     icon: Thermometer,
     actionEn: "Cool with water (not ice), get to emergency vet immediately",
-    actionZh: "用水（非冰）降溫，立即前往緊急獸醫"
+    actionZh: "用水（非冰）降溫，立即前往緊急獸醫",
+    infoToShare: {
+      en: ["Duration of heat exposure", "Environment temperature", "Cooling measures taken", "Current body temperature"],
+      zh: ["暴露於高溫的時間", "環境溫度", "已採取的降溫措施", "目前體溫"]
+    }
   },
   {
     id: "cat-urinary-block",
@@ -243,7 +276,11 @@ const SYMPTOM_SNIPPETS: SymptomSnippet[] = [
     severity: 'critical',
     icon: AlertTriangle,
     actionEn: "Emergency - go to 24hr vet immediately, do not wait",
-    actionZh: "緊急情況 - 立即前往24小時獸醫，不要等待"
+    actionZh: "緊急情況 - 立即前往24小時獸醫，不要等待",
+    infoToShare: {
+      en: ["Last successful urination", "Litter box visit frequency", "Blood in urine", "Cat's gender and age"],
+      zh: ["最後成功排尿時間", "去貓砂盆頻率", "尿中有血", "貓的性別和年齡"]
+    }
   },
   {
     id: "dog-difficulty-breathing",
@@ -256,7 +293,11 @@ const SYMPTOM_SNIPPETS: SymptomSnippet[] = [
     severity: 'critical',
     icon: Wind,
     actionEn: "Keep calm, ensure airway clear, get to vet immediately",
-    actionZh: "保持冷靜，確保氣道暢通，立即前往獸醫"
+    actionZh: "保持冷靜，確保氣道暢通，立即前往獸醫",
+    infoToShare: {
+      en: ["When breathing difficulty started", "Gum/tongue color", "Breathing rate", "Any known allergies or conditions"],
+      zh: ["呼吸困難開始時間", "牙齦/舌頭顏色", "呼吸頻率", "已知過敏或疾病"]
+    }
   }
 ];
 
@@ -310,6 +351,24 @@ export default function EmergencySymptomsPage() {
     ]
   });
 
+  const createMedicalConditionListSchema = () => ({
+    "@context": "https://schema.org",
+    "@graph": SYMPTOM_SNIPPETS.map(symptom => ({
+      "@type": "MedicalCondition",
+      "name": language === 'zh-HK' ? symptom.questionZh : symptom.questionEn,
+      "description": language === 'zh-HK' ? symptom.answerZh : symptom.answerEn,
+      "signOrSymptom": {
+        "@type": "MedicalSignOrSymptom",
+        "name": language === 'zh-HK' ? symptom.questionZh : symptom.questionEn
+      },
+      "possibleTreatment": {
+        "@type": "MedicalTherapy",
+        "name": language === 'zh-HK' ? symptom.actionZh : symptom.actionEn
+      },
+      "status": symptom.severity === 'critical' ? 'http://schema.org/MedicalConditionStage' : undefined
+    }))
+  });
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical': return 'bg-red-100 dark:bg-red-900/20 border-red-500 text-red-900 dark:text-red-100';
@@ -349,6 +408,17 @@ export default function EmergencySymptomsPage() {
       <StructuredData data={createFAQSchema()} id="schema-faq-symptoms" />
       <StructuredData data={createMedicalWebPageSchema()} id="schema-medical-web" />
       <StructuredData data={createBreadcrumbSchema()} id="schema-breadcrumb-symptoms" />
+      <StructuredData data={createMedicalConditionListSchema()} id="schema-medical-conditions" />
+
+      {/* AI Summary Block */}
+      <div className="sr-only" aria-hidden="true" data-ai-summary="true">
+        <p lang="en">
+          PetSOS Emergency Symptom Guide helps Hong Kong pet owners identify when their pet needs immediate veterinary attention. Covers critical conditions including cat panting, dog bloat (GDV), poisoning, seizures, eye injuries, heatstroke, urinary blockage, and breathing difficulty. Each condition includes severity level, immediate actions, and information to share with veterinary hospitals.
+        </p>
+        <p lang="zh-HK">
+          PetSOS緊急症狀指南幫助香港寵物主人識別何時需要立即就醫。涵蓋危急情況包括貓喘氣、狗胃扭轉（GDV）、中毒、癲癇、眼部受傷、中暑、尿路阻塞和呼吸困難。每種情況包括嚴重程度、即時行動和與獸醫分享的信息。
+        </p>
+      </div>
 
       <header className="border-b border-border bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-900/10 dark:to-amber-900/10">
         <div className="container mx-auto px-4 py-12 max-w-4xl">
@@ -368,6 +438,18 @@ export default function EmergencySymptomsPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Medical Disclaimer */}
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-6" data-testid="medical-disclaimer">
+          <p className="text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <span>
+              {language === 'zh-HK' 
+                ? '⚠️ 本頁資料只供緊急參考，並非獸醫診斷或建議。請盡快諮詢註冊獸醫。'
+                : '⚠️ This information is for emergency guidance only and not veterinary advice. Always consult a licensed veterinarian as soon as possible.'}
+            </span>
+          </p>
+        </div>
+
         <Card className="mb-8 border-red-500 bg-red-50 dark:bg-red-900/10">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
@@ -437,6 +519,17 @@ export default function EmergencySymptomsPage() {
                         </span>
                       </div>
                     </div>
+                    <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                      {symptom.infoToShare[language === 'zh-HK' ? 'zh' : 'en'].map((info, idx) => (
+                        <div key={idx} className="flex items-start gap-1">
+                          <dt className="sr-only">Information to share</dt>
+                          <dd className="flex items-center gap-1 text-muted-foreground">
+                            <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" />
+                            {info}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
                     <VerificationBadge contentSlug={`symptom-${symptom.id}`} />
                   </div>
                 </div>
@@ -611,6 +704,12 @@ export default function EmergencySymptomsPage() {
             </div>
           </CardContent>
         </Card>
+
+        <div className="text-center text-xs text-muted-foreground mt-8 pb-4">
+          {language === 'zh-HK' 
+            ? '由獸醫專業人員審閱 — 2026年1月'
+            : 'Reviewed by veterinary professionals — January 2026'}
+        </div>
       </main>
     </div>
   );
