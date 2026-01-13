@@ -6,16 +6,29 @@ User-agent: *
 Allow: /
 
 # Disallow private/admin areas
+Disallow: /admin
 Disallow: /admin-dashboard
 Disallow: /admin-clinics
 Disallow: /admin-config
 Disallow: /admin-analytics
 Disallow: /admin-login
 Disallow: /clinic-dashboard
+Disallow: /clinic/dashboard
 Disallow: /home
 Disallow: /profile
 Disallow: /pets
 Disallow: /message-status
+Disallow: /login
+Disallow: /signup
+
+# Disallow user-specific private data
+Disallow: /emergency-results/
+Disallow: /emergency-profile/
+
+# Disallow owner edit portals
+Disallow: /clinic/edit/
+Disallow: /hospital/edit/
+Disallow: /hospital-update
 
 # Sitemap location (with cache-busting parameter to bypass CDN cache)
 Sitemap: https://petsos.site/sitemap.xml?v=20260108
