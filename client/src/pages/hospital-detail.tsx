@@ -876,7 +876,7 @@ export default function HospitalDetailPage() {
           )}
 
           {/* BLOCK 4 - Consultation Fees */}
-          {isEastIsland ? (
+          {isEastIsland && (hospital.consultFeeDay || hospital.consultFeeEvening || hospital.consultFeeMidnight) ? (
             <Card className="mb-6" data-testid="card-fees-ei">
               <CardHeader>
                 <CardTitle className="text-lg" data-testid="text-consult-fees">
@@ -889,16 +889,42 @@ export default function HospitalDetailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg" data-testid="fee-evening-midnight">
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {language === 'zh-HK' ? '晚間及午夜（8:30 PM 起）' : 'Evening & Midnight (from 8:30 PM)'}
-                    </span>
-                    <span className="text-lg font-bold text-gray-900 dark:text-white">
-                      HK$1,100
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="space-y-2">
+                  {hospital.consultFeeDay && (
+                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg" data-testid="fee-day">
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {language === 'zh-HK' ? '日間診症' : 'Day Consultation'}
+                      </span>
+                      <span className="text-lg font-bold text-gray-900 dark:text-white">
+                        HK${hospital.consultFeeDay}
+                      </span>
+                    </div>
+                  )}
+                  {hospital.consultFeeEvening && (
+                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg" data-testid="fee-evening">
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {language === 'zh-HK' 
+                          ? `晚間診症${hospital.eveningSurchargeStart ? `（${hospital.eveningSurchargeStart}起）` : ''}` 
+                          : `Evening Consultation${hospital.eveningSurchargeStart ? ` (from ${hospital.eveningSurchargeStart})` : ''}`}
+                      </span>
+                      <span className="text-lg font-bold text-gray-900 dark:text-white">
+                        HK${hospital.consultFeeEvening}
+                      </span>
+                    </div>
+                  )}
+                  {hospital.consultFeeMidnight && (
+                    <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg" data-testid="fee-midnight">
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {language === 'zh-HK' 
+                          ? `午夜急症${hospital.midnightSurchargeStart ? `（${hospital.midnightSurchargeStart}起）` : ''}` 
+                          : `Emergency/Midnight${hospital.midnightSurchargeStart ? ` (from ${hospital.midnightSurchargeStart})` : ''}`}
+                      </span>
+                      <span className="text-lg font-bold text-red-600 dark:text-red-400">
+                        HK${hospital.consultFeeMidnight}
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
                     {language === 'zh-HK' ? '僅供參考' : 'Reference only'}
                   </p>
                 </div>
