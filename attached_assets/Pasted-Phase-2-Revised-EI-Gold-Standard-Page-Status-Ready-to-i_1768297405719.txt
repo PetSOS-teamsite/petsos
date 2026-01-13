@@ -1,0 +1,239 @@
+Phase 2 (Revised) — EI Gold Standard Page
+
+Status: Ready to implement
+Risk: Low
+Nature: UI logic + copy refinement (no schema change required)
+
+Reference anchor: East Island 24-Hour Animal Hospital
+
+GLOBAL RULES (Lock These First)
+
+These apply to all blocks:
+
+Hide empty sections completely (never show “N/A”)
+
+Never infer capabilities
+
+Exact numbers > generic text (where verified)
+
+EI-only enhancements must be gated by ReferencePartner
+
+Non-EI hospitals fall back to neutral, public-source wording
+
+BLOCK-BY-BLOCK REFINEMENTS (Final)
+BLOCK 1 — “What This Hospital Is Best For” (Refined Logic)
+
+Change: Add deterministic ranking + Oxygen Therapy
+
+Derivation logic (max 5 bullets)
+
+Priority order:
+
+ICU / Critical Care
+
+Emergency Surgery
+
+Advanced Imaging
+
+Blood & Oxygen Support
+
+Exotic / Special Species
+
+Explicit rule
+
+If oxygenTherapy = true, always include “Oxygen therapy & respiratory support”
+
+Oxygen is high-intent for breathing distress searches
+
+Final EN copy (EI)
+
+Best suited for emergencies involving:
+• Critical care & intensive monitoring
+• Trauma, collapse & breathing distress
+• Emergency surgery (soft tissue & orthopaedic)
+• Advanced imaging (CT / Ultrasound)
+• Oxygen therapy & blood transfusion support
+
+Final 繁中
+
+特別適合處理以下緊急情況：
+• 危急個案及深切治療監察
+• 外傷、突然倒下、呼吸困難
+• 緊急手術（軟組織／骨科）
+• 先進影像診斷（CT／超聲波）
+• 氧氣治療及輸血支援
+
+BLOCK 2 — Emergency Capability Matrix (Refined)
+
+Change: Explicit Oxygen + section skipping logic
+
+Section rules
+
+Show section only if ≥1 capability = true
+
+Oxygen Therapy must appear under Life Support
+
+Life Support section (EI example)
+
+Oxygen Therapy ✅
+
+Ventilator Support ✅
+
+Blood Transfusion ✅
+
+Dialysis (if true)
+
+Why this matters
+
+“Oxygen therapy” is a panic keyword
+
+EI is one of the few HK hospitals with full respiratory support 24/7
+
+BLOCK 3 — Triage, Wait-Time & Intake Status (Upgraded)
+
+Change: Add intake clarity + schema alignment
+
+UI logic
+
+liveStatus pill:
+
+normal → green
+
+busy → amber
+
+critical_only → red
+
+Text always explains triage over arrival order
+
+Copy addition (EN)
+
+Accepting emergency patients:
+Status updates reflect current intake capacity and may change rapidly.
+
+GEO refinement (behind the scenes)
+
+Set isAcceptingNewPatients = true in schema when:
+
+isAvailable = true
+
+liveStatus ≠ critical_only
+
+This improves AI selection during crisis queries.
+
+BLOCK 4 — Consultation Fees (EI Precision Mode)
+
+Change: Use exact verified fee for EI
+
+EI-specific rule (ReferencePartner only)
+
+Show exact figure when confirmed
+
+Final EI EN copy
+
+Emergency consultation fees (reference)
+• Evening & Midnight (from 8:30 PM): HK$1,100
+
+Fees vary depending on case complexity and required treatment.
+
+Why this is important
+
+AI models quote exact numbers ~4× more often
+
+This positions PetSOS as the fee authority for midnight searches
+
+Non-EI fallback
+
+Continue using bands or “contact hospital”
+
+BLOCK 5 — Typhoon & Holiday Operations (HK Moat 강화)
+
+Change: Add Transport Warning
+
+Add below status table (EN)
+
+Transport note during T8 / T10:
+MTR services may be suspended. Road transport (taxi or van) is usually required.
+
+繁中
+
+八號／十號風球交通提示：
+港鐵露天路段或會暫停服務，通常需要使用的士或私家車前往。
+
+This is highly HK-specific and strongly favored by GEO.
+
+BLOCK 6 — Panic Logistics (Upgraded)
+
+Change: Add Pet Ambulance + Taxi surcharge
+
+Add section (EN)
+
+Emergency transport options
+• Taxi / Uber Pet (common in HK, may charge ~HK$5 per pet)
+• Pet Club HK Ambulance: 9782 2999 (oxygen & stretcher support)
+
+繁中
+
+緊急運送選項
+• 的士／Uber Pet（一般可攜帶寵物，或加收約 HK$5）
+• Pet Club HK 寵物救護車：9782 2999（提供氧氣及擔架）
+
+This is pure information gain competitors do not offer.
+
+BLOCK 7 — Verification & Trust Footer (Confirmed, No Change)
+
+Change: None — already excellent
+
+Rule recap
+
+“Validated with EI” line → ReferencePartner only
+
+Others show:
+
+“Information sourced from public records. Please confirm with hospital before arrival.”
+
+This protects relationships and credibility.
+
+IMPLEMENTATION SUMMARY (What Dev Actually Needs To Do)
+Code changes
+
+UI logic only (no DB changes)
+
+3 small conditionals:
+
+Oxygen Therapy prominence
+
+EI exact fee override
+
+Transport warning visibility
+
+No changes needed
+
+DB schema
+
+Indexing
+
+Core entity schema (except optional isAcceptingNewPatients boolean mapping)
+
+Phase 2 Acceptance Checklist (Final)
+
+Before marking Phase 2 complete:
+
+ EI page shows Oxygen Therapy clearly
+
+ EI fee shows HK$1,100 (not band)
+
+ Triage block includes intake clarity
+
+ Typhoon block includes transport warning
+
+ Pet ambulance number visible
+
+ Non-EI hospitals gracefully hide missing data
+
+ Page reads calm, factual, non-promotional
+
+Strategic Note (Important)
+
+At this point, EI’s page will likely be the most information-dense emergency hospital page in Hong Kong.
+
+That’s not a content win — that’s a GEO moat.
