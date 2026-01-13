@@ -239,14 +239,6 @@
     <lastmod>2026-01-08</lastmod>
   </url>
   
-  <!-- Login / Signup Page -->
-  <url>
-    <loc>https://petsos.site/login</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-    <lastmod>2026-01-08</lastmod>
-  </url>
-  
   <!-- Privacy Policy -->
   <url>
     <loc>https://petsos.site/privacy-policy</loc>

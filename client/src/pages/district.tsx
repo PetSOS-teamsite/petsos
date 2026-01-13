@@ -88,6 +88,114 @@ const HONG_KONG_DISTRICTS: District[] = [
     keywordsZh: "灣仔獸醫, 灣仔24小時動物醫院, 跑馬地緊急寵物護理, 會展獸醫診所"
   },
   {
+    slug: "eastern",
+    nameEn: "Eastern District",
+    nameZh: "東區",
+    regionCode: "HKI",
+    latitude: 22.2842,
+    longitude: 114.2240,
+    descriptionEn: "Pet emergency in Eastern District including Shau Kei Wan and Quarry Bay? Connect instantly with 24-hour veterinary clinics ready to help your pet. Emergency care is available around the clock.",
+    descriptionZh: "筲箕灣、鰂魚涌等東區寵物緊急情況？即時聯繫24小時獸醫診所，隨時為您的寵物提供幫助。全天候緊急護理服務。",
+    keywordsEn: "Eastern District vet, 24-hour animal hospital Shau Kei Wan, emergency pet care Quarry Bay, veterinary clinic Sai Wan Ho",
+    keywordsZh: "東區獸醫, 筲箕灣24小時動物醫院, 鰂魚涌緊急寵物護理, 西灣河獸醫診所"
+  },
+  {
+    slug: "southern",
+    nameEn: "Southern District",
+    nameZh: "南區",
+    regionCode: "HKI",
+    latitude: 22.2472,
+    longitude: 114.1553,
+    descriptionEn: "Pet emergency in Southern District including Repulse Bay and Stanley? Find 24-hour veterinary clinics nearby. Don't let distance delay your pet's emergency care.",
+    descriptionZh: "淺水灣、赤柱等南區寵物緊急情況？尋找附近24小時獸醫診所。不要讓距離延誤您寵物的緊急護理。",
+    keywordsEn: "Southern District vet, 24-hour animal hospital Repulse Bay, emergency pet care Stanley, veterinary clinic Aberdeen",
+    keywordsZh: "南區獸醫, 淺水灣24小時動物醫院, 赤柱緊急寵物護理, 香港仔獸醫診所"
+  },
+  {
+    slug: "aberdeen",
+    nameEn: "Aberdeen",
+    nameZh: "香港仔",
+    regionCode: "HKI",
+    latitude: 22.2478,
+    longitude: 114.1556,
+    descriptionEn: "Pet emergency in Aberdeen or Ap Lei Chau? Find nearby 24-hour veterinary clinics ready to provide urgent care. Help is available around the clock.",
+    descriptionZh: "香港仔或鴨脷洲寵物緊急情況？尋找附近24小時獸醫診所，隨時提供緊急護理。全天候服務。",
+    keywordsEn: "Aberdeen vet, 24-hour animal hospital Aberdeen, emergency pet care Ap Lei Chau, veterinary clinic South Horizons",
+    keywordsZh: "香港仔獸醫, 香港仔24小時動物醫院, 鴨脷洲緊急寵物護理, 海怡半島獸醫診所"
+  },
+  {
+    slug: "jordan",
+    nameEn: "Jordan",
+    nameZh: "佐敦",
+    regionCode: "KLN",
+    latitude: 22.3047,
+    longitude: 114.1721,
+    descriptionEn: "Pet emergency in Jordan? Connect instantly with 24-hour veterinary clinics in Kowloon ready to help your pet. Emergency care available day and night.",
+    descriptionZh: "佐敦寵物緊急情況？即時聯繫九龍24小時獸醫診所，隨時為您的寵物提供幫助。日夜緊急護理服務。",
+    keywordsEn: "Jordan vet, 24-hour animal hospital Jordan, emergency pet care Yau Ma Tei, veterinary clinic Austin Road",
+    keywordsZh: "佐敦獸醫, 佐敦24小時動物醫院, 油麻地緊急寵物護理, 柯士甸道獸醫診所"
+  },
+  {
+    slug: "kowloon-city",
+    nameEn: "Kowloon City",
+    nameZh: "九龍城",
+    regionCode: "KLN",
+    latitude: 22.3307,
+    longitude: 114.1897,
+    descriptionEn: "Pet emergency in Kowloon City or To Kwa Wan? Find 24-hour veterinary clinics ready to provide urgent care. Every second counts in a pet emergency.",
+    descriptionZh: "九龍城或土瓜灣寵物緊急情況？尋找24小時獸醫診所，隨時提供緊急護理。寵物緊急情況分秒必爭。",
+    keywordsEn: "Kowloon City vet, 24-hour animal hospital To Kwa Wan, emergency pet care Ho Man Tin, veterinary clinic Kai Tak",
+    keywordsZh: "九龍城獸醫, 土瓜灣24小時動物醫院, 何文田緊急寵物護理, 啟德獸醫診所"
+  },
+  {
+    slug: "kowloon-bay",
+    nameEn: "Kowloon Bay",
+    nameZh: "九龍灣",
+    regionCode: "KLN",
+    latitude: 22.3234,
+    longitude: 114.2136,
+    descriptionEn: "Pet emergency in Kowloon Bay? Connect with experienced 24-hour emergency vets nearby. Fast access to veterinary care can save your pet's life.",
+    descriptionZh: "九龍灣寵物緊急情況？聯繫附近經驗豐富的24小時緊急獸醫。快速獲得獸醫護理可以拯救您寵物的生命。",
+    keywordsEn: "Kowloon Bay vet, 24-hour animal hospital Kowloon Bay, emergency pet care Telford Gardens, veterinary clinic MegaBox",
+    keywordsZh: "九龍灣獸醫, 九龍灣24小時動物醫院, 德福花園緊急寵物護理, MegaBox獸醫診所"
+  },
+  {
+    slug: "kwun-tong",
+    nameEn: "Kwun Tong",
+    nameZh: "觀塘",
+    regionCode: "KLN",
+    latitude: 22.3131,
+    longitude: 114.2258,
+    descriptionEn: "Pet emergency in Kwun Tong? Find 24-hour veterinary clinics in East Kowloon ready to help. Immediate access to emergency pet care.",
+    descriptionZh: "觀塘寵物緊急情況？尋找東九龍24小時獸醫診所，隨時提供幫助。即時獲得緊急寵物護理。",
+    keywordsEn: "Kwun Tong vet, 24-hour animal hospital Kwun Tong, emergency pet care APM, veterinary clinic Lam Tin",
+    keywordsZh: "觀塘獸醫, 觀塘24小時動物醫院, APM緊急寵物護理, 藍田獸醫診所"
+  },
+  {
+    slug: "wong-tai-sin",
+    nameEn: "Wong Tai Sin",
+    nameZh: "黃大仙",
+    regionCode: "KLN",
+    latitude: 22.3419,
+    longitude: 114.1936,
+    descriptionEn: "Pet emergency in Wong Tai Sin? Connect with 24-hour veterinary clinics ready to provide urgent care for your pet. Help is available now.",
+    descriptionZh: "黃大仙寵物緊急情況？聯繫24小時獸醫診所，隨時為您的寵物提供緊急護理。即時獲得幫助。",
+    keywordsEn: "Wong Tai Sin vet, 24-hour animal hospital Wong Tai Sin, emergency pet care Diamond Hill, veterinary clinic Choi Hung",
+    keywordsZh: "黃大仙獸醫, 黃大仙24小時動物醫院, 鑽石山緊急寵物護理, 彩虹獸醫診所"
+  },
+  {
+    slug: "sham-shui-po",
+    nameEn: "Sham Shui Po",
+    nameZh: "深水埗",
+    regionCode: "KLN",
+    latitude: 22.3303,
+    longitude: 114.1622,
+    descriptionEn: "Pet emergency in Sham Shui Po? Find nearby 24-hour veterinary clinics ready to help. Don't wait—get your pet the care they need now.",
+    descriptionZh: "深水埗寵物緊急情況？尋找附近24小時獸醫診所，隨時提供幫助。不要等待—立即為您的寵物獲得所需護理。",
+    keywordsEn: "Sham Shui Po vet, 24-hour animal hospital Sham Shui Po, emergency pet care Cheung Sha Wan, veterinary clinic Lai Chi Kok",
+    keywordsZh: "深水埗獸醫, 深水埗24小時動物醫院, 長沙灣緊急寵物護理, 荔枝角獸醫診所"
+  },
+  {
     slug: "sha-tin",
     nameEn: "Sha Tin",
     nameZh: "沙田",
@@ -167,6 +275,42 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "元朗寵物緊急情況？尋找新界24小時獸醫診所，隨時為您的寵物提供幫助。即時獲得緊急護理。",
     keywordsEn: "Yuen Long vet, 24-hour pet clinic Yuen Long, emergency vet New Territories",
     keywordsZh: "元朗獸醫, 元朗24小時寵物診所, 新界緊急獸醫"
+  },
+  {
+    slug: "yau-ma-tei",
+    nameEn: "Yau Ma Tei",
+    nameZh: "油麻地",
+    regionCode: "KLN",
+    latitude: 22.3126,
+    longitude: 114.1705,
+    descriptionEn: "Pet emergency in Yau Ma Tei? Connect with 24-hour veterinary clinics in Kowloon. Immediate access to emergency pet care when your pet needs it most.",
+    descriptionZh: "油麻地寵物緊急情況？聯繫九龍24小時獸醫診所。在您的寵物最需要時即時獲得緊急護理。",
+    keywordsEn: "Yau Ma Tei vet, 24-hour animal hospital Yau Ma Tei, emergency pet care Temple Street, veterinary clinic Nathan Road",
+    keywordsZh: "油麻地獸醫, 油麻地24小時動物醫院, 廟街緊急寵物護理, 彌敦道獸醫診所"
+  },
+  {
+    slug: "tai-po",
+    nameEn: "Tai Po",
+    nameZh: "大埔",
+    regionCode: "NTI",
+    latitude: 22.4507,
+    longitude: 114.1642,
+    descriptionEn: "Pet emergency in Tai Po? Find 24-hour veterinary clinics in the New Territories ready to help. Quick access to emergency care for your pet.",
+    descriptionZh: "大埔寵物緊急情況？尋找新界24小時獸醫診所，隨時提供幫助。快速獲得您寵物的緊急護理。",
+    keywordsEn: "Tai Po vet, 24-hour animal hospital Tai Po, emergency pet care New Territories North, veterinary clinic Tai Wo",
+    keywordsZh: "大埔獸醫, 大埔24小時動物醫院, 新界北緊急寵物護理, 太和獸醫診所"
+  },
+  {
+    slug: "tsuen-wan",
+    nameEn: "Tsuen Wan",
+    nameZh: "荃灣",
+    regionCode: "NTI",
+    latitude: 22.3703,
+    longitude: 114.1144,
+    descriptionEn: "Pet emergency in Tsuen Wan? Connect with 24-hour veterinary clinics ready to provide urgent care. Help is available around the clock.",
+    descriptionZh: "荃灣寵物緊急情況？聯繫24小時獸醫診所，隨時提供緊急護理。全天候服務。",
+    keywordsEn: "Tsuen Wan vet, 24-hour animal hospital Tsuen Wan, emergency pet care New Territories West, veterinary clinic Kwai Chung",
+    keywordsZh: "荃灣獸醫, 荃灣24小時動物醫院, 新界西緊急寵物護理, 葵涌獸醫診所"
   }
 ];
 
