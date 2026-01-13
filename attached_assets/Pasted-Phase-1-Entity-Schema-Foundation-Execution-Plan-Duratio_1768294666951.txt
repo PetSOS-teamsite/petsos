@@ -1,0 +1,252 @@
+Phase 1 — Entity & Schema Foundation (Execution Plan)
+
+Duration: ~5–7 engineering days
+Objective:
+Make PetSOS unambiguously understood as:
+
+a software emergency utility, and
+
+a verified emergency hospital knowledge graph for Hong Kong.
+
+Phase 1 Success Criteria (Lock This)
+
+Phase 1 is complete only when:
+
+✅ PetSOS is classified as a SoftwareApplication (not blog, not directory)
+
+✅ Every hospital page outputs valid VeterinaryCare schema
+
+✅ District pages output machine-readable hospital collections
+
+✅ Schema tests pass with no critical errors
+
+✅ EI is clearly understood as a verified emergency provider entity
+
+1️⃣ Site-Wide Entity Definition (PetSOS = Software Utility)
+Pages
+
+/
+
+/emergency
+
+Required JSON-LD (static, site-owned)
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "PetSOS",
+  "applicationCategory": "MedicalApplication",
+  "operatingSystem": ["Web", "iOS", "Android"],
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "HKD"
+  },
+  "description": "PetSOS is a free emergency coordination tool that helps Hong Kong pet owners reach 24-hour animal hospitals faster by broadcasting emergencies to multiple clinics at once.",
+  "publisher": {
+    "@type": "Organization",
+    "name": "PetSOS"
+  },
+  "areaServed": {
+    "@type": "AdministrativeArea",
+    "name": "Hong Kong"
+  }
+}
+
+Why this matters
+
+Prevents PetSOS being interpreted as “just another blog”
+
+Enables tool-based AI citations
+
+Supports mobile + PWA discovery
+
+Owner: Engineering
+Acceptance check:
+Google Rich Results Test → recognized as SoftwareApplication.
+
+2️⃣ Organization Entity (Trust & EEAT Anchor)
+Page
+
+/about
+
+Required JSON-LD
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "PetSOS",
+  "url": "https://petsos.site",
+  "description": "PetSOS is a non-profit emergency coordination platform for pet owners in Hong Kong.",
+  "areaServed": "HK"
+}
+
+Notes
+
+Keep non-profit / public utility tone
+
+No founder bios needed yet
+
+Avoid marketing claims
+
+Owner: Engineering / Content
+Acceptance check:
+Organization appears as separate entity from hospitals.
+
+3️⃣ Hospital Entity Schema (Dynamic, Critical)
+Pages
+
+/hospitals/:slug
+
+Each hospital page must dynamically output:
+
+VeterinaryCare
+
+nested MedicalOrganization
+
+EmergencyService context
+
+Core Mapping (from your DB)
+Schema Property	DB Field
+@type	VeterinaryCare
+name	nameEn (+ alternateName = nameZh)
+address	addressEn / addressZh
+geo	latitude / longitude
+telephone	phone
+url	hospital page URL
+openingHoursSpecification	open247
+areaServed	regions.nameEn
+availableService	derived from booleans
+medicalSpecialty	emergency, surgery, imaging
+
+⚠️ Important rule
+Only include services where DB field = true.
+No inferred or assumed capabilities.
+
+Reference Partner Signal (EI)
+
+For East Island 24-Hour Animal Hospital only, add:
+
+"additionalProperty": {
+  "@type": "PropertyValue",
+  "name": "ReferencePartner",
+  "value": "PetSOS"
+}
+
+
+This subtly reinforces entity co-occurrence without marketing language.
+
+Owner: Engineering
+Acceptance check:
+Schema validator shows valid VeterinaryCare entity.
+
+4️⃣ Breadcrumb Schema (Navigation Clarity)
+Pages
+
+/hospitals/:slug
+
+/district/:code
+
+Example
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Hospitals",
+      "item": "https://petsos.site/hospitals"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Eastern District",
+      "item": "https://petsos.site/district/eastern"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "East Island 24-Hour Animal Hospital",
+      "item": "https://petsos.site/hospitals/east-island-24-hour-animal-hospital"
+    }
+  ]
+}
+
+
+Why
+
+Reinforces location hierarchy
+
+Improves district-level GEO understanding
+
+5️⃣ District Collection Schema (Hyper-Local GEO)
+Pages
+
+/district/:code
+
+Required Schema
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "24-Hour Animal Hospitals in Eastern District",
+  "mainEntity": {
+    "@type": "ItemList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "item": {
+          "@id": "https://petsos.site/hospitals/east-island-24-hour-animal-hospital"
+        }
+      }
+    ]
+  }
+}
+
+Rules
+
+Only include verified hospitals
+
+Order by proximity or relevance (not random)
+
+Owner: Engineering
+Acceptance check:
+LLMs can infer “Eastern District → EI → emergency”.
+
+6️⃣ FAQ Schema (Already Built — Just Lock Rules)
+Pages
+
+/emergency
+
+/emergency-symptoms
+
+/hospitals/:slug (auto-generated FAQs)
+
+Rules
+
+FAQs must be factual
+
+No “best”, “top”, or promotional claims
+
+Keep answers short and precise
+
+Owner: Content / Engineering
+Acceptance check:
+Rich Results Test → FAQ eligible.
+
+Phase 1 Final Checklist
+
+Before moving to Phase 2, confirm:
+
+ SoftwareApplication schema live on / + /emergency
+
+ Organization schema live on /about
+
+ VeterinaryCare schema on all /hospitals/:slug
+
+ EI marked as reference partner
+
+ District pages output CollectionPage schema
+
+ Breadcrumb schema valid
+
+ No schema errors or warnings
