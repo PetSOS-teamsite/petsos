@@ -1,0 +1,181 @@
+Phase 1 Revised Action Plan (Based on Dev Review)
+Phase 1 Target (unchanged)
+
+✅ Make PetSOS recognized as:
+
+a software emergency utility, and
+
+a HK emergency hospital knowledge graph.
+
+Most of this is already done. We now close the 3 remaining gaps.
+
+A) Gap 1 — District CollectionPage Schema (Must Implement)
+
+Status: ❌ Gap
+Priority: P0 (do this first)
+Risk: Low
+
+Why it matters (GEO)
+
+District pages are your hyper-local authority layer. Without CollectionPage + ItemList, LLMs can’t easily understand:
+
+“Eastern District contains EI hospital entity”
+
+“These are verified 24h options in this area”
+
+Implementation (what to add)
+
+On /district/:code add JSON-LD in addition to anything you already have:
+
+Required structure
+
+@type: CollectionPage
+
+mainEntity: ItemList
+
+itemListElement: each hospital as ListItem with position and @id
+
+Rules
+
+Only include hospitals where verified=true AND (open247=true if it’s a 24h hospital list)
+
+Stable order:
+
+If user location known: by distance
+
+Else: by isPartner desc, lastVerifiedAt desc, then name
+
+Acceptance checks
+
+Google Rich Results Test: no critical errors
+
+View-source: JSON-LD includes all hospitals for that district
+
+Manual sanity: /district/eastern lists EI as position 1 if partner
+
+B) Gap 2 — EI Reference Partner Signal (Must Implement)
+
+Status: ❌ Gap
+Priority: P0 (do this second)
+Risk: Low
+
+Why it matters (GEO)
+
+This is a subtle but powerful “entity reinforcement” signal:
+
+PetSOS ↔ EI co-occurrence
+
+“Validated” relationship
+
+Helps your future hospital outreach story (“we have a reference partner model”)
+
+Implementation
+
+On EI hospital record only (match by slug or id), inject:
+
+"additionalProperty": [
+  {
+    "@type": "PropertyValue",
+    "name": "ReferencePartner",
+    "value": "PetSOS"
+  }
+]
+
+
+If you already use additionalProperty, append it rather than replace.
+
+Acceptance checks
+
+EI page source includes ReferencePartner property
+
+Other hospitals do not include it
+
+Schema test passes
+
+C) Gap 3 — SoftwareApplication Schema (Do This, But Precisely)
+
+Status: ⚠️ Gap / debate
+Priority: P1 (do after A & B)
+Risk: Low if additive, but only if we do it right.
+
+Your developer is correct: do not replace EmergencyService / HowTo, and do not overload / with too many top-level entities.
+
+Decision (clear, recommended)
+
+✅ Add SoftwareApplication only on:
+
+/emergency
+
+❌ Do NOT add it to / for now.
+
+Why this is the best compromise
+
+/emergency is the “tool page” where the app is clearly used
+
+You keep EmergencyService + HowTo (great for crisis intent)
+
+You still get the “this is a software tool” signal for LLMs and app discovery
+
+You avoid confusing Google about whether the homepage is an app listing vs organization website
+
+Implementation rule
+
+Add SoftwareApplication as a secondary JSON-LD block, not merged into existing types, not replacing anything.
+
+Suggested minimal schema (keep it short)
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "PetSOS",
+  "applicationCategory": "MedicalApplication",
+  "operatingSystem": ["Web", "iOS", "Android"],
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "HKD" },
+  "url": "https://petsos.site/emergency",
+  "description": "PetSOS is a free emergency coordination tool that helps Hong Kong pet owners reach 24-hour animal hospitals faster by broadcasting emergencies to multiple clinics at once."
+}
+
+Acceptance checks
+
+Rich Results Test: no errors
+
+Doesn’t remove or alter existing schemas
+
+Page still qualifies for FAQ/HowTo (if already eligible)
+
+Phase 1 Updated Timeline (Realistic)
+
+Your dev is right — you don’t need 5–7 days.
+
+✅ P0 (2–3 hours)
+
+Implement district CollectionPage schema
+
+Implement EI ReferencePartner
+
+✅ P1 (30–60 mins)
+
+Add SoftwareApplication schema to /emergency (additive only)
+
+✅ QA (30–60 mins)
+
+Validate 3 pages in Google Rich Results Test:
+
+/emergency
+
+/hospitals/east-island-...
+
+/district/eastern
+
+Phase 1 Final “Done” Checklist (Sign-off)
+
+Phase 1 is complete when:
+
+ /district/:code outputs CollectionPage + ItemList (verified hospitals only)
+
+ EI hospital page includes ReferencePartner property
+
+ /emergency includes SoftwareApplication schema (additive)
+
+ All schema changes pass validation with no critical errors
+
+ No indexability rules regressed from Phase 0
