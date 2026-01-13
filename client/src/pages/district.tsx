@@ -159,6 +159,12 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "淺水灣、赤柱等南區寵物緊急情況？尋找附近24小時獸醫診所。不要讓距離延誤您寵物的緊急護理。",
     keywordsEn: "Southern District vet, 24-hour animal hospital Repulse Bay, emergency pet care Stanley, veterinary clinic Aberdeen",
     keywordsZh: "南區獸醫, 淺水灣24小時動物醫院, 赤柱緊急寵物護理, 香港仔獸醫診所",
+    mtrLinesEn: "Wong Chuk Hang MTR (South Island Line), Ocean Park MTR (South Island Line)",
+    mtrLinesZh: "黃竹坑港鐵站（南港島綫）、海洋公園港鐵站（南港島綫）",
+    transportNotesEn: "No direct MTR in Aberdeen/Repulse Bay area. Rely on buses from Wong Chuk Hang or Lei Tung stations. Limited taxi availability in remote areas.",
+    transportNotesZh: "香港仔/淺水灣地區無直達港鐵。需從黃竹坑或利東站轉乘巴士。偏遠地區的士供應有限。",
+    tunnelAccessEn: "Aberdeen Tunnel to Wan Chai",
+    tunnelAccessZh: "香港仔隧道連接灣仔",
     lastReviewed: "2026-01-13"
   },
   {
@@ -172,6 +178,12 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "香港仔或鴨脷洲寵物緊急情況？尋找附近24小時獸醫診所，隨時提供緊急護理。全天候服務。",
     keywordsEn: "Aberdeen vet, 24-hour animal hospital Aberdeen, emergency pet care Ap Lei Chau, veterinary clinic South Horizons",
     keywordsZh: "香港仔獸醫, 香港仔24小時動物醫院, 鴨脷洲緊急寵物護理, 海怡半島獸醫診所",
+    mtrLinesEn: "Nearest: Lei Tung MTR (South Island Line), Wong Chuk Hang MTR (South Island Line)",
+    mtrLinesZh: "最近：利東港鐵站（南港島綫）、黃竹坑港鐵站（南港島綫）",
+    transportNotesEn: "No direct MTR. Take bus from Lei Tung or Wong Chuk Hang MTR. Aberdeen Tunnel provides fast access to Wan Chai.",
+    transportNotesZh: "無直達港鐵。從利東或黃竹坑港鐵站乘巴士前往。香港仔隧道可快速前往灣仔。",
+    tunnelAccessEn: "Aberdeen Tunnel to Wan Chai, direct bus routes to Central",
+    tunnelAccessZh: "香港仔隧道連接灣仔，直達巴士前往中環",
     lastReviewed: "2026-01-13"
   },
   {
@@ -185,6 +197,12 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "佐敦寵物緊急情況？即時聯繫九龍24小時獸醫診所，隨時為您的寵物提供幫助。日夜緊急護理服務。",
     keywordsEn: "Jordan vet, 24-hour animal hospital Jordan, emergency pet care Yau Ma Tei, veterinary clinic Austin Road",
     keywordsZh: "佐敦獸醫, 佐敦24小時動物醫院, 油麻地緊急寵物護理, 柯士甸道獸醫診所",
+    mtrLinesEn: "Jordan MTR (Tsuen Wan Line)",
+    mtrLinesZh: "佐敦港鐵站（荃灣綫）",
+    transportNotesEn: "High taxi availability. Near Cross-Harbour Tunnel entrance. Walking distance to Tsim Sha Tsui and Yau Ma Tei stations.",
+    transportNotesZh: "的士供應充足。鄰近紅磡海底隧道入口。步行可達尖沙咀及油麻地站。",
+    tunnelAccessEn: "Cross-Harbour Tunnel nearby via Hung Hom",
+    tunnelAccessZh: "經紅磡前往紅磡海底隧道",
     lastReviewed: "2026-01-13"
   },
   {
@@ -217,6 +235,12 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "九龍灣寵物緊急情況？聯繫附近經驗豐富的24小時緊急獸醫。快速獲得獸醫護理可以拯救您寵物的生命。",
     keywordsEn: "Kowloon Bay vet, 24-hour animal hospital Kowloon Bay, emergency pet care Telford Gardens, veterinary clinic MegaBox",
     keywordsZh: "九龍灣獸醫, 九龍灣24小時動物醫院, 德福花園緊急寵物護理, MegaBox獸醫診所",
+    mtrLinesEn: "Kowloon Bay MTR (Kwun Tong Line)",
+    mtrLinesZh: "九龍灣港鐵站（觀塘綫）",
+    transportNotesEn: "Good taxi availability. Telford Plaza directly connected. Easy access to Kai Tak area.",
+    transportNotesZh: "的士供應良好。德福廣場直接連通。方便前往啟德區。",
+    tunnelAccessEn: "Eastern Harbour Crossing to Hong Kong Island",
+    tunnelAccessZh: "東區海底隧道連接港島",
     lastReviewed: "2026-01-13"
   },
   {
@@ -230,6 +254,12 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "觀塘寵物緊急情況？尋找東九龍24小時獸醫診所，隨時提供幫助。即時獲得緊急寵物護理。",
     keywordsEn: "Kwun Tong vet, 24-hour animal hospital Kwun Tong, emergency pet care APM, veterinary clinic Lam Tin",
     keywordsZh: "觀塘獸醫, 觀塘24小時動物醫院, APM緊急寵物護理, 藍田獸醫診所",
+    mtrLinesEn: "Kwun Tong MTR (Kwun Tong Line), Lam Tin MTR (Kwun Tong Line)",
+    mtrLinesZh: "觀塘港鐵站（觀塘綫）、藍田港鐵站（觀塘綫）",
+    transportNotesEn: "Good taxi availability. APM mall connected to station. Industrial area with good bus coverage.",
+    transportNotesZh: "的士供應良好。APM商場與車站相連。工業區巴士覆蓋良好。",
+    tunnelAccessEn: "Eastern Harbour Crossing to Hong Kong Island",
+    tunnelAccessZh: "東區海底隧道連接港島",
     lastReviewed: "2026-01-13"
   },
   {
@@ -243,6 +273,12 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "黃大仙寵物緊急情況？聯繫24小時獸醫診所，隨時為您的寵物提供緊急護理。即時獲得幫助。",
     keywordsEn: "Wong Tai Sin vet, 24-hour animal hospital Wong Tai Sin, emergency pet care Diamond Hill, veterinary clinic Choi Hung",
     keywordsZh: "黃大仙獸醫, 黃大仙24小時動物醫院, 鑽石山緊急寵物護理, 彩虹獸醫診所",
+    mtrLinesEn: "Wong Tai Sin MTR (Kwun Tong Line), Diamond Hill MTR (Kwun Tong/Tuen Ma Lines)",
+    mtrLinesZh: "黃大仙港鐵站（觀塘綫）、鑽石山港鐵站（觀塘綫/屯馬綫）",
+    transportNotesEn: "Good MTR coverage. Diamond Hill is major interchange. Moderate taxi availability.",
+    transportNotesZh: "港鐵覆蓋良好。鑽石山為主要轉車站。的士供應中等。",
+    tunnelAccessEn: "Lion Rock Tunnel to Sha Tin",
+    tunnelAccessZh: "獅子山隧道連接沙田",
     lastReviewed: "2026-01-13"
   },
   {
@@ -256,6 +292,12 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "深水埗寵物緊急情況？尋找附近24小時獸醫診所，隨時提供幫助。不要等待—立即為您的寵物獲得所需護理。",
     keywordsEn: "Sham Shui Po vet, 24-hour animal hospital Sham Shui Po, emergency pet care Cheung Sha Wan, veterinary clinic Lai Chi Kok",
     keywordsZh: "深水埗獸醫, 深水埗24小時動物醫院, 長沙灣緊急寵物護理, 荔枝角獸醫診所",
+    mtrLinesEn: "Sham Shui Po MTR (Tsuen Wan Line), Cheung Sha Wan MTR (Tsuen Wan Line), Lai Chi Kok MTR (Tsuen Wan Line)",
+    mtrLinesZh: "深水埗港鐵站（荃灣綫）、長沙灣港鐵站（荃灣綫）、荔枝角港鐵站（荃灣綫）",
+    transportNotesEn: "Good MTR coverage along Cheung Sha Wan Road. Moderate taxi availability. Congested streets.",
+    transportNotesZh: "長沙灣道沿線港鐵覆蓋良好。的士供應中等。街道擠塞。",
+    tunnelAccessEn: "Cross-Harbour Tunnel via Hung Hom",
+    tunnelAccessZh: "經紅磡前往紅磡海底隧道",
     lastReviewed: "2026-01-13"
   },
   {
@@ -336,6 +378,12 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "屯門寵物緊急情況？聯繫新界西區附近的24小時獸醫診所。在您的寵物最需要時快速獲得緊急護理。",
     keywordsEn: "Tuen Mun vet, 24-hour animal hospital Tuen Mun, emergency pet care New Territories West",
     keywordsZh: "屯門獸醫, 屯門24小時動物醫院, 新界西緊急寵物護理",
+    mtrLinesEn: "Tuen Mun MTR (Tuen Ma Line), Light Rail (multiple routes)",
+    mtrLinesZh: "屯門港鐵站（屯馬綫）、輕鐵（多條路線）",
+    transportNotesEn: "Light Rail serves local areas. Good bus coverage. Far from urban Kowloon (45+ min to TST).",
+    transportNotesZh: "輕鐵服務區內。巴士覆蓋良好。距離九龍市區較遠（往尖沙咀需45分鐘以上）。",
+    tunnelAccessEn: "Tuen Mun Road to Tsuen Wan, Tai Lam Tunnel to Yuen Long",
+    tunnelAccessZh: "屯門公路連接荃灣、大欖隧道連接元朗",
     lastReviewed: "2026-01-13"
   },
   {
@@ -349,6 +397,12 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "元朗寵物緊急情況？尋找新界24小時獸醫診所，隨時為您的寵物提供幫助。即時獲得緊急護理。",
     keywordsEn: "Yuen Long vet, 24-hour pet clinic Yuen Long, emergency vet New Territories",
     keywordsZh: "元朗獸醫, 元朗24小時寵物診所, 新界緊急獸醫",
+    mtrLinesEn: "Yuen Long MTR (Tuen Ma Line), Light Rail (routes 610, 614, 615, 761P)",
+    mtrLinesZh: "元朗港鐵站（屯馬綫）、輕鐵（610、614、615、761P線）",
+    transportNotesEn: "Light Rail connects to Tuen Mun and Tin Shui Wai. Good taxi availability in town center.",
+    transportNotesZh: "輕鐵連接屯門及天水圍。市中心的士供應良好。",
+    tunnelAccessEn: "Tai Lam Tunnel to Tsuen Wan",
+    tunnelAccessZh: "大欖隧道連接荃灣",
     lastReviewed: "2026-01-13"
   },
   {
@@ -381,6 +435,12 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "大埔寵物緊急情況？尋找新界24小時獸醫診所，隨時提供幫助。快速獲得您寵物的緊急護理。",
     keywordsEn: "Tai Po vet, 24-hour animal hospital Tai Po, emergency pet care New Territories North, veterinary clinic Tai Wo",
     keywordsZh: "大埔獸醫, 大埔24小時動物醫院, 新界北緊急寵物護理, 太和獸醫診所",
+    mtrLinesEn: "Tai Po Market MTR (East Rail Line), Tai Wo MTR (East Rail Line)",
+    mtrLinesZh: "大埔墟港鐵站（東鐵綫）、太和港鐵站（東鐵綫）",
+    transportNotesEn: "Good MTR coverage on East Rail Line. Moderate taxi availability. Bus routes to Sha Tin and Kowloon.",
+    transportNotesZh: "東鐵綫港鐵覆蓋良好。的士供應中等。巴士前往沙田及九龍。",
+    tunnelAccessEn: "Tolo Highway to Sha Tin",
+    tunnelAccessZh: "吐露港公路連接沙田",
     lastReviewed: "2026-01-13"
   },
   {
@@ -394,6 +454,12 @@ const HONG_KONG_DISTRICTS: District[] = [
     descriptionZh: "荃灣寵物緊急情況？聯繫24小時獸醫診所，隨時提供緊急護理。全天候服務。",
     keywordsEn: "Tsuen Wan vet, 24-hour animal hospital Tsuen Wan, emergency pet care New Territories West, veterinary clinic Kwai Chung",
     keywordsZh: "荃灣獸醫, 荃灣24小時動物醫院, 新界西緊急寵物護理, 葵涌獸醫診所",
+    mtrLinesEn: "Tsuen Wan MTR (Tsuen Wan Line), Tsuen Wan West MTR (Tuen Ma Line)",
+    mtrLinesZh: "荃灣港鐵站（荃灣綫）、荃灣西港鐵站（屯馬綫）",
+    transportNotesEn: "Two MTR lines available. Good taxi availability. Major bus interchange.",
+    transportNotesZh: "兩條港鐵綫可用。的士供應良好。主要巴士轉車站。",
+    tunnelAccessEn: "Shing Mun Tunnel to Sha Tin, Tuen Mun Road to Tuen Mun",
+    tunnelAccessZh: "城門隧道連接沙田、屯門公路連接屯門",
     lastReviewed: "2026-01-13"
   }
 ];
