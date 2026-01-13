@@ -650,10 +650,6 @@ export function createMedicalWebPageSchema(language: string = 'en') {
     "audience": {
       "@type": "Audience",
       "audienceType": language === 'zh-HK' ? "寵物主人" : "Pet Owners"
-    },
-    "medicalAudience": {
-      "@type": "MedicalAudience",
-      "audienceType": "Patient"
     }
   };
 }

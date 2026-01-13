@@ -105,6 +105,7 @@ export default function EmergencyChecklistPage() {
   const createFAQSchema = () => ({
     "@context": "https://schema.org",
     "@type": "FAQPage",
+    "inLanguage": language === 'zh-HK' ? "zh-HK" : "en",
     "mainEntity": FAQS.map(faq => ({
       "@type": "Question",
       "name": language === 'zh-HK' ? faq.questionZh : faq.questionEn,

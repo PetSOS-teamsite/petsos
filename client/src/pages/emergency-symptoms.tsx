@@ -307,6 +307,7 @@ export default function EmergencySymptomsPage() {
   const createFAQSchema = () => ({
     "@context": "https://schema.org",
     "@type": "FAQPage",
+    "inLanguage": language === 'zh-HK' ? "zh-HK" : "en",
     "mainEntity": SYMPTOM_SNIPPETS.map(item => ({
       "@type": "Question",
       "name": language === 'zh-HK' ? item.questionZh : item.questionEn,
@@ -325,6 +326,7 @@ export default function EmergencySymptomsPage() {
       ? "香港寵物緊急症狀識別指南。了解何時需要立即就醫，包括呼吸困難、中毒、癲癇等危急情況的處理方法。"
       : "Hong Kong pet emergency symptom recognition guide. Learn when immediate vet care is needed, including how to handle critical situations like breathing difficulty, poisoning, and seizures.",
     "url": "https://petsos.site/emergency-symptoms",
+    "inLanguage": language === 'zh-HK' ? "zh-HK" : "en",
     "medicalAudience": {
       "@type": "PetOwner"
     },
@@ -364,8 +366,7 @@ export default function EmergencySymptomsPage() {
       "possibleTreatment": {
         "@type": "MedicalTherapy",
         "name": language === 'zh-HK' ? symptom.actionZh : symptom.actionEn
-      },
-      "status": symptom.severity === 'critical' ? 'http://schema.org/MedicalConditionStage' : undefined
+      }
     }))
   });
 
