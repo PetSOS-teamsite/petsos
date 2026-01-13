@@ -1,0 +1,288 @@
+Phase 2 — EI Gold Standard Page
+BLOCK 1 — “What This Hospital Is Best For” (Orientation)
+
+Purpose: Help panicking owners decide if EI is suitable in 5 seconds.
+
+Data mapping
+
+Derived from: ICU, imaging, surgery, blood, exotic, oxygen, ventilator
+
+UI
+
+Short bullet list (max 5)
+
+Appears near top, under hospital name
+
+Copy (EN)
+
+Best suited for emergencies involving:
+• Critical care & intensive monitoring
+• Trauma, breathing distress, collapse
+• Emergency surgery (soft tissue & orthopaedic)
+• Advanced imaging (CT / Ultrasound)
+• Blood transfusion & oxygen support
+
+Copy (繁中)
+
+特別適合處理以下緊急情況：
+• 危急個案及深切治療監察
+• 外傷、呼吸困難、突然倒下
+• 緊急手術（軟組織／骨科）
+• 先進影像診斷（CT／超聲波）
+• 輸血及氧氣治療
+
+Acceptance
+
+No marketing language
+
+Max 5 bullets
+
+Fully derived from DB flags
+
+BLOCK 2 — Emergency Capability Matrix (Core Authority)
+
+Purpose: Be the most information-dense, honest hospital section online.
+
+Data mapping
+
+ICU, imaging, blood, surgery, ventilation, dialysis, exotic, lab
+
+UI
+
+Matrix or grouped checklist
+
+Show ✅ / — only (no grey guesses)
+
+Section labels
+
+Critical Care
+
+Imaging & Diagnostics
+
+Blood & Life Support
+
+Emergency Surgery
+
+Exotic Species (if applicable)
+
+Acceptance
+
+Only show capabilities where DB = true
+
+No implied services
+
+BLOCK 3 — Triage & Wait-Time Transparency (Trust Builder)
+
+Purpose: Reduce frustration; explain why waiting happens.
+
+Data mapping
+
+triagePolicy
+
+typicalWaitBand
+
+liveStatus
+
+UI
+
+Short explainer + status pill
+
+Copy (EN)
+
+How emergency triage works
+Patients are assessed based on medical urgency, not arrival order. Life-threatening cases are prioritised.
+
+Typical waiting time: {{typicalWaitBand}}
+(May vary depending on case severity and hospital load.)
+
+Copy (繁中)
+
+急症分流說明
+病患會按醫療緊急程度處理，而非到達先後。危急個案會優先。
+
+一般等候時間： {{typicalWaitBand}}
+(實際時間會因個案嚴重程度及醫院即時情況而有所不同)
+
+Disclaimer (fixed)
+
+Information is provided for emergency guidance only.
+
+Acceptance
+
+Wait time never shown without disclaimer
+
+Live status does not override triage explanation
+
+BLOCK 4 — Consultation Fees (Transparent, Not Promotional)
+
+Purpose: Address midnight-fee anxiety without promising totals.
+
+Data mapping
+
+consultFeeDay / Evening / Midnight
+
+surcharge start times
+
+holiday surcharge
+
+depositBand
+
+UI
+
+Table with time bands
+
+Species grouping if applicable
+
+Copy (EN)
+
+Consultation fees (reference only)
+Fees vary by case complexity and required treatment.
+
+• Daytime: HK$ {{dayFee}}
+• Evening (from {{eveningStart}}): HK$ {{eveningFee}}
+• Midnight (from {{midnightStart}}): HK$ {{midnightFee}}
+
+Admission deposit: {{depositBand}} (if required)
+
+Copy (繁中)
+
+診症費用（只供參考）
+費用會因個案複雜程度及所需治療而有所不同。
+
+• 日間：HK$ {{dayFee}}
+• 晚間（{{eveningStart}}後）：HK$ {{eveningFee}}
+• 午夜（{{midnightStart}}後）：HK$ {{midnightFee}}
+
+入院按金： {{depositBand}}（如適用）
+
+Acceptance
+
+Never say “starting from”
+
+Always marked “reference only”
+
+BLOCK 5 — Typhoon & Holiday Operations (HK-Specific Moat)
+
+Purpose: High-value local GEO + real-world usefulness.
+
+Data mapping
+
+openT8 / openT10 / Black Rain
+
+CNY / Christmas flags
+
+lastConfirmedAt
+
+UI
+
+Simple table + timestamp
+
+Copy (EN)
+
+Typhoon & public holiday operations
+• Typhoon Signal 8: {{open/closed}}
+• Typhoon Signal 10: {{open/closed}}
+• Black Rainstorm: {{open/closed}}
+
+Last confirmed: {{lastConfirmedAt}}
+
+Copy (繁中)
+
+颱風及假期應診安排
+• 八號風球：{{應診／不應診}}
+• 十號風球：{{應診／不應診}}
+• 黑色暴雨：{{應診／不應診}}
+
+最後確認時間：{{lastConfirmedAt}}
+
+Acceptance
+
+Timestamp always shown
+
+If unknown → show “Please confirm before arrival”
+
+BLOCK 6 — Getting There in an Emergency (Panic Logistics)
+
+Purpose: Remove friction at the most stressful moment.
+
+Data mapping
+
+emergencyEntrance
+
+taxiDropoff
+
+parkingDetails
+
+wheelchairAccess
+
+UI
+
+Bullet list + “Open in Maps” CTA
+
+Copy (EN)
+
+Arriving during an emergency
+• Emergency entrance: {{emergencyEntrance}}
+• Taxi drop-off: {{taxiDropoff}}
+• Parking: {{parkingDetails}}
+
+Copy (繁中)
+
+緊急到達指引
+• 急症入口：{{emergencyEntranceZh}}
+• 的士上落點：{{taxiDropoffZh}}
+• 泊車安排：{{parkingDetailsZh}}
+
+Acceptance
+
+No assumptions
+
+Empty fields hidden, not shown as “N/A”
+
+BLOCK 7 — Verification & Trust Footer (Quiet Authority)
+
+Purpose: Show this page is maintained, not scraped.
+
+Data mapping
+
+verified
+
+lastVerifiedAt
+
+ReferencePartner (EI only)
+
+Copy (EN)
+
+Information verified by PetSOS
+Last verified: {{lastVerifiedAt}}
+
+Emergency capability data validated with East Island 24-Hour Animal Hospital.
+
+Copy (繁中)
+
+資料由 PetSOS 驗證
+最後驗證時間：{{lastVerifiedAt}}
+
+急症服務資料已與東區24小時動物醫院確認。
+
+Acceptance
+
+Appears only if verified = true
+
+Reference line only for EI
+
+Phase 2 Completion Checklist
+
+Before sign-off:
+
+ All 7 blocks implemented on EI page
+
+ No marketing adjectives (“best”, “top”, “leading”)
+
+ All variable data pulled from DB
+
+ EN + 繁中 toggles correctly
+
+ Page reads calmly, not sales-y
+
+ Suitable to be quoted by AI without disclaimers removed
