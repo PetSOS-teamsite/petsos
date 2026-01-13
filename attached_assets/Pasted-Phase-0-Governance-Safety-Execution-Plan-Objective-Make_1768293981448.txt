@@ -1,0 +1,240 @@
+Phase 0 — Governance & Safety (Execution Plan)
+
+Objective:
+Make PetSOS crawl-safe, privacy-safe, and trust-safe before any GEO amplification.
+
+Outcome:
+Search engines + LLMs see only what they should, and hospitals feel protected.
+
+0️⃣ Phase 0 Success Criteria (Lock This)
+
+Phase 0 is done only when:
+
+❌ No private emergency data is indexable
+
+✅ All public utility pages are indexable
+
+✅ One canonical URL per hospital
+
+✅ Language switching does not create duplicate URLs
+
+✅ Sitemap contains only approved pages
+
+✅ Transparency rules are documented internally
+
+0.1 Indexing & Robots Rules (CRITICAL)
+✅ Indexable (must return index,follow)
+/emergency
+/emergency-symptoms
+/hospitals/:slug
+/district/:code
+/blog/*
+/typhoon-status
+/about
+/verification-process
+/medical-advisory
+
+❌ Noindex (must return noindex,nofollow)
+/emergency-results/:requestId
+/emergency-profile/:requestId
+/emergency-results/:requestId/messages
+/messages
+/profile
+/pets
+/clinic/dashboard
+/admin/*
+
+Implementation checklist
+
+Add <meta name="robots" content="noindex,nofollow"> on all private routes
+
+Ensure no private route appears in sitemap.xml
+
+Confirm Google Search Console → URL Inspection shows “Excluded by noindex”
+
+Owner: Engineering
+Acceptance check:
+Manually inspect 2–3 :requestId URLs → must be non-indexable.
+
+0.2 Canonical & Language Handling (Duplicate Safety)
+Canonical rules
+
+Canonical URL = /hospitals/:slug
+
+No language-specific canonicals
+
+No query parameters (?lang=zh) in canonical
+
+Language switcher rules
+
+Language toggle does not change URL
+
+Only text changes, not route
+
+No crawlable /zh/ or /en/ paths (for now)
+
+(Optional, later)
+
+If you introduce /zh/ paths later → use hreflang
+
+Do not do this in Phase 0
+
+Owner: Engineering
+Acceptance check:
+View page source → canonical tag always points to base URL.
+
+0.3 Sitemap.xml (Dynamic & Clean)
+Sitemap inclusion rules
+
+Include only:
+
+Hospitals where verified = true
+
+Regions where regions.active = true
+
+Blog posts (all 5)
+
+Core public pages (/emergency, /emergency-symptoms, etc.)
+
+Sitemap fields
+
+<loc> = canonical URL
+
+<lastmod> =
+
+hospitals → updatedAt OR lastVerifiedAt
+
+blogs → updatedAt
+
+No query params
+
+No admin or requestId paths
+
+Automation
+
+Sitemap regenerates daily
+
+Excludes anything with noindex
+
+Owner: Engineering
+Acceptance check:
+Download sitemap.xml → manually scan for any /admin, /profile, or requestId.
+
+0.4 Transparency Policy (Internal Rulebook)
+
+This is non-technical but critical for hospital trust.
+
+Create a 1-page internal doc defining:
+
+Public (Always Visible)
+
+Opening hours
+
+Emergency capabilities
+
+Species accepted
+
+Logistics (parking, entrance, taxi)
+
+Typhoon / holiday opening status
+
+Verification date
+
+Public with Disclaimer
+
+Consultation fees (exact or band)
+
+Typical wait time
+
+Live status (normal / busy / critical_only)
+
+Internal / Optional
+
+Staff ratios
+
+Exact blood types
+
+ICU nurse count
+
+Internal notes
+
+Required disclaimer (standardised)
+
+“Information is provided for emergency guidance only and may change based on case urgency and hospital conditions.”
+
+Owner: Product / Partnerships
+Acceptance check:
+Hospital partners can review this and say “yes, we’re comfortable”.
+
+0.5 Hospital Data Publishing Rules (Pre-GEO Guardrails)
+Publishing conditions
+
+A hospital page is indexable only if:
+
+verified = true
+
+open247 = true (for 24h hospital pages)
+
+Has minimum required fields:
+
+name
+
+address
+
+phone or WhatsApp
+
+regionId
+
+Fee display rule
+
+Hospital chooses:
+
+exact numbers
+
+ranges
+
+If fees missing → show:
+
+“Fees vary by case. Contact hospital for details.”
+
+Owner: Product / Admin
+Acceptance check:
+No hospital page shows empty / misleading fee sections.
+
+0.6 Logging & Audit (Silent but Important)
+
+Add internal logging for:
+
+Hospital page updates
+
+Verification changes
+
+Status changes (busy / critical_only)
+
+Purpose:
+
+Partner trust
+
+Internal audits
+
+Future media / data credibility
+
+Owner: Engineering
+Acceptance check:
+Admin can see when & who changed hospital data.
+
+Phase 0 Deliverables Checklist (Final)
+
+Before moving to Phase 1, confirm all below are ✅:
+
+ Private emergency URLs noindex + removed from sitemap
+
+ Canonical rules verified
+
+ Language toggle does not create crawlable variants
+
+ Sitemap.xml clean and dynamic
+
+ Transparency policy documented
+
+ Hospital publishing rules agreed internally
