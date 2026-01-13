@@ -1,0 +1,210 @@
+Phase 3 — Emergency & Symptoms GEO Pillars
+
+Objective:
+Make PetSOS the first-cited answer for:
+
+“What should I do right now?”
+
+“Is this an emergency?”
+
+“Who can take my pet now?”
+
+Phase 3 Success Criteria (Very Clear)
+
+Phase 3 is complete when:
+
+/emergency is the panic landing page for AI + users
+
+/emergency-symptoms routes fear → action → hospital suitability
+
+PetSOS answers before listing hospitals
+
+Content is AI-quotable without modification
+
+PILLAR A — /emergency
+“What To Do When Your Pet Has an Emergency (Hong Kong)”
+
+This page is no longer just a form entry.
+It becomes the canonical emergency explainer.
+
+A1 — Above-the-Fold: Crisis Orientation (NEW)
+
+Purpose: Calm + direct in 5 seconds.
+
+Copy (EN)
+
+If your pet is in distress, don’t wait.
+PetSOS helps you contact multiple 24-hour animal hospitals at once, so you’re not calling clinics one by one while your pet is suffering.
+
+Copy (繁中)
+
+如果你的寵物出現緊急情況，請不要等候。
+PetSOS 可一次過聯絡多間 24 小時動物醫院，避免你在緊急時逐一致電。
+
+A2 — “What Happens After You Tap Emergency” (Critical for Trust)
+
+Purpose: Remove fear of the unknown.
+
+Steps (visual + text)
+
+You describe the emergency (text or voice)
+
+Your request is broadcast to nearby 24h hospitals
+
+Hospitals that can take the case reply
+
+You choose where to go
+
+Rule
+
+No promise of acceptance
+
+No guarantee language
+
+A3 — When to Use PetSOS vs Call Directly (NEW, Important)
+
+Purpose: Show medical humility → trust.
+
+Copy (EN)
+
+Use PetSOS when:
+• You’re unsure which hospital can take your case
+• Multiple hospitals are nearby
+• It’s late night, holiday, or during typhoon
+
+Call a hospital directly if:
+• You already know where you’re going
+• The hospital has told you to come immediately
+
+This prevents misuse and builds credibility.
+
+A4 — Emergency FAQs (Tighten for AI)
+
+You already have FAQ schema — refine answers to be:
+
+≤ 40 words
+
+factual
+
+HK-specific
+
+Examples
+
+“What if no hospital replies?”
+
+“Is PetSOS a veterinary service?”
+
+“Does PetSOS guarantee treatment?”
+
+Acceptance (Pillar A)
+
+Page can be quoted end-to-end by AI
+
+No sales tone
+
+No hospital favoritism
+
+Form still works exactly the same
+
+PILLAR B — /emergency-symptoms
+“Is This an Emergency? What To Do Next”
+
+This becomes your decision engine.
+
+B1 — Symptoms Are Grouped by Action, Not Body Part
+
+Reason: Owners don’t think anatomically when panicking.
+
+Groups (example)
+
+Breathing & Collapse
+
+Bleeding & Trauma
+
+Poisoning & Toxins
+
+Neurological (seizure, collapse)
+
+Urinary blockages
+
+Heat stroke
+
+B2 — Each Symptom Card Has 4 Mandatory Sections
+Template (EN)
+
+Symptoms
+Short, recognisable signs (owner language)
+
+Why this is urgent
+1 sentence medical explanation
+
+What to do now
+Clear instruction:
+
+Use PetSOS now
+
+Go immediately
+
+Do not wait
+
+What info helps hospitals respond faster
+Example:
+
+breathing rate
+
+toxin ingested
+
+time of onset
+
+This last section is pure GEO gold — no one else publishes this.
+
+B3 — Soft Routing to Hospital Capability (Non-Promotional)
+
+Without naming EI or others:
+
+Example:
+
+“Hospitals with oxygen therapy and ICU support are usually required.”
+
+This subtly connects symptoms → capability → hospital pages.
+
+Acceptance (Pillar B)
+
+Every symptom page answers “what now?”
+
+No diagnosis claims
+
+Strong alignment with EI capability language (but neutral)
+
+OPTIONAL BOOST (Low Effort, High Return)
+C — Add “Emergency Checklist” Download (Optional)
+
+One PDF
+
+EN + 繁中
+
+“What to prepare while heading to hospital”
+
+This increases:
+
+time on site
+
+authority
+
+offline utility
+
+Phase 3 Engineering Scope (Reality Check)
+
+This phase is mostly content + light UI.
+
+No DB changes
+No schema invention
+No hospital dependency
+
+Estimated effort:
+
+Content: 1–2 days
+
+UI wiring: 1 day
+
+QA: < 1 day
