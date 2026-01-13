@@ -514,7 +514,15 @@ export default function ClinicResultsPage() {
         return distA - distB;
       }
       
-      // FOURTH PRIORITY: 24-hour hospitals
+      // FOURTH PRIORITY: Last reply time (more recent replies rank higher)
+      const replyA = a.lastInboundReplyAt ? new Date(a.lastInboundReplyAt).getTime() : -Infinity;
+      const replyB = b.lastInboundReplyAt ? new Date(b.lastInboundReplyAt).getTime() : -Infinity;
+      
+      if (replyA !== replyB) {
+        return replyB - replyA; // More recent (higher timestamp) comes first
+      }
+      
+      // FIFTH PRIORITY: 24-hour hospitals
       if (a.open247 && !b.open247) return -1;
       if (!a.open247 && b.open247) return 1;
       
