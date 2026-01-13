@@ -37,6 +37,7 @@ const MedicalAdvisoryPage = lazy(() => import("@/pages/medical-advisory"));
 const VerificationProcessPage = lazy(() => import("@/pages/verification-process"));
 const ConsultantsPage = lazy(() => import("@/pages/consultants"));
 const EmergencySymptomsPage = lazy(() => import("@/pages/emergency-symptoms"));
+const EmergencyChecklistPage = lazy(() => import("@/pages/emergency-checklist"));
 const TyphoonStatusPage = lazy(() => import("@/pages/typhoon-status"));
 const HospitalsPage = lazy(() => import("@/pages/hospitals"));
 const HospitalDetailPage = lazy(() => import("@/pages/hospital-detail"));
@@ -107,6 +108,7 @@ function PublicRouter() {
       <Route path="/verification-process" component={VerificationProcessPage} />
       <Route path="/consultants" component={ConsultantsPage} />
       <Route path="/emergency-symptoms" component={EmergencySymptomsPage} />
+      <Route path="/emergency-checklist" component={EmergencyChecklistPage} />
       <Route path="/typhoon-status" component={TyphoonStatusPage} />
       <Route path="/emergency" component={EmergencyPage} />
       <Route path="/emergency-results/:requestId" component={ClinicResultsPage} />
