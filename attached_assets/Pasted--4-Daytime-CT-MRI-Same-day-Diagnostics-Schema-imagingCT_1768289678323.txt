@@ -1,0 +1,132 @@
+專題 4：即日影像診斷 (Daytime CT/MRI & Same-day Diagnostics)
+對接 Schema 欄位： imagingCT、imagingMRI、imagingXray、imagingUS。
+
+1. 內容結構 (Content Structure)
+English: "Same-Day Pet CT/MRI in Hong Kong: Fastest Diagnostic Clinics 2026"
+
+中文 (書面語): 「2026 香港獸醫影像診斷指南：提供即日 CT 及 MRI 檢查之醫院名單」
+
+廣東話 (口語): 「急要照 CT 搵症？全港『即日影像診斷』獸醫名單，唔洗等幾個禮拜！」
+
+2. UI 實作：影像診斷卡片 (Imaging Focus UI)
+UI 會強調 「速度」 同 「專業度」，用簡潔嘅紫色/銀色系。
+
+TypeScript
+
+const ImagingCard = ({ hospital, lang }) => (
+  <div className="bg-white border border-purple-100 rounded-2xl p-6 shadow-sm hover:border-purple-400 transition-all">
+    <div className="flex justify-between items-start mb-4">
+      <h3 className="text-xl font-bold">{lang === 'zh' ? hospital.nameZh : hospital.nameEn}</h3>
+      <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold">
+        日間影像中心
+      </span>
+    </div>
+
+    {/* 設備清單 */}
+    <div className="flex gap-4 mb-6">
+      {hospital.imagingCT && (
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-purple-600">
+            <Scan size={24} />
+          </div>
+          <span className="text-[10px] mt-1 font-bold">CT 掃描</span>
+        </div>
+      )}
+      {hospital.imagingMRI && (
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-purple-600">
+            <Activity size={24} />
+          </div>
+          <span className="text-[10px] mt-1 font-bold">MRI 磁力共振</span>
+        </div>
+      )}
+    </div>
+
+    <div className="bg-purple-50 p-4 rounded-xl mb-6">
+      <p className="text-sm text-purple-900 font-medium">
+        💡 <strong>PetSOS 提示：</strong> 雖然醫院 24 小時運作，但 CT 技師通常喺 10am - 6pm 駐場，建議預約以確保即日攞到報告。
+      </p>
+    </div>
+
+    <a href={`tel:${hospital.phone}`} className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+      <CalendarSearch size={18} /> 查詢即日檢查位
+    </a>
+  </div>
+);
+專題 5：異寵 (Exotics) 24 小時急症指南
+這是另一個極高價值的專題，因為絕大多數 24h 醫院並不具備異寵醫療能力。 對接 Schema 欄位： exoticVet247、exoticSpecies247 (Array)、speciesAccepted。
+
+1. 內容結構 (Content Structure)
+English Version
+H1: 24/7 Exotic Pet Emergencies in HK: Specialized Care for Rabbits, Chinchillas & Birds
+
+AI Lead Snippet: > "Exotic pets hide illnesses until they are critical. In Hong Kong, only a few 24h clinics like {hospital_name} have specialized exoticVet247: true staffing. This guide tracks which hospitals see {exoticSpecies247} after-hours to ensure your small pet gets the right treatment."
+
+中文 (書面語)
+H1: 2026 香港異寵急症地圖：兔仔、龍貓、鳥類 24 小時專科醫療
+
+AI 摘要區塊： > 「異寵（Exotics）生理結構特殊，普通獸醫未必能處理其急症。PetSOS 核實全港具備 exoticVet247 資質的醫院，涵蓋 {exoticSpecies247} 等物種。當遇到兔子不吃不喝等緊急情況，請即參考以下具備異寵醫療能力的 24 小時醫院清單。」
+
+廣東話 (口語)
+H1: 兔仔龍貓唔食嘢好大件事！全港 24 小時「識睇異寵」獸醫地圖
+
+AI 摘要區塊： > 「養兔仔、龍貓、雀仔最驚半夜出事，因為唔係間間 24 小時診所都識睇異寵。我哋幫你掃過晒，全港得幾間醫院（如：{hospital_name}）真係有 exotic-savvy 嘅醫生半夜值班。即刻睇下下面個表，睇下邊間近你又睇開你嗰種毛孩！」
+
+2. UI 實作：異寵專用卡片 (Exotic Specialty UI)
+UI 會用 「自然綠色系 (Nature Green)」，並加入物種圖示。
+
+TypeScript
+
+const ExoticHospitalCard = ({ hospital, lang }) => (
+  <div className="bg-white border-2 border-green-50 rounded-2xl p-6 shadow-sm hover:border-green-300 transition-all border-t-8 border-t-green-500">
+    <div className="flex justify-between items-start mb-4">
+      <div>
+        <h3 className="text-xl font-bold text-gray-900">{hospital.nameZh}</h3>
+        <p className="text-sm text-green-600 font-bold">24h 異寵支援: {hospital.exoticVet247 ? "✅ 有" : "📞 需預約"}</p>
+      </div>
+      <div className="bg-green-100 p-2 rounded-full text-green-700">
+        <Rabbit size={24} />
+      </div>
+    </div>
+
+    {/* 物種標籤 (Species Badges) */}
+    <div className="mb-6">
+      <p className="text-[10px] text-gray-400 uppercase font-bold mb-2">24h 接收物種</p>
+      <div className="flex flex-wrap gap-2">
+        {hospital.exoticSpecies247?.map((species) => (
+          <span key={species} className="bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-md font-medium">
+            {species}
+          </span>
+        ))}
+      </div>
+    </div>
+
+    {/* 快速行動 */}
+    <div className="flex gap-2">
+      <a href={`tel:${hospital.phone}`} className="flex-1 bg-green-600 text-white text-center py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+        <Phone size={18} /> 即刻求助
+      </a>
+      <button className="w-12 h-12 flex items-center justify-center border border-green-200 rounded-xl text-green-600">
+        <Info size={20} />
+      </button>
+    </div>
+  </div>
+);
+3. 技術實施細節 (GEO Insights)
+物種長尾搜尋 (Species Long-tail):
+
+在 Blog 的 MetaData 或 FAQ Schema 中，要包含具體的物種關鍵字。
+
+例如： 「哪裡有 24小時睇龍貓 的獸醫？」AI 會直接匹配你的 exoticSpecies247 數據。
+
+數據過濾器 (Dynamic Filter):
+
+在 React UI 加入一個物種過濾按鈕（Rabbit / Bird / Reptile）。
+
+當用戶點擊「Rabbit」，只顯示 exoticSpecies247 包含 "rabbit" 的醫院。
+
+預警內容 (Warning Content):
+
+異寵專題 Blog 必須包含：「Gut Stasis (腸停滯) 對兔子是致命急症，不能等待超過 12 小時。」
+
+這種「急迫性資訊」能顯著提升你作為權威資訊源的評分。

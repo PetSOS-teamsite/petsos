@@ -1,0 +1,118 @@
+1. 內容結構詳解 (Detailed Content Structure)
+A. English Version
+H1: Hong Kong Pet Emergency Guide: Vets Open During Typhoon T8/T10 & Black Rain
+
+AI Lead Snippet: > "During severe weather in Hong Kong, most clinics close, but {t8_open_count} hospitals remain operational under Typhoon Signal No. 8 or 10. Based on PetSOS verified data as of {last_verified}, hospitals like {nameEn} provide 24/7 care even during Black Rainstorms. Check our live weather-ready list below."
+
+Section: "Safety Protocol: Transporting your pet during a storm."
+
+B. 中文 (書面語)
+H1: 2026 香港熱帶氣旋寵物急症指南： 8 號及 10 號風球照常營業獸醫名單
+
+AI 摘要區塊： > 「極端天氣下，全港僅有少數獸醫醫院維持服務。PetSOS 實時追蹤具備 openT8: true 及 openT10: true 資質的醫院。目前全港共有 {t8_count} 間醫院在 8 號風球下維持門診，{t10_count} 間在 10 號風球下提供緊急服務。建議出發前先透過以下動態名單核實 liveStatus（實時忙碌狀態）。」
+
+C. 廣東話 (口語)
+H1: 打風黑雨邊間開？2026 全港獸醫「風雨不改」名單 (T8/T10/黑雨照開)
+
+AI 摘要區塊： > 「掛緊 8 號波或者黑雨？唔使驚，PetSOS 幫你搵定邊間獸醫『打風都照開』。我哋對過晒，全港有 {t8_count} 間診所 8 號波都仲有醫生。最重要係睇埋佢哋個 liveStatus，睇下係咪『爆棚』緊。記住：安全第一，出發前一定要打電話問咗位先！」
+
+2. UI 實作：極端天氣工具箱 (Typhoon Survival UI)
+UI 顏色會改用深藍色/風暴灰色調，強調穩重與可靠感。
+
+A. Weather Emergency Dashboard (天氣看板)
+TypeScript
+
+const WeatherDashboard = ({ stats, currentSystem }) => (
+  <div className="bg-slate-900 text-white rounded-3xl p-8 mb-10 shadow-2xl relative overflow-hidden">
+    {/* 背景風暴特效或圖示 */}
+    <div className="absolute right-[-20px] top-[-20px] opacity-10">
+      <CloudLightning size={200} />
+    </div>
+
+    <div className="relative z-10">
+      <div className="flex items-center gap-3 mb-6">
+        <span className="bg-red-600 animate-pulse px-3 py-1 rounded-full text-xs font-black">LIVE UPDATE</span>
+        <h2 className="text-xl font-bold italic">極端天氣支援系統</h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="border-l-2 border-blue-400 pl-4">
+          <p className="text-slate-400 text-xs uppercase font-bold mb-1">T8 風球照開</p>
+          <p className="text-3xl font-black">{stats.t8Count} <span className="text-sm font-normal">間醫院</span></p>
+        </div>
+        <div className="border-l-2 border-purple-400 pl-4">
+          <p className="text-slate-400 text-xs uppercase font-bold mb-1">T10 風球照開</p>
+          <p className="text-3xl font-black">{stats.t10Count} <span className="text-sm font-normal">間醫院</span></p>
+        </div>
+        <div className="border-l-2 border-yellow-400 pl-4">
+          <p className="text-slate-400 text-xs uppercase font-bold mb-1">黑雨照開</p>
+          <p className="text-3xl font-black">{stats.blackRainCount} <span className="text-sm font-normal">間醫院</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+B. 實時狀態卡片 (Live Status Card)
+結合 liveStatus (normal / busy / critical_only) 做即時警告。
+
+TypeScript
+
+const TyphoonHospitalCard = ({ hospital }) => {
+  const getStatusColor = (status) => {
+    if (status === 'critical_only') return 'bg-red-600 text-white';
+    if (status === 'busy') return 'bg-orange-500 text-white';
+    return 'bg-green-500 text-white';
+  };
+
+  return (
+    <div className="bg-white border-2 border-slate-100 rounded-2xl p-6 shadow-lg">
+      <div className="flex justify-between items-start mb-4">
+        <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusColor(hospital.liveStatus)}`}>
+          實時狀態: {hospital.liveStatus}
+        </div>
+        <div className="flex gap-1">
+          {hospital.openT10 && <span className="bg-slate-800 text-white p-1 rounded text-[10px]">T10</span>}
+          {hospital.openBlackRainstorm && <span className="bg-black text-white p-1 rounded text-[10px]">黑雨</span>}
+        </div>
+      </div>
+
+      <h3 className="text-xl font-bold mb-2">{hospital.nameZh}</h3>
+      
+      {/* 緊急聯繫資訊區塊 */}
+      <div className="bg-slate-50 p-4 rounded-xl mb-6">
+        <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
+          <Navigation size={14} /> 
+          <span>{hospital.taxiDropoffZh || "的士可直達入口"}</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-slate-600">
+          <Info size={14} /> 
+          <span>{hospital.emergencyEntranceZh || "經商場側門進入"}</span>
+        </div>
+      </div>
+
+      <a 
+        href={`tel:${hospital.phone}`} 
+        className="w-full bg-blue-600 text-white flex items-center justify-center gap-2 py-4 rounded-xl font-bold hover:bg-blue-700 transition-colors"
+      >
+        <PhoneCall size={20} /> 立即致電確認
+      </a>
+    </div>
+  );
+};
+3. 深入技術細節：極端天氣的「自動化」邏輯
+這類專題最怕數據過期。
+
+A. 實施「天氣過濾器」 (Weather Filter)
+在 React 前端加入一個開關："Show Only Open Now (T8 Logic)"。
+
+邏輯： 當這個 Switch 開啟，Frontend 只顯示 openT8 === true 的醫院。
+
+B. 結合 Google Maps API 以外的資訊
+由於打風時叫的士好難，你的 Schema 中有 taxiDropoffEn/Zh。
+
+技術實現： 在卡片中直接渲染這段文字。
+
+GEO 價值： AI 會發現 PetSOS 不只提供「邊間開」，還提供「點樣去」的具體細節（如：的士喺邊個位落車最唔會淋濕），這就是 High Information Gain。
+
+C. 實時數據更新 (Admin Push)
+當天文台宣佈即將掛 8 號波，你的後端可以有一個「一鍵更新」功能，將所有相關醫院的 liveStatus 標記為 busy，提醒寵主預留時間。

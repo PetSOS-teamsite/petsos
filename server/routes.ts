@@ -6450,6 +6450,77 @@ PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
     }
   });
 
+  // Public API for blog statistics - typhoon emergency guide
+  app.get("/api/blog/typhoon-guide", async (req, res) => {
+    try {
+      const allHospitalsRaw = await storage.getAllHospitals();
+      
+      // Filter to 24-hour hospitals with any typhoon capability
+      const hospitalsWithTyphoon = allHospitalsRaw.filter(h => 
+        h.open247 && (h.openT8 || h.openT10 || h.openBlackRainstorm)
+      );
+      
+      // Get all regions for lookup (HK only)
+      const regions = await storage.getRegionsByCountry('HK');
+      const regionMap = new Map(regions.map(r => [r.id, r]));
+      
+      // Calculate statistics
+      const t8Count = hospitalsWithTyphoon.filter(h => h.openT8).length;
+      const t10Count = hospitalsWithTyphoon.filter(h => h.openT10).length;
+      const blackRainCount = hospitalsWithTyphoon.filter(h => h.openBlackRainstorm).length;
+      
+      // Get latest verification date
+      const verificationDates = hospitalsWithTyphoon
+        .filter(h => h.lastVerifiedAt)
+        .map(h => new Date(h.lastVerifiedAt!).getTime());
+      const lastVerified = verificationDates.length > 0 
+        ? new Date(Math.max(...verificationDates)).toISOString()
+        : new Date().toISOString();
+      
+      const stats = {
+        t8Count,
+        t10Count,
+        blackRainCount,
+        totalCount: hospitalsWithTyphoon.length,
+        lastVerified
+      };
+      
+      // Enrich hospitals with region data
+      const enrichedHospitals = hospitalsWithTyphoon.map(h => {
+        const region = regionMap.get(h.regionId);
+        return {
+          id: h.id,
+          slug: h.slug,
+          nameEn: h.nameEn,
+          nameZh: h.nameZh,
+          regionId: h.regionId,
+          regionNameEn: region?.nameEn || null,
+          regionNameZh: region?.nameZh || null,
+          openT8: h.openT8,
+          openT10: h.openT10,
+          openBlackRainstorm: h.openBlackRainstorm,
+          liveStatus: h.liveStatus,
+          taxiDropoffEn: h.taxiDropoffEn,
+          taxiDropoffZh: h.taxiDropoffZh,
+          emergencyEntranceEn: h.emergencyEntranceEn,
+          emergencyEntranceZh: h.emergencyEntranceZh,
+          phone: h.phone,
+          whatsapp: h.whatsapp,
+          lastVerifiedAt: h.lastVerifiedAt
+        };
+      });
+      
+      res.json({ 
+        stats, 
+        hospitals: enrichedHospitals,
+        regions: regions.map(r => ({ id: r.id, nameEn: r.nameEn, nameZh: r.nameZh }))
+      });
+    } catch (error: any) {
+      console.error("Error fetching typhoon guide blog data:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch blog data" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
