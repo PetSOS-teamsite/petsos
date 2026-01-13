@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -256,11 +257,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-between items-start mb-2">
-            <div className="flex-1" />
+    <>
+      <SEO noindex={true} />
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-between items-start mb-2">
+              <div className="flex-1" />
             <CardTitle className="text-3xl font-bold text-red-600 flex-1 text-center">
               PetSOS
             </CardTitle>
@@ -637,5 +640,6 @@ export default function LoginPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }

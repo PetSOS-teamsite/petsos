@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, Loader2, Search, X, Activity, MessageCircle, Phone, Copy, ExternalLink, Check as CheckIcon } from "lucide-react";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -416,6 +417,7 @@ export default function AdminClinicsPage() {
 
   return (
     <>
+      <SEO noindex={true} />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="container mx-auto px-4 py-4">

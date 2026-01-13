@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Dialog,
@@ -428,11 +429,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 py-8">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="mb-6">
-          <Link href="/">
-            <Button variant="ghost" size="sm" data-testid="button-back">
+    <>
+      <SEO noindex={true} />
+      <div className="min-h-screen bg-white dark:bg-gray-900 py-8">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="mb-6">
+            <Link href="/">
+              <Button variant="ghost" size="sm" data-testid="button-back">
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t("button.back_home", "Back to Home")}
             </Button>
@@ -1177,5 +1180,6 @@ export default function ProfilePage() {
         </Card>
       </div>
     </div>
+    </>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { SEO } from "@/components/SEO";
 import { 
   ArrowLeft, 
   Bell, 
@@ -299,7 +300,9 @@ PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
   const scheduledCount = broadcasts.filter(b => b.status === 'scheduled').length;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <>
+      <SEO noindex={true} />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -787,6 +790,7 @@ PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

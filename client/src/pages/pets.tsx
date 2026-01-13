@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
@@ -422,11 +423,13 @@ export default function PetsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="mb-6 flex items-center justify-between">
-          <Link href="/profile">
-            <Button variant="ghost" size="sm" data-testid="button-back">
+    <>
+      <SEO noindex={true} />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="mb-6 flex items-center justify-between">
+            <Link href="/profile">
+              <Button variant="ghost" size="sm" data-testid="button-back">
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t("pets.back_to_profile", "Back to Profile")}
             </Button>
@@ -847,5 +850,6 @@ export default function PetsPage() {
         </AlertDialog>
       </div>
     </div>
+    </>
   );
 }

@@ -4,17 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
+import { SEO } from "@/components/SEO";
 
 export default function HomePage() {
   const { t } = useTranslation();
 
   
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800 bg-[#EF4444] dark:bg-[#DC2626]">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/">
+    <>
+      <SEO noindex={true} />
+      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+        {/* Header */}
+        <header className="border-b border-gray-200 dark:border-gray-800 bg-[#EF4444] dark:bg-[#DC2626]">
+          <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+            <Link href="/">
             <h1 className="text-3xl font-bold text-white cursor-pointer" data-testid="text-logo-header">
               PetSOS
             </h1>
@@ -140,5 +143,6 @@ export default function HomePage() {
         </div>
       </footer>
     </div>
+    </>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ArrowLeft, Plus, Pencil, Trash2, Building2, Clock, CheckCircle2, AlertCircle, MapPin, Loader2, Search, X, Activity, Image as ImageIcon, Upload, XCircle, Copy, ExternalLink, KeyRound, Star, Camera, MessageCircle, RotateCcw } from "lucide-react";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useStorageStatus } from "@/hooks/useStorageStatus";
@@ -2187,8 +2188,10 @@ export default function AdminHospitalsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      {/* Header */}
+    <>
+      <SEO noindex={true} />
+      <div className="container mx-auto p-6 max-w-7xl">
+        {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center gap-4 mb-2">
@@ -2649,6 +2652,7 @@ export default function AdminHospitalsPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }

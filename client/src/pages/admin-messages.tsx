@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -177,7 +178,9 @@ export default function AdminMessagesPage() {
   });
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <>
+      <SEO noindex={true} />
+      <div className="container mx-auto p-6 max-w-7xl">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">WhatsApp Messages</h1>
@@ -447,6 +450,7 @@ export default function AdminMessagesPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }

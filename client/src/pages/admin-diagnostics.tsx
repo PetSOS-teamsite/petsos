@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,7 +57,9 @@ export default function AdminDiagnosticsPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <>
+      <SEO noindex={true} />
+      <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">WhatsApp Diagnostics</h1>
         <p className="text-muted-foreground">
@@ -262,6 +265,7 @@ export default function AdminDiagnosticsPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }

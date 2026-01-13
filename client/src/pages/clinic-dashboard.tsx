@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ArrowLeft, Building2, Phone, Mail, MapPin, Globe, Clock, AlertCircle, Pencil, MessageSquare, CheckCircle2 } from "lucide-react";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -321,11 +322,13 @@ export default function ClinicDashboardPage() {
   const regionName = regions?.find(r => r.id === clinic.regionId)?.nameEn || "Unknown";
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-[#EF4444] text-white shadow-sm">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/">
-            <h1 className="text-2xl font-bold cursor-pointer" data-testid="text-logo">PetSOS</h1>
+    <>
+      <SEO noindex={true} />
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-50 border-b bg-[#EF4444] text-white shadow-sm">
+          <div className="container mx-auto flex h-16 items-center justify-between px-4">
+            <Link href="/">
+              <h1 className="text-2xl font-bold cursor-pointer" data-testid="text-logo">PetSOS</h1>
           </Link>
           <Link href="/profile">
             <Button variant="ghost" className="text-white hover:bg-red-600" data-testid="link-profile">
@@ -806,5 +809,6 @@ export default function ClinicDashboardPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }

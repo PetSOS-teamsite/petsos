@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -213,7 +214,9 @@ export default function AdminHospitalOutreachPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4" data-testid="admin-hospital-outreach-page">
+    <>
+      <SEO noindex={true} />
+      <div className="container mx-auto py-8 px-4" data-testid="admin-hospital-outreach-page">
       <div className="mb-6">
         <Link href="/admin/hospitals" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4">
           <ArrowLeft className="h-4 w-4 mr-1" />
@@ -455,6 +458,7 @@ export default function AdminHospitalOutreachPage() {
           </Tabs>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }

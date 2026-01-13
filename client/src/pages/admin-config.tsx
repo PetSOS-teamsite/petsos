@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -65,7 +66,9 @@ export default function AdminConfig() {
   const [activeTab, setActiveTab] = useState("countries");
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl" data-testid="page-admin-config">
+    <>
+      <SEO noindex={true} />
+      <div className="container mx-auto p-6 max-w-7xl" data-testid="page-admin-config">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-red-600" data-testid="text-page-title">Configuration Management</h1>
         <p className="text-muted-foreground mt-2">Manage countries, regions, and pet breeds</p>
@@ -90,7 +93,8 @@ export default function AdminConfig() {
           <PetBreedsTab />
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </>
   );
 }
 
