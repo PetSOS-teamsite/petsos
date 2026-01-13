@@ -1,0 +1,306 @@
+Phase 3 (Revised & Locked)
+Emergency & Symptoms GEO Pillars
+
+Status: Approved with refinements
+Risk level: Controlled
+Primary upgrade: Medical safety + AI parsing precision
+
+🔒 GLOBAL SAFETY & GOVERNANCE (NEW — MUST IMPLEMENT)
+
+These apply to all Phase 3 pages.
+
+1) Medical Disclaimer (Mandatory, Prominent)
+
+Appears:
+
+Above the fold (small but visible)
+
+In footer
+
+In <meta> description (short form)
+
+EN
+
+⚠️ This information is for emergency guidance only and not veterinary advice. Always consult a licensed veterinarian as soon as possible.
+
+繁中
+
+⚠️ 本頁資料只供緊急參考，並非獸醫診斷或建議。請盡快諮詢註冊獸醫。
+
+✅ This mitigates HIGH medical liability risk.
+
+2) Language Guardrails (Locked)
+
+Never use
+
+“This is an emergency”
+
+“Your pet needs surgery”
+
+“Call now”
+
+Always use
+
+“May require immediate attention”
+
+“Hospitals with X capability may be needed”
+
+“Contact a hospital promptly”
+
+This applies to all copy + headings.
+
+3) Timestamp Authority (NEW)
+
+Add to:
+
+/emergency
+
+/emergency-symptoms
+
+each symptom page
+
+Footer line
+
+Reviewed by veterinary professionals — January 2026
+
+Use lastReviewedAt internally for future updates.
+
+PILLAR A (REVISED) — /emergency
+“What should I do if my pet has an emergency in Hong Kong?”
+
+This page becomes a MedicalWebPage + SoftwareApplication + HowTo hub.
+
+A0 — Schema Stack (Updated)
+
+Add (additive, not replacing existing):
+
+MedicalWebPage
+
+SoftwareApplication (already added)
+
+HowTo (already exists)
+
+FAQPage (exists)
+
+Why
+
+MedicalWebPage = health intent clarity
+
+HowTo = step parsing
+
+SoftwareApplication = tool identity
+
+A1 — Above-the-Fold Crisis Orientation (Refined)
+
+Add AI-summary block for LLMs.
+
+Visible copy (EN)
+
+If your pet shows signs that may indicate an emergency, don’t wait.
+PetSOS helps you reach nearby 24-hour animal hospitals quickly, so you’re not calling clinics one by one during a critical moment.
+
+sr-only AI summary (≈50 words, EN)
+
+PetSOS is a free emergency coordination tool for Hong Kong pet owners. It allows users to broadcast urgent pet medical situations to multiple 24-hour animal hospitals at once, helping owners identify which hospitals may be able to take the case during late nights, holidays, or typhoons.
+
+(Repeat in 繁中.)
+
+A2 — “What Happens After You Tap Emergency” (AI-Optimized)
+
+Implementation upgrade
+
+Use semantic <ol>
+
+Map steps to HowToStep schema
+
+Steps (neutral, non-promissory)
+
+Describe the situation (text or voice)
+
+Your request is shared with nearby 24-hour hospitals
+
+Hospitals that are able to respond may reply
+
+You decide where to go
+
+No guarantees. No urgency pressure.
+
+A3 — “When Should I Use PetSOS?” (Converted to FAQ)
+
+This directly addresses reviewer feedback.
+
+Question (exact-match heading)
+
+When should I use PetSOS?
+
+Answer (EN)
+
+PetSOS is designed for situations where your pet may require urgent veterinary attention and you are unsure which 24-hour hospital can take the case, especially late at night, on holidays, or during typhoons.
+
+Add FAQ schema.
+
+A4 — Expanded Emergency FAQs (Locked Set)
+
+Add these exact questions (short answers, ≤40 words):
+
+Is PetSOS available 24/7?
+
+Does PetSOS charge a fee?
+
+Can PetSOS guarantee treatment?
+
+Can I use PetSOS for non-emergencies?
+
+What if no hospital replies?
+
+These directly match AI query patterns.
+
+Acceptance — Pillar A
+
+Page qualifies as MedicalWebPage
+
+HowTo steps parse cleanly
+
+FAQ rich results valid
+
+Disclaimer visible without scrolling
+
+PILLAR B (REVISED) — /emergency-symptoms
+“Signs that may indicate a pet emergency”
+
+This becomes a decision router, not a diagnosis page.
+
+B0 — URL & Canonical Strategy (Approved)
+
+/emergency-symptoms → index / overview
+
+/emergency-symptoms/[slug] → individual symptom pages (recommended)
+
+This is optional but strongly encouraged for featured snippets.
+
+B1 — Heading Strategy (Critical Change)
+
+Use question-format headings only.
+
+❌ “Breathing Emergencies”
+✅ “What should I do if my cat is panting heavily?”
+
+This aligns exactly with search + AI prompts.
+
+B2 — Symptom Card Structure (Locked)
+
+Each symptom page/card must follow this exact semantic structure:
+
+<article itemscope itemtype="https://schema.org/MedicalCondition">
+  <h2 itemprop="name">What should I do if my dog is having trouble breathing?</h2>
+
+  <section data-section="symptoms">
+    <h3>Signs that may indicate urgency</h3>
+  </section>
+
+  <section data-section="urgency">
+    <h3>Why this may need immediate attention</h3>
+  </section>
+
+  <section data-section="action">
+    <h3>What to do now</h3>
+  </section>
+
+  <section data-section="hospital-info">
+    <h3>Hospital capabilities that may be required</h3>
+  </section>
+</article>
+
+
+Add MedicalCondition schema with:
+
+signOrSymptom
+
+possibleTreatment (generic, non-prescriptive)
+
+B3 — “What Information Helps Hospitals Respond Faster” (Enhanced)
+
+No change in concept — just format upgrade
+
+Use <dl> definition list
+
+This is your highest GEO value section
+
+Example:
+
+Time symptoms started
+
+Breathing rate
+
+Known toxin exposure
+
+Existing medical conditions
+
+B4 — Soft Capability Routing (Safe Version)
+
+Use phrasing like:
+
+Hospitals with oxygen therapy and intensive care support may be required for these signs.
+
+Then link:
+
+Capability → filtered hospital list
+(No hospital names, no ranking.)
+
+B5 — AI Summary Block (Per Symptom)
+
+Hidden sr-only block, bilingual, ~40 words.
+
+This is how AI lifts content verbatim.
+
+Acceptance — Pillar B
+
+No diagnostic claims
+
+MedicalCondition schema valid
+
+Question-format headings used
+
+Each symptom page stands alone as an answer
+
+OPTIONAL BOOST (APPROVED WITH SAFETY)
+Emergency Checklist
+
+Implementation rule
+
+HTML page first: /emergency-checklist (indexable)
+
+PDF second (download)
+
+Ensure:
+
+Text-based PDF (accessible)
+
+Same disclaimer applied
+
+UPDATED PHASE 3 SCOPE (REALISTIC)
+
+Content writing: 1–2 days
+
+UI + schema wiring: 1 day
+
+QA + review: <1 day
+
+No DB changes.
+No hospital dependencies.
+
+FINAL GO / NO-GO CHECKLIST
+
+Before implementing:
+
+ Medical disclaimer added globally
+
+ Diagnostic language removed
+
+ MedicalWebPage schema added
+
+ Question-format headings used
+
+ lastReviewedAt timestamps visible
+
+ AI-summary blocks added
