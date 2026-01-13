@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <!-- Homepage / Landing Page -->
   <url>
     <loc>https://petsos.site/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://petsos.site/" />
+    <xhtml:link rel="alternate" hreflang="zh-HK" href="https://petsos.site/" />
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <lastmod>2025-10-28</lastmod>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <!-- Emergency Request Page -->
@@ -14,7 +17,7 @@
     <loc>https://petsos.site/emergency</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <lastmod>2025-10-28</lastmod>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <!-- Clinics Directory -->
@@ -22,7 +25,7 @@
     <loc>https://petsos.site/clinics</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
-    <lastmod>2025-11-01</lastmod>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <!-- Districts Index -->
@@ -30,7 +33,7 @@
     <loc>https://petsos.site/districts</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-01</lastmod>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <!-- District Pages - Hong Kong Island -->
@@ -38,21 +41,42 @@
     <loc>https://petsos.site/district/central</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-02</lastmod>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <url>
     <loc>https://petsos.site/district/causeway-bay</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-02</lastmod>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <url>
     <loc>https://petsos.site/district/wan-chai</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-02</lastmod>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/eastern</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/southern</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/aberdeen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <!-- District Pages - Kowloon -->
@@ -60,14 +84,63 @@
     <loc>https://petsos.site/district/tsim-sha-tsui</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-02</lastmod>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <url>
     <loc>https://petsos.site/district/mong-kok</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-02</lastmod>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/yau-ma-tei</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/jordan</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/kowloon-city</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/kowloon-bay</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/kwun-tong</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/wong-tai-sin</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/sham-shui-po</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <!-- District Pages - New Territories -->
@@ -75,7 +148,63 @@
     <loc>https://petsos.site/district/sha-tin</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2025-11-02</lastmod>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/tai-po</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/tuen-mun</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/yuen-long</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/tsuen-wan</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/kwai-tsing</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/sai-kung</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/north</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://petsos.site/district/tseung-kwan-o</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <!-- Resources / Pet Emergency Care Guide -->
@@ -83,7 +212,7 @@
     <loc>https://petsos.site/resources</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2025-11-01</lastmod>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <!-- FAQ Page -->
@@ -91,14 +220,23 @@
     <loc>https://petsos.site/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2025-11-02</lastmod>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
-  <!-- Login / Signup Page -->
+  <!-- About Page -->
   <url>
-    <loc>https://petsos.site/login</loc>
+    <loc>https://petsos.site/about</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
+    <lastmod>2026-01-08</lastmod>
+  </url>
+  
+  <!-- Emergency Symptoms Guide -->
+  <url>
+    <loc>https://petsos.site/emergency-symptoms</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <!-- Privacy Policy -->
@@ -106,6 +244,7 @@
     <loc>https://petsos.site/privacy-policy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
+    <lastmod>2026-01-08</lastmod>
   </url>
   
   <!-- Terms of Service -->
@@ -113,6 +252,7 @@
     <loc>https://petsos.site/terms-of-service</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
+    <lastmod>2026-01-08</lastmod>
   </url>
-  
+
 </urlset>

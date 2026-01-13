@@ -15,20 +15,30 @@ __export(schema_exports, {
   auditLogs: () => auditLogs,
   clinicReviews: () => clinicReviews,
   clinics: () => clinics,
+  contentVerifications: () => contentVerifications,
   countries: () => countries,
   defaultNotificationPreferences: () => defaultNotificationPreferences,
   emergencyRequests: () => emergencyRequests,
   featureFlags: () => featureFlags,
+  hkHolidays: () => hkHolidays,
   hospitalConsultFees: () => hospitalConsultFees,
+  hospitalEmergencyStatus: () => hospitalEmergencyStatus,
+  hospitalPingLogs: () => hospitalPingLogs,
+  hospitalPingState: () => hospitalPingState,
   hospitalUpdates: () => hospitalUpdates,
   hospitals: () => hospitals,
   insertAuditLogSchema: () => insertAuditLogSchema,
   insertClinicReviewSchema: () => insertClinicReviewSchema,
   insertClinicSchema: () => insertClinicSchema,
+  insertContentVerificationSchema: () => insertContentVerificationSchema,
   insertCountrySchema: () => insertCountrySchema,
   insertEmergencyRequestSchema: () => insertEmergencyRequestSchema,
   insertFeatureFlagSchema: () => insertFeatureFlagSchema,
+  insertHkHolidaySchema: () => insertHkHolidaySchema,
   insertHospitalConsultFeeSchema: () => insertHospitalConsultFeeSchema,
+  insertHospitalEmergencyStatusSchema: () => insertHospitalEmergencyStatusSchema,
+  insertHospitalPingLogSchema: () => insertHospitalPingLogSchema,
+  insertHospitalPingStateSchema: () => insertHospitalPingStateSchema,
   insertHospitalSchema: () => insertHospitalSchema,
   insertHospitalUpdateSchema: () => insertHospitalUpdateSchema,
   insertMessageSchema: () => insertMessageSchema,
@@ -41,7 +51,13 @@ __export(schema_exports, {
   insertPushSubscriptionSchema: () => insertPushSubscriptionSchema,
   insertRegionSchema: () => insertRegionSchema,
   insertTranslationSchema: () => insertTranslationSchema,
+  insertTyphoonAlertSchema: () => insertTyphoonAlertSchema,
+  insertTyphoonNotificationQueueSchema: () => insertTyphoonNotificationQueueSchema,
+  insertUserEmergencySubscriptionSchema: () => insertUserEmergencySubscriptionSchema,
   insertUserSchema: () => insertUserSchema,
+  insertVerifiedContentItemSchema: () => insertVerifiedContentItemSchema,
+  insertVetApplicationSchema: () => insertVetApplicationSchema,
+  insertVetConsultantSchema: () => insertVetConsultantSchema,
   insertWhatsappChatMessageSchema: () => insertWhatsappChatMessageSchema,
   insertWhatsappConversationSchema: () => insertWhatsappConversationSchema,
   messages: () => messages,
@@ -56,7 +72,13 @@ __export(schema_exports, {
   regions: () => regions,
   sessions: () => sessions,
   translations: () => translations,
+  typhoonAlerts: () => typhoonAlerts,
+  typhoonNotificationQueue: () => typhoonNotificationQueue,
+  userEmergencySubscriptions: () => userEmergencySubscriptions,
   users: () => users,
+  verifiedContentItems: () => verifiedContentItems,
+  vetApplications: () => vetApplications,
+  vetConsultants: () => vetConsultants,
   whatsappChatMessages: () => whatsappChatMessages,
   whatsappConversations: () => whatsappConversations
 });
@@ -65,7 +87,7 @@ import { customType } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var geography, sessions, notificationPreferencesSchema, defaultNotificationPreferences, STORAGE_QUOTA, users, insertUserSchema, pets, insertPetSchema, countries, insertCountrySchema, regions, insertRegionSchema, petBreeds, insertPetBreedSchema, clinics, insertClinicSchema, emergencyRequests, insertEmergencyRequestSchema, hospitals, insertHospitalSchema, messages, insertMessageSchema, featureFlags, insertFeatureFlagSchema, auditLogs, insertAuditLogSchema, privacyConsents, insertPrivacyConsentSchema, translations, insertTranslationSchema, hospitalConsultFees, insertHospitalConsultFeeSchema, hospitalUpdates, insertHospitalUpdateSchema, petMedicalRecords, insertPetMedicalRecordSchema, petMedicalSharingConsents, insertPetMedicalSharingConsentSchema, pushSubscriptions, insertPushSubscriptionSchema, notificationBroadcasts, insertNotificationBroadcastSchema, clinicReviews, insertClinicReviewSchema, whatsappConversations, insertWhatsappConversationSchema, whatsappChatMessages, insertWhatsappChatMessageSchema;
+var geography, sessions, notificationPreferencesSchema, defaultNotificationPreferences, STORAGE_QUOTA, users, insertUserSchema, pets, insertPetSchema, countries, insertCountrySchema, regions, insertRegionSchema, petBreeds, insertPetBreedSchema, clinics, insertClinicSchema, emergencyRequests, insertEmergencyRequestSchema, hospitals, insertHospitalSchema, messages, insertMessageSchema, featureFlags, insertFeatureFlagSchema, auditLogs, insertAuditLogSchema, privacyConsents, insertPrivacyConsentSchema, translations, insertTranslationSchema, hospitalConsultFees, insertHospitalConsultFeeSchema, hospitalUpdates, insertHospitalUpdateSchema, petMedicalRecords, insertPetMedicalRecordSchema, petMedicalSharingConsents, insertPetMedicalSharingConsentSchema, pushSubscriptions, insertPushSubscriptionSchema, notificationBroadcasts, insertNotificationBroadcastSchema, clinicReviews, insertClinicReviewSchema, whatsappConversations, insertWhatsappConversationSchema, whatsappChatMessages, insertWhatsappChatMessageSchema, typhoonAlerts, insertTyphoonAlertSchema, hkHolidays, insertHkHolidaySchema, hospitalEmergencyStatus, insertHospitalEmergencyStatusSchema, typhoonNotificationQueue, insertTyphoonNotificationQueueSchema, userEmergencySubscriptions, insertUserEmergencySubscriptionSchema, vetConsultants, insertVetConsultantSchema, verifiedContentItems, insertVerifiedContentItemSchema, contentVerifications, insertContentVerificationSchema, vetApplications, insertVetApplicationSchema, hospitalPingState, insertHospitalPingStateSchema, hospitalPingLogs, insertHospitalPingLogSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -263,8 +285,8 @@ var init_schema = __esm({
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
       userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
       petId: varchar("pet_id").references(() => pets.id, { onDelete: "set null" }),
-      symptom: text("symptom"),
-      // single symptom field
+      symptom: text("symptom").notNull(),
+      // single symptom field - required
       locationLatitude: decimal("location_latitude"),
       locationLongitude: decimal("location_longitude"),
       manualLocation: text("manual_location"),
@@ -276,10 +298,11 @@ var init_schema = __esm({
       createdAt: timestamp("created_at").notNull().defaultNow(),
       petSpecies: text("pet_species"),
       petBreed: text("pet_breed"),
-      petAge: text("pet_age"),
+      petAge: integer("pet_age"),
+      // integer to match database
       voiceTranscript: text("voice_transcript"),
       aiAnalyzedSymptoms: text("ai_analyzed_symptoms"),
-      isVoiceRecording: boolean("is_voice_recording")
+      isVoiceRecording: boolean("is_voice_recording").notNull().default(false)
     });
     insertEmergencyRequestSchema = createInsertSchema(emergencyRequests).omit({
       id: true,
@@ -364,11 +387,119 @@ var init_schema = __esm({
       ownerVerificationCodeExpiresAt: timestamp("owner_verification_code_expires_at"),
       // When the code expires
       verified: boolean("verified").notNull().default(false),
+      // ========== DEEP DATA FIELDS FOR GEO & SEARCH ==========
+      // 1. Blood Bank Details
+      bloodBankCanine: boolean("blood_bank_canine"),
+      // On-site canine blood stock
+      bloodBankFeline: boolean("blood_bank_feline"),
+      // On-site feline blood stock
+      bloodTypesAvailable: text("blood_types_available").array(),
+      // e.g., ["DEA 1.1+", "DEA 1.1-", "Type A", "Type B"]
+      // 2. Emergency Fee Structure
+      consultFeeDay: integer("consult_fee_day"),
+      // Daytime consultation fee ($)
+      consultFeeEvening: integer("consult_fee_evening"),
+      // Evening consultation fee ($)
+      consultFeeMidnight: integer("consult_fee_midnight"),
+      // Midnight/late night fee ($)
+      eveningSurchargeStart: text("evening_surcharge_start"),
+      // e.g., "18:00"
+      midnightSurchargeStart: text("midnight_surcharge_start"),
+      // e.g., "00:00"
+      holidaySurchargePercent: integer("holiday_surcharge_percent"),
+      // e.g., 50 for 50%
+      // 3. ICU/Oxygen Capacity
+      oxygenCageCount: integer("oxygen_cage_count"),
+      // Number of oxygen cages
+      icuBedCount: integer("icu_bed_count"),
+      // Number of ICU beds
+      icuNurseCount: integer("icu_nurse_count"),
+      // ICU-specific nurse count
+      overnightVetNurseRatio: text("overnight_vet_nurse_ratio"),
+      // e.g., "1:3"
+      // 4. Exotic Species Support
+      exoticVet247: boolean("exotic_vet_247"),
+      // Specialized exotic vet on-site 24/7
+      exoticSpecies247: text("exotic_species_247").array(),
+      // Species seen 24/7: ["rabbit", "bird", "reptile", "small_mammal"]
+      // 5. Advanced Imaging Details
+      imagingTech247: boolean("imaging_tech_247"),
+      // 24/7 imaging technician available
+      ctScanOnSite: boolean("ct_scan_on_site"),
+      // On-site CT (vs. mobile/referral)
+      mriOnSite: boolean("mri_on_site"),
+      // On-site MRI (vs. referral)
+      // 6. Toxin/Antidote Readiness
+      antivenomStock: boolean("antivenom_stock"),
+      // Snake antivenom available
+      ratPoisonAntidote: boolean("rat_poison_antidote"),
+      // Vitamin K / rat poison antidote
+      gastricLavageKit: boolean("gastric_lavage_kit"),
+      // Stomach pump equipment
+      activatedCharcoal: boolean("activated_charcoal"),
+      // Activated charcoal for poisoning
+      // 7. Surgical Readiness Details
+      surgeon247: text("surgeon_247"),
+      // "on_site" | "on_call" | "referral_only"
+      surgeonCalloutTime: text("surgeon_callout_time"),
+      // e.g., "30 mins"
+      // 8. In-Patient Quality
+      cctvMonitoring: boolean("cctv_monitoring"),
+      // Remote CCTV monitoring for owners
+      visitationHours: text("visitation_hours"),
+      // e.g., "10:00-20:00" or "24h"
+      // 9. Panic Logistics
+      emergencyEntranceEn: text("emergency_entrance_en"),
+      // e.g., "Side door on Smith St"
+      emergencyEntranceZh: text("emergency_entrance_zh"),
+      parkingDetailsEn: text("parking_details_en"),
+      // e.g., "Free 30-min parking at ABC Lot"
+      parkingDetailsZh: text("parking_details_zh"),
+      taxiDropoffEn: text("taxi_dropoff_en"),
+      // e.g., "Ask for Happy Valley Road entrance"
+      taxiDropoffZh: text("taxi_dropoff_zh"),
+      // 10. Typhoon/Holiday Policies
+      openT8: boolean("open_t8"),
+      // Open during Typhoon Signal 8
+      openT10: boolean("open_t10"),
+      // Open during Typhoon Signal 10
+      openBlackRainstorm: boolean("open_black_rainstorm"),
+      // Open during Black Rainstorm
+      lunarNewYearOpen: boolean("lunar_new_year_open"),
+      // Open during Lunar New Year
+      lunarNewYearSurcharge: integer("lunar_new_year_surcharge"),
+      // Surcharge % during CNY
+      christmasOpen: boolean("christmas_open"),
+      // Open during Christmas
+      // Self-service portal fields
+      accessCode: varchar("access_code", { length: 8 }).unique(),
+      // 8-character unique code for hospital self-service
+      lastConfirmedAt: timestamp("last_confirmed_at"),
+      // When hospital last confirmed their info is correct
+      confirmedByName: text("confirmed_by_name"),
+      // Name of person who confirmed the info
+      inviteSentAt: timestamp("invite_sent_at"),
+      // When WhatsApp invitation was last sent
+      // 11. Data Source & Confidence (for transparency + legal safety)
+      feeSource: text("fee_source"),
+      // self_reported | verified_call | website | unknown
+      waitTimeSource: text("wait_time_source"),
+      // self_reported | verified_call | website | unknown
+      statusSource: text("status_source"),
+      // self_reported | verified_call | website | unknown
+      dataConfidenceScore: integer("data_confidence_score"),
+      // 0-100 confidence score
+      // 12. Responsiveness Tracking (for GEO moat)
+      lastReplyAt: timestamp("last_reply_at"),
+      // Last time hospital responded to any communication
+      replyChannel: text("reply_channel"),
+      // whatsapp | api | manual
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
     }, (table) => [
       index("idx_hospital_location").using("gist", table.location),
-      index("idx_hospital_region").on(table.regionId)
+      index("idx_hospital_region").on(table.regionId),
+      uniqueIndex("idx_hospital_access_code").on(table.accessCode)
     ]);
     insertHospitalSchema = createInsertSchema(hospitals).omit({
       id: true,
@@ -386,9 +517,15 @@ var init_schema = __esm({
       recipient: text("recipient").notNull(),
       content: text("content").notNull(),
       status: text("status").notNull().default("queued"),
-      // queued, sent, delivered, read, failed
+      // queued, in_progress, sent, delivered, read, failed
       whatsappMessageId: text("whatsapp_message_id"),
       // Meta's wamid for tracking delivery status
+      templateName: text("template_name"),
+      // WhatsApp template name (persisted at queue time)
+      templateVariables: jsonb("template_variables").$type(),
+      // Template variables (persisted at queue time)
+      templateLanguage: text("template_language"),
+      // Template language code (en, zh_HK)
       sentAt: timestamp("sent_at"),
       deliveredAt: timestamp("delivered_at"),
       readAt: timestamp("read_at"),
@@ -676,6 +813,448 @@ var init_schema = __esm({
       id: true,
       createdAt: true
     });
+    typhoonAlerts = pgTable("typhoon_alerts", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      signalCode: text("signal_code").notNull(),
+      // T1, T3, T8NW, T8NE, T8SW, T8SE, T9, T10
+      signalNameEn: text("signal_name_en").notNull(),
+      signalNameZh: text("signal_name_zh").notNull(),
+      issuedAt: timestamp("issued_at").notNull(),
+      liftedAt: timestamp("lifted_at"),
+      isActive: boolean("is_active").notNull().default(true),
+      observatoryBulletinId: text("observatory_bulletin_id"),
+      // HKO bulletin reference
+      severityLevel: integer("severity_level").notNull(),
+      // 1-10 based on signal
+      notes: text("notes"),
+      createdAt: timestamp("created_at").notNull().defaultNow(),
+      updatedAt: timestamp("updated_at").notNull().defaultNow()
+    }, (table) => [
+      index("idx_typhoon_alerts_active").on(table.isActive),
+      index("idx_typhoon_alerts_issued").on(table.issuedAt)
+    ]);
+    insertTyphoonAlertSchema = createInsertSchema(typhoonAlerts).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    hkHolidays = pgTable("hk_holidays", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      date: timestamp("date").notNull(),
+      nameEn: text("name_en").notNull(),
+      nameZh: text("name_zh").notNull(),
+      holidayType: text("holiday_type").notNull(),
+      // public, bank, special
+      year: integer("year").notNull(),
+      isGazetted: boolean("is_gazetted").notNull().default(true),
+      notes: text("notes")
+    }, (table) => [
+      index("idx_hk_holidays_date").on(table.date),
+      index("idx_hk_holidays_year").on(table.year),
+      uniqueIndex("idx_hk_holidays_unique").on(table.date, table.nameEn)
+    ]);
+    insertHkHolidaySchema = createInsertSchema(hkHolidays).omit({
+      id: true
+    });
+    hospitalEmergencyStatus = pgTable("hospital_emergency_status", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      hospitalId: varchar("hospital_id").notNull().references(() => hospitals.id, { onDelete: "cascade" }),
+      statusType: text("status_type").notNull(),
+      // typhoon, holiday, special
+      referenceId: varchar("reference_id"),
+      // typhoon_alert ID or hk_holiday ID
+      isOpen: boolean("is_open").notNull(),
+      openingTime: text("opening_time"),
+      // e.g., "09:00"
+      closingTime: text("closing_time"),
+      // e.g., "18:00"
+      confirmedAt: timestamp("confirmed_at").notNull().defaultNow(),
+      confirmedBy: varchar("confirmed_by").references(() => users.id, { onDelete: "set null" }),
+      confirmationMethod: text("confirmation_method"),
+      // phone_call, whatsapp, self_report, auto
+      notes: text("notes"),
+      expiresAt: timestamp("expires_at"),
+      // when this status should be considered stale
+      createdAt: timestamp("created_at").notNull().defaultNow()
+    }, (table) => [
+      index("idx_hospital_emergency_status_hospital").on(table.hospitalId),
+      index("idx_hospital_emergency_status_type").on(table.statusType),
+      index("idx_hospital_emergency_status_reference").on(table.referenceId)
+    ]);
+    insertHospitalEmergencyStatusSchema = createInsertSchema(hospitalEmergencyStatus).omit({
+      id: true,
+      createdAt: true
+    });
+    typhoonNotificationQueue = pgTable("typhoon_notification_queue", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      typhoonAlertId: varchar("typhoon_alert_id").references(() => typhoonAlerts.id, { onDelete: "cascade" }),
+      holidayId: varchar("holiday_id").references(() => hkHolidays.id, { onDelete: "cascade" }),
+      notificationType: text("notification_type").notNull(),
+      // typhoon_warning, holiday_reminder, status_update
+      targetAudience: text("target_audience").notNull(),
+      // all_users, subscribed, hospitals
+      channel: text("channel").notNull(),
+      // push, email, whatsapp
+      titleEn: text("title_en").notNull(),
+      titleZh: text("title_zh").notNull(),
+      bodyEn: text("body_en").notNull(),
+      bodyZh: text("body_zh").notNull(),
+      status: text("status").notNull().default("pending"),
+      // pending, sending, sent, failed
+      retryCount: integer("retry_count").notNull().default(0),
+      scheduledFor: timestamp("scheduled_for"),
+      sentAt: timestamp("sent_at"),
+      recipientCount: integer("recipient_count"),
+      errorMessage: text("error_message"),
+      createdAt: timestamp("created_at").notNull().defaultNow()
+    }, (table) => [
+      index("idx_typhoon_notification_queue_status").on(table.status),
+      index("idx_typhoon_notification_queue_scheduled").on(table.scheduledFor)
+    ]);
+    insertTyphoonNotificationQueueSchema = createInsertSchema(typhoonNotificationQueue).omit({
+      id: true,
+      createdAt: true,
+      sentAt: true,
+      recipientCount: true
+    });
+    userEmergencySubscriptions = pgTable("user_emergency_subscriptions", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+      email: text("email"),
+      phone: text("phone"),
+      pushToken: text("push_token"),
+      // FCM token for anonymous users
+      subscriptionType: text("subscription_type").notNull(),
+      // typhoon, holiday, all
+      notifyChannels: text("notify_channels").array().notNull().default(sql`ARRAY['push']::text[]`),
+      // push, email, sms
+      preferredLanguage: text("preferred_language").notNull().default("en"),
+      isActive: boolean("is_active").notNull().default(true),
+      createdAt: timestamp("created_at").notNull().defaultNow(),
+      updatedAt: timestamp("updated_at").notNull().defaultNow()
+    }, (table) => [
+      index("idx_user_emergency_subscriptions_user").on(table.userId),
+      index("idx_user_emergency_subscriptions_active").on(table.isActive)
+    ]);
+    insertUserEmergencySubscriptionSchema = createInsertSchema(userEmergencySubscriptions).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    vetConsultants = pgTable("vet_consultants", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      // Core identity
+      fullName: text("full_name").notNull(),
+      // Primary name field
+      nameEn: text("name_en"),
+      // Legacy - for backward compatibility
+      nameZh: text("name_zh"),
+      // Role & type (per spec)
+      role: text("role").notNull().default("vet"),
+      // vet, nurse, practice_manager, other
+      vetType: text("vet_type"),
+      // GP, Specialist, GP_with_interest (only if role=vet)
+      // Professional info
+      clinicName: text("clinic_name"),
+      // Primary clinic / organisation
+      educationBackground: text("education_background"),
+      // Free text: BVSc / DVM / VN Diploma / FANZCVS
+      specialtyOrInterest: text("specialty_or_interest"),
+      // Optional specialty or special interest
+      // Legacy fields (kept for backward compatibility)
+      titleEn: text("title_en"),
+      // Legacy credential field
+      titleZh: text("title_zh"),
+      specialtyEn: text("specialty_en"),
+      // Legacy specialty field
+      specialtyZh: text("specialty_zh"),
+      bioEn: text("bio_en"),
+      bioZh: text("bio_zh"),
+      photoUrl: text("photo_url"),
+      licenseNumber: text("license_number"),
+      // Optional - not displayed publicly per GEO guidelines
+      hospitalAffiliationEn: text("hospital_affiliation_en"),
+      // Legacy
+      hospitalAffiliationZh: text("hospital_affiliation_zh"),
+      // Legacy
+      yearsExperience: integer("years_experience"),
+      // Visibility & privacy (per spec - NO contact info stored)
+      visibilityPreference: text("visibility_preference").notNull().default("name_role"),
+      // name_role, clinic_only, anonymous
+      internalNotes: text("internal_notes"),
+      // Admin-only notes
+      // Status
+      isActive: boolean("is_active").notNull().default(true),
+      isPublic: boolean("is_public").notNull().default(true),
+      joinedAt: timestamp("joined_at").notNull().defaultNow(),
+      createdAt: timestamp("created_at").notNull().defaultNow(),
+      updatedAt: timestamp("updated_at").notNull().defaultNow()
+    }, (table) => [
+      index("idx_vet_consultants_active").on(table.isActive),
+      index("idx_vet_consultants_public").on(table.isPublic),
+      index("idx_vet_consultants_role").on(table.role)
+    ]);
+    insertVetConsultantSchema = createInsertSchema(vetConsultants).omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    verifiedContentItems = pgTable("verified_content_items", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      contentType: text("content_type").notNull(),
+      // emergency_symptom, blog, guide, faq
+      contentSlug: text("content_slug").notNull().unique(),
+      // e.g., "cat-panting", "dog-bloat"
+      titleEn: text("title_en").notNull(),
+      titleZh: text("title_zh"),
+      descriptionEn: text("description_en"),
+      descriptionZh: text("description_zh"),
+      url: text("url"),
+      // relative URL path, e.g., "/emergency-symptoms#cat-panting"
+      isPublished: boolean("is_published").notNull().default(true),
+      publishedAt: timestamp("published_at"),
+      lastUpdatedAt: timestamp("last_updated_at").notNull().defaultNow(),
+      createdAt: timestamp("created_at").notNull().defaultNow()
+    }, (table) => [
+      index("idx_verified_content_type").on(table.contentType),
+      index("idx_verified_content_slug").on(table.contentSlug),
+      index("idx_verified_content_published").on(table.isPublished)
+    ]);
+    insertVerifiedContentItemSchema = createInsertSchema(verifiedContentItems).omit({
+      id: true,
+      createdAt: true
+    });
+    contentVerifications = pgTable("content_verifications", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      consultantId: varchar("consultant_id").notNull().references(() => vetConsultants.id, { onDelete: "cascade" }),
+      contentId: varchar("content_id").notNull().references(() => verifiedContentItems.id, { onDelete: "cascade" }),
+      // Verification scope per spec: what aspect was verified
+      verificationScope: text("verification_scope").notNull().default("clarity"),
+      // clarity, safety, triage_language
+      verifiedAt: timestamp("verified_at").notNull().defaultNow(),
+      verificationNotes: text("verification_notes"),
+      adminNote: text("admin_note"),
+      // Admin-only note about this verification
+      isVisible: boolean("is_visible").notNull().default(true),
+      // show this verification publicly
+      contentVersion: text("content_version"),
+      // track which version was verified
+      createdAt: timestamp("created_at").notNull().defaultNow()
+    }, (table) => [
+      index("idx_content_verifications_consultant").on(table.consultantId),
+      index("idx_content_verifications_content").on(table.contentId),
+      uniqueIndex("idx_content_verifications_unique").on(table.consultantId, table.contentId)
+    ]);
+    insertContentVerificationSchema = createInsertSchema(contentVerifications).omit({
+      id: true,
+      createdAt: true
+    });
+    vetApplications = pgTable("vet_applications", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      // SECTION A - Professional Snapshot (per spec)
+      fullName: text("full_name").notNull(),
+      // Required
+      role: text("role").notNull(),
+      // vet, nurse, practice_manager, other
+      vetType: text("vet_type"),
+      // GP, Specialist, GP_with_interest (only if role=vet)
+      clinicName: text("clinic_name").notNull(),
+      // Primary Clinic / Organisation
+      phoneWhatsapp: text("phone_whatsapp").notNull(),
+      // Private - admin only
+      email: text("email"),
+      // Optional email
+      // SECTION B - Background
+      educationBackground: text("education_background"),
+      // Free text: BVSc / DVM / VN Diploma
+      // SECTION C - Verification Scope (stored as JSON array)
+      verificationScope: text("verification_scope").array(),
+      // clarity, emergency_discovery, safety_messaging
+      // SECTION D - Future Involvement (stored as JSON array)
+      futureContactInterest: text("future_contact_interest").array(),
+      // reviewing_guides, cpd_sessions, workshops, videos, community_education
+      // SECTION E - Additional
+      additionalComments: text("additional_comments"),
+      // Optional free text
+      // Consent tracking (per spec)
+      consentAcknowledged: boolean("consent_acknowledged").notNull().default(false),
+      consentVersion: text("consent_version").notNull().default("v1"),
+      // Legacy fields (kept for backward compatibility)
+      nameEn: text("name_en"),
+      // Legacy
+      nameZh: text("name_zh"),
+      // Legacy
+      phone: text("phone"),
+      // Legacy
+      licenseNumber: text("license_number"),
+      // Legacy
+      titleEn: text("title_en"),
+      // Legacy
+      titleZh: text("title_zh"),
+      // Legacy
+      specialtyEn: text("specialty_en"),
+      // Legacy
+      specialtyZh: text("specialty_zh"),
+      // Legacy
+      hospitalAffiliationEn: text("hospital_affiliation_en"),
+      // Legacy
+      hospitalAffiliationZh: text("hospital_affiliation_zh"),
+      // Legacy
+      yearsExperience: integer("years_experience"),
+      // Legacy
+      motivationEn: text("motivation_en"),
+      // Legacy
+      motivationZh: text("motivation_zh"),
+      // Legacy
+      cvUrl: text("cv_url"),
+      // Legacy
+      // Status tracking
+      status: text("status").notNull().default("pending"),
+      // pending, approved, rejected
+      reviewedBy: varchar("reviewed_by").references(() => users.id, { onDelete: "set null" }),
+      reviewedAt: timestamp("reviewed_at"),
+      reviewNotes: text("review_notes"),
+      createdConsultantId: varchar("created_consultant_id").references(() => vetConsultants.id, { onDelete: "set null" }),
+      submittedAt: timestamp("submitted_at").notNull().defaultNow(),
+      createdAt: timestamp("created_at").notNull().defaultNow(),
+      updatedAt: timestamp("updated_at").notNull().defaultNow()
+    }, (table) => [
+      index("idx_vet_applications_status").on(table.status),
+      index("idx_vet_applications_role").on(table.role)
+    ]);
+    insertVetApplicationSchema = createInsertSchema(vetApplications).omit({
+      id: true,
+      status: true,
+      reviewedBy: true,
+      reviewedAt: true,
+      reviewNotes: true,
+      createdConsultantId: true,
+      submittedAt: true,
+      createdAt: true,
+      updatedAt: true,
+      // Legacy fields - not used in new form
+      nameEn: true,
+      nameZh: true,
+      phone: true,
+      licenseNumber: true,
+      titleEn: true,
+      titleZh: true,
+      specialtyEn: true,
+      specialtyZh: true,
+      hospitalAffiliationEn: true,
+      hospitalAffiliationZh: true,
+      yearsExperience: true,
+      motivationEn: true,
+      motivationZh: true,
+      cvUrl: true
+    });
+    hospitalPingState = pgTable("hospital_ping_state", {
+      hospitalId: varchar("hospital_id").primaryKey().references(() => hospitals.id, { onDelete: "cascade" }),
+      pingEnabled: boolean("ping_enabled").notNull().default(true),
+      pingStatus: text("ping_status").notNull().default("active"),
+      // active, no_reply, paused
+      lastPingSentAt: timestamp("last_ping_sent_at"),
+      lastPingMessageId: text("last_ping_message_id"),
+      lastInboundReplyAt: timestamp("last_inbound_reply_at"),
+      lastReplyLatencySeconds: integer("last_reply_latency_seconds"),
+      noReplySince: timestamp("no_reply_since"),
+      createdAt: timestamp("created_at").notNull().defaultNow(),
+      updatedAt: timestamp("updated_at").notNull().defaultNow()
+    });
+    insertHospitalPingStateSchema = createInsertSchema(hospitalPingState).omit({
+      createdAt: true,
+      updatedAt: true
+    });
+    hospitalPingLogs = pgTable("hospital_ping_logs", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      hospitalId: varchar("hospital_id").notNull().references(() => hospitals.id, { onDelete: "cascade" }),
+      direction: text("direction").notNull(),
+      // outbound, inbound
+      providerMessageId: text("provider_message_id"),
+      eventType: text("event_type").notNull(),
+      // ping_sent, reply_received, no_reply_marked
+      sentAt: timestamp("sent_at"),
+      receivedAt: timestamp("received_at"),
+      payload: jsonb("payload"),
+      createdAt: timestamp("created_at").notNull().defaultNow()
+    }, (table) => [
+      index("idx_ping_logs_hospital").on(table.hospitalId),
+      index("idx_ping_logs_created").on(table.createdAt)
+    ]);
+    insertHospitalPingLogSchema = createInsertSchema(hospitalPingLogs).omit({
+      id: true,
+      createdAt: true
+    });
+  }
+});
+
+// server/gmail-client.ts
+var gmail_client_exports = {};
+__export(gmail_client_exports, {
+  getUncachableGmailClient: () => getUncachableGmailClient,
+  sendGmailEmail: () => sendGmailEmail
+});
+import { google } from "googleapis";
+async function getAccessToken() {
+  if (connectionSettings && connectionSettings.settings.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
+    return connectionSettings.settings.access_token;
+  }
+  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  const xReplitToken = process.env.REPL_IDENTITY ? "repl " + process.env.REPL_IDENTITY : process.env.WEB_REPL_RENEWAL ? "depl " + process.env.WEB_REPL_RENEWAL : null;
+  if (!xReplitToken) {
+    throw new Error("X_REPLIT_TOKEN not found for repl/depl");
+  }
+  connectionSettings = await fetch(
+    "https://" + hostname + "/api/v2/connection?include_secrets=true&connector_names=google-mail",
+    {
+      headers: {
+        "Accept": "application/json",
+        "X_REPLIT_TOKEN": xReplitToken
+      }
+    }
+  ).then((res) => res.json()).then((data) => data.items?.[0]);
+  const accessToken = connectionSettings?.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
+  if (!connectionSettings || !accessToken) {
+    throw new Error("Gmail not connected");
+  }
+  return accessToken;
+}
+async function getUncachableGmailClient() {
+  const accessToken = await getAccessToken();
+  const oauth2Client = new google.auth.OAuth2();
+  oauth2Client.setCredentials({
+    access_token: accessToken
+  });
+  return google.gmail({ version: "v1", auth: oauth2Client });
+}
+async function sendGmailEmail(to, subject, content, from) {
+  try {
+    const gmail = await getUncachableGmailClient();
+    const emailContent = [
+      `From: ${from}`,
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      "",
+      content
+    ].join("\n");
+    const encodedMessage = Buffer.from(emailContent).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    await gmail.users.messages.send({
+      userId: "me",
+      requestBody: {
+        raw: encodedMessage
+      }
+    });
+    console.log("[GMAIL] Email sent successfully to:", to);
+    return true;
+  } catch (error) {
+    console.error("[GMAIL] Error sending email:", error);
+    return false;
+  }
+}
+var connectionSettings;
+var init_gmail_client = __esm({
+  "server/gmail-client.ts"() {
+    "use strict";
   }
 });
 
@@ -688,6 +1267,7 @@ import { createServer } from "http";
 
 // server/storage.ts
 init_schema();
+import { randomUUID } from "crypto";
 
 // server/db.ts
 init_schema();
@@ -702,7 +1282,7 @@ var pool = new Pool({ connectionString: process.env.DATABASE_URL });
 var db = drizzle(pool, { schema: schema_exports });
 
 // server/storage.ts
-import { eq, and, or, inArray, sql as sql2, desc, lte, gte } from "drizzle-orm";
+import { eq, and, or, inArray, sql as sql2, desc, lte, gte, isNotNull } from "drizzle-orm";
 var DatabaseStorage = class {
   async getAllClinics() {
     return await db.select().from(clinics).where(eq(clinics.status, "active"));
@@ -1144,6 +1724,40 @@ var DatabaseStorage = class {
       return void 0;
     }
   }
+  async getHospitalByAccessCode(accessCode) {
+    try {
+      const result = await db.select().from(hospitals).where(eq(hospitals.accessCode, accessCode));
+      return result[0];
+    } catch (error) {
+      console.warn("getHospitalByAccessCode query failed:", error instanceof Error ? error.message : error);
+      return void 0;
+    }
+  }
+  async generateAccessCodesForAllHospitals() {
+    const allHospitals = await this.getAllHospitals();
+    let updated = 0;
+    const errors = [];
+    for (const hospital of allHospitals) {
+      if (!hospital.accessCode) {
+        try {
+          const code = this.generateUniqueAccessCode();
+          await this.updateHospital(hospital.id, { accessCode: code });
+          updated++;
+        } catch (err) {
+          errors.push(`Failed to update ${hospital.nameEn}: ${err instanceof Error ? err.message : "Unknown error"}`);
+        }
+      }
+    }
+    return { updated, errors };
+  }
+  generateUniqueAccessCode() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let code = "";
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  }
   async getHospitalsByRegion(regionId) {
     try {
       return await db.select().from(hospitals).where(eq(hospitals.regionId, regionId));
@@ -1401,6 +2015,23 @@ var DatabaseStorage = class {
   async getActiveTokens(language, role) {
     const subscriptions = await this.getAllActivePushSubscriptions(language, role);
     return subscriptions.map((s) => s.token);
+  }
+  async getPetOwnerEmails() {
+    const result = await db.select({
+      id: users.id,
+      email: users.email
+    }).from(users).where(and(
+      eq(users.role, "user"),
+      isNotNull(users.email)
+    ));
+    return result.filter((u) => u.email !== null);
+  }
+  async getPetOwnerPushTokens() {
+    const result = await db.select({ token: pushSubscriptions.token }).from(pushSubscriptions).innerJoin(users, eq(pushSubscriptions.userId, users.id)).where(and(
+      eq(pushSubscriptions.isActive, true),
+      eq(users.role, "user")
+    ));
+    return result.map((r) => r.token);
   }
   // Notification Broadcasts
   async createNotificationBroadcast(broadcast) {
@@ -1665,73 +2296,309 @@ var DatabaseStorage = class {
     );
     return result[0];
   }
+  // Typhoon & Holiday Protocol
+  async getActiveTyphoonAlert() {
+    const result = await db.select().from(typhoonAlerts).where(eq(typhoonAlerts.isActive, true)).orderBy(desc(typhoonAlerts.issuedAt)).limit(1);
+    return result[0] || null;
+  }
+  async getUpcomingHoliday(days) {
+    const now = /* @__PURE__ */ new Date();
+    const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1e3);
+    const result = await db.select().from(hkHolidays).where(and(
+      gte(hkHolidays.date, now),
+      lte(hkHolidays.date, futureDate)
+    )).orderBy(hkHolidays.date).limit(1);
+    return result[0] || null;
+  }
+  async getHospitalEmergencyStatuses(referenceId) {
+    const now = /* @__PURE__ */ new Date();
+    return await db.select().from(hospitalEmergencyStatus).where(and(
+      eq(hospitalEmergencyStatus.referenceId, referenceId),
+      or(
+        sql2`${hospitalEmergencyStatus.expiresAt} IS NULL`,
+        gte(hospitalEmergencyStatus.expiresAt, now)
+      )
+    ));
+  }
+  async updateHospitalEmergencyStatus(data) {
+    const existing = await db.select().from(hospitalEmergencyStatus).where(and(
+      eq(hospitalEmergencyStatus.hospitalId, data.hospitalId),
+      eq(hospitalEmergencyStatus.referenceId, data.referenceId || "")
+    )).limit(1);
+    if (existing[0]) {
+      const result2 = await db.update(hospitalEmergencyStatus).set({ ...data, confirmedAt: /* @__PURE__ */ new Date() }).where(eq(hospitalEmergencyStatus.id, existing[0].id)).returning();
+      return result2[0];
+    }
+    const result = await db.insert(hospitalEmergencyStatus).values({
+      id: randomUUID(),
+      ...data,
+      confirmedAt: /* @__PURE__ */ new Date()
+    }).returning();
+    return result[0];
+  }
+  async createEmergencySubscription(data) {
+    const result = await db.insert(userEmergencySubscriptions).values({
+      id: randomUUID(),
+      ...data
+    }).returning();
+    return result[0];
+  }
+  async getHolidaysByYear(year) {
+    return await db.select().from(hkHolidays).where(eq(hkHolidays.year, year)).orderBy(hkHolidays.date);
+  }
+  async createTyphoonAlert(data) {
+    const result = await db.insert(typhoonAlerts).values({
+      id: randomUUID(),
+      ...data
+    }).returning();
+    return result[0];
+  }
+  async liftTyphoonAlert(alertId) {
+    const result = await db.update(typhoonAlerts).set({ isActive: false, liftedAt: /* @__PURE__ */ new Date() }).where(eq(typhoonAlerts.id, alertId)).returning();
+    return result[0] || null;
+  }
+  async getPendingTyphoonNotifications() {
+    const now = /* @__PURE__ */ new Date();
+    return await db.select().from(typhoonNotificationQueue).where(and(
+      eq(typhoonNotificationQueue.status, "pending"),
+      or(
+        sql2`${typhoonNotificationQueue.scheduledFor} IS NULL`,
+        lte(typhoonNotificationQueue.scheduledFor, now)
+      )
+    )).orderBy(typhoonNotificationQueue.createdAt);
+  }
+  async createTyphoonNotification(data) {
+    const result = await db.insert(typhoonNotificationQueue).values({
+      id: randomUUID(),
+      ...data
+    }).returning();
+    return result[0];
+  }
+  async updateTyphoonNotification(id, data) {
+    const result = await db.update(typhoonNotificationQueue).set(data).where(eq(typhoonNotificationQueue.id, id)).returning();
+    return result[0];
+  }
+  async getActiveEmergencySubscriptions(subscriptionType) {
+    if (subscriptionType) {
+      return await db.select().from(userEmergencySubscriptions).where(and(
+        eq(userEmergencySubscriptions.isActive, true),
+        or(
+          eq(userEmergencySubscriptions.subscriptionType, subscriptionType),
+          eq(userEmergencySubscriptions.subscriptionType, "all")
+        )
+      ));
+    }
+    return await db.select().from(userEmergencySubscriptions).where(eq(userEmergencySubscriptions.isActive, true));
+  }
+  // Vet Consultants & Content Verification
+  async getVetConsultants() {
+    return await db.select().from(vetConsultants).where(and(
+      eq(vetConsultants.isActive, true),
+      eq(vetConsultants.isPublic, true)
+    )).orderBy(vetConsultants.nameEn);
+  }
+  async getVetConsultantById(id) {
+    const result = await db.select().from(vetConsultants).where(eq(vetConsultants.id, id)).limit(1);
+    return result[0];
+  }
+  async getVetConsultantWithContent(id) {
+    const consultant = await this.getVetConsultantById(id);
+    if (!consultant) return void 0;
+    const verifications = await db.select({
+      content: verifiedContentItems,
+      verifiedAt: contentVerifications.verifiedAt
+    }).from(contentVerifications).innerJoin(verifiedContentItems, eq(contentVerifications.contentId, verifiedContentItems.id)).where(and(
+      eq(contentVerifications.consultantId, id),
+      eq(contentVerifications.isVisible, true),
+      eq(verifiedContentItems.isPublished, true)
+    )).orderBy(desc(contentVerifications.verifiedAt));
+    const verifiedContent = verifications.map((v) => ({
+      ...v.content,
+      verifiedAt: v.verifiedAt
+    }));
+    return {
+      ...consultant,
+      verifiedContent
+    };
+  }
+  async getContentVerification(contentSlug) {
+    const result = await db.select({
+      content: verifiedContentItems,
+      verifier: vetConsultants,
+      verifiedAt: contentVerifications.verifiedAt
+    }).from(verifiedContentItems).leftJoin(contentVerifications, and(
+      eq(contentVerifications.contentId, verifiedContentItems.id),
+      eq(contentVerifications.isVisible, true)
+    )).leftJoin(vetConsultants, and(
+      eq(vetConsultants.id, contentVerifications.consultantId),
+      eq(vetConsultants.isActive, true),
+      eq(vetConsultants.isPublic, true)
+    )).where(eq(verifiedContentItems.contentSlug, contentSlug)).limit(1);
+    if (result.length === 0) return void 0;
+    const { content, verifier, verifiedAt } = result[0];
+    return {
+      ...content,
+      verifier: verifier || null,
+      verifiedAt: verifiedAt || null
+    };
+  }
+  // Vet Applications
+  async getVetApplications(status) {
+    if (status) {
+      return await db.select().from(vetApplications).where(eq(vetApplications.status, status)).orderBy(desc(vetApplications.createdAt));
+    }
+    return await db.select().from(vetApplications).orderBy(desc(vetApplications.createdAt));
+  }
+  async getVetApplicationById(id) {
+    const result = await db.select().from(vetApplications).where(eq(vetApplications.id, id)).limit(1);
+    return result[0];
+  }
+  async createVetApplication(data) {
+    const result = await db.insert(vetApplications).values(data).returning();
+    return result[0];
+  }
+  async updateVetApplicationStatus(id, status, reviewedBy, reviewNotes) {
+    const result = await db.update(vetApplications).set({
+      status,
+      reviewedBy,
+      reviewedAt: /* @__PURE__ */ new Date(),
+      reviewNotes: reviewNotes || null,
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(eq(vetApplications.id, id)).returning();
+    return result[0];
+  }
+  async approveVetApplication(id, reviewedBy, reviewNotes) {
+    return await db.transaction(async (tx) => {
+      const appResult = await tx.select().from(vetApplications).where(eq(vetApplications.id, id)).limit(1);
+      if (!appResult[0]) {
+        throw new Error("Vet application not found");
+      }
+      const application = appResult[0];
+      if (!application.fullName && !application.nameEn) {
+        throw new Error("Full name is required to approve application");
+      }
+      const consultantResult = await tx.insert(vetConsultants).values({
+        // New schema fields
+        fullName: application.fullName || application.nameEn || "Unknown",
+        role: application.role || "vet",
+        vetType: application.vetType,
+        clinicName: application.clinicName || application.hospitalAffiliationEn,
+        educationBackground: application.educationBackground,
+        // Legacy fields for backward compatibility
+        nameEn: application.nameEn || application.fullName,
+        nameZh: application.nameZh,
+        titleEn: application.titleEn || application.educationBackground || "Veterinary Professional",
+        titleZh: application.titleZh,
+        specialtyEn: application.specialtyEn,
+        specialtyZh: application.specialtyZh,
+        licenseNumber: application.licenseNumber,
+        hospitalAffiliationEn: application.hospitalAffiliationEn || application.clinicName,
+        hospitalAffiliationZh: application.hospitalAffiliationZh,
+        yearsExperience: application.yearsExperience,
+        // Privacy & visibility defaults
+        visibilityPreference: "name_role",
+        // Phone/Email is private - admin can view in application record if needed
+        // Do not expose to public consultant profile
+        isActive: true,
+        isPublic: true,
+        joinedAt: /* @__PURE__ */ new Date()
+      }).returning();
+      const consultant = consultantResult[0];
+      const updatedAppResult = await tx.update(vetApplications).set({
+        status: "approved",
+        reviewedBy,
+        reviewedAt: /* @__PURE__ */ new Date(),
+        reviewNotes: reviewNotes || null,
+        createdConsultantId: consultant.id,
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq(vetApplications.id, id)).returning();
+      return {
+        application: updatedAppResult[0],
+        consultant
+      };
+    });
+  }
+  // Admin Vet Consultant Management
+  async createVetConsultant(data) {
+    const result = await db.insert(vetConsultants).values(data).returning();
+    return result[0];
+  }
+  async updateVetConsultant(id, data) {
+    const result = await db.update(vetConsultants).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(vetConsultants.id, id)).returning();
+    return result[0];
+  }
+  async deleteVetConsultant(id) {
+    const result = await db.delete(vetConsultants).where(eq(vetConsultants.id, id)).returning();
+    return result.length > 0;
+  }
+  // Content Verification Management
+  async createContentVerification(data) {
+    const result = await db.insert(contentVerifications).values(data).returning();
+    return result[0];
+  }
+  async deleteContentVerification(consultantId, contentId) {
+    const result = await db.delete(contentVerifications).where(and(
+      eq(contentVerifications.consultantId, consultantId),
+      eq(contentVerifications.contentId, contentId)
+    )).returning();
+    return result.length > 0;
+  }
+  async getVerifiedContentItems() {
+    return await db.select().from(verifiedContentItems).orderBy(verifiedContentItems.titleEn);
+  }
+  // Hospital Ping State
+  async getHospitalPingState(hospitalId) {
+    const result = await db.select().from(hospitalPingState).where(eq(hospitalPingState.hospitalId, hospitalId));
+    return result[0];
+  }
+  async getAllHospitalPingStates() {
+    return await db.select().from(hospitalPingState);
+  }
+  async getActiveHospitalPingStates() {
+    return await db.select().from(hospitalPingState).where(and(
+      eq(hospitalPingState.pingEnabled, true),
+      eq(hospitalPingState.pingStatus, "active")
+    ));
+  }
+  async upsertHospitalPingState(data) {
+    const result = await db.insert(hospitalPingState).values(data).onConflictDoUpdate({
+      target: hospitalPingState.hospitalId,
+      set: { ...data, updatedAt: /* @__PURE__ */ new Date() }
+    }).returning();
+    return result[0];
+  }
+  async updateHospitalPingState(hospitalId, data) {
+    const result = await db.update(hospitalPingState).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(hospitalPingState.hospitalId, hospitalId)).returning();
+    return result[0];
+  }
+  async getHospitalsNeedingNoReplyMarking() {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1e3);
+    return await db.select().from(hospitalPingState).where(and(
+      eq(hospitalPingState.pingStatus, "active"),
+      isNotNull(hospitalPingState.lastPingSentAt),
+      lte(hospitalPingState.lastPingSentAt, oneDayAgo),
+      or(
+        sql2`${hospitalPingState.lastInboundReplyAt} IS NULL`,
+        sql2`${hospitalPingState.lastInboundReplyAt} < ${hospitalPingState.lastPingSentAt}`
+      )
+    ));
+  }
+  // Hospital Ping Logs
+  async createHospitalPingLog(data) {
+    const result = await db.insert(hospitalPingLogs).values(data).returning();
+    return result[0];
+  }
+  async getHospitalPingLogs(hospitalId, limit = 50) {
+    return await db.select().from(hospitalPingLogs).where(eq(hospitalPingLogs.hospitalId, hospitalId)).orderBy(desc(hospitalPingLogs.createdAt)).limit(limit);
+  }
 };
 var storage = new DatabaseStorage();
 
 // server/routes.ts
 import { z as z2 } from "zod";
 
-// server/gmail-client.ts
-import { google } from "googleapis";
-var connectionSettings;
-async function getAccessToken() {
-  if (connectionSettings && connectionSettings.settings.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
-    return connectionSettings.settings.access_token;
-  }
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY ? "repl " + process.env.REPL_IDENTITY : process.env.WEB_REPL_RENEWAL ? "depl " + process.env.WEB_REPL_RENEWAL : null;
-  if (!xReplitToken) {
-    throw new Error("X_REPLIT_TOKEN not found for repl/depl");
-  }
-  connectionSettings = await fetch(
-    "https://" + hostname + "/api/v2/connection?include_secrets=true&connector_names=google-mail",
-    {
-      headers: {
-        "Accept": "application/json",
-        "X_REPLIT_TOKEN": xReplitToken
-      }
-    }
-  ).then((res) => res.json()).then((data) => data.items?.[0]);
-  const accessToken = connectionSettings?.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
-  if (!connectionSettings || !accessToken) {
-    throw new Error("Gmail not connected");
-  }
-  return accessToken;
-}
-async function getUncachableGmailClient() {
-  const accessToken = await getAccessToken();
-  const oauth2Client = new google.auth.OAuth2();
-  oauth2Client.setCredentials({
-    access_token: accessToken
-  });
-  return google.gmail({ version: "v1", auth: oauth2Client });
-}
-async function sendGmailEmail(to, subject, content, from) {
-  try {
-    const gmail = await getUncachableGmailClient();
-    const emailContent = [
-      `From: ${from}`,
-      `To: ${to}`,
-      `Subject: ${subject}`,
-      "",
-      content
-    ].join("\n");
-    const encodedMessage = Buffer.from(emailContent).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    await gmail.users.messages.send({
-      userId: "me",
-      requestBody: {
-        raw: encodedMessage
-      }
-    });
-    console.log("[GMAIL] Email sent successfully to:", to);
-    return true;
-  } catch (error) {
-    console.error("[GMAIL] Error sending email:", error);
-    return false;
-  }
-}
-
 // server/services/messaging.ts
+init_gmail_client();
 import { Client as LineClient } from "@line/bot-sdk";
 var WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || "https://graph.facebook.com/v17.0";
 var WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
@@ -1770,10 +2637,16 @@ var MessagingService = class {
       console.error("[WhatsApp Template] Credentials not configured - missing token or phone number ID");
       return { success: false, error: "WhatsApp credentials not configured" };
     }
-    const cleanedNumber = phoneNumber.replace(/[^0-9]/g, "");
+    let cleanedNumber = phoneNumber.replace(/[^0-9]/g, "");
     if (!cleanedNumber || cleanedNumber.length < 8) {
       console.error("[WhatsApp Template] Invalid phone number:", phoneNumber);
       return { success: false, error: "Invalid phone number" };
+    }
+    if (TESTING_MODE) {
+      const originalNumber = cleanedNumber;
+      cleanedNumber = TEST_PHONE_NUMBERS[testNumberIndex % TEST_PHONE_NUMBERS.length];
+      testNumberIndex++;
+      console.log(`[TESTING MODE] Redirecting WhatsApp template from ${originalNumber} to test number: ${cleanedNumber}`);
     }
     try {
       const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
@@ -1971,6 +2844,7 @@ ${content}`;
   }
   /**
    * Process a queued message
+   * Uses atomic state transitions to prevent duplicate sends
    */
   async processMessage(messageId) {
     const message = await storage.getMessage(messageId);
@@ -1978,20 +2852,44 @@ ${content}`;
       console.error("Message not found:", messageId);
       return;
     }
-    if (message.status !== "queued" && message.retryCount >= MAX_RETRIES) {
+    if (message.status === "in_progress") {
+      console.log("[Process Message] Message already in progress, skipping:", messageId);
       return;
     }
+    if (message.status === "sent" || message.status === "delivered" || message.status === "read") {
+      console.log("[Process Message] Message already sent/delivered, skipping:", messageId);
+      return;
+    }
+    if (message.status === "failed" && message.retryCount >= MAX_RETRIES) {
+      console.log("[Process Message] Max retries exceeded, skipping:", messageId);
+      return;
+    }
+    if (message.status !== "queued" && message.status !== "failed") {
+      console.log("[Process Message] Invalid status for processing:", message.status);
+      return;
+    }
+    await storage.updateMessage(messageId, { status: "in_progress" });
     try {
       let success = false;
       let whatsappMessageId;
       let errorMessage;
       if (message.messageType === "whatsapp") {
-        if (message.content.startsWith("[Template: ")) {
+        if (message.templateName && message.templateVariables) {
+          console.log("[Process Message] Using persisted template data:", message.templateName);
+          const result = await this.sendWhatsAppTemplateMessage(
+            message.recipient,
+            message.templateName,
+            message.templateVariables
+          );
+          success = result.success;
+          whatsappMessageId = result.messageId;
+          errorMessage = result.error;
+        } else if (message.content.startsWith("[Template: ")) {
           const templateMatch = message.content.match(/\[Template: ([^\]]+)\]/);
           if (templateMatch) {
             const templateName = templateMatch[1];
-            const emergencyRequestId = message.emergencyRequestId;
-            const templateData = await this.buildTemplateMessage(emergencyRequestId);
+            console.log("[Process Message] Legacy mode - rebuilding template:", templateName);
+            const templateData = await this.buildTemplateMessage(message.emergencyRequestId);
             if (templateData && templateData.templateName === templateName) {
               const result = await this.sendWhatsAppTemplateMessage(
                 message.recipient,
@@ -2021,7 +2919,6 @@ ${content}`;
               hospital.email,
               "Emergency Pet Request",
               message.content.replace(/\[Template: [^\]]+\]\s*/, "")
-              // Remove template prefix for email
             );
             if (emailSuccess) {
               await storage.updateMessage(messageId, {
@@ -2057,17 +2954,22 @@ ${content}`;
           });
         } else {
           await storage.updateMessage(messageId, {
+            status: "queued",
             retryCount: newRetryCount,
             errorMessage: errorMessage || null
           });
+          console.log(`[Process Message] Scheduling retry ${newRetryCount}/${MAX_RETRIES} for message ${messageId} in ${RETRY_DELAY_MS * newRetryCount}ms`);
           setTimeout(() => {
+            console.log(`[Process Message] Executing retry ${newRetryCount} for message ${messageId}`);
             this.processMessage(messageId);
           }, RETRY_DELAY_MS * newRetryCount);
         }
       }
     } catch (error) {
       console.error("Error processing message:", error);
-      const newRetryCount = message.retryCount + 1;
+      const currentMessage = await storage.getMessage(messageId);
+      const currentRetryCount = currentMessage?.retryCount ?? message.retryCount;
+      const newRetryCount = currentRetryCount + 1;
       await storage.updateMessage(messageId, {
         status: newRetryCount >= MAX_RETRIES ? "failed" : "queued",
         failedAt: newRetryCount >= MAX_RETRIES ? /* @__PURE__ */ new Date() : null,
@@ -2075,7 +2977,9 @@ ${content}`;
         retryCount: newRetryCount
       });
       if (newRetryCount < MAX_RETRIES) {
+        console.log(`[Process Message] Scheduling retry ${newRetryCount}/${MAX_RETRIES} for message ${messageId} after error`);
         setTimeout(() => {
+          console.log(`[Process Message] Executing retry ${newRetryCount} for message ${messageId} after error`);
           this.processMessage(messageId);
         }, RETRY_DELAY_MS * newRetryCount);
       }
@@ -2264,6 +3168,7 @@ ${isZhHk ? "\u806F\u7D61" : "Contact"}: ${variables[5]} (${variables[6]})
       let messageType;
       let recipient;
       let contentToStore;
+      const templateLanguage = templateName.endsWith("_zh_hk") ? "zh_HK" : "en";
       if (hospital.whatsapp) {
         messageType = "whatsapp";
         recipient = hospital.whatsapp;
@@ -2281,7 +3186,10 @@ ${isZhHk ? "\u806F\u7D61" : "Contact"}: ${variables[5]} (${variables[6]})
         recipient,
         messageType,
         content: contentToStore,
-        status: "queued"
+        status: "queued",
+        templateName: messageType === "whatsapp" ? templateName : null,
+        templateVariables: messageType === "whatsapp" ? variables : null,
+        templateLanguage: messageType === "whatsapp" ? templateLanguage : null
       });
       await this.processMessage(msg.id);
       const updatedMsg = await storage.getMessage(msg.id);
@@ -2318,6 +3226,37 @@ ${isZhHk ? "\u806F\u7D61" : "Contact"}: ${variables[5]} (${variables[6]})
       }
     }
     return messages2;
+  }
+  /**
+   * Send a direct WhatsApp message (not tied to an emergency request)
+   * Used for admin outreach, notifications, etc.
+   */
+  async sendDirectWhatsAppMessage(phoneNumber, content) {
+    return this.sendWhatsAppMessage(phoneNumber, content);
+  }
+  /**
+   * Send a Thank You message to a vet consultant applicant
+   * Uses the consultant_thank_you WhatsApp template
+   */
+  async sendThankYouMessage(phoneNumber, applicantName) {
+    console.log("[Thank You Message] Sending to:", phoneNumber, "Name:", applicantName);
+    const templateName = "consultant_thank_you";
+    const templateVariables = [applicantName];
+    try {
+      const result = await this.sendWhatsAppTemplateMessage(phoneNumber, templateName, templateVariables);
+      return result;
+    } catch (error) {
+      console.error("[Thank You Message] Template failed, trying direct message:", error.message);
+      const fallbackMessage = `Dear ${applicantName},
+
+Thank you for your interest in joining PetSOS as a veterinary consultant. We appreciate your commitment to helping pet owners during emergencies.
+
+We will review your application and get back to you soon.
+
+Best regards,
+The PetSOS Team`;
+      return this.sendWhatsAppMessage(phoneNumber, fallbackMessage);
+    }
   }
 };
 var messagingService = new MessagingService();
@@ -3034,8 +3973,94 @@ ${analysis.summary}
 };
 var deepseekService = new DeepSeekService();
 
-// server/routes.ts
-init_schema();
+// server/services/hko-api.ts
+var HKO_API_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=en";
+var SIGNAL_NAMES = {
+  "TC1": { en: "Standby Signal No. 1", zh: "\u4E00\u865F\u6212\u5099\u4FE1\u865F", severity: 1 },
+  "TC3": { en: "Strong Wind Signal No. 3", zh: "\u4E09\u865F\u5F37\u98A8\u4FE1\u865F", severity: 3 },
+  "TC8NE": { en: "Gale or Storm Signal No. 8 NE", zh: "\u516B\u865F\u6771\u5317\u70C8\u98A8\u6216\u66B4\u98A8\u4FE1\u865F", severity: 8 },
+  "TC8NW": { en: "Gale or Storm Signal No. 8 NW", zh: "\u516B\u865F\u897F\u5317\u70C8\u98A8\u6216\u66B4\u98A8\u4FE1\u865F", severity: 8 },
+  "TC8SE": { en: "Gale or Storm Signal No. 8 SE", zh: "\u516B\u865F\u6771\u5357\u70C8\u98A8\u6216\u66B4\u98A8\u4FE1\u865F", severity: 8 },
+  "TC8SW": { en: "Gale or Storm Signal No. 8 SW", zh: "\u516B\u865F\u897F\u5357\u70C8\u98A8\u6216\u66B4\u98A8\u4FE1\u865F", severity: 8 },
+  "TC9": { en: "Increasing Gale or Storm Signal No. 9", zh: "\u4E5D\u865F\u70C8\u98A8\u6216\u66B4\u98A8\u98A8\u529B\u589E\u5F37\u4FE1\u865F", severity: 9 },
+  "TC10": { en: "Hurricane Signal No. 10", zh: "\u5341\u865F\u98B6\u98A8\u4FE1\u865F", severity: 10 }
+};
+async function fetchWithRetry(url, retries = 3, delay = 1e3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1e4);
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          "Accept": "application/json",
+          "User-Agent": "PetSOS/1.0"
+        }
+      });
+      clearTimeout(timeoutId);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response;
+    } catch (error) {
+      console.error(`[HKO API] Attempt ${attempt}/${retries} failed:`, error.message);
+      if (attempt === retries) {
+        throw new Error(`Failed to fetch HKO data after ${retries} attempts: ${error.message}`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, delay * attempt));
+    }
+  }
+  throw new Error("Unexpected error in fetchWithRetry");
+}
+async function fetchTyphoonWarning() {
+  try {
+    console.log("[HKO API] Fetching typhoon warning data...");
+    const response = await fetchWithRetry(HKO_API_URL);
+    const data = await response.json();
+    console.log("[HKO API] Response received:", JSON.stringify(data).substring(0, 500));
+    if (!data || typeof data !== "object") {
+      console.log("[HKO API] Invalid response format");
+      return null;
+    }
+    const wtcsgnl = data.WTCSGNL;
+    if (!wtcsgnl) {
+      console.log("[HKO API] No WTCSGNL field - no typhoon signal active");
+      return null;
+    }
+    const signalCode = wtcsgnl.code;
+    if (!signalCode) {
+      console.log("[HKO API] WTCSGNL present but no code field");
+      return null;
+    }
+    const normalizedCode = signalCode.toUpperCase();
+    const signalInfo = SIGNAL_NAMES[normalizedCode];
+    if (!signalInfo) {
+      console.warn(`[HKO API] Unknown signal code: ${signalCode}`);
+      const severity = normalizedCode.includes("10") ? 10 : normalizedCode.includes("9") ? 9 : normalizedCode.includes("8") ? 8 : normalizedCode.includes("3") ? 3 : 1;
+      return {
+        signalCode: normalizedCode,
+        signalName: `Typhoon Signal ${normalizedCode}`,
+        signalNameZh: `\u98B1\u98A8\u4FE1\u865F ${normalizedCode}`,
+        issuedAt: wtcsgnl.issueTime ? new Date(wtcsgnl.issueTime) : /* @__PURE__ */ new Date(),
+        severity,
+        rawData: wtcsgnl
+      };
+    }
+    const issuedAt = wtcsgnl.issueTime ? new Date(wtcsgnl.issueTime) : wtcsgnl.updateTime ? new Date(wtcsgnl.updateTime) : /* @__PURE__ */ new Date();
+    console.log(`[HKO API] Active typhoon signal: ${normalizedCode} (${signalInfo.en}), issued at ${issuedAt.toISOString()}`);
+    return {
+      signalCode: normalizedCode,
+      signalName: signalInfo.en,
+      signalNameZh: signalInfo.zh,
+      issuedAt,
+      severity: signalInfo.severity,
+      rawData: wtcsgnl
+    };
+  } catch (error) {
+    console.error("[HKO API] Error fetching typhoon warning:", error.message);
+    throw error;
+  }
+}
 
 // server/services/fcm.ts
 import admin from "firebase-admin";
@@ -3145,13 +4170,454 @@ var FCMService = class {
   }
 };
 var fcmService = new FCMService();
+var sendPushNotification = async (tokens, payload) => {
+  return fcmService.sendToTokens(tokens, payload);
+};
 var sendBroadcastNotification = async (tokens, payload) => {
   return fcmService.sendBroadcast(tokens, payload);
 };
 
+// server/services/notification-scheduler.ts
+init_gmail_client();
+var SCHEDULER_INTERVAL_MS = 60 * 1e3;
+var TYPHOON_QUEUE_INTERVAL_MS = 30 * 1e3;
+var MAX_RETRIES2 = 3;
+var schedulerInterval = null;
+var typhoonQueueInterval = null;
+var isProcessing = false;
+var isTyphoonQueueProcessing = false;
+var WHATSAPP_API_URL2 = process.env.WHATSAPP_API_URL || "https://graph.facebook.com/v17.0";
+var WHATSAPP_PHONE_NUMBER_ID2 = process.env.WHATSAPP_PHONE_NUMBER_ID;
+var WHATSAPP_ACCESS_TOKEN2 = process.env.WHATSAPP_ACCESS_TOKEN;
+async function processScheduledNotifications() {
+  if (isProcessing) {
+    console.log("[NotificationScheduler] Previous run still in progress, skipping...");
+    return;
+  }
+  isProcessing = true;
+  try {
+    const dueNotifications = await storage.getScheduledNotifications();
+    if (dueNotifications.length === 0) {
+      return;
+    }
+    console.log(`[NotificationScheduler] Found ${dueNotifications.length} scheduled notifications to send`);
+    for (const notification of dueNotifications) {
+      try {
+        console.log(`[NotificationScheduler] Processing notification ${notification.id}: "${notification.title}"`);
+        await storage.updateNotificationBroadcastStatus(notification.id, "pending");
+        const tokens = await storage.getActiveTokens(
+          notification.targetLanguage || void 0,
+          notification.targetRole || void 0
+        );
+        if (tokens.length === 0) {
+          await storage.updateNotificationBroadcast(notification.id, {
+            status: "sent",
+            recipientCount: 0,
+            providerResponse: {
+              message: "No active subscriptions found",
+              url: notification.url || null
+            },
+            sentAt: /* @__PURE__ */ new Date()
+          });
+          console.log(`[NotificationScheduler] Notification ${notification.id} sent to 0 recipients (no active subscriptions)`);
+          continue;
+        }
+        const result = await sendBroadcastNotification(tokens, {
+          title: notification.title,
+          message: notification.message,
+          url: notification.url || void 0
+        });
+        if (result.failedTokens && result.failedTokens.length > 0) {
+          await storage.deactivatePushSubscriptions(result.failedTokens);
+        }
+        await storage.updateNotificationBroadcast(notification.id, {
+          status: result.success ? "sent" : "failed",
+          recipientCount: result.successCount || 0,
+          providerResponse: {
+            successCount: result.successCount || 0,
+            failureCount: result.failureCount || 0,
+            url: notification.url || null,
+            error: result.error || null
+          },
+          sentAt: result.success ? /* @__PURE__ */ new Date() : null
+        });
+        await storage.createAuditLog({
+          entityType: "notification_broadcast",
+          entityId: notification.id,
+          action: "send_scheduled",
+          userId: notification.adminId,
+          changes: {
+            title: notification.title,
+            scheduledFor: notification.scheduledFor,
+            recipientCount: result.successCount || 0,
+            success: result.success
+          }
+        });
+        console.log(`[NotificationScheduler] Notification ${notification.id} sent: ${result.successCount} success, ${result.failureCount} failed`);
+      } catch (error) {
+        console.error(`[NotificationScheduler] Error processing notification ${notification.id}:`, error);
+        await storage.updateNotificationBroadcast(notification.id, {
+          status: "failed",
+          providerResponse: {
+            error: error instanceof Error ? error.message : "Unknown error"
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error("[NotificationScheduler] Error in scheduler run:", error);
+  } finally {
+    isProcessing = false;
+  }
+}
+function startNotificationScheduler() {
+  if (schedulerInterval) {
+    console.log("[NotificationScheduler] Scheduler already running");
+    return;
+  }
+  console.log("[NotificationScheduler] Starting notification scheduler (checking every minute)");
+  processScheduledNotifications();
+  schedulerInterval = setInterval(processScheduledNotifications, SCHEDULER_INTERVAL_MS);
+}
+async function sendWhatsAppTextMessage(phoneNumber, message) {
+  if (!WHATSAPP_ACCESS_TOKEN2 || !WHATSAPP_PHONE_NUMBER_ID2) {
+    console.log("[WhatsApp] Not configured - skipping message");
+    return { success: false, error: "WhatsApp not configured" };
+  }
+  let cleanedNumber = phoneNumber.replace(/[^0-9]/g, "");
+  if (!cleanedNumber || cleanedNumber.length < 8) {
+    return { success: false, error: "Invalid phone number" };
+  }
+  try {
+    const url = `${WHATSAPP_API_URL2}/${WHATSAPP_PHONE_NUMBER_ID2}/messages`;
+    const payload = {
+      messaging_product: "whatsapp",
+      to: cleanedNumber,
+      type: "text",
+      text: { body: message }
+    };
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${WHATSAPP_ACCESS_TOKEN2}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("[WhatsApp] Send failed:", errorData);
+      return { success: false, error: JSON.stringify(errorData) };
+    }
+    console.log("[WhatsApp] Message sent successfully to:", cleanedNumber);
+    return { success: true };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("[WhatsApp] Error:", errorMessage);
+    return { success: false, error: errorMessage };
+  }
+}
+async function sendNotificationByChannel(notification, subscription) {
+  const channel = notification.channel;
+  const language = subscription?.preferredLanguage || "en";
+  const title = language === "zh" ? notification.titleZh : notification.titleEn;
+  const body = language === "zh" ? notification.bodyZh : notification.bodyEn;
+  console.log(`[TyphoonQueue] Sending ${channel} notification: "${title}"`);
+  try {
+    switch (channel) {
+      case "push": {
+        const token = subscription?.pushToken;
+        if (!token) {
+          return { success: false, error: "No push token available" };
+        }
+        const result = await sendPushNotification([token], { title, message: body });
+        return { success: result.success, error: result.error };
+      }
+      case "email": {
+        const email = subscription?.email;
+        if (!email) {
+          return { success: false, error: "No email address available" };
+        }
+        try {
+          const success = await sendGmailEmail(
+            email,
+            title,
+            body,
+            process.env.EMAIL_FROM || "noreply@petsos.site"
+          );
+          return { success, error: success ? void 0 : "Email send failed" };
+        } catch (error) {
+          console.log("[TyphoonQueue] Email service not configured, skipping");
+          return { success: false, error: "Email service not configured" };
+        }
+      }
+      case "whatsapp": {
+        const phone = subscription?.phone;
+        if (!phone) {
+          return { success: false, error: "No phone number available" };
+        }
+        const message = `${title}
+
+${body}`;
+        return await sendWhatsAppTextMessage(phone, message);
+      }
+      default:
+        return { success: false, error: `Unknown channel: ${channel}` };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return { success: false, error: errorMessage };
+  }
+}
+async function processTyphoonNotificationQueue() {
+  if (isTyphoonQueueProcessing) {
+    console.log("[TyphoonQueue] Previous run still in progress, skipping...");
+    return { processed: 0, sent: 0, failed: 0 };
+  }
+  isTyphoonQueueProcessing = true;
+  let processed = 0, sent = 0, failed = 0;
+  try {
+    const pendingNotifications = await storage.getPendingTyphoonNotifications();
+    if (pendingNotifications.length === 0) {
+      return { processed: 0, sent: 0, failed: 0 };
+    }
+    console.log(`[TyphoonQueue] Processing ${pendingNotifications.length} pending notifications`);
+    for (const notification of pendingNotifications) {
+      processed++;
+      try {
+        await storage.updateTyphoonNotification(notification.id, { status: "sending" });
+        let subscription = null;
+        if (notification.targetAudience === "subscribed") {
+          const subscriptions = await storage.getActiveEmergencySubscriptions("typhoon");
+          subscription = subscriptions[0] || null;
+        }
+        const result = await sendNotificationByChannel(notification, subscription);
+        if (result.success) {
+          await storage.updateTyphoonNotification(notification.id, {
+            status: "sent",
+            sentAt: /* @__PURE__ */ new Date(),
+            recipientCount: 1
+          });
+          sent++;
+          console.log(`[TyphoonQueue] Notification ${notification.id} sent successfully`);
+        } else {
+          const retryCount = (notification.retryCount || 0) + 1;
+          if (retryCount >= MAX_RETRIES2) {
+            await storage.updateTyphoonNotification(notification.id, {
+              status: "failed",
+              retryCount,
+              errorMessage: result.error || "Max retries exceeded"
+            });
+            failed++;
+            console.error(`[TyphoonQueue] Notification ${notification.id} failed after ${retryCount} retries: ${result.error}`);
+          } else {
+            await storage.updateTyphoonNotification(notification.id, {
+              status: "pending",
+              retryCount,
+              errorMessage: result.error
+            });
+            console.log(`[TyphoonQueue] Notification ${notification.id} will retry (attempt ${retryCount}/${MAX_RETRIES2})`);
+          }
+        }
+      } catch (error) {
+        console.error(`[TyphoonQueue] Error processing notification ${notification.id}:`, error);
+        await storage.updateTyphoonNotification(notification.id, {
+          status: "failed",
+          errorMessage: error instanceof Error ? error.message : "Unknown error"
+        });
+        failed++;
+      }
+    }
+    console.log(`[TyphoonQueue] Batch complete: ${processed} processed, ${sent} sent, ${failed} failed`);
+    return { processed, sent, failed };
+  } catch (error) {
+    console.error("[TyphoonQueue] Error in queue processing:", error);
+    return { processed, sent, failed };
+  } finally {
+    isTyphoonQueueProcessing = false;
+  }
+}
+async function queueTyphoonNotifications(alertId) {
+  console.log(`[TyphoonQueue] Queueing notifications for typhoon alert: ${alertId}`);
+  try {
+    const subscriptions = await storage.getActiveEmergencySubscriptions("typhoon");
+    if (subscriptions.length === 0) {
+      console.log("[TyphoonQueue] No active subscriptions found");
+      return 0;
+    }
+    console.log(`[TyphoonQueue] Found ${subscriptions.length} active subscriptions`);
+    let queuedCount = 0;
+    for (const subscription of subscriptions) {
+      const channels = subscription.notifyChannels || ["push"];
+      const language = subscription.preferredLanguage || "en";
+      for (const channel of channels) {
+        if (channel !== "push" && channel !== "email" && channel !== "whatsapp") {
+          continue;
+        }
+        try {
+          await storage.createTyphoonNotification({
+            typhoonAlertId: alertId,
+            notificationType: "typhoon_warning",
+            targetAudience: "subscribed",
+            channel,
+            titleEn: "\u26A0\uFE0F Typhoon Warning",
+            titleZh: "\u26A0\uFE0F \u98B1\u98A8\u8B66\u544A",
+            bodyEn: "A typhoon signal has been raised in Hong Kong. Please keep your pets safe and check emergency veterinary services.",
+            bodyZh: "\u9999\u6E2F\u5DF2\u767C\u51FA\u98B1\u98A8\u4FE1\u865F\u3002\u8ACB\u78BA\u4FDD\u5BF5\u7269\u5B89\u5168\u4E26\u67E5\u95B1\u7DCA\u6025\u7378\u91AB\u670D\u52D9\u3002",
+            status: "pending",
+            retryCount: 0
+          });
+          queuedCount++;
+        } catch (error) {
+          console.error(`[TyphoonQueue] Failed to queue notification for subscription ${subscription.id}:`, error);
+        }
+      }
+    }
+    console.log(`[TyphoonQueue] Queued ${queuedCount} notifications for ${subscriptions.length} subscribers`);
+    return queuedCount;
+  } catch (error) {
+    console.error("[TyphoonQueue] Error queueing notifications:", error);
+    return 0;
+  }
+}
+function startTyphoonNotificationScheduler() {
+  if (typhoonQueueInterval) {
+    console.log("[TyphoonQueue] Scheduler already running");
+    return;
+  }
+  console.log(`[TyphoonQueue] Starting typhoon notification scheduler (every ${TYPHOON_QUEUE_INTERVAL_MS / 1e3}s)`);
+  processTyphoonNotificationQueue();
+  typhoonQueueInterval = setInterval(async () => {
+    try {
+      await processTyphoonNotificationQueue();
+    } catch (error) {
+      console.error("[TyphoonQueue] Scheduler error:", error);
+    }
+  }, TYPHOON_QUEUE_INTERVAL_MS);
+}
+
+// server/services/typhoon-monitor.ts
+var pollingInterval = null;
+var POLLING_INTERVAL_MS = 5 * 60 * 1e3;
+function isT8OrAbove(signalCode) {
+  const code = signalCode.toUpperCase();
+  return code.includes("8") || code.includes("9") || code.includes("10") || code === "T8" || code === "T9" || code === "T10" || code === "SIGNAL_8" || code === "SIGNAL_9" || code === "SIGNAL_10";
+}
+async function checkAndUpdateTyphoonStatus() {
+  try {
+    console.log("[Typhoon Monitor] Checking typhoon status...");
+    const [hkoData, activeAlert] = await Promise.all([
+      fetchTyphoonWarning().catch((err) => {
+        console.error("[Typhoon Monitor] Failed to fetch HKO data:", err.message);
+        return null;
+      }),
+      storage.getActiveTyphoonAlert()
+    ]);
+    if (hkoData === null && activeAlert === null) {
+      console.log("[Typhoon Monitor] No typhoon signal active, no alert in DB");
+      return { changed: false, action: "none" };
+    }
+    if (hkoData !== null && activeAlert === null) {
+      console.log(`[Typhoon Monitor] New typhoon signal detected: ${hkoData.signalCode}`);
+      const newAlert = await storage.createTyphoonAlert({
+        signalCode: hkoData.signalCode,
+        signalNameEn: hkoData.signalName,
+        signalNameZh: hkoData.signalNameZh,
+        issuedAt: hkoData.issuedAt,
+        isActive: true,
+        severityLevel: hkoData.severity,
+        notes: hkoData.rawData ? JSON.stringify(hkoData.rawData) : null
+      });
+      console.log(`[Typhoon Monitor] Created new typhoon alert: ${newAlert.id}`);
+      if (isT8OrAbove(hkoData.signalCode)) {
+        console.log(`[Typhoon Monitor] T8+ signal detected, queueing notifications...`);
+        await queueTyphoonNotifications(newAlert.id);
+      }
+      return {
+        changed: true,
+        action: "created",
+        currentSignal: hkoData.signalCode,
+        alert: newAlert
+      };
+    }
+    if (hkoData === null && activeAlert !== null) {
+      console.log(`[Typhoon Monitor] Typhoon signal lifted (was: ${activeAlert.signalCode})`);
+      const liftedAlert = await storage.liftTyphoonAlert(activeAlert.id);
+      return {
+        changed: true,
+        action: "lifted",
+        previousSignal: activeAlert.signalCode,
+        alert: liftedAlert
+      };
+    }
+    if (hkoData !== null && activeAlert !== null) {
+      if (hkoData.signalCode !== activeAlert.signalCode) {
+        console.log(`[Typhoon Monitor] Typhoon signal changed: ${activeAlert.signalCode} -> ${hkoData.signalCode}`);
+        await storage.liftTyphoonAlert(activeAlert.id);
+        const newAlert = await storage.createTyphoonAlert({
+          signalCode: hkoData.signalCode,
+          signalNameEn: hkoData.signalName,
+          signalNameZh: hkoData.signalNameZh,
+          issuedAt: hkoData.issuedAt,
+          isActive: true,
+          severityLevel: hkoData.severity,
+          notes: hkoData.rawData ? JSON.stringify(hkoData.rawData) : null
+        });
+        return {
+          changed: true,
+          action: "updated",
+          previousSignal: activeAlert.signalCode,
+          currentSignal: hkoData.signalCode,
+          alert: newAlert
+        };
+      }
+      console.log(`[Typhoon Monitor] No change - signal still ${hkoData.signalCode}`);
+      return {
+        changed: false,
+        action: "none",
+        currentSignal: hkoData.signalCode,
+        alert: activeAlert
+      };
+    }
+    return { changed: false, action: "none" };
+  } catch (error) {
+    console.error("[Typhoon Monitor] Error checking typhoon status:", error.message);
+    return {
+      changed: false,
+      action: "none",
+      error: error.message
+    };
+  }
+}
+function startTyphoonPolling() {
+  if (pollingInterval) {
+    console.log("[Typhoon Monitor] Polling already running");
+    return;
+  }
+  console.log(`[Typhoon Monitor] Starting background polling (every ${POLLING_INTERVAL_MS / 1e3}s)`);
+  checkAndUpdateTyphoonStatus().then((result) => {
+    if (result.changed) {
+      console.log(`[Typhoon Monitor] Initial check - ${result.action}: ${result.currentSignal || result.previousSignal}`);
+    }
+  }).catch((err) => console.error("[Typhoon Monitor] Initial check failed:", err.message));
+  pollingInterval = setInterval(async () => {
+    try {
+      const result = await checkAndUpdateTyphoonStatus();
+      if (result.changed) {
+        console.log(`[Typhoon Monitor] Status changed - ${result.action}: ${result.currentSignal || result.previousSignal}`);
+      }
+    } catch (error) {
+      console.error("[Typhoon Monitor] Polling error:", error.message);
+    }
+  }, POLLING_INTERVAL_MS);
+}
+
+// server/routes.ts
+init_schema();
+
 // server/objectStorage.ts
 import { Storage } from "@google-cloud/storage";
-import { randomUUID } from "crypto";
+import { randomUUID as randomUUID2 } from "crypto";
 
 // server/objectAcl.ts
 var ACL_POLICY_METADATA_KEY = "custom:aclPolicy";
@@ -3231,23 +4697,198 @@ async function canAccessObject({
 
 // server/objectStorage.ts
 var REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
-var objectStorageClient = new Storage({
-  credentials: {
-    audience: "replit",
-    subject_token_type: "access_token",
-    token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
-    type: "external_account",
-    credential_source: {
-      url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
-      format: {
-        type: "json",
-        subject_token_field_name: "access_token"
+var ReplitStorageProvider = class {
+  type = "replit";
+  bucketName;
+  storage;
+  privateObjectDir;
+  constructor() {
+    this.privateObjectDir = process.env.PRIVATE_OBJECT_DIR || "";
+    if (!this.privateObjectDir) {
+      throw new Error("PRIVATE_OBJECT_DIR not set for Replit storage provider");
+    }
+    const { bucketName } = this.parseObjectPath(this.privateObjectDir);
+    this.bucketName = bucketName;
+    this.storage = new Storage({
+      credentials: {
+        audience: "replit",
+        subject_token_type: "access_token",
+        token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
+        type: "external_account",
+        credential_source: {
+          url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
+          format: {
+            type: "json",
+            subject_token_field_name: "access_token"
+          }
+        },
+        universe_domain: "googleapis.com"
+      },
+      projectId: ""
+    });
+  }
+  parseObjectPath(path5) {
+    if (!path5.startsWith("/")) {
+      path5 = `/${path5}`;
+    }
+    const pathParts = path5.split("/");
+    if (pathParts.length < 3) {
+      throw new Error("Invalid path: must contain at least a bucket name");
+    }
+    return {
+      bucketName: pathParts[1],
+      objectName: pathParts.slice(2).join("/")
+    };
+  }
+  getStorageClient() {
+    return this.storage;
+  }
+  getBucket() {
+    return this.storage.bucket(this.bucketName);
+  }
+  async signUploadUrl(objectName, ttlSec, contentType) {
+    const request = {
+      bucket_name: this.bucketName,
+      object_name: objectName,
+      method: "PUT",
+      expires_at: new Date(Date.now() + ttlSec * 1e3).toISOString()
+    };
+    if (contentType) {
+      request.content_type = contentType;
+    }
+    const response = await fetch(
+      `${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request)
       }
-    },
-    universe_domain: "googleapis.com"
-  },
-  projectId: ""
-});
+    );
+    if (!response.ok) {
+      throw new Error(
+        `Failed to sign object URL, errorcode: ${response.status}, make sure you're running on Replit`
+      );
+    }
+    const { signed_url: signedURL } = await response.json();
+    return signedURL;
+  }
+  getPublicUrl(objectName) {
+    return `https://storage.googleapis.com/${this.bucketName}/${objectName}`;
+  }
+  getUploadsPrefix() {
+    const { objectName } = this.parseObjectPath(this.privateObjectDir);
+    return objectName ? `${objectName}/uploads` : "uploads";
+  }
+  getPrivateObjectDir() {
+    return this.privateObjectDir;
+  }
+};
+var GCSStorageProvider = class {
+  type = "gcs";
+  bucketName;
+  storage;
+  uploadsPrefix = "uploads";
+  constructor() {
+    const serviceAccountJson = process.env.GCS_SERVICE_ACCOUNT_JSON;
+    const bucketName = process.env.GCS_BUCKET_NAME;
+    if (!serviceAccountJson) {
+      throw new Error("GCS_SERVICE_ACCOUNT_JSON not set for GCS storage provider");
+    }
+    if (!bucketName) {
+      throw new Error("GCS_BUCKET_NAME not set for GCS storage provider");
+    }
+    this.bucketName = bucketName;
+    try {
+      const credentials = JSON.parse(serviceAccountJson);
+      this.storage = new Storage({
+        credentials,
+        projectId: credentials.project_id
+      });
+    } catch (error) {
+      throw new Error(`Failed to parse GCS_SERVICE_ACCOUNT_JSON: ${error}`);
+    }
+  }
+  getStorageClient() {
+    return this.storage;
+  }
+  getBucket() {
+    return this.storage.bucket(this.bucketName);
+  }
+  async signUploadUrl(objectName, ttlSec, contentType) {
+    const file = this.getBucket().file(objectName);
+    const [url] = await file.getSignedUrl({
+      version: "v4",
+      action: "write",
+      expires: Date.now() + ttlSec * 1e3,
+      contentType: contentType || "application/octet-stream"
+    });
+    return url;
+  }
+  getPublicUrl(objectName) {
+    return `https://storage.googleapis.com/${this.bucketName}/${objectName}`;
+  }
+  getUploadsPrefix() {
+    return this.uploadsPrefix;
+  }
+};
+var UnavailableStorageProvider = class {
+  type = "unavailable";
+  bucketName = "";
+  getStorageClient() {
+    throw new Error("Storage is not available");
+  }
+  getBucket() {
+    throw new Error("Storage is not available");
+  }
+  async signUploadUrl(_objectName, _ttlSec, _contentType) {
+    throw new Error("Storage is not available");
+  }
+  getPublicUrl(_objectName) {
+    throw new Error("Storage is not available");
+  }
+  getUploadsPrefix() {
+    throw new Error("Storage is not available");
+  }
+};
+function detectStorageProvider() {
+  if (process.env.PRIVATE_OBJECT_DIR) {
+    try {
+      return new ReplitStorageProvider();
+    } catch (error) {
+      console.warn("Failed to initialize Replit storage provider:", error);
+    }
+  }
+  if (process.env.GCS_SERVICE_ACCOUNT_JSON && process.env.GCS_BUCKET_NAME) {
+    try {
+      return new GCSStorageProvider();
+    } catch (error) {
+      console.warn("Failed to initialize GCS storage provider:", error);
+    }
+  }
+  return new UnavailableStorageProvider();
+}
+var storageProvider = null;
+function getStorageProvider() {
+  if (!storageProvider) {
+    storageProvider = detectStorageProvider();
+  }
+  return storageProvider;
+}
+function getStorageStatus() {
+  const provider = getStorageProvider();
+  if (provider.type === "unavailable") {
+    return {
+      available: false,
+      provider: "unavailable",
+      message: "Object storage not available. Set PRIVATE_OBJECT_DIR (Replit) or GCS_SERVICE_ACCOUNT_JSON + GCS_BUCKET_NAME (GCS)."
+    };
+  }
+  return {
+    available: true,
+    provider: provider.type,
+    message: `Object storage is configured using ${provider.type === "replit" ? "Replit" : "Google Cloud Storage"} provider.`
+  };
+}
 var ObjectNotFoundError = class _ObjectNotFoundError extends Error {
   constructor() {
     super("Object not found");
@@ -3256,9 +4897,10 @@ var ObjectNotFoundError = class _ObjectNotFoundError extends Error {
   }
 };
 var ObjectStorageService = class {
+  provider;
   constructor() {
+    this.provider = getStorageProvider();
   }
-  // Gets the public object search paths.
   getPublicObjectSearchPaths() {
     const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
     const paths = Array.from(
@@ -3267,28 +4909,37 @@ var ObjectStorageService = class {
       )
     );
     if (paths.length === 0) {
+      if (this.provider.type === "gcs") {
+        return [`/${this.provider.bucketName}/public`];
+      }
       throw new Error(
         "PUBLIC_OBJECT_SEARCH_PATHS not set. Create a bucket in 'Object Storage' tool and set PUBLIC_OBJECT_SEARCH_PATHS env var (comma-separated paths)."
       );
     }
     return paths;
   }
-  // Gets the private object directory.
   getPrivateObjectDir() {
-    const dir = process.env.PRIVATE_OBJECT_DIR || "";
-    if (!dir) {
-      throw new Error(
-        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' tool and set PRIVATE_OBJECT_DIR env var."
-      );
+    if (this.provider.type === "replit") {
+      const dir = process.env.PRIVATE_OBJECT_DIR || "";
+      if (!dir) {
+        throw new Error(
+          "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' tool and set PRIVATE_OBJECT_DIR env var."
+        );
+      }
+      return dir;
+    } else if (this.provider.type === "gcs") {
+      return `/${this.provider.bucketName}/.private`;
     }
-    return dir;
+    throw new Error("Storage provider not available");
   }
-  // Search for a public object from the search paths.
   async searchPublicObject(filePath) {
+    if (this.provider.type === "unavailable") {
+      return null;
+    }
     for (const searchPath of this.getPublicObjectSearchPaths()) {
       const fullPath = `${searchPath}/${filePath}`;
       const { bucketName, objectName } = parseObjectPath(fullPath);
-      const bucket = objectStorageClient.bucket(bucketName);
+      const bucket = this.provider.getStorageClient().bucket(bucketName);
       const file = bucket.file(objectName);
       const [exists] = await file.exists();
       if (exists) {
@@ -3297,7 +4948,6 @@ var ObjectStorageService = class {
     }
     return null;
   }
-  // Downloads an object to the response.
   async downloadObject(file, res, cacheTtlSec = 3600) {
     try {
       const [metadata] = await file.getMetadata();
@@ -3323,25 +4973,15 @@ var ObjectStorageService = class {
       }
     }
   }
-  // Gets the upload URL for an object entity.
-  async getObjectEntityUploadURL() {
-    const privateObjectDir = this.getPrivateObjectDir();
-    if (!privateObjectDir) {
-      throw new Error(
-        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' tool and set PRIVATE_OBJECT_DIR env var."
-      );
+  async getObjectEntityUploadURL(contentType) {
+    if (this.provider.type === "unavailable") {
+      throw new Error("Storage provider not available");
     }
-    const objectId = randomUUID();
-    const fullPath = `${privateObjectDir}/uploads/${objectId}`;
-    const { bucketName, objectName } = parseObjectPath(fullPath);
-    return signObjectURL({
-      bucketName,
-      objectName,
-      method: "PUT",
-      ttlSec: 900
-    });
+    const objectId = randomUUID2();
+    const uploadsPrefix = this.provider.getUploadsPrefix();
+    const objectName = `${uploadsPrefix}/${objectId}`;
+    return this.provider.signUploadUrl(objectName, 900, contentType);
   }
-  // Gets the object entity file from the object path.
   async getObjectEntityFile(objectPath) {
     if (!objectPath.startsWith("/objects/")) {
       throw new ObjectNotFoundError();
@@ -3357,7 +4997,7 @@ var ObjectStorageService = class {
     }
     const objectEntityPath = `${entityDir}${entityId}`;
     const { bucketName, objectName } = parseObjectPath(objectEntityPath);
-    const bucket = objectStorageClient.bucket(bucketName);
+    const bucket = this.provider.getStorageClient().bucket(bucketName);
     const objectFile = bucket.file(objectName);
     const [exists] = await objectFile.exists();
     if (!exists) {
@@ -3381,7 +5021,6 @@ var ObjectStorageService = class {
     const entityId = rawObjectPath.slice(objectEntityDir.length);
     return `/objects/${entityId}`;
   }
-  // Tries to set the ACL policy for the object entity and return the normalized path.
   async trySetObjectEntityAclPolicy(rawPath, aclPolicy) {
     const normalizedPath = this.normalizeObjectEntityPath(rawPath);
     if (!normalizedPath.startsWith("/")) {
@@ -3391,7 +5030,6 @@ var ObjectStorageService = class {
     await setObjectAclPolicy(objectFile, aclPolicy);
     return normalizedPath;
   }
-  // Checks if the user can access the object entity.
   async canAccessObjectEntity({
     userId,
     objectFile,
@@ -3403,18 +5041,18 @@ var ObjectStorageService = class {
       requestedPermission: requestedPermission ?? "read" /* READ */
     });
   }
-  // Extracts the object entity path from a raw file path (like a signed URL).
-  // This is an alias for normalizeObjectEntityPath for semantic clarity.
   extractObjectEntityPath(rawPath) {
     return this.normalizeObjectEntityPath(rawPath);
   }
-  // Gets the public URL for an object entity path.
-  // For paths like /objects/uploads/uuid, returns the accessible URL.
   getObjectEntityPublicUrl(objectPath) {
     if (!objectPath.startsWith("/objects/")) {
       return objectPath;
     }
     const entityId = objectPath.slice("/objects/".length);
+    if (this.provider.type === "gcs") {
+      const objectName2 = `${this.provider.getUploadsPrefix()}/${entityId}`.replace(/^uploads\//, "");
+      return this.provider.getPublicUrl(objectName2);
+    }
     let entityDir = this.getPrivateObjectDir();
     if (!entityDir.endsWith("/")) {
       entityDir = `${entityDir}/`;
@@ -3422,6 +5060,9 @@ var ObjectStorageService = class {
     const fullPath = `${entityDir}${entityId}`;
     const { bucketName, objectName } = parseObjectPath(fullPath);
     return `https://storage.googleapis.com/${bucketName}/${objectName}`;
+  }
+  getProviderType() {
+    return this.provider.type;
   }
 };
 function parseObjectPath(path5) {
@@ -3438,36 +5079,6 @@ function parseObjectPath(path5) {
     bucketName,
     objectName
   };
-}
-async function signObjectURL({
-  bucketName,
-  objectName,
-  method,
-  ttlSec
-}) {
-  const request = {
-    bucket_name: bucketName,
-    object_name: objectName,
-    method,
-    expires_at: new Date(Date.now() + ttlSec * 1e3).toISOString()
-  };
-  const response = await fetch(
-    `${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(request)
-    }
-  );
-  if (!response.ok) {
-    throw new Error(
-      `Failed to sign object URL, errorcode: ${response.status}, make sure you're running on Replit`
-    );
-  }
-  const { signed_url: signedURL } = await response.json();
-  return signedURL;
 }
 
 // server/routes.ts
@@ -3521,6 +5132,241 @@ function isEncryptedSecret(secret) {
   } catch {
     return false;
   }
+}
+
+// server/services/hospital-ping-scheduler.ts
+var DAILY_PING_INTERVAL_MS = 60 * 60 * 1e3;
+var NO_REPLY_CHECK_INTERVAL_MS = 60 * 60 * 1e3;
+var PING_MESSAGE = "Hi \u{1F44B} Just checking availability - PetSOS";
+var WHATSAPP_API_URL3 = process.env.WHATSAPP_API_URL || "https://graph.facebook.com/v17.0";
+var WHATSAPP_PHONE_NUMBER_ID3 = process.env.WHATSAPP_PHONE_NUMBER_ID;
+var WHATSAPP_ACCESS_TOKEN3 = process.env.WHATSAPP_ACCESS_TOKEN;
+var dailyPingInterval = null;
+var noReplyCheckInterval = null;
+var isDailyPingProcessing = false;
+var isNoReplyProcessing = false;
+async function sendWhatsAppPingMessage(phoneNumber) {
+  if (!WHATSAPP_ACCESS_TOKEN3 || !WHATSAPP_PHONE_NUMBER_ID3) {
+    console.log("[HospitalPing] WhatsApp not configured - skipping ping");
+    return { success: false, error: "WhatsApp not configured" };
+  }
+  let cleanedNumber = phoneNumber.replace(/[^0-9]/g, "");
+  if (!cleanedNumber || cleanedNumber.length < 8) {
+    return { success: false, error: "Invalid phone number" };
+  }
+  try {
+    const url = `${WHATSAPP_API_URL3}/${WHATSAPP_PHONE_NUMBER_ID3}/messages`;
+    const payload = {
+      messaging_product: "whatsapp",
+      to: cleanedNumber,
+      type: "text",
+      text: { body: PING_MESSAGE }
+    };
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${WHATSAPP_ACCESS_TOKEN3}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("[HospitalPing] Send failed:", errorData);
+      return { success: false, error: JSON.stringify(errorData) };
+    }
+    const data = await response.json();
+    const messageId = data?.messages?.[0]?.id;
+    console.log("[HospitalPing] Ping sent successfully to:", cleanedNumber, "messageId:", messageId);
+    return { success: true, messageId };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("[HospitalPing] Error:", errorMessage);
+    return { success: false, error: errorMessage };
+  }
+}
+async function isEligibleForPing(hospital, pingState) {
+  if (!hospital.whatsapp) {
+    return false;
+  }
+  if (!pingState) {
+    return true;
+  }
+  if (!pingState.pingEnabled) {
+    return false;
+  }
+  if (pingState.pingStatus === "no_reply" || pingState.pingStatus === "paused") {
+    return false;
+  }
+  if (pingState.lastPingSentAt) {
+    const hoursSinceLastPing = (Date.now() - pingState.lastPingSentAt.getTime()) / (1e3 * 60 * 60);
+    if (hoursSinceLastPing < 23) {
+      return false;
+    }
+  }
+  return true;
+}
+async function processDailyPings() {
+  if (isDailyPingProcessing) {
+    console.log("[HospitalPing] Daily ping still in progress, skipping...");
+    return { processed: 0, sent: 0, failed: 0 };
+  }
+  isDailyPingProcessing = true;
+  let processed = 0, sent = 0, failed = 0;
+  try {
+    const hospitals2 = await storage.getAllHospitals();
+    const hospitalsWithWhatsApp = hospitals2.filter((h) => h.whatsapp && h.status === "active");
+    if (hospitalsWithWhatsApp.length === 0) {
+      console.log("[HospitalPing] No hospitals with WhatsApp numbers found");
+      return { processed: 0, sent: 0, failed: 0 };
+    }
+    console.log(`[HospitalPing] Checking ${hospitalsWithWhatsApp.length} hospitals for daily ping`);
+    for (const hospital of hospitalsWithWhatsApp) {
+      processed++;
+      try {
+        const pingState = await storage.getHospitalPingState(hospital.id);
+        if (!await isEligibleForPing(hospital, pingState)) {
+          continue;
+        }
+        const result = await sendWhatsAppPingMessage(hospital.whatsapp);
+        if (result.success) {
+          await storage.upsertHospitalPingState({
+            hospitalId: hospital.id,
+            pingEnabled: pingState?.pingEnabled ?? true,
+            pingStatus: "active",
+            lastPingSentAt: /* @__PURE__ */ new Date(),
+            lastPingMessageId: result.messageId || null,
+            lastInboundReplyAt: pingState?.lastInboundReplyAt || null,
+            lastReplyLatencySeconds: pingState?.lastReplyLatencySeconds || null,
+            noReplySince: null
+          });
+          await storage.createHospitalPingLog({
+            hospitalId: hospital.id,
+            direction: "outbound",
+            providerMessageId: result.messageId || null,
+            eventType: "ping_sent",
+            sentAt: /* @__PURE__ */ new Date(),
+            receivedAt: null,
+            payload: { phoneNumber: hospital.whatsapp }
+          });
+          sent++;
+          console.log(`[HospitalPing] Ping sent to hospital ${hospital.id} (${hospital.nameEn})`);
+        } else {
+          failed++;
+          console.error(`[HospitalPing] Failed to ping hospital ${hospital.id}: ${result.error}`);
+        }
+      } catch (error) {
+        failed++;
+        console.error(`[HospitalPing] Error processing hospital ${hospital.id}:`, error);
+      }
+    }
+    console.log(`[HospitalPing] Daily ping complete: ${processed} processed, ${sent} sent, ${failed} failed`);
+    return { processed, sent, failed };
+  } catch (error) {
+    console.error("[HospitalPing] Error in daily ping processing:", error);
+    return { processed, sent, failed };
+  } finally {
+    isDailyPingProcessing = false;
+  }
+}
+async function processNoReplyMarking() {
+  if (isNoReplyProcessing) {
+    console.log("[HospitalPing] No-reply check still in progress, skipping...");
+    return { marked: 0 };
+  }
+  isNoReplyProcessing = true;
+  let marked = 0;
+  try {
+    const hospitalsNeedingMarking = await storage.getHospitalsNeedingNoReplyMarking();
+    if (hospitalsNeedingMarking.length === 0) {
+      return { marked: 0 };
+    }
+    console.log(`[HospitalPing] Found ${hospitalsNeedingMarking.length} hospitals needing no-reply marking`);
+    for (const pingState of hospitalsNeedingMarking) {
+      try {
+        await storage.updateHospitalPingState(pingState.hospitalId, {
+          pingStatus: "no_reply",
+          noReplySince: /* @__PURE__ */ new Date()
+        });
+        await storage.createHospitalPingLog({
+          hospitalId: pingState.hospitalId,
+          direction: "outbound",
+          providerMessageId: null,
+          eventType: "no_reply_marked",
+          sentAt: null,
+          receivedAt: null,
+          payload: {
+            lastPingSentAt: pingState.lastPingSentAt,
+            reason: "No reply within 24 hours"
+          }
+        });
+        marked++;
+        console.log(`[HospitalPing] Hospital ${pingState.hospitalId} marked as no_reply`);
+      } catch (error) {
+        console.error(`[HospitalPing] Error marking hospital ${pingState.hospitalId}:`, error);
+      }
+    }
+    console.log(`[HospitalPing] No-reply marking complete: ${marked} hospitals marked`);
+    return { marked };
+  } catch (error) {
+    console.error("[HospitalPing] Error in no-reply marking:", error);
+    return { marked };
+  } finally {
+    isNoReplyProcessing = false;
+  }
+}
+async function handleHospitalReply(hospitalId, phoneNumber, providerMessageId) {
+  try {
+    const pingState = await storage.getHospitalPingState(hospitalId);
+    const now = /* @__PURE__ */ new Date();
+    let latencySeconds = null;
+    if (pingState?.lastPingSentAt) {
+      latencySeconds = Math.floor((now.getTime() - pingState.lastPingSentAt.getTime()) / 1e3);
+    }
+    await storage.upsertHospitalPingState({
+      hospitalId,
+      pingEnabled: pingState?.pingEnabled ?? true,
+      pingStatus: "active",
+      lastPingSentAt: pingState?.lastPingSentAt || null,
+      lastPingMessageId: pingState?.lastPingMessageId || null,
+      lastInboundReplyAt: now,
+      lastReplyLatencySeconds: latencySeconds,
+      noReplySince: null
+    });
+    await storage.createHospitalPingLog({
+      hospitalId,
+      direction: "inbound",
+      providerMessageId: providerMessageId || null,
+      eventType: "reply_received",
+      sentAt: null,
+      receivedAt: now,
+      payload: { phoneNumber }
+    });
+    console.log(`[HospitalPing] Hospital ${hospitalId} reply recorded, latency: ${latencySeconds}s`);
+  } catch (error) {
+    console.error(`[HospitalPing] Error handling hospital reply for ${hospitalId}:`, error);
+  }
+}
+function startHospitalPingScheduler() {
+  if (dailyPingInterval) {
+    console.log("[HospitalPing] Scheduler already running");
+    return;
+  }
+  console.log(`[HospitalPing] Starting hospital ping scheduler (daily ping every ${DAILY_PING_INTERVAL_MS / 1e3 / 60} min, no-reply check every ${NO_REPLY_CHECK_INTERVAL_MS / 1e3 / 60} min)`);
+  dailyPingInterval = setInterval(async () => {
+    try {
+      await processDailyPings();
+    } catch (error) {
+      console.error("[HospitalPing] Daily ping scheduler error:", error);
+    }
+  }, DAILY_PING_INTERVAL_MS);
+  noReplyCheckInterval = setInterval(async () => {
+    try {
+      await processNoReplyMarking();
+    } catch (error) {
+      console.error("[HospitalPing] No-reply check error:", error);
+    }
+  }, NO_REPLY_CHECK_INTERVAL_MS);
 }
 
 // server/routes.ts
@@ -3718,6 +5564,14 @@ async function registerRoutes(app2) {
                       sentAt: timestamp2
                     });
                     console.log(`[WhatsApp Webhook] Stored incoming message ${chatMessage.id} in conversation ${conversation.id}`);
+                    if (conversation.hospitalId) {
+                      try {
+                        await handleHospitalReply(conversation.hospitalId, sanitizedPhone, whatsappMsgId);
+                        console.log(`[WhatsApp Webhook] Tracked hospital reply for ${conversation.hospitalId}`);
+                      } catch (pingError) {
+                        console.error("[WhatsApp Webhook] Error tracking hospital reply:", pingError);
+                      }
+                    }
                   } catch (msgError) {
                     console.error("[WhatsApp Webhook] Error processing incoming message:", msgError);
                   }
@@ -3771,19 +5625,118 @@ async function registerRoutes(app2) {
     }
   });
   const publicDir = config.isDevelopment ? path.resolve(import.meta.dirname, "../client/public") : path.resolve(import.meta.dirname, "public");
-  app2.get("/sitemap.xml", (req, res) => {
-    res.set({
-      "Content-Type": "application/xml; charset=UTF-8",
-      "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
-      "Pragma": "no-cache",
-      "Expires": "0"
-    });
-    res.removeHeader("ETag");
-    res.sendFile("sitemap.xml", {
-      root: publicDir,
-      etag: false,
-      lastModified: false
-    });
+  app2.get("/sitemap.xml", async (req, res) => {
+    try {
+      const baseUrl = "https://petsos.site";
+      const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+      const regions2 = await storage.getRegions();
+      const activeRegions = regions2.filter((r) => r.active);
+      const allHospitals = await storage.getAllHospitals();
+      const indexableHospitals = allHospitals.filter(
+        (h) => h.slug && h.isAvailable && (h.verified || h.open247)
+      );
+      const staticPages = [
+        { path: "/", priority: "1.0", changefreq: "daily" },
+        { path: "/emergency", priority: "1.0", changefreq: "weekly" },
+        { path: "/emergency-symptoms", priority: "0.9", changefreq: "monthly" },
+        { path: "/hospitals", priority: "0.9", changefreq: "daily" },
+        { path: "/clinics", priority: "0.9", changefreq: "daily" },
+        { path: "/districts", priority: "0.8", changefreq: "weekly" },
+        { path: "/resources", priority: "0.7", changefreq: "weekly" },
+        { path: "/faq", priority: "0.7", changefreq: "monthly" },
+        { path: "/about", priority: "0.7", changefreq: "monthly" },
+        { path: "/medical-advisory", priority: "0.6", changefreq: "monthly" },
+        { path: "/verification-process", priority: "0.6", changefreq: "monthly" },
+        { path: "/consultants", priority: "0.6", changefreq: "monthly" },
+        { path: "/typhoon-status", priority: "0.7", changefreq: "daily" },
+        { path: "/privacy", priority: "0.4", changefreq: "monthly" },
+        { path: "/terms", priority: "0.4", changefreq: "monthly" }
+      ];
+      const blogPages = [
+        { path: "/blog/midnight-fees", priority: "0.8", changefreq: "weekly" },
+        { path: "/blog/blood-bank", priority: "0.8", changefreq: "weekly" },
+        { path: "/blog/typhoon-guide", priority: "0.8", changefreq: "weekly" },
+        { path: "/blog/imaging-diagnostics", priority: "0.8", changefreq: "weekly" },
+        { path: "/blog/exotic-emergency", priority: "0.8", changefreq: "weekly" }
+      ];
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+      for (const page of staticPages) {
+        xml += `  <url>
+`;
+        xml += `    <loc>${baseUrl}${page.path}</loc>
+`;
+        xml += `    <changefreq>${page.changefreq}</changefreq>
+`;
+        xml += `    <priority>${page.priority}</priority>
+`;
+        xml += `    <lastmod>${today}</lastmod>
+`;
+        xml += `  </url>
+`;
+      }
+      for (const page of blogPages) {
+        xml += `  <url>
+`;
+        xml += `    <loc>${baseUrl}${page.path}</loc>
+`;
+        xml += `    <changefreq>${page.changefreq}</changefreq>
+`;
+        xml += `    <priority>${page.priority}</priority>
+`;
+        xml += `    <lastmod>${today}</lastmod>
+`;
+        xml += `  </url>
+`;
+      }
+      for (const region of activeRegions) {
+        xml += `  <url>
+`;
+        xml += `    <loc>${baseUrl}/district/${region.code}</loc>
+`;
+        xml += `    <changefreq>weekly</changefreq>
+`;
+        xml += `    <priority>0.8</priority>
+`;
+        xml += `    <lastmod>${today}</lastmod>
+`;
+        xml += `  </url>
+`;
+      }
+      for (const hospital of indexableHospitals) {
+        const lastmod = hospital.lastVerifiedAt ? new Date(hospital.lastVerifiedAt).toISOString().split("T")[0] : hospital.updatedAt ? new Date(hospital.updatedAt).toISOString().split("T")[0] : today;
+        xml += `  <url>
+`;
+        xml += `    <loc>${baseUrl}/hospitals/${hospital.slug}</loc>
+`;
+        xml += `    <changefreq>weekly</changefreq>
+`;
+        xml += `    <priority>0.8</priority>
+`;
+        xml += `    <lastmod>${lastmod}</lastmod>
+`;
+        xml += `  </url>
+`;
+      }
+      xml += "</urlset>";
+      res.set({
+        "Content-Type": "application/xml; charset=UTF-8",
+        "Cache-Control": "public, max-age=3600"
+        // Cache for 1 hour
+      });
+      res.send(xml);
+    } catch (error) {
+      console.error("[Sitemap] Error generating sitemap:", error);
+      res.set({
+        "Content-Type": "application/xml; charset=UTF-8",
+        "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0"
+      });
+      res.sendFile("sitemap.xml", {
+        root: publicDir,
+        etag: false,
+        lastModified: false
+      });
+    }
   });
   app2.get("/sitemap-2025.xml", (req, res) => {
     res.set({
@@ -3820,6 +5773,10 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/test", (req, res) => {
     res.json({ message: "API is working!" });
+  });
+  app2.get("/api/storage/status", (req, res) => {
+    const status = getStorageStatus();
+    res.json(status);
   });
   app2.use("/api/", generalLimiter);
   app2.get("/api/users/export", exportLimiter, isAuthenticated, async (req, res) => {
@@ -4506,8 +6463,9 @@ async function registerRoutes(app2) {
       if (pet.userId !== userId) {
         return res.status(403).json({ error: "Access denied" });
       }
+      const { contentType } = req.body || {};
       const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL(contentType);
       res.json({ uploadURL });
     } catch (error) {
       console.error("Error getting pet photo upload URL:", error);
@@ -5226,7 +7184,18 @@ async function registerRoutes(app2) {
   app2.get("/api/hospitals", async (req, res) => {
     try {
       const hospitals2 = await storage.getAllHospitals();
-      res.json(hospitals2);
+      const pingStates = await storage.getAllHospitalPingStates();
+      const pingStateMap = new Map(pingStates.map((ps) => [ps.hospitalId, ps]));
+      const hospitalsWithPingState = hospitals2.map((h) => {
+        const pingState = pingStateMap.get(h.id);
+        return {
+          ...h,
+          // Only expose last reply time for recency display - no internal admin details
+          lastInboundReplyAt: pingState?.lastInboundReplyAt || null,
+          replyStatus: pingState?.pingStatus === "no_reply" ? "unresponsive" : "active"
+        };
+      });
+      res.json(hospitalsWithPingState);
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -5247,6 +7216,57 @@ async function registerRoutes(app2) {
       }
       res.json(hospital);
     } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.get("/api/hospitals/nearby", async (req, res) => {
+    try {
+      const { latitude, longitude, radius, last_reply_window } = z2.object({
+        latitude: z2.string().transform(Number),
+        longitude: z2.string().transform(Number),
+        radius: z2.string().transform(Number).default("10000"),
+        last_reply_window: z2.enum(["1h", "24h", "7d", "none", "all"]).optional()
+      }).parse(req.query);
+      let hospitals2 = await storage.getNearbyHospitals(latitude, longitude, radius);
+      const pingStates = await storage.getAllHospitalPingStates();
+      const pingStateMap = new Map(pingStates.map((ps) => [ps.hospitalId, ps]));
+      const hospitalsWithPingState = hospitals2.map((h) => {
+        const pingState = pingStateMap.get(h.id);
+        return {
+          ...h,
+          lastInboundReplyAt: pingState?.lastInboundReplyAt || null,
+          replyStatus: pingState?.pingStatus === "no_reply" ? "unresponsive" : "active"
+        };
+      });
+      if (last_reply_window && last_reply_window !== "all") {
+        const now = Date.now();
+        const filterHospitals = hospitalsWithPingState.filter((h) => {
+          const lastReply = h.lastInboundReplyAt;
+          if (last_reply_window === "none") {
+            return !lastReply;
+          }
+          if (!lastReply) return false;
+          const replyTime = new Date(lastReply).getTime();
+          const ageMs = now - replyTime;
+          switch (last_reply_window) {
+            case "1h":
+              return ageMs <= 60 * 60 * 1e3;
+            case "24h":
+              return ageMs <= 24 * 60 * 60 * 1e3;
+            case "7d":
+              return ageMs <= 7 * 24 * 60 * 60 * 1e3;
+            default:
+              return true;
+          }
+        });
+        res.json(filterHospitals);
+      } else {
+        res.json(hospitalsWithPingState);
+      }
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -5427,50 +7447,6 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  app2.get("/api/hospitals", async (req, res) => {
-    try {
-      const hospitals2 = await storage.getAllHospitals();
-      res.json(hospitals2);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-  app2.get("/api/hospitals/region/:regionId", async (req, res) => {
-    try {
-      const hospitals2 = await storage.getHospitalsByRegion(req.params.regionId);
-      res.json(hospitals2);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-  app2.get("/api/hospitals/nearby", async (req, res) => {
-    try {
-      const { latitude, longitude, radius } = z2.object({
-        latitude: z2.string().transform(Number),
-        longitude: z2.string().transform(Number),
-        radius: z2.string().transform(Number).default("10000")
-        // default 10km in meters
-      }).parse(req.query);
-      const hospitals2 = await storage.getNearbyHospitals(latitude, longitude, radius);
-      res.json(hospitals2);
-    } catch (error) {
-      if (error instanceof z2.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-  app2.get("/api/hospitals/:id", async (req, res) => {
-    try {
-      const hospital = await storage.getHospital(req.params.id);
-      if (!hospital) {
-        return res.status(404).json({ message: "Hospital not found" });
-      }
-      res.json(hospital);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
   app2.get("/api/hospitals/:hospitalId/emergency-requests", isAuthenticated, async (req, res) => {
     try {
       const user = req.user;
@@ -5484,10 +7460,109 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+  app2.get("/api/hospitals/:hospitalId/ping-state", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const pingState = await storage.getHospitalPingState(req.params.hospitalId);
+      res.json(pingState || { hospitalId: req.params.hospitalId, pingEnabled: true, pingStatus: "active" });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.get("/api/admin/hospital-ping-states", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const pingStates = await storage.getAllHospitalPingStates();
+      res.json(pingStates);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.patch("/api/hospitals/:hospitalId/ping-settings", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { pingEnabled } = z2.object({
+        pingEnabled: z2.boolean()
+      }).parse(req.body);
+      const hospitalId = req.params.hospitalId;
+      const hospital = await storage.getHospital(hospitalId);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      const existingState = await storage.getHospitalPingState(hospitalId);
+      const updatedState = await storage.upsertHospitalPingState({
+        hospitalId,
+        pingEnabled,
+        pingStatus: existingState?.pingStatus || "active",
+        lastPingSentAt: existingState?.lastPingSentAt || null,
+        lastPingMessageId: existingState?.lastPingMessageId || null,
+        lastInboundReplyAt: existingState?.lastInboundReplyAt || null,
+        lastReplyLatencySeconds: existingState?.lastReplyLatencySeconds || null,
+        noReplySince: existingState?.noReplySince || null
+      });
+      await storage.createAuditLog({
+        entityType: "hospital_ping_state",
+        entityId: hospitalId,
+        action: "update_ping_settings",
+        userId: req.user.id,
+        changes: { pingEnabled },
+        ipAddress: req.ip
+      });
+      res.json(updatedState);
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.post("/api/hospitals/:hospitalId/reset-ping-status", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const hospitalId = req.params.hospitalId;
+      const hospital = await storage.getHospital(hospitalId);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      const existingState = await storage.getHospitalPingState(hospitalId);
+      if (!existingState) {
+        return res.status(404).json({ message: "No ping state found for hospital" });
+      }
+      const updatedState = await storage.updateHospitalPingState(hospitalId, {
+        pingStatus: "active",
+        noReplySince: null
+      });
+      await storage.createHospitalPingLog({
+        hospitalId,
+        direction: "outbound",
+        providerMessageId: null,
+        eventType: "ping_sent",
+        sentAt: null,
+        receivedAt: null,
+        payload: { action: "manual_reset", resetBy: req.user.id }
+      });
+      await storage.createAuditLog({
+        entityType: "hospital_ping_state",
+        entityId: hospitalId,
+        action: "reset_ping_status",
+        userId: req.user.id,
+        changes: { previousStatus: existingState.pingStatus, newStatus: "active" },
+        ipAddress: req.ip
+      });
+      res.json(updatedState);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.get("/api/hospitals/:hospitalId/ping-logs", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit) || 50;
+      const logs = await storage.getHospitalPingLogs(req.params.hospitalId, limit);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
   app2.post("/api/emergency-requests", async (req, res) => {
     try {
       const emergencyRequestSchemaWithCoercion = insertEmergencyRequestSchema.extend({
-        petAge: z2.union([z2.string(), z2.null()]).optional()
+        petAge: z2.union([z2.number(), z2.null()]).optional()
       });
       let loggedInUserId = null;
       if (req.user) {
@@ -5498,13 +7573,18 @@ async function registerRoutes(app2) {
       console.log("[Emergency Request] req.user:", req.user ? "exists" : "null");
       console.log("[Emergency Request] session.passport.user:", req.session?.passport?.user);
       console.log("[Emergency Request] loggedInUserId:", loggedInUserId);
+      let parsedPetAge = null;
+      if (req.body.petAge != null) {
+        const age = parseInt(req.body.petAge, 10);
+        parsedPetAge = isNaN(age) ? null : age;
+      }
       const validatedData = emergencyRequestSchemaWithCoercion.parse({
         userId: req.body.userId ?? loggedInUserId ?? null,
         petId: req.body.petId ?? null,
         symptom: req.body.symptom,
         petSpecies: req.body.petSpecies ?? null,
         petBreed: req.body.petBreed ?? null,
-        petAge: req.body.petAge != null ? String(req.body.petAge) : null,
+        petAge: parsedPetAge,
         locationLatitude: req.body.locationLatitude ? String(req.body.locationLatitude) : null,
         locationLongitude: req.body.locationLongitude ? String(req.body.locationLongitude) : null,
         manualLocation: req.body.manualLocation ?? null,
@@ -5514,7 +7594,7 @@ async function registerRoutes(app2) {
         regionId: req.body.regionId ?? null,
         voiceTranscript: req.body.voiceTranscript ?? null,
         aiAnalyzedSymptoms: req.body.aiAnalyzedSymptoms ?? null,
-        isVoiceRecording: req.body.isVoiceRecording ?? null
+        isVoiceRecording: req.body.isVoiceRecording ?? false
       });
       const emergencyRequest = await storage.createEmergencyRequest(validatedData);
       await storage.createAuditLog({
@@ -5525,7 +7605,7 @@ async function registerRoutes(app2) {
         ipAddress: req.ip,
         userAgent: req.get("user-agent")
       });
-      res.json(emergencyRequest);
+      res.status(201).json(emergencyRequest);
     } catch (error) {
       if (error instanceof z2.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
@@ -6059,31 +8139,31 @@ async function registerRoutes(app2) {
         phoneNumber: z2.string().min(8, "Phone number required"),
         message: z2.string().optional().default("Test message from PetSOS")
       }).parse(req.body);
-      const WHATSAPP_ACCESS_TOKEN2 = process.env.WHATSAPP_ACCESS_TOKEN;
-      const WHATSAPP_PHONE_NUMBER_ID2 = process.env.WHATSAPP_PHONE_NUMBER_ID;
-      const WHATSAPP_API_URL2 = process.env.WHATSAPP_API_URL || "https://graph.facebook.com/v17.0";
+      const WHATSAPP_ACCESS_TOKEN4 = process.env.WHATSAPP_ACCESS_TOKEN;
+      const WHATSAPP_PHONE_NUMBER_ID4 = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      const WHATSAPP_API_URL4 = process.env.WHATSAPP_API_URL || "https://graph.facebook.com/v17.0";
       console.log("[WhatsApp Test] DEBUG - Checking credentials...");
-      console.log("[WhatsApp Test] Has Access Token:", !!WHATSAPP_ACCESS_TOKEN2);
-      console.log("[WhatsApp Test] Has Phone Number ID:", !!WHATSAPP_PHONE_NUMBER_ID2);
-      console.log("[WhatsApp Test] Token length:", WHATSAPP_ACCESS_TOKEN2?.length || 0);
-      console.log("[WhatsApp Test] Phone ID:", WHATSAPP_PHONE_NUMBER_ID2 || "NOT SET");
+      console.log("[WhatsApp Test] Has Access Token:", !!WHATSAPP_ACCESS_TOKEN4);
+      console.log("[WhatsApp Test] Has Phone Number ID:", !!WHATSAPP_PHONE_NUMBER_ID4);
+      console.log("[WhatsApp Test] Token length:", WHATSAPP_ACCESS_TOKEN4?.length || 0);
+      console.log("[WhatsApp Test] Phone ID:", WHATSAPP_PHONE_NUMBER_ID4 || "NOT SET");
       console.log("[WhatsApp Test] All env keys with WHATSAPP:", Object.keys(process.env).filter((k) => k.includes("WHATSAPP")));
-      if (!WHATSAPP_ACCESS_TOKEN2 || !WHATSAPP_PHONE_NUMBER_ID2) {
+      if (!WHATSAPP_ACCESS_TOKEN4 || !WHATSAPP_PHONE_NUMBER_ID4) {
         console.error("[WhatsApp Test] ERROR - Credentials missing!");
         return res.status(400).json({
           success: false,
           error: "WhatsApp credentials not configured",
           details: {
-            hasAccessToken: !!WHATSAPP_ACCESS_TOKEN2,
-            hasPhoneNumberId: !!WHATSAPP_PHONE_NUMBER_ID2,
-            apiUrl: WHATSAPP_API_URL2,
-            tokenLength: WHATSAPP_ACCESS_TOKEN2?.length || 0,
-            phoneNumberId: WHATSAPP_PHONE_NUMBER_ID2 || null
+            hasAccessToken: !!WHATSAPP_ACCESS_TOKEN4,
+            hasPhoneNumberId: !!WHATSAPP_PHONE_NUMBER_ID4,
+            apiUrl: WHATSAPP_API_URL4,
+            tokenLength: WHATSAPP_ACCESS_TOKEN4?.length || 0,
+            phoneNumberId: WHATSAPP_PHONE_NUMBER_ID4 || null
           }
         });
       }
       const cleanedNumber = phoneNumber.replace(/[^0-9]/g, "");
-      const url = `${WHATSAPP_API_URL2}/${WHATSAPP_PHONE_NUMBER_ID2}/messages`;
+      const url = `${WHATSAPP_API_URL4}/${WHATSAPP_PHONE_NUMBER_ID4}/messages`;
       const payload = {
         messaging_product: "whatsapp",
         to: cleanedNumber,
@@ -6095,7 +8175,7 @@ async function registerRoutes(app2) {
       const response = await fetch(url, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${WHATSAPP_ACCESS_TOKEN2}`,
+          "Authorization": `Bearer ${WHATSAPP_ACCESS_TOKEN4}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify(payload)
@@ -6112,8 +8192,8 @@ async function registerRoutes(app2) {
           debugInfo: {
             url,
             phoneNumber: cleanedNumber,
-            hasToken: !!WHATSAPP_ACCESS_TOKEN2,
-            phoneNumberId: WHATSAPP_PHONE_NUMBER_ID2
+            hasToken: !!WHATSAPP_ACCESS_TOKEN4,
+            phoneNumberId: WHATSAPP_PHONE_NUMBER_ID4
           }
         });
       }
@@ -6223,13 +8303,13 @@ async function registerRoutes(app2) {
           isArchived: false
         });
       }
-      const WHATSAPP_ACCESS_TOKEN2 = process.env.WHATSAPP_ACCESS_TOKEN;
-      const WHATSAPP_PHONE_NUMBER_ID2 = process.env.WHATSAPP_PHONE_NUMBER_ID;
-      const WHATSAPP_API_URL2 = "https://graph.facebook.com/v17.0";
-      if (!WHATSAPP_ACCESS_TOKEN2 || !WHATSAPP_PHONE_NUMBER_ID2) {
+      const WHATSAPP_ACCESS_TOKEN4 = process.env.WHATSAPP_ACCESS_TOKEN;
+      const WHATSAPP_PHONE_NUMBER_ID4 = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      const WHATSAPP_API_URL4 = "https://graph.facebook.com/v17.0";
+      if (!WHATSAPP_ACCESS_TOKEN4 || !WHATSAPP_PHONE_NUMBER_ID4) {
         return res.status(500).json({ message: "WhatsApp not configured" });
       }
-      const url = `${WHATSAPP_API_URL2}/${WHATSAPP_PHONE_NUMBER_ID2}/messages`;
+      const url = `${WHATSAPP_API_URL4}/${WHATSAPP_PHONE_NUMBER_ID4}/messages`;
       const payload = {
         messaging_product: "whatsapp",
         to: sanitizedPhone,
@@ -6239,7 +8319,7 @@ async function registerRoutes(app2) {
       const response = await fetch(url, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${WHATSAPP_ACCESS_TOKEN2}`,
+          "Authorization": `Bearer ${WHATSAPP_ACCESS_TOKEN4}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify(payload)
@@ -6318,13 +8398,13 @@ async function registerRoutes(app2) {
       if (!conversation) {
         return res.status(404).json({ message: "Conversation not found" });
       }
-      const WHATSAPP_ACCESS_TOKEN2 = process.env.WHATSAPP_ACCESS_TOKEN;
-      const WHATSAPP_PHONE_NUMBER_ID2 = process.env.WHATSAPP_PHONE_NUMBER_ID;
-      const WHATSAPP_API_URL2 = "https://graph.facebook.com/v17.0";
-      if (!WHATSAPP_ACCESS_TOKEN2 || !WHATSAPP_PHONE_NUMBER_ID2) {
+      const WHATSAPP_ACCESS_TOKEN4 = process.env.WHATSAPP_ACCESS_TOKEN;
+      const WHATSAPP_PHONE_NUMBER_ID4 = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      const WHATSAPP_API_URL4 = "https://graph.facebook.com/v17.0";
+      if (!WHATSAPP_ACCESS_TOKEN4 || !WHATSAPP_PHONE_NUMBER_ID4) {
         return res.status(500).json({ message: "WhatsApp not configured" });
       }
-      const url = `${WHATSAPP_API_URL2}/${WHATSAPP_PHONE_NUMBER_ID2}/messages`;
+      const url = `${WHATSAPP_API_URL4}/${WHATSAPP_PHONE_NUMBER_ID4}/messages`;
       const payload = {
         messaging_product: "whatsapp",
         to: conversation.phoneNumber,
@@ -6334,7 +8414,7 @@ async function registerRoutes(app2) {
       const response = await fetch(url, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${WHATSAPP_ACCESS_TOKEN2}`,
+          "Authorization": `Bearer ${WHATSAPP_ACCESS_TOKEN4}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify(payload)
@@ -6587,10 +8667,192 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+  app2.patch("/api/hospitals/:id/status", async (req, res) => {
+    try {
+      const { verificationCode, liveStatus } = z2.object({
+        verificationCode: z2.string().length(6, "Code must be 6 digits"),
+        liveStatus: z2.enum(["normal", "busy", "critical_only", "full"], {
+          errorMap: () => ({ message: "Status must be one of: normal, busy, critical_only, full" })
+        })
+      }).parse(req.body);
+      const hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      if (hospital.ownerVerificationCode !== verificationCode) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+      if (hospital.ownerVerificationCodeExpiresAt && /* @__PURE__ */ new Date() > new Date(hospital.ownerVerificationCodeExpiresAt)) {
+        return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
+      }
+      const updatedHospital = await storage.updateHospital(req.params.id, { liveStatus });
+      await storage.createAuditLog({
+        entityType: "hospital",
+        entityId: hospital.id,
+        action: "status_update",
+        changes: { liveStatus, previousStatus: hospital.liveStatus },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent")
+      });
+      res.json({
+        success: true,
+        liveStatus: updatedHospital?.liveStatus,
+        message: `Status updated to ${liveStatus}`
+      });
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error updating hospital status:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.post("/api/hospitals/verify-code", async (req, res) => {
+    try {
+      const { accessCode } = z2.object({
+        accessCode: z2.string().length(8, "Access code must be 8 characters")
+      }).parse(req.body);
+      const hospital = await storage.getHospitalByAccessCode(accessCode.toUpperCase());
+      if (!hospital) {
+        return res.status(401).json({ message: "Invalid access code" });
+      }
+      res.json({
+        id: hospital.id,
+        slug: hospital.slug,
+        nameEn: hospital.nameEn,
+        nameZh: hospital.nameZh,
+        addressEn: hospital.addressEn,
+        addressZh: hospital.addressZh,
+        phone: hospital.phone,
+        whatsapp: hospital.whatsapp,
+        email: hospital.email,
+        open247: hospital.open247,
+        lastConfirmedAt: hospital.lastConfirmedAt,
+        confirmedByName: hospital.confirmedByName
+      });
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error verifying access code:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.post("/api/hospitals/update-by-code", async (req, res) => {
+    try {
+      const updateSchema = z2.object({
+        accessCode: z2.string().length(8, "Access code must be 8 characters"),
+        phone: z2.string().optional(),
+        whatsapp: z2.string().optional(),
+        email: z2.string().email().optional().or(z2.literal("")),
+        open247: z2.boolean().optional(),
+        confirmedByName: z2.string().min(1, "Name is required")
+      });
+      const { accessCode, confirmedByName, ...updateData } = updateSchema.parse(req.body);
+      const hospital = await storage.getHospitalByAccessCode(accessCode.toUpperCase());
+      if (!hospital) {
+        return res.status(401).json({ message: "Invalid access code" });
+      }
+      const updatedHospital = await storage.updateHospital(hospital.id, {
+        ...updateData,
+        confirmedByName,
+        lastConfirmedAt: /* @__PURE__ */ new Date()
+      });
+      await storage.createAuditLog({
+        entityType: "hospital",
+        entityId: hospital.id,
+        action: "self_service_update",
+        changes: { ...updateData, confirmedByName },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent")
+      });
+      res.json({
+        success: true,
+        message: "Hospital information updated successfully",
+        hospital: {
+          id: updatedHospital?.id,
+          nameEn: updatedHospital?.nameEn,
+          nameZh: updatedHospital?.nameZh,
+          lastConfirmedAt: updatedHospital?.lastConfirmedAt,
+          confirmedByName: updatedHospital?.confirmedByName
+        }
+      });
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error updating hospital by code:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.post("/api/hospitals/confirm-info", async (req, res) => {
+    try {
+      const { accessCode, confirmedByName } = z2.object({
+        accessCode: z2.string().length(8, "Access code must be 8 characters"),
+        confirmedByName: z2.string().min(1, "Name is required")
+      }).parse(req.body);
+      const hospital = await storage.getHospitalByAccessCode(accessCode.toUpperCase());
+      if (!hospital) {
+        return res.status(401).json({ message: "Invalid access code" });
+      }
+      const updatedHospital = await storage.updateHospital(hospital.id, {
+        confirmedByName,
+        lastConfirmedAt: /* @__PURE__ */ new Date()
+      });
+      await storage.createAuditLog({
+        entityType: "hospital",
+        entityId: hospital.id,
+        action: "self_service_confirm",
+        changes: { confirmedByName },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent")
+      });
+      res.json({
+        success: true,
+        message: "Hospital information confirmed",
+        hospital: {
+          id: updatedHospital?.id,
+          nameEn: updatedHospital?.nameEn,
+          nameZh: updatedHospital?.nameZh,
+          lastConfirmedAt: updatedHospital?.lastConfirmedAt,
+          confirmedByName: updatedHospital?.confirmedByName
+        }
+      });
+    } catch (error) {
+      if (error instanceof z2.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error confirming hospital info:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.post("/api/hospitals/generate-access-codes", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const result = await storage.generateAccessCodesForAllHospitals();
+      await storage.createAuditLog({
+        entityType: "hospital",
+        entityId: "all",
+        action: "generate_access_codes",
+        changes: { updated: result.updated, errors: result.errors.length },
+        userId: req.user?.id,
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent")
+      });
+      res.json({
+        success: true,
+        updated: result.updated,
+        errors: result.errors
+      });
+    } catch (error) {
+      console.error("Error generating access codes:", error);
+      res.status(500).json({ message: "Failed to generate access codes" });
+    }
+  });
   app2.post("/api/hospitals/:id/photo-upload-url", async (req, res) => {
     try {
-      const { verificationCode } = z2.object({
-        verificationCode: z2.string().length(6, "Code must be 6 digits")
+      const { verificationCode, contentType } = z2.object({
+        verificationCode: z2.string().length(6, "Code must be 6 digits"),
+        contentType: z2.string().optional()
       }).parse(req.body);
       const hospital = await storage.getHospital(req.params.id);
       if (!hospital) {
@@ -6603,7 +8865,7 @@ async function registerRoutes(app2) {
         return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
       }
       const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL(contentType);
       res.json({ uploadURL });
     } catch (error) {
       if (error instanceof z2.ZodError) {
@@ -6714,8 +8976,9 @@ async function registerRoutes(app2) {
       if (!hospital) {
         return res.status(404).json({ message: "Hospital not found" });
       }
+      const { contentType } = req.body || {};
       const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL(contentType);
       res.json({ uploadURL });
     } catch (error) {
       console.error("Error getting hospital photo upload URL:", error);
@@ -6805,6 +9068,215 @@ async function registerRoutes(app2) {
       }
       console.error("Error deleting hospital photo:", error);
       res.status(500).json({ error: error.message || "Failed to delete hospital photo" });
+    }
+  });
+  app2.get("/api/admin/hospitals/outreach-status", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const allHospitals = await storage.getAllHospitals();
+      const outreachData = allHospitals.map((hospital) => ({
+        id: hospital.id,
+        slug: hospital.slug,
+        nameEn: hospital.nameEn,
+        nameZh: hospital.nameZh,
+        phone: hospital.phone,
+        whatsapp: hospital.whatsapp,
+        email: hospital.email,
+        verificationCode: hospital.ownerVerificationCode,
+        verificationCodeExpiresAt: hospital.ownerVerificationCodeExpiresAt,
+        lastConfirmedAt: hospital.lastConfirmedAt,
+        confirmedByName: hospital.confirmedByName,
+        inviteSentAt: hospital.inviteSentAt,
+        isAvailable: hospital.isAvailable,
+        status: hospital.lastConfirmedAt ? "confirmed" : "pending"
+      }));
+      res.json(outreachData);
+    } catch (error) {
+      console.error("Error fetching hospital outreach status:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.post("/api/admin/hospitals/send-invite/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      let hospital = await storage.getHospital(req.params.id);
+      if (!hospital) {
+        return res.status(404).json({ message: "Hospital not found" });
+      }
+      const targetPhone = hospital.whatsapp || hospital.phone;
+      if (!targetPhone) {
+        return res.status(400).json({ message: "Hospital has no phone or WhatsApp number" });
+      }
+      const code = Math.floor(Math.random() * 9e5 + 1e5).toString();
+      const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1e3);
+      hospital = await storage.updateHospital(req.params.id, {
+        ownerVerificationCode: code,
+        ownerVerificationCodeExpiresAt: expiresAt
+      }) || hospital;
+      const hospitalName = hospital.nameEn || hospital.nameZh || "Hospital";
+      const editLink = `https://petsos.site/hospital/edit/${hospital.slug}`;
+      const message = `\u{1F3E5} PetSOS Hospital Information Update
+
+Dear ${hospitalName},
+
+We are launching PetSOS, a non-profit pet emergency platform connecting pet owners with 24-hour veterinary clinics in Hong Kong.
+
+Your clinic is listed on our platform. Please verify your information:
+
+\u{1F449} ${editLink}
+\u{1F4CB} Verification Code: ${code}
+
+This code expires in 72 hours.
+
+Thank you,
+PetSOS Team
+
+---
+
+\u{1F3E5} PetSOS \u91AB\u9662\u8CC7\u6599\u66F4\u65B0
+
+${hospital.nameZh || hospitalName} \u60A8\u597D\uFF0C
+
+\u6211\u5011\u6B63\u63A8\u51FA PetSOS\uFF0C\u4E00\u500B\u9023\u7D50\u5BF5\u7269\u4E3B\u4EBA\u8207\u9999\u6E2F24\u5C0F\u6642\u7378\u91AB\u8A3A\u6240\u7684\u975E\u71DF\u5229\u5BF5\u7269\u6025\u75C7\u5E73\u53F0\u3002
+
+\u60A8\u7684\u8A3A\u6240\u5DF2\u5217\u65BC\u6211\u5011\u5E73\u53F0\u3002\u8ACB\u9A57\u8B49\u60A8\u7684\u8CC7\u6599\uFF1A
+
+\u{1F449} ${editLink}
+\u{1F4CB} \u9A57\u8B49\u78BC\uFF1A${code}
+
+\u6B64\u9A57\u8B49\u78BC\u5C07\u65BC72\u5C0F\u6642\u5F8C\u5931\u6548\u3002
+
+\u8B1D\u8B1D\uFF0C
+PetSOS \u5718\u968A`;
+      const result = await messagingService.sendDirectWhatsAppMessage(targetPhone, message);
+      if (result.success) {
+        await storage.updateHospital(hospital.id, { inviteSentAt: /* @__PURE__ */ new Date() });
+        await storage.createAuditLog({
+          entityType: "hospital",
+          entityId: hospital.id,
+          action: "send_invite",
+          userId: req.user.id,
+          changes: { inviteSentAt: (/* @__PURE__ */ new Date()).toISOString(), phone: targetPhone, codeGenerated: true },
+          ipAddress: req.ip,
+          userAgent: req.get("user-agent")
+        });
+        res.json({
+          success: true,
+          message: "Invitation sent successfully",
+          hospital: hospital.nameEn,
+          sentTo: targetPhone
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Failed to send invitation",
+          error: result.error
+        });
+      }
+    } catch (error) {
+      console.error("Error sending hospital invite:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app2.post("/api/admin/hospitals/send-all-invites", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const allHospitals = await storage.getAllHospitals();
+      const pendingHospitals = allHospitals.filter(
+        (h) => !h.lastConfirmedAt && (h.whatsapp || h.phone)
+      );
+      if (pendingHospitals.length === 0) {
+        return res.json({
+          success: true,
+          message: "No pending hospitals to invite",
+          sent: 0,
+          failed: 0
+        });
+      }
+      const results = {
+        sent: 0,
+        failed: 0,
+        details: []
+      };
+      for (let hospital of pendingHospitals) {
+        const targetPhone = hospital.whatsapp || hospital.phone;
+        const hospitalName = hospital.nameEn || hospital.nameZh || "Hospital";
+        try {
+          const code = Math.floor(Math.random() * 9e5 + 1e5).toString();
+          const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1e3);
+          hospital = await storage.updateHospital(hospital.id, {
+            ownerVerificationCode: code,
+            ownerVerificationCodeExpiresAt: expiresAt
+          }) || hospital;
+          const editLink = `https://petsos.site/hospital/edit/${hospital.slug}`;
+          const message = `\u{1F3E5} PetSOS Hospital Information Update
+
+Dear ${hospitalName},
+
+We are launching PetSOS, a non-profit pet emergency platform connecting pet owners with 24-hour veterinary clinics in Hong Kong.
+
+Your clinic is listed on our platform. Please verify your information:
+
+\u{1F449} ${editLink}
+\u{1F4CB} Verification Code: ${code}
+
+This code expires in 72 hours.
+
+Thank you,
+PetSOS Team
+
+---
+
+\u{1F3E5} PetSOS \u91AB\u9662\u8CC7\u6599\u66F4\u65B0
+
+${hospital.nameZh || hospitalName} \u60A8\u597D\uFF0C
+
+\u6211\u5011\u6B63\u63A8\u51FA PetSOS\uFF0C\u4E00\u500B\u9023\u7D50\u5BF5\u7269\u4E3B\u4EBA\u8207\u9999\u6E2F24\u5C0F\u6642\u7378\u91AB\u8A3A\u6240\u7684\u975E\u71DF\u5229\u5BF5\u7269\u6025\u75C7\u5E73\u53F0\u3002
+
+\u60A8\u7684\u8A3A\u6240\u5DF2\u5217\u65BC\u6211\u5011\u5E73\u53F0\u3002\u8ACB\u9A57\u8B49\u60A8\u7684\u8CC7\u6599\uFF1A
+
+\u{1F449} ${editLink}
+\u{1F4CB} \u9A57\u8B49\u78BC\uFF1A${code}
+
+\u6B64\u9A57\u8B49\u78BC\u5C07\u65BC72\u5C0F\u6642\u5F8C\u5931\u6548\u3002
+
+\u8B1D\u8B1D\uFF0C
+PetSOS \u5718\u968A`;
+          const result = await messagingService.sendDirectWhatsAppMessage(targetPhone, message);
+          if (result.success) {
+            await storage.updateHospital(hospital.id, { inviteSentAt: /* @__PURE__ */ new Date() });
+            results.sent++;
+            results.details.push({ hospital: hospitalName, status: "sent" });
+          } else {
+            results.failed++;
+            results.details.push({ hospital: hospitalName, status: "failed", error: result.error });
+          }
+        } catch (err) {
+          results.failed++;
+          results.details.push({
+            hospital: hospitalName,
+            status: "failed",
+            error: err instanceof Error ? err.message : "Unknown error"
+          });
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1e3));
+      }
+      await storage.createAuditLog({
+        entityType: "hospital_outreach",
+        entityId: "bulk",
+        action: "send_bulk_invites",
+        userId: req.user.id,
+        changes: { sent: results.sent, failed: results.failed },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent")
+      });
+      res.json({
+        success: true,
+        message: `Sent ${results.sent} invitations, ${results.failed} failed`,
+        sent: results.sent,
+        failed: results.failed,
+        details: results.details
+      });
+    } catch (error) {
+      console.error("Error sending bulk hospital invites:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
   app2.get("/api/medical-records/storage-usage", isAuthenticated, async (req, res) => {
@@ -7302,6 +9774,145 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: error.message || "Failed to cancel notification" });
     }
   });
+  app2.post("/api/admin/send-launch-notification", broadcastLimiter, isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const titleEn = "\u{1F680} PetSOS is Now Live!";
+      const titleZh = "\u{1F680} PetSOS \u6B63\u5F0F\u555F\u52D5\uFF01";
+      const messageEn = `Dear Pet Owner,
+
+PetSOS is now ready to help you find 24-hour veterinary care for your pet in Hong Kong.
+
+\u2705 Find nearby 24-hour clinics
+\u2705 One-tap emergency broadcast
+\u2705 Real-time typhoon alerts
+
+Visit https://petsos.site now!`;
+      const messageZh = `\u89AA\u611B\u7684\u5BF5\u7269\u4E3B\u4EBA\uFF0C
+
+PetSOS \u73FE\u5DF2\u6E96\u5099\u597D\u5E6B\u52A9\u60A8\u5728\u9999\u6E2F\u5C0B\u627E 24 \u5C0F\u6642\u7378\u91AB\u670D\u52D9\u3002
+
+\u2705 \u641C\u5C0B\u9644\u8FD1 24 \u5C0F\u6642\u8A3A\u6240
+\u2705 \u4E00\u9375\u7DCA\u6025\u5EE3\u64AD
+\u2705 \u5373\u6642\u98B1\u98A8\u8B66\u5831
+
+\u7ACB\u5373\u700F\u89BD https://petsos.site\uFF01`;
+      const combinedMessage = `${messageEn}
+
+---
+
+${messageZh}`;
+      const combinedTitle = `${titleEn} / ${titleZh}`;
+      const broadcast = await storage.createNotificationBroadcast({
+        title: combinedTitle,
+        message: combinedMessage,
+        targetLanguage: null,
+        targetRole: "pet_owner",
+        url: "https://petsos.site",
+        adminId: userId,
+        status: "pending"
+      });
+      const results = {
+        pushSuccessCount: 0,
+        pushFailureCount: 0,
+        emailSuccessCount: 0,
+        emailFailureCount: 0,
+        totalPetOwners: 0
+      };
+      const pushTokens = await storage.getPetOwnerPushTokens();
+      console.log(`[Launch Notification] Found ${pushTokens.length} pet owners with push tokens`);
+      if (pushTokens.length > 0) {
+        const pushResult = await sendBroadcastNotification(pushTokens, {
+          title: titleEn,
+          message: `${messageEn.substring(0, 150)}...`,
+          url: "https://petsos.site"
+        });
+        results.pushSuccessCount = pushResult.successCount || 0;
+        results.pushFailureCount = pushResult.failureCount || 0;
+        if (pushResult.failedTokens && pushResult.failedTokens.length > 0) {
+          await storage.deactivatePushSubscriptions(pushResult.failedTokens);
+        }
+        console.log(`[Launch Notification] Push: ${results.pushSuccessCount} success, ${results.pushFailureCount} failed`);
+      }
+      const petOwnerEmails = await storage.getPetOwnerEmails();
+      console.log(`[Launch Notification] Found ${petOwnerEmails.length} pet owners with emails`);
+      results.totalPetOwners = petOwnerEmails.length;
+      const emailSubject = `${titleEn} - ${titleZh}`;
+      const emailContent = combinedMessage;
+      for (const owner of petOwnerEmails) {
+        try {
+          const { sendGmailEmail: sendGmailEmail2 } = await Promise.resolve().then(() => (init_gmail_client(), gmail_client_exports));
+          const success = await sendGmailEmail2(
+            owner.email,
+            emailSubject,
+            emailContent,
+            process.env.EMAIL_FROM || "noreply@petsos.site"
+          );
+          if (success) {
+            results.emailSuccessCount++;
+          } else {
+            results.emailFailureCount++;
+          }
+        } catch (emailError) {
+          console.error(`[Launch Notification] Email error for ${owner.email}:`, emailError);
+          results.emailFailureCount++;
+        }
+      }
+      console.log(`[Launch Notification] Email: ${results.emailSuccessCount} success, ${results.emailFailureCount} failed`);
+      const totalSuccess = results.pushSuccessCount + results.emailSuccessCount;
+      const totalFailure = results.pushFailureCount + results.emailFailureCount;
+      await storage.updateNotificationBroadcast(broadcast.id, {
+        status: totalSuccess > 0 ? "sent" : "failed",
+        recipientCount: totalSuccess,
+        providerResponse: {
+          pushSuccessCount: results.pushSuccessCount,
+          pushFailureCount: results.pushFailureCount,
+          emailSuccessCount: results.emailSuccessCount,
+          emailFailureCount: results.emailFailureCount,
+          totalPetOwners: results.totalPetOwners,
+          note: "Launch notification - Push + Email only (NO WhatsApp)"
+        },
+        sentAt: /* @__PURE__ */ new Date()
+      });
+      await storage.createAuditLog({
+        entityType: "notification_broadcast",
+        entityId: broadcast.id,
+        action: "send_launch_notification",
+        userId,
+        changes: {
+          type: "launch_notification",
+          pushSuccessCount: results.pushSuccessCount,
+          pushFailureCount: results.pushFailureCount,
+          emailSuccessCount: results.emailSuccessCount,
+          emailFailureCount: results.emailFailureCount,
+          totalPetOwners: results.totalPetOwners
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent")
+      });
+      res.status(201).json({
+        success: true,
+        broadcastId: broadcast.id,
+        results: {
+          push: {
+            success: results.pushSuccessCount,
+            failed: results.pushFailureCount,
+            total: pushTokens.length
+          },
+          email: {
+            success: results.emailSuccessCount,
+            failed: results.emailFailureCount,
+            total: petOwnerEmails.length
+          },
+          totalNotified: totalSuccess
+        },
+        message: `Launch notification sent to ${totalSuccess} pet owners (${results.pushSuccessCount} push, ${results.emailSuccessCount} email)`
+      });
+    } catch (error) {
+      console.error("[Launch Notification] Error:", error);
+      res.status(500).json({ error: error.message || "Failed to send launch notification" });
+    }
+  });
   app2.get("/api/admin/notifications/history", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const limit = Math.min(parseInt(req.query.limit) || 50, 100);
@@ -7350,6 +9961,698 @@ async function registerRoutes(app2) {
       messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
       appId: process.env.VITE_FIREBASE_APP_ID || ""
     });
+  });
+  app2.get("/api/typhoon/status", async (req, res) => {
+    try {
+      const currentAlert = await storage.getActiveTyphoonAlert();
+      const upcomingHoliday = await storage.getUpcomingHoliday(7);
+      let hospitalStatuses = [];
+      if (currentAlert || upcomingHoliday) {
+        const referenceId = currentAlert?.id || upcomingHoliday?.id;
+        if (referenceId) {
+          hospitalStatuses = await storage.getHospitalEmergencyStatuses(referenceId);
+        }
+      }
+      res.json({
+        currentAlert,
+        upcomingHoliday,
+        hospitalStatuses,
+        lastUpdated: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } catch (error) {
+      console.error("Error fetching typhoon status:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch typhoon status" });
+    }
+  });
+  app2.post("/api/typhoon/hospital-status", isAuthenticated, async (req, res) => {
+    try {
+      const { hospitalId, isOpen, openingTime, closingTime, notes, statusType, referenceId } = req.body;
+      const status = await storage.updateHospitalEmergencyStatus({
+        hospitalId,
+        statusType: statusType || "typhoon",
+        referenceId,
+        isOpen,
+        openingTime,
+        closingTime,
+        confirmedBy: req.user.id,
+        confirmationMethod: "self_report",
+        notes,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1e3)
+        // Expires in 24 hours
+      });
+      res.json({ success: true, status });
+    } catch (error) {
+      console.error("Error updating hospital emergency status:", error);
+      res.status(500).json({ error: error.message || "Failed to update status" });
+    }
+  });
+  app2.post("/api/typhoon/subscribe", async (req, res) => {
+    try {
+      const { email, phone, pushToken, subscriptionType, notifyChannels, preferredLanguage, userId } = req.body;
+      const subscription = await storage.createEmergencySubscription({
+        userId: userId || null,
+        email,
+        phone,
+        pushToken,
+        subscriptionType: subscriptionType || "all",
+        notifyChannels: notifyChannels || ["push"],
+        preferredLanguage: preferredLanguage || "en"
+      });
+      res.json({ success: true, subscription });
+    } catch (error) {
+      console.error("Error creating emergency subscription:", error);
+      res.status(500).json({ error: error.message || "Failed to create subscription" });
+    }
+  });
+  app2.get("/api/typhoon/sync", async (req, res) => {
+    try {
+      console.log("[Typhoon Sync] Manual sync triggered");
+      const result = await checkAndUpdateTyphoonStatus();
+      res.json({
+        success: true,
+        ...result,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } catch (error) {
+      console.error("Error syncing typhoon status:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to sync typhoon status"
+      });
+    }
+  });
+  app2.get("/api/typhoon/hko-raw", async (req, res) => {
+    try {
+      const data = await fetchTyphoonWarning();
+      res.json({
+        success: true,
+        hasActiveSignal: data !== null,
+        data,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } catch (error) {
+      console.error("Error fetching HKO data:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to fetch HKO data"
+      });
+    }
+  });
+  app2.get("/api/holidays", async (req, res) => {
+    try {
+      const year = parseInt(req.query.year) || (/* @__PURE__ */ new Date()).getFullYear();
+      const holidays = await storage.getHolidaysByYear(year);
+      res.json(holidays);
+    } catch (error) {
+      console.error("Error fetching holidays:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch holidays" });
+    }
+  });
+  app2.post("/api/admin/typhoon/alert", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { signalCode, signalNameEn, signalNameZh, issuedAt, severityLevel, notes, observatoryBulletinId } = req.body;
+      const alert = await storage.createTyphoonAlert({
+        signalCode,
+        signalNameEn,
+        signalNameZh,
+        issuedAt: new Date(issuedAt),
+        severityLevel,
+        notes,
+        observatoryBulletinId,
+        isActive: true
+      });
+      res.json({ success: true, alert });
+    } catch (error) {
+      console.error("Error creating typhoon alert:", error);
+      res.status(500).json({ error: error.message || "Failed to create alert" });
+    }
+  });
+  app2.post("/api/admin/typhoon/lift/:alertId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { alertId } = req.params;
+      const alert = await storage.liftTyphoonAlert(alertId);
+      res.json({ success: true, alert });
+    } catch (error) {
+      console.error("Error lifting typhoon alert:", error);
+      res.status(500).json({ error: error.message || "Failed to lift alert" });
+    }
+  });
+  app2.get("/api/consultants", async (req, res) => {
+    try {
+      const consultants = await storage.getVetConsultants();
+      const consultantsWithContent = await Promise.all(
+        consultants.map(async (consultant) => {
+          const withContent = await storage.getVetConsultantWithContent(consultant.id);
+          return withContent || { ...consultant, verifiedContent: [] };
+        })
+      );
+      res.json(consultantsWithContent);
+    } catch (error) {
+      console.error("Error fetching consultants:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch consultants" });
+    }
+  });
+  app2.get("/api/consultants/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const consultant = await storage.getVetConsultantWithContent(id);
+      if (!consultant) {
+        return res.status(404).json({ error: "Consultant not found" });
+      }
+      if (!consultant.isActive || !consultant.isPublic) {
+        return res.status(404).json({ error: "Consultant not found" });
+      }
+      res.json(consultant);
+    } catch (error) {
+      console.error("Error fetching consultant:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch consultant" });
+    }
+  });
+  app2.get("/api/content/:slug/verification", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const verification = await storage.getContentVerification(slug);
+      if (!verification) {
+        return res.status(404).json({ error: "Content not found" });
+      }
+      res.json({
+        contentSlug: verification.contentSlug,
+        contentType: verification.contentType,
+        titleEn: verification.titleEn,
+        titleZh: verification.titleZh,
+        isVerified: verification.verifier !== null,
+        verifier: verification.verifier ? {
+          id: verification.verifier.id,
+          nameEn: verification.verifier.nameEn,
+          nameZh: verification.verifier.nameZh,
+          titleEn: verification.verifier.titleEn,
+          titleZh: verification.verifier.titleZh,
+          specialtyEn: verification.verifier.specialtyEn,
+          specialtyZh: verification.verifier.specialtyZh,
+          photoUrl: verification.verifier.photoUrl
+        } : null,
+        verifiedAt: verification.verifiedAt
+      });
+    } catch (error) {
+      console.error("Error fetching content verification:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch verification info" });
+    }
+  });
+  app2.post("/api/vet-applications", async (req, res) => {
+    try {
+      const validatedData = insertVetApplicationSchema.parse(req.body);
+      const application = await storage.createVetApplication(validatedData);
+      res.status(201).json(application);
+    } catch (error) {
+      console.error("Error creating vet application:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid application data", details: error.errors });
+      }
+      res.status(500).json({ error: error.message || "Failed to create application" });
+    }
+  });
+  app2.get("/api/admin/vet-applications", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { status } = req.query;
+      const applications = await storage.getVetApplications(status);
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching vet applications:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch applications" });
+    }
+  });
+  app2.get("/api/admin/vet-applications/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const application = await storage.getVetApplicationById(id);
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+      res.json(application);
+    } catch (error) {
+      console.error("Error fetching vet application:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch application" });
+    }
+  });
+  app2.patch("/api/admin/vet-applications/:id/status", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, reviewNotes } = req.body;
+      if (!status || !["pending", "approved", "rejected"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status. Must be one of: pending, approved, rejected" });
+      }
+      const application = await storage.updateVetApplicationStatus(
+        id,
+        status,
+        req.user.id,
+        reviewNotes
+      );
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+      res.json(application);
+    } catch (error) {
+      console.error("Error updating vet application status:", error);
+      res.status(500).json({ error: error.message || "Failed to update application status" });
+    }
+  });
+  app2.post("/api/admin/vet-applications/:id/approve", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reviewNotes } = req.body;
+      const result = await storage.approveVetApplication(id, req.user.id, reviewNotes);
+      res.json(result);
+    } catch (error) {
+      console.error("Error approving vet application:", error);
+      res.status(500).json({ error: error.message || "Failed to approve application" });
+    }
+  });
+  app2.post("/api/admin/vet-applications/:id/send-thank-you", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const application = await storage.getVetApplicationById(id);
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+      const phoneNumber = application.phoneWhatsapp || application.phone;
+      if (!phoneNumber) {
+        return res.status(400).json({ error: "No phone number available for this applicant" });
+      }
+      const result = await messagingService.sendThankYouMessage(phoneNumber, application.fullName || "Valued Professional");
+      res.json({
+        success: true,
+        message: "Thank you message sent successfully",
+        messageId: result.messageId
+      });
+    } catch (error) {
+      console.error("Error sending thank you message:", error);
+      res.status(500).json({ error: error.message || "Failed to send thank you message" });
+    }
+  });
+  app2.post("/api/admin/consultants", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertVetConsultantSchema.parse(req.body);
+      const consultant = await storage.createVetConsultant(validatedData);
+      res.status(201).json(consultant);
+    } catch (error) {
+      console.error("Error creating consultant:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid consultant data", details: error.errors });
+      }
+      res.status(500).json({ error: error.message || "Failed to create consultant" });
+    }
+  });
+  app2.patch("/api/admin/consultants/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const consultant = await storage.updateVetConsultant(id, req.body);
+      if (!consultant) {
+        return res.status(404).json({ error: "Consultant not found" });
+      }
+      res.json(consultant);
+    } catch (error) {
+      console.error("Error updating consultant:", error);
+      res.status(500).json({ error: error.message || "Failed to update consultant" });
+    }
+  });
+  app2.delete("/api/admin/consultants/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteVetConsultant(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Consultant not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting consultant:", error);
+      res.status(500).json({ error: error.message || "Failed to delete consultant" });
+    }
+  });
+  app2.post("/api/admin/content-verifications", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertContentVerificationSchema.parse(req.body);
+      const verification = await storage.createContentVerification(validatedData);
+      res.status(201).json(verification);
+    } catch (error) {
+      console.error("Error creating content verification:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid verification data", details: error.errors });
+      }
+      res.status(500).json({ error: error.message || "Failed to create verification" });
+    }
+  });
+  app2.delete("/api/admin/content-verifications/:consultantId/:contentId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { consultantId, contentId } = req.params;
+      const deleted = await storage.deleteContentVerification(consultantId, contentId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Verification link not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting content verification:", error);
+      res.status(500).json({ error: error.message || "Failed to delete verification" });
+    }
+  });
+  app2.get("/api/admin/verified-content", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const contentItems = await storage.getVerifiedContentItems();
+      res.json(contentItems);
+    } catch (error) {
+      console.error("Error fetching verified content items:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch verified content items" });
+    }
+  });
+  app2.get("/api/blog/midnight-fees", async (req, res) => {
+    try {
+      const allHospitalsRaw = await storage.getAllHospitals();
+      const allHospitals = allHospitalsRaw.filter((h) => h.open247);
+      const hospitalsWithFees = allHospitals.filter((h) => h.consultFeeMidnight !== null && h.consultFeeMidnight !== void 0).sort((a, b) => (a.consultFeeMidnight || 0) - (b.consultFeeMidnight || 0));
+      const regions2 = await storage.getRegionsByCountry("HK");
+      const regionMap = new Map(regions2.map((r) => [r.id, r]));
+      const fees = hospitalsWithFees.map((h) => h.consultFeeMidnight);
+      const minFee = fees.length > 0 ? Math.min(...fees) : null;
+      const maxFee = fees.length > 0 ? Math.max(...fees) : null;
+      let medianFee = null;
+      if (fees.length > 0) {
+        const mid = Math.floor(fees.length / 2);
+        if (fees.length % 2 === 0) {
+          medianFee = Math.round((fees[mid - 1] + fees[mid]) / 2);
+        } else {
+          medianFee = fees[mid];
+        }
+      }
+      const cheapestHospital = hospitalsWithFees[0] || null;
+      const cheapestRegion = cheapestHospital ? regionMap.get(cheapestHospital.regionId) : null;
+      const verifiedHospitals = hospitalsWithFees.filter((h) => h.lastVerifiedAt);
+      const verificationDates = hospitalsWithFees.filter((h) => h.lastVerifiedAt).map((h) => new Date(h.lastVerifiedAt).getTime());
+      const lastVerified = verificationDates.length > 0 ? new Date(Math.max(...verificationDates)).toISOString() : (/* @__PURE__ */ new Date()).toISOString();
+      const hospitalsByRegion = {};
+      for (const hospital of hospitalsWithFees) {
+        const region = regionMap.get(hospital.regionId);
+        const regionName = region?.nameEn || "Other";
+        if (!hospitalsByRegion[regionName]) {
+          hospitalsByRegion[regionName] = [];
+        }
+        hospitalsByRegion[regionName].push(hospital);
+      }
+      let cheapestDistrictName = null;
+      let cheapestDistrictAvg = Infinity;
+      for (const [regionName, hospitals2] of Object.entries(hospitalsByRegion)) {
+        const avgFee = hospitals2.reduce((sum, h) => sum + (h.consultFeeMidnight || 0), 0) / hospitals2.length;
+        if (avgFee < cheapestDistrictAvg) {
+          cheapestDistrictAvg = avgFee;
+          cheapestDistrictName = regionName;
+        }
+      }
+      const stats = {
+        minFee,
+        maxFee,
+        medianFee,
+        totalCount: hospitalsWithFees.length,
+        verifiedCount: verifiedHospitals.length,
+        lastVerified,
+        cheapestHospital: cheapestHospital ? {
+          nameEn: cheapestHospital.nameEn,
+          nameZh: cheapestHospital.nameZh,
+          fee: cheapestHospital.consultFeeMidnight,
+          region: cheapestRegion?.nameEn || null,
+          regionZh: cheapestRegion?.nameZh || null
+        } : null,
+        cheapestDistrict: cheapestDistrictName,
+        depositRange: "$5,000 - $10,000"
+      };
+      const enrichedHospitals = hospitalsWithFees.map((h) => {
+        const region = regionMap.get(h.regionId);
+        return {
+          id: h.id,
+          slug: h.slug,
+          nameEn: h.nameEn,
+          nameZh: h.nameZh,
+          regionId: h.regionId,
+          regionNameEn: region?.nameEn || null,
+          regionNameZh: region?.nameZh || null,
+          consultFeeMidnight: h.consultFeeMidnight,
+          consultFeeEvening: h.consultFeeEvening,
+          consultFeeDay: h.consultFeeDay,
+          midnightSurchargeStart: h.midnightSurchargeStart,
+          eveningSurchargeStart: h.eveningSurchargeStart,
+          onSiteVet247: h.onSiteVet247,
+          open247: h.open247,
+          openT8: h.openT8,
+          openT10: h.openT10,
+          verified: h.verified,
+          lastVerifiedAt: h.lastVerifiedAt,
+          phone: h.phone,
+          whatsapp: h.whatsapp,
+          depositBand: h.depositBand,
+          admissionDeposit: h.admissionDeposit
+        };
+      });
+      res.json({
+        stats,
+        hospitals: enrichedHospitals,
+        regions: regions2.map((r) => ({ id: r.id, nameEn: r.nameEn, nameZh: r.nameZh }))
+      });
+    } catch (error) {
+      console.error("Error fetching midnight fee blog data:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch blog data" });
+    }
+  });
+  app2.get("/api/blog/blood-bank", async (req, res) => {
+    try {
+      const allHospitalsRaw = await storage.getAllHospitals();
+      const hospitalsWithBlood = allHospitalsRaw.filter(
+        (h) => h.bloodTransfusion || h.bloodBankCanine || h.bloodBankFeline
+      );
+      const regions2 = await storage.getRegionsByCountry("HK");
+      const regionMap = new Map(regions2.map((r) => [r.id, r]));
+      const canineCount = hospitalsWithBlood.filter((h) => h.bloodBankCanine).length;
+      const felineCount = hospitalsWithBlood.filter((h) => h.bloodBankFeline).length;
+      const transfusionCount = hospitalsWithBlood.filter((h) => h.bloodTransfusion).length;
+      const verificationDates = hospitalsWithBlood.filter((h) => h.lastVerifiedAt).map((h) => new Date(h.lastVerifiedAt).getTime());
+      const lastVerified = verificationDates.length > 0 ? new Date(Math.max(...verificationDates)).toISOString() : (/* @__PURE__ */ new Date()).toISOString();
+      const fullServiceHospitals = hospitalsWithBlood.filter(
+        (h) => h.bloodBankCanine && h.bloodBankFeline
+      );
+      const topHospital = fullServiceHospitals[0] || null;
+      const topHospitalRegion = topHospital ? regionMap.get(topHospital.regionId) : null;
+      const stats = {
+        canineCount,
+        felineCount,
+        transfusionCount,
+        totalCount: hospitalsWithBlood.length,
+        lastVerified,
+        topHospital: topHospital ? {
+          nameEn: topHospital.nameEn,
+          nameZh: topHospital.nameZh,
+          region: topHospitalRegion?.nameEn || null,
+          regionZh: topHospitalRegion?.nameZh || null
+        } : null
+      };
+      const enrichedHospitals = hospitalsWithBlood.map((h) => {
+        const region = regionMap.get(h.regionId);
+        return {
+          id: h.id,
+          slug: h.slug,
+          nameEn: h.nameEn,
+          nameZh: h.nameZh,
+          regionId: h.regionId,
+          regionNameEn: region?.nameEn || null,
+          regionNameZh: region?.nameZh || null,
+          bloodTransfusion: h.bloodTransfusion,
+          bloodBankCanine: h.bloodBankCanine,
+          bloodBankFeline: h.bloodBankFeline,
+          open247: h.open247,
+          verified: h.verified,
+          lastVerifiedAt: h.lastVerifiedAt,
+          phone: h.phone,
+          whatsapp: h.whatsapp
+        };
+      });
+      res.json({
+        stats,
+        hospitals: enrichedHospitals,
+        regions: regions2.map((r) => ({ id: r.id, nameEn: r.nameEn, nameZh: r.nameZh }))
+      });
+    } catch (error) {
+      console.error("Error fetching blood bank blog data:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch blog data" });
+    }
+  });
+  app2.get("/api/blog/typhoon-guide", async (req, res) => {
+    try {
+      const allHospitalsRaw = await storage.getAllHospitals();
+      const hospitalsWithTyphoon = allHospitalsRaw.filter(
+        (h) => h.open247 && (h.openT8 || h.openT10 || h.openBlackRainstorm)
+      );
+      const regions2 = await storage.getRegionsByCountry("HK");
+      const regionMap = new Map(regions2.map((r) => [r.id, r]));
+      const t8Count = hospitalsWithTyphoon.filter((h) => h.openT8).length;
+      const t10Count = hospitalsWithTyphoon.filter((h) => h.openT10).length;
+      const blackRainCount = hospitalsWithTyphoon.filter((h) => h.openBlackRainstorm).length;
+      const verificationDates = hospitalsWithTyphoon.filter((h) => h.lastVerifiedAt).map((h) => new Date(h.lastVerifiedAt).getTime());
+      const lastVerified = verificationDates.length > 0 ? new Date(Math.max(...verificationDates)).toISOString() : (/* @__PURE__ */ new Date()).toISOString();
+      const stats = {
+        t8Count,
+        t10Count,
+        blackRainCount,
+        totalCount: hospitalsWithTyphoon.length,
+        lastVerified
+      };
+      const enrichedHospitals = hospitalsWithTyphoon.map((h) => {
+        const region = regionMap.get(h.regionId);
+        return {
+          id: h.id,
+          slug: h.slug,
+          nameEn: h.nameEn,
+          nameZh: h.nameZh,
+          regionId: h.regionId,
+          regionNameEn: region?.nameEn || null,
+          regionNameZh: region?.nameZh || null,
+          openT8: h.openT8,
+          openT10: h.openT10,
+          openBlackRainstorm: h.openBlackRainstorm,
+          liveStatus: h.liveStatus,
+          taxiDropoffEn: h.taxiDropoffEn,
+          taxiDropoffZh: h.taxiDropoffZh,
+          emergencyEntranceEn: h.emergencyEntranceEn,
+          emergencyEntranceZh: h.emergencyEntranceZh,
+          phone: h.phone,
+          whatsapp: h.whatsapp,
+          lastVerifiedAt: h.lastVerifiedAt
+        };
+      });
+      res.json({
+        stats,
+        hospitals: enrichedHospitals,
+        regions: regions2.map((r) => ({ id: r.id, nameEn: r.nameEn, nameZh: r.nameZh }))
+      });
+    } catch (error) {
+      console.error("Error fetching typhoon guide blog data:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch blog data" });
+    }
+  });
+  app2.get("/api/blog/imaging-diagnostics", async (req, res) => {
+    try {
+      const allHospitalsRaw = await storage.getAllHospitals();
+      const hospitalsWithImaging = allHospitalsRaw.filter(
+        (h) => h.imagingCT || h.imagingMRI || h.imagingXray || h.imagingUS
+      );
+      const regions2 = await storage.getRegionsByCountry("HK");
+      const regionMap = new Map(regions2.map((r) => [r.id, r]));
+      const ctCount = hospitalsWithImaging.filter((h) => h.imagingCT).length;
+      const mriCount = hospitalsWithImaging.filter((h) => h.imagingMRI).length;
+      const xrayCount = hospitalsWithImaging.filter((h) => h.imagingXray).length;
+      const usCount = hospitalsWithImaging.filter((h) => h.imagingUS).length;
+      const verificationDates = hospitalsWithImaging.filter((h) => h.lastVerifiedAt).map((h) => new Date(h.lastVerifiedAt).getTime());
+      const lastVerified = verificationDates.length > 0 ? new Date(Math.max(...verificationDates)).toISOString() : (/* @__PURE__ */ new Date()).toISOString();
+      const stats = {
+        ctCount,
+        mriCount,
+        xrayCount,
+        usCount,
+        totalCount: hospitalsWithImaging.length,
+        lastVerified
+      };
+      const enrichedHospitals = hospitalsWithImaging.map((h) => {
+        const region = regionMap.get(h.regionId);
+        return {
+          id: h.id,
+          slug: h.slug,
+          nameEn: h.nameEn,
+          nameZh: h.nameZh,
+          regionId: h.regionId,
+          regionNameEn: region?.nameEn || null,
+          regionNameZh: region?.nameZh || null,
+          imagingCT: h.imagingCT,
+          imagingMRI: h.imagingMRI,
+          imagingXray: h.imagingXray,
+          imagingUS: h.imagingUS,
+          sameDayCT: h.sameDayCT,
+          open247: h.open247,
+          liveStatus: h.liveStatus,
+          phone: h.phone,
+          whatsapp: h.whatsapp,
+          lastVerifiedAt: h.lastVerifiedAt
+        };
+      });
+      res.json({
+        stats,
+        hospitals: enrichedHospitals,
+        regions: regions2.map((r) => ({ id: r.id, nameEn: r.nameEn, nameZh: r.nameZh }))
+      });
+    } catch (error) {
+      console.error("Error fetching imaging diagnostics blog data:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch blog data" });
+    }
+  });
+  app2.get("/api/blog/exotic-emergency", async (req, res) => {
+    try {
+      const allHospitalsRaw = await storage.getAllHospitals();
+      const hospitalsWithExotic = allHospitalsRaw.filter(
+        (h) => h.open247 && (h.exoticVet247 === true || h.exoticSpecies247 && Array.isArray(h.exoticSpecies247) && h.exoticSpecies247.length > 0)
+      );
+      const regions2 = await storage.getRegionsByCountry("HK");
+      const regionMap = new Map(regions2.map((r) => [r.id, r]));
+      const exoticVet247Count = hospitalsWithExotic.filter((h) => h.exoticVet247 === true).length;
+      const allSpecies = /* @__PURE__ */ new Set();
+      hospitalsWithExotic.forEach((h) => {
+        if (h.exoticSpecies247 && Array.isArray(h.exoticSpecies247)) {
+          h.exoticSpecies247.forEach((species) => allSpecies.add(species));
+        }
+      });
+      let topHospital = null;
+      let maxSpeciesCount = 0;
+      hospitalsWithExotic.forEach((h) => {
+        const speciesCount = h.exoticSpecies247?.length || 0;
+        if (speciesCount > maxSpeciesCount) {
+          maxSpeciesCount = speciesCount;
+          topHospital = {
+            id: h.id,
+            nameEn: h.nameEn,
+            nameZh: h.nameZh,
+            speciesCount
+          };
+        }
+      });
+      const verificationDates = hospitalsWithExotic.filter((h) => h.lastVerifiedAt).map((h) => new Date(h.lastVerifiedAt).getTime());
+      const lastVerified = verificationDates.length > 0 ? new Date(Math.max(...verificationDates)).toISOString() : (/* @__PURE__ */ new Date()).toISOString();
+      const stats = {
+        exoticVet247Count,
+        totalCount: hospitalsWithExotic.length,
+        speciesSupported: Array.from(allSpecies),
+        lastVerified,
+        topHospital
+      };
+      const enrichedHospitals = hospitalsWithExotic.map((h) => {
+        const region = regionMap.get(h.regionId);
+        return {
+          id: h.id,
+          slug: h.slug,
+          nameEn: h.nameEn,
+          nameZh: h.nameZh,
+          regionId: h.regionId,
+          regionNameEn: region?.nameEn || null,
+          regionNameZh: region?.nameZh || null,
+          exoticVet247: h.exoticVet247,
+          exoticSpecies247: h.exoticSpecies247 || [],
+          open247: h.open247,
+          liveStatus: h.liveStatus,
+          phone: h.phone,
+          whatsapp: h.whatsapp,
+          lastVerifiedAt: h.lastVerifiedAt
+        };
+      });
+      res.json({
+        stats,
+        hospitals: enrichedHospitals,
+        regions: regions2.map((r) => ({ id: r.id, nameEn: r.nameEn, nameZh: r.nameZh }))
+      });
+    } catch (error) {
+      console.error("Error fetching exotic emergency blog data:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch blog data" });
+    }
   });
   const httpServer = createServer(app2);
   return httpServer;
@@ -8024,99 +11327,60 @@ if (process.env.RUN_TRANSLATION_SEED === "true") {
   });
 }
 
-// server/services/notification-scheduler.ts
-var SCHEDULER_INTERVAL_MS = 60 * 1e3;
-var schedulerInterval = null;
-var isProcessing = false;
-async function processScheduledNotifications() {
-  if (isProcessing) {
-    console.log("[NotificationScheduler] Previous run still in progress, skipping...");
-    return;
-  }
-  isProcessing = true;
-  try {
-    const dueNotifications = await storage.getScheduledNotifications();
-    if (dueNotifications.length === 0) {
-      return;
-    }
-    console.log(`[NotificationScheduler] Found ${dueNotifications.length} scheduled notifications to send`);
-    for (const notification of dueNotifications) {
-      try {
-        console.log(`[NotificationScheduler] Processing notification ${notification.id}: "${notification.title}"`);
-        await storage.updateNotificationBroadcastStatus(notification.id, "pending");
-        const tokens = await storage.getActiveTokens(
-          notification.targetLanguage || void 0,
-          notification.targetRole || void 0
-        );
-        if (tokens.length === 0) {
-          await storage.updateNotificationBroadcast(notification.id, {
-            status: "sent",
-            recipientCount: 0,
-            providerResponse: {
-              message: "No active subscriptions found",
-              url: notification.url || null
-            },
-            sentAt: /* @__PURE__ */ new Date()
-          });
-          console.log(`[NotificationScheduler] Notification ${notification.id} sent to 0 recipients (no active subscriptions)`);
-          continue;
-        }
-        const result = await sendBroadcastNotification(tokens, {
-          title: notification.title,
-          message: notification.message,
-          url: notification.url || void 0
-        });
-        if (result.failedTokens && result.failedTokens.length > 0) {
-          await storage.deactivatePushSubscriptions(result.failedTokens);
-        }
-        await storage.updateNotificationBroadcast(notification.id, {
-          status: result.success ? "sent" : "failed",
-          recipientCount: result.successCount || 0,
-          providerResponse: {
-            successCount: result.successCount || 0,
-            failureCount: result.failureCount || 0,
-            url: notification.url || null,
-            error: result.error || null
-          },
-          sentAt: result.success ? /* @__PURE__ */ new Date() : null
-        });
-        await storage.createAuditLog({
-          entityType: "notification_broadcast",
-          entityId: notification.id,
-          action: "send_scheduled",
-          userId: notification.adminId,
-          changes: {
-            title: notification.title,
-            scheduledFor: notification.scheduledFor,
-            recipientCount: result.successCount || 0,
-            success: result.success
-          }
-        });
-        console.log(`[NotificationScheduler] Notification ${notification.id} sent: ${result.successCount} success, ${result.failureCount} failed`);
-      } catch (error) {
-        console.error(`[NotificationScheduler] Error processing notification ${notification.id}:`, error);
-        await storage.updateNotificationBroadcast(notification.id, {
-          status: "failed",
-          providerResponse: {
-            error: error instanceof Error ? error.message : "Unknown error"
-          }
-        });
+// server/seed-countries.ts
+var countriesData = [
+  { code: "HK", nameEn: "Hong Kong", nameZh: "\u9999\u6E2F", phonePrefix: "+852", flag: "\u{1F1ED}\u{1F1F0}", active: true, sortOrder: 1, region: "asia" },
+  { code: "CN", nameEn: "China", nameZh: "\u4E2D\u570B", phonePrefix: "+86", flag: "\u{1F1E8}\u{1F1F3}", active: true, sortOrder: 2, region: "asia" },
+  { code: "TW", nameEn: "Taiwan", nameZh: "\u53F0\u7063", phonePrefix: "+886", flag: "\u{1F1F9}\u{1F1FC}", active: true, sortOrder: 3, region: "asia" },
+  { code: "SG", nameEn: "Singapore", nameZh: "\u65B0\u52A0\u5761", phonePrefix: "+65", flag: "\u{1F1F8}\u{1F1EC}", active: true, sortOrder: 4, region: "asia" },
+  { code: "JP", nameEn: "Japan", nameZh: "\u65E5\u672C", phonePrefix: "+81", flag: "\u{1F1EF}\u{1F1F5}", active: true, sortOrder: 5, region: "asia" },
+  { code: "KR", nameEn: "South Korea", nameZh: "\u97D3\u570B", phonePrefix: "+82", flag: "\u{1F1F0}\u{1F1F7}", active: true, sortOrder: 6, region: "asia" },
+  { code: "US", nameEn: "United States", nameZh: "\u7F8E\u570B", phonePrefix: "+1", flag: "\u{1F1FA}\u{1F1F8}", active: true, sortOrder: 7, region: "americas" },
+  { code: "GB", nameEn: "United Kingdom", nameZh: "\u82F1\u570B", phonePrefix: "+44", flag: "\u{1F1EC}\u{1F1E7}", active: true, sortOrder: 8, region: "europe" },
+  { code: "CA", nameEn: "Canada", nameZh: "\u52A0\u62FF\u5927", phonePrefix: "+1", flag: "\u{1F1E8}\u{1F1E6}", active: true, sortOrder: 9, region: "americas" },
+  { code: "AU", nameEn: "Australia", nameZh: "\u6FB3\u6D32", phonePrefix: "+61", flag: "\u{1F1E6}\u{1F1FA}", active: true, sortOrder: 10, region: "oceania" }
+];
+async function seedCountries() {
+  console.log("\u{1F30D} Seeding countries...");
+  let created = 0;
+  let skipped = 0;
+  for (const country of countriesData) {
+    try {
+      const existing = await storage.getCountryByCode(country.code);
+      if (existing) {
+        skipped++;
+      } else {
+        await storage.createCountry(country);
+        created++;
       }
+    } catch (error) {
+      console.error(`Error seeding country "${country.code}":`, error);
+    }
+  }
+  console.log(`\u2705 Country seeding complete!`);
+  console.log(`   - Created: ${created} countries`);
+  console.log(`   - Skipped: ${skipped} existing`);
+  return { created, skipped };
+}
+async function ensureCountriesExist() {
+  try {
+    const existingCountries = await storage.getAllCountries();
+    if (existingCountries.length === 0) {
+      console.log("\u{1F30D} No countries found, seeding...");
+      await seedCountries();
+    } else {
+      console.log(`\u2705 Found ${existingCountries.length} countries`);
     }
   } catch (error) {
-    console.error("[NotificationScheduler] Error in scheduler run:", error);
-  } finally {
-    isProcessing = false;
+    console.error("Error checking countries:", error);
   }
 }
-function startNotificationScheduler() {
-  if (schedulerInterval) {
-    console.log("[NotificationScheduler] Scheduler already running");
-    return;
-  }
-  console.log("[NotificationScheduler] Starting notification scheduler (checking every minute)");
-  processScheduledNotifications();
-  schedulerInterval = setInterval(processScheduledNotifications, SCHEDULER_INTERVAL_MS);
+if (process.env.RUN_COUNTRY_SEED === "true") {
+  console.log("\u{1F30D} Running country seed via RUN_COUNTRY_SEED=true");
+  seedCountries().then(() => process.exit(0)).catch((error) => {
+    console.error("\u274C Error seeding countries:", error);
+    process.exit(1);
+  });
 }
 
 // server/index.ts
@@ -8169,9 +11433,10 @@ var BUILD_VERSION = process.env.RENDER_GIT_COMMIT || Date.now().toString();
 app.use((req, res, next) => {
   const reqPath = req.path;
   const isHashedAsset = reqPath.startsWith("/assets/") && /[-\.][A-Za-z0-9]{8,}\.(js|css|woff2?|ttf|eot)$/i.test(reqPath);
+  const isSpaRoute = !reqPath.startsWith("/api") && !reqPath.startsWith("/assets/") && !reqPath.match(/\.[a-zA-Z0-9]+$/);
   if (isHashedAsset) {
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-  } else if (reqPath === "/" || reqPath.endsWith(".html")) {
+  } else if (reqPath === "/" || reqPath.endsWith(".html") || isSpaRoute) {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
@@ -8209,6 +11474,7 @@ app.use((req, res, next) => {
 });
 (async () => {
   ensureTranslationsExist().then(() => log("[Startup] Translations seeded successfully")).catch((err) => log(`[Startup] Translation seeding error (non-critical): ${err.message}`));
+  ensureCountriesExist().then(() => log("[Startup] Countries seeded successfully")).catch((err) => log(`[Startup] Country seeding error (non-critical): ${err.message}`));
   const server = await registerRoutes(app);
   setupSentryErrorHandler(app);
   app.use((err, _req, res, _next) => {
@@ -8256,6 +11522,12 @@ app.use((req, res, next) => {
     setTimeout(() => {
       startNotificationScheduler();
       log("[Startup] Notification scheduler started (deferred)");
+      startTyphoonNotificationScheduler();
+      log("[Startup] Typhoon notification queue scheduler started (every 30 seconds)");
+      startTyphoonPolling();
+      log("[Startup] Typhoon polling started (every 5 minutes)");
+      startHospitalPingScheduler();
+      log("[Startup] Hospital ping scheduler started (hourly ping + no-reply check)");
     }, 2e3);
   });
 })();

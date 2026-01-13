@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertCircle, MapPin, Phone, ChevronRight, ChevronLeft, CheckCircle } from "lucide-react";
+import { AlertCircle, MapPin, Phone, ChevronRight, ChevronLeft, CheckCircle, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -22,7 +22,7 @@ import { analytics } from "@/lib/analytics";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { PhoneInput } from "@/components/PhoneInput";
 import { SEO } from "@/components/SEO";
-import { StructuredData, createEmergencyServiceSchema, createFAQSchema, createHowToSchema, createBreadcrumbSchema, createSoftwareApplicationSchema } from "@/components/StructuredData";
+import { StructuredData, createEmergencyServiceSchema, createFAQSchema, createHowToSchema, createBreadcrumbSchema, createSoftwareApplicationSchema, createMedicalWebPageSchema } from "@/components/StructuredData";
 
 // Symptom options - ordered by severity level (critical → serious → moderate)
 const SYMPTOMS = [
@@ -378,6 +378,26 @@ export default function EmergencyPage() {
     {
       question: "如何知道哪些症狀是緊急情況？",
       answer: "嚴重症狀包括：昏迷或失去意識、呼吸困難、癲癇發作、嚴重出血、中毒等。如果您不確定，請立即聯繫獸醫。PetSOS可以幫助您快速聯絡多家24小時診所。"
+    },
+    {
+      question: "什麼時候應該使用PetSOS？",
+      answer: "當您的寵物出現緊急情況需要即時獸醫護理時，特別是在深夜、假期或颱風期間難以聯繫診所時，PetSOS可以幫助您同時聯繫多間24小時動物醫院。"
+    },
+    {
+      question: "PetSOS是否24小時運作？",
+      answer: "是的！PetSOS全天候運作，24/7隨時可用。無論何時發生緊急情況，您都可以使用我們的服務聯繫香港的24小時動物醫院。"
+    },
+    {
+      question: "使用PetSOS需要收費嗎？",
+      answer: "PetSOS是完全免費的服務。我們不收取任何費用。獸醫診所的診療費用則按各診所收費標準。"
+    },
+    {
+      question: "PetSOS能保證治療嗎？",
+      answer: "PetSOS是一個緊急協調工具，幫助您快速聯繫多間診所。我們無法保證任何特定診所能接收您的個案，但通過同時廣播給多間診所，可以大大增加找到可用診所的機會。"
+    },
+    {
+      question: "如果沒有醫院回覆怎麼辦？",
+      answer: "如果沒有醫院回覆，請直接致電各診所。PetSOS會顯示附近診所的電話號碼。在緊急情況下，建議同時使用電話和PetSOS廣播功能。"
     }
   ] : [
     {
@@ -399,6 +419,26 @@ export default function EmergencyPage() {
     {
       question: "How do I know if a symptom is an emergency?",
       answer: "Critical symptoms include: unconsciousness, difficulty breathing, seizures, severe bleeding, poisoning, and trauma. If unsure, contact a vet immediately. PetSOS can help you quickly reach multiple 24-hour clinics."
+    },
+    {
+      question: "When should I use PetSOS?",
+      answer: "Use PetSOS when your pet has an emergency requiring immediate veterinary care, especially during late nights, holidays, or typhoons when it's difficult to reach clinics. PetSOS helps you contact multiple 24-hour animal hospitals simultaneously."
+    },
+    {
+      question: "Is PetSOS available 24/7?",
+      answer: "Yes! PetSOS operates around the clock, 24/7. Whenever an emergency occurs, you can use our service to contact 24-hour animal hospitals in Hong Kong."
+    },
+    {
+      question: "Does PetSOS charge a fee?",
+      answer: "PetSOS is completely free to use. We do not charge any fees. Veterinary clinic consultation fees are charged according to each clinic's own pricing."
+    },
+    {
+      question: "Can PetSOS guarantee treatment?",
+      answer: "PetSOS is an emergency coordination tool that helps you quickly contact multiple clinics. We cannot guarantee that any specific clinic will accept your case, but by broadcasting to multiple clinics simultaneously, we greatly increase your chances of finding an available clinic."
+    },
+    {
+      question: "What if no hospital replies?",
+      answer: "If no hospital replies, please call the clinics directly. PetSOS displays phone numbers for nearby clinics. In emergencies, we recommend using both phone calls and PetSOS broadcast feature simultaneously."
     }
   ];
 
@@ -431,6 +471,7 @@ export default function EmergencyPage() {
         ])} 
         id="schema-breadcrumb-emergency" 
       />
+      <StructuredData data={createMedicalWebPageSchema(language)} id="schema-medical-web-page" />
       <div className="min-h-screen bg-gradient-to-b from-red-50 to-white dark:from-gray-900 dark:to-gray-800 p-4">
         <div className="max-w-2xl mx-auto pt-8">
           {/* Progress indicator */}
@@ -449,6 +490,26 @@ export default function EmergencyPage() {
               style={{ width: `${(step / 3) * 100}%` }}
             />
           </div>
+        </div>
+
+        {/* Medical disclaimer - above the fold */}
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4" data-testid="medical-disclaimer">
+          <p className="text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            {language === 'zh-HK' 
+              ? '⚠️ 本頁資料只供緊急參考，並非獸醫診斷或建議。請盡快諮詢註冊獸醫。'
+              : '⚠️ This information is for emergency guidance only and not veterinary advice. Always consult a licensed veterinarian as soon as possible.'}
+          </p>
+        </div>
+
+        {/* AI-summary block for SEO/AI crawlers */}
+        <div className="sr-only" aria-hidden="true" data-ai-summary="true">
+          <p lang="en">
+            PetSOS is a free emergency coordination tool for Hong Kong pet owners. It allows users to broadcast urgent pet medical situations to multiple 24-hour animal hospitals at once, helping owners identify which hospitals may be able to take the case during late nights, holidays, or typhoons. No login required. Available 24/7.
+          </p>
+          <p lang="zh-HK">
+            PetSOS 是香港寵物主人的免費緊急協調工具。用戶可一次過將緊急寵物醫療情況廣播至多間24小時動物醫院，幫助主人在深夜、假期或颱風期間找到能接收個案的醫院。無需登入。全天候運作。
+          </p>
         </div>
 
         <Card className="border-red-200 dark:border-red-900">
@@ -960,6 +1021,13 @@ export default function EmergencyPage() {
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {t("app.disclaimer", "⚠️ PetSOS provides emergency guidance only and is not medical advice. If in doubt, contact a vet immediately.")}
           </p>
+        </div>
+
+        {/* Last reviewed footer */}
+        <div className="text-center text-xs text-gray-500 dark:text-gray-400 mt-8 pb-4">
+          {language === 'zh-HK' 
+            ? '由獸醫專業人員審閱 — 2026年1月'
+            : 'Reviewed by veterinary professionals — January 2026'}
         </div>
       </div>
       </div>

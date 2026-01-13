@@ -624,6 +624,40 @@ export function createSoftwareApplicationSchema(language: string = 'en') {
   };
 }
 
+// MedicalWebPage schema for /emergency page
+export function createMedicalWebPageSchema(language: string = 'en') {
+  return {
+    "@context": "https://schema.org",
+    "@type": "MedicalWebPage",
+    "name": language === 'zh-HK' 
+      ? "寵物緊急護理指南 - 香港"
+      : "Emergency Pet Care Guide - Hong Kong",
+    "headline": language === 'zh-HK'
+      ? "如果我的寵物在香港發生緊急情況，應該怎麼辦？"
+      : "What should I do if my pet has an emergency in Hong Kong?",
+    "description": language === 'zh-HK'
+      ? "香港寵物主人緊急指引。使用PetSOS即時聯繫24小時動物醫院，獲取專業獸醫協助。"
+      : "Emergency guidance for pet owners in Hong Kong. Use PetSOS to instantly contact 24-hour animal hospitals for professional veterinary assistance.",
+    "url": "https://petsos.site/emergency",
+    "datePublished": "2025-01-01",
+    "dateModified": "2026-01-01",
+    "lastReviewed": "2026-01-01",
+    "reviewedBy": {
+      "@type": "Organization",
+      "name": "PetSOS"
+    },
+    "inLanguage": language === 'zh-HK' ? "zh-HK" : "en",
+    "audience": {
+      "@type": "Audience",
+      "audienceType": language === 'zh-HK' ? "寵物主人" : "Pet Owners"
+    },
+    "medicalAudience": {
+      "@type": "MedicalAudience",
+      "audienceType": "Patient"
+    }
+  };
+}
+
 // Typhoon/Holiday emergency status schema
 export function createEmergencyStatusSchema(
   status: 'normal' | 'typhoon' | 'holiday',
