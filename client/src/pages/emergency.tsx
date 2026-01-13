@@ -22,7 +22,7 @@ import { analytics } from "@/lib/analytics";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { PhoneInput } from "@/components/PhoneInput";
 import { SEO } from "@/components/SEO";
-import { StructuredData, createEmergencyServiceSchema, createFAQSchema, createHowToSchema, createBreadcrumbSchema } from "@/components/StructuredData";
+import { StructuredData, createEmergencyServiceSchema, createFAQSchema, createHowToSchema, createBreadcrumbSchema, createSoftwareApplicationSchema } from "@/components/StructuredData";
 
 // Symptom options - ordered by severity level (critical → serious → moderate)
 const SYMPTOMS = [
@@ -421,6 +421,7 @@ export default function EmergencyPage() {
         language={language}
       />
       <StructuredData data={createEmergencyServiceSchema(language)} id="schema-emergency-service" />
+      <StructuredData data={createSoftwareApplicationSchema(language)} id="schema-software-application" />
       <StructuredData data={createFAQSchema(faqData)} id="schema-faq" />
       <StructuredData data={createHowToSchema(language)} id="schema-howto-emergency" />
       <StructuredData 

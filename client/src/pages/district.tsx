@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Phone, MessageCircle, Navigation, Clock, MapPin, ArrowLeft, ExternalLink, AlertTriangle, Ship } from "lucide-react";
 import { SEO } from "@/components/SEO";
-import { StructuredData } from "@/components/StructuredData";
+import { StructuredData, createDistrictCollectionSchema } from "@/components/StructuredData";
 import { analytics } from "@/lib/analytics";
-import type { Clinic } from "@shared/schema";
+import type { Clinic, Hospital } from "@shared/schema";
 
 interface District {
   slug: string;
@@ -186,6 +186,12 @@ export default function DistrictPage() {
     enabled: !!district,
   });
 
+  // Fetch hospitals for CollectionPage schema (hospitals have slugs, clinics don't)
+  const { data: hospitals } = useQuery<Hospital[]>({
+    queryKey: ['/api/hospitals'],
+    enabled: !!district,
+  });
+
   // Track district page view
   useEffect(() => {
     if (district) {
@@ -299,6 +305,38 @@ export default function DistrictPage() {
       />
       <StructuredData data={createLocalBusinessSchema()} id="schema-local-business" />
       <StructuredData data={createBreadcrumbSchema()} id="schema-breadcrumb" />
+      {(() => {
+        // Get verified 24-hour hospitals in this region for CollectionPage schema
+        const districtHospitals = hospitals?.filter(h => 
+          h.regionId === regionId && 
+          h.slug && 
+          h.open247 && 
+          (h.verified || h.isAvailable)
+        ).sort((a, b) => {
+          // Sort: partners first, then by lastVerifiedAt desc
+          if (a.isPartner && !b.isPartner) return -1;
+          if (!a.isPartner && b.isPartner) return 1;
+          const aDate = a.lastVerifiedAt ? new Date(a.lastVerifiedAt).getTime() : 0;
+          const bDate = b.lastVerifiedAt ? new Date(b.lastVerifiedAt).getTime() : 0;
+          return bDate - aDate;
+        }) || [];
+        
+        return districtHospitals.length > 0 ? (
+          <StructuredData 
+            data={createDistrictCollectionSchema(
+              language === 'zh-HK' ? district.nameZh : district.nameEn,
+              `https://petsos.site/district/${district.slug}`,
+              districtHospitals.map(h => ({
+                slug: h.slug!,
+                nameEn: h.nameEn,
+                isPartner: h.isPartner || false
+              })),
+              language
+            )} 
+            id="schema-collection-page" 
+          />
+        ) : null;
+      })()}
 
       {/* Header */}
       <header className="border-b border-border bg-card">

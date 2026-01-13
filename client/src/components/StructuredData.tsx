@@ -527,16 +527,101 @@ export function createEnhancedHospitalSchema(hospital: {
     schema.availableLanguage = ["en", "zh-HK"];
   }
 
+  // Build additionalProperty array
+  const additionalProperties: Array<{ "@type": string; name: string; value: string }> = [];
+  
   // Add species accepted
   if (hospital.speciesAccepted && hospital.speciesAccepted.length > 0) {
-    schema.additionalProperty = hospital.speciesAccepted.map(species => ({
+    hospital.speciesAccepted.forEach(species => {
+      additionalProperties.push({
+        "@type": "PropertyValue",
+        "name": "Species Accepted",
+        "value": species
+      });
+    });
+  }
+  
+  // Add ReferencePartner for East Island hospital (EI partnership signal)
+  const EI_SLUG = 'east-island-24-hours-animal-hospital';
+  if (hospital.slug === EI_SLUG) {
+    additionalProperties.push({
       "@type": "PropertyValue",
-      "name": "Species Accepted",
-      "value": species
-    }));
+      "name": "ReferencePartner",
+      "value": "PetSOS"
+    });
+  }
+  
+  if (additionalProperties.length > 0) {
+    schema.additionalProperty = additionalProperties;
   }
 
   return schema;
+}
+
+// District CollectionPage schema for hyper-local GEO
+export function createDistrictCollectionSchema(
+  districtName: string,
+  districtUrl: string,
+  hospitals: Array<{
+    slug: string;
+    nameEn: string;
+    isPartner?: boolean;
+  }>,
+  language: string = 'en'
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": language === 'zh-HK' 
+      ? `${districtName}24小時動物醫院`
+      : `24-Hour Animal Hospitals in ${districtName}`,
+    "description": language === 'zh-HK'
+      ? `${districtName}區經驗證的24小時動物醫院列表`
+      : `Verified 24-hour veterinary hospitals in ${districtName} district`,
+    "url": districtUrl,
+    "mainEntity": {
+      "@type": "ItemList",
+      "numberOfItems": hospitals.length,
+      "itemListElement": hospitals.map((hospital, index) => ({
+        "@type": "ListItem",
+        "position": index + 1,
+        "item": {
+          "@id": `https://petsos.site/hospitals/${hospital.slug}`,
+          "@type": "VeterinaryCare",
+          "name": hospital.nameEn
+        }
+      }))
+    }
+  };
+}
+
+// SoftwareApplication schema for /emergency page
+export function createSoftwareApplicationSchema(language: string = 'en') {
+  return {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "PetSOS",
+    "applicationCategory": "MedicalApplication",
+    "operatingSystem": ["Web", "iOS", "Android"],
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "HKD"
+    },
+    "url": "https://petsos.site/emergency",
+    "description": language === 'zh-HK'
+      ? "PetSOS是免費緊急協調工具，幫助香港寵物主人一鍵向多間24小時動物醫院廣播求助。"
+      : "PetSOS is a free emergency coordination tool that helps Hong Kong pet owners reach 24-hour animal hospitals faster by broadcasting emergencies to multiple clinics at once.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "PetSOS",
+      "url": "https://petsos.site"
+    },
+    "areaServed": {
+      "@type": "AdministrativeArea",
+      "name": language === 'zh-HK' ? "香港" : "Hong Kong"
+    }
+  };
 }
 
 // Typhoon/Holiday emergency status schema
