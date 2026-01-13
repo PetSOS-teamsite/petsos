@@ -6521,6 +6521,162 @@ PetSOS 現已準備好幫助您在香港尋找 24 小時獸醫服務。
     }
   });
 
+  // Public API for blog statistics - imaging diagnostics guide
+  app.get("/api/blog/imaging-diagnostics", async (req, res) => {
+    try {
+      const allHospitalsRaw = await storage.getAllHospitals();
+      
+      // Filter to hospitals with any imaging capability
+      const hospitalsWithImaging = allHospitalsRaw.filter(h => 
+        h.imagingCT || h.imagingMRI || h.imagingXray || h.imagingUS
+      );
+      
+      // Get all regions for lookup (HK only)
+      const regions = await storage.getRegionsByCountry('HK');
+      const regionMap = new Map(regions.map(r => [r.id, r]));
+      
+      // Calculate statistics
+      const ctCount = hospitalsWithImaging.filter(h => h.imagingCT).length;
+      const mriCount = hospitalsWithImaging.filter(h => h.imagingMRI).length;
+      const xrayCount = hospitalsWithImaging.filter(h => h.imagingXray).length;
+      const usCount = hospitalsWithImaging.filter(h => h.imagingUS).length;
+      
+      // Get latest verification date
+      const verificationDates = hospitalsWithImaging
+        .filter(h => h.lastVerifiedAt)
+        .map(h => new Date(h.lastVerifiedAt!).getTime());
+      const lastVerified = verificationDates.length > 0 
+        ? new Date(Math.max(...verificationDates)).toISOString()
+        : new Date().toISOString();
+      
+      const stats = {
+        ctCount,
+        mriCount,
+        xrayCount,
+        usCount,
+        totalCount: hospitalsWithImaging.length,
+        lastVerified
+      };
+      
+      // Enrich hospitals with region data
+      const enrichedHospitals = hospitalsWithImaging.map(h => {
+        const region = regionMap.get(h.regionId);
+        return {
+          id: h.id,
+          slug: h.slug,
+          nameEn: h.nameEn,
+          nameZh: h.nameZh,
+          regionId: h.regionId,
+          regionNameEn: region?.nameEn || null,
+          regionNameZh: region?.nameZh || null,
+          imagingCT: h.imagingCT,
+          imagingMRI: h.imagingMRI,
+          imagingXray: h.imagingXray,
+          imagingUS: h.imagingUS,
+          sameDayCT: h.sameDayCT,
+          open247: h.open247,
+          liveStatus: h.liveStatus,
+          phone: h.phone,
+          whatsapp: h.whatsapp,
+          lastVerifiedAt: h.lastVerifiedAt
+        };
+      });
+      
+      res.json({ 
+        stats, 
+        hospitals: enrichedHospitals,
+        regions: regions.map(r => ({ id: r.id, nameEn: r.nameEn, nameZh: r.nameZh }))
+      });
+    } catch (error: any) {
+      console.error("Error fetching imaging diagnostics blog data:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch blog data" });
+    }
+  });
+
+  app.get("/api/blog/exotic-emergency", async (req, res) => {
+    try {
+      const allHospitalsRaw = await storage.getAllHospitals();
+      
+      const hospitalsWithExotic = allHospitalsRaw.filter(h => 
+        h.open247 && (
+          h.exoticVet247 === true || 
+          (h.exoticSpecies247 && Array.isArray(h.exoticSpecies247) && h.exoticSpecies247.length > 0)
+        )
+      );
+      
+      const regions = await storage.getRegionsByCountry('HK');
+      const regionMap = new Map(regions.map(r => [r.id, r]));
+      
+      const exoticVet247Count = hospitalsWithExotic.filter(h => h.exoticVet247 === true).length;
+      
+      const allSpecies = new Set<string>();
+      hospitalsWithExotic.forEach(h => {
+        if (h.exoticSpecies247 && Array.isArray(h.exoticSpecies247)) {
+          h.exoticSpecies247.forEach(species => allSpecies.add(species));
+        }
+      });
+      
+      let topHospital = null;
+      let maxSpeciesCount = 0;
+      hospitalsWithExotic.forEach(h => {
+        const speciesCount = h.exoticSpecies247?.length || 0;
+        if (speciesCount > maxSpeciesCount) {
+          maxSpeciesCount = speciesCount;
+          topHospital = {
+            id: h.id,
+            nameEn: h.nameEn,
+            nameZh: h.nameZh,
+            speciesCount
+          };
+        }
+      });
+      
+      const verificationDates = hospitalsWithExotic
+        .filter(h => h.lastVerifiedAt)
+        .map(h => new Date(h.lastVerifiedAt!).getTime());
+      const lastVerified = verificationDates.length > 0 
+        ? new Date(Math.max(...verificationDates)).toISOString()
+        : new Date().toISOString();
+      
+      const stats = {
+        exoticVet247Count,
+        totalCount: hospitalsWithExotic.length,
+        speciesSupported: Array.from(allSpecies),
+        lastVerified,
+        topHospital
+      };
+      
+      const enrichedHospitals = hospitalsWithExotic.map(h => {
+        const region = regionMap.get(h.regionId);
+        return {
+          id: h.id,
+          slug: h.slug,
+          nameEn: h.nameEn,
+          nameZh: h.nameZh,
+          regionId: h.regionId,
+          regionNameEn: region?.nameEn || null,
+          regionNameZh: region?.nameZh || null,
+          exoticVet247: h.exoticVet247,
+          exoticSpecies247: h.exoticSpecies247 || [],
+          open247: h.open247,
+          liveStatus: h.liveStatus,
+          phone: h.phone,
+          whatsapp: h.whatsapp,
+          lastVerifiedAt: h.lastVerifiedAt
+        };
+      });
+      
+      res.json({ 
+        stats, 
+        hospitals: enrichedHospitals,
+        regions: regions.map(r => ({ id: r.id, nameEn: r.nameEn, nameZh: r.nameZh }))
+      });
+    } catch (error: any) {
+      console.error("Error fetching exotic emergency blog data:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch blog data" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
