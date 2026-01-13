@@ -110,6 +110,7 @@ export default function EmergencyProfilePage() {
         title={language === 'zh-HK' ? '緊急求助檔案 - PetSOS' : 'Emergency Profile - PetSOS'}
         description={language === 'zh-HK' ? '寵物緊急求助詳情及醫療記錄' : 'Pet emergency request details and medical records'}
         language={language}
+        noindex={true}
       />
       
       <div className="min-h-screen bg-gradient-to-b from-red-50 to-white dark:from-gray-900 dark:to-gray-800 p-4">

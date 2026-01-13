@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useRoute, Link } from "wouter";
+import { SEO } from "@/components/SEO";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -791,9 +792,16 @@ export default function ClinicResultsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-y-auto">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+    <>
+      <SEO
+        title={language === 'zh-HK' ? '緊急診所結果 - PetSOS' : 'Emergency Clinic Results - PetSOS'}
+        description={language === 'zh-HK' ? '查看附近診所及發送緊急求助' : 'View nearby clinics and send emergency requests'}
+        language={language}
+        noindex={true}
+      />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-y-auto">
+        {/* Header */}
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -1519,6 +1527,7 @@ export default function ClinicResultsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }

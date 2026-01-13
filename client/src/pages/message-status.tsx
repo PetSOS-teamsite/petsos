@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CheckCircle, Clock, XCircle, AlertCircle, Mail, MessageCircle, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SEO } from "@/components/SEO";
 
 interface Message {
   id: string;
@@ -116,14 +117,20 @@ export default function MessageStatusPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href={`/emergency-results/${params?.requestId}`}>
-              <Button variant="ghost" size="icon" data-testid="button-back">
-                <ArrowLeft className="h-5 w-5" />
+    <>
+      <SEO
+        title="Message Status - PetSOS"
+        description="Track the status of your emergency broadcast messages"
+        noindex={true}
+      />
+      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+        {/* Header */}
+        <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <Link href={`/emergency-results/${params?.requestId}`}>
+                <Button variant="ghost" size="icon" data-testid="button-back">
+                  <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
             <div className="flex-1">
@@ -308,8 +315,9 @@ export default function MessageStatusPage() {
               </Card>
             ))
           )}
-        </div>
-      </main>
-    </div>
+          </div>
+        </main>
+      </div>
+    </>
   );
 }
