@@ -33,7 +33,7 @@ Preferred communication style: Simple, everyday language.
 ## Feature Specifications
 - **User & Pet Management**: CRUD for profiles and pets, bilingual breed selection.
 - **Pet Medical Records**: Secure document storage (Replit Object Storage) with ACL, consent-based sharing in emergencies, storage quotas.
-- **Hospital Management**: Admin interface for 24-hour animal hospitals, including profile updates by verified owners via access codes.
+- **Hospital Management**: Admin interface for 24-hour animal hospitals, including profile updates by verified owners via access codes. **Hospital Audit Trail**: Field-level change logging for all hospital updates (via access code, verification code, admin, or API), with admin dashboard for viewing change history. **Quick Status Toggle**: Hospital owners can quickly update live status (normal/busy/critical_only/full) from the self-service portal after verification.
 - **Emergency Request Flow**: Multi-step form for authenticated/anonymous users, including AI-powered voice recording analysis (OpenAI), and post-submission editing.
 - **Internationalization**: Database-stored translations (EN, zh-HK), client-side language detection.
 - **Multi-Region Configuration**: Database-driven configuration for countries, regions, and pet breeds.
