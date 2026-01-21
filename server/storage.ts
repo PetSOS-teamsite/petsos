@@ -30,10 +30,11 @@ import {
   type VetConsultantWithContent, type ContentWithVerifier,
   type VetApplication, type InsertVetApplication,
   type HospitalPingState, type InsertHospitalPingState, type HospitalPingLog, type InsertHospitalPingLog,
+  type HospitalChangeLog, type InsertHospitalChangeLog,
   users, pets, countries, regions, petBreeds, clinics, emergencyRequests, messages, featureFlags, auditLogs, privacyConsents, translations, hospitals, hospitalConsultFees, hospitalUpdates, petMedicalRecords, petMedicalSharingConsents, pushSubscriptions, notificationBroadcasts, clinicReviews, whatsappConversations, whatsappChatMessages,
   typhoonAlerts, hkHolidays, hospitalEmergencyStatus, userEmergencySubscriptions, typhoonNotificationQueue,
   vetConsultants, verifiedContentItems, contentVerifications, vetApplications,
-  hospitalPingState, hospitalPingLogs
+  hospitalPingState, hospitalPingLogs, hospitalChangeLogs
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -318,6 +319,12 @@ export interface IStorage {
   // Hospital Ping Logs
   createHospitalPingLog(data: InsertHospitalPingLog): Promise<HospitalPingLog>;
   getHospitalPingLogs(hospitalId: string, limit?: number): Promise<HospitalPingLog[]>;
+  
+  // Hospital Change Logs (Audit Trail)
+  createHospitalChangeLog(data: InsertHospitalChangeLog): Promise<HospitalChangeLog>;
+  createHospitalChangeLogs(data: InsertHospitalChangeLog[]): Promise<HospitalChangeLog[]>;
+  getHospitalChangeLogs(hospitalId: string, limit?: number): Promise<HospitalChangeLog[]>;
+  getRecentHospitalChangeLogs(limit?: number): Promise<(HospitalChangeLog & { hospitalName?: string })[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -2007,6 +2014,23 @@ export class MemStorage implements IStorage {
 
   async getHospitalPingLogs(hospitalId: string, limit?: number): Promise<HospitalPingLog[]> {
     throw new Error("MemStorage does not support hospital ping logs - use DatabaseStorage");
+  }
+
+  // Hospital Change Logs - stub implementations
+  async createHospitalChangeLog(data: InsertHospitalChangeLog): Promise<HospitalChangeLog> {
+    throw new Error("MemStorage does not support hospital change logs - use DatabaseStorage");
+  }
+
+  async createHospitalChangeLogs(data: InsertHospitalChangeLog[]): Promise<HospitalChangeLog[]> {
+    throw new Error("MemStorage does not support hospital change logs - use DatabaseStorage");
+  }
+
+  async getHospitalChangeLogs(hospitalId: string, limit?: number): Promise<HospitalChangeLog[]> {
+    throw new Error("MemStorage does not support hospital change logs - use DatabaseStorage");
+  }
+
+  async getRecentHospitalChangeLogs(limit?: number): Promise<(HospitalChangeLog & { hospitalName?: string })[]> {
+    throw new Error("MemStorage does not support hospital change logs - use DatabaseStorage");
   }
 }
 
@@ -3860,6 +3884,47 @@ class DatabaseStorage implements IStorage {
       .where(eq(hospitalPingLogs.hospitalId, hospitalId))
       .orderBy(desc(hospitalPingLogs.createdAt))
       .limit(limit);
+  }
+
+  // Hospital Change Logs (Audit Trail)
+  async createHospitalChangeLog(data: InsertHospitalChangeLog): Promise<HospitalChangeLog> {
+    const result = await db.insert(hospitalChangeLogs).values(data).returning();
+    return result[0];
+  }
+
+  async createHospitalChangeLogs(data: InsertHospitalChangeLog[]): Promise<HospitalChangeLog[]> {
+    if (data.length === 0) return [];
+    const result = await db.insert(hospitalChangeLogs).values(data).returning();
+    return result;
+  }
+
+  async getHospitalChangeLogs(hospitalId: string, limit: number = 50): Promise<HospitalChangeLog[]> {
+    return await db.select().from(hospitalChangeLogs)
+      .where(eq(hospitalChangeLogs.hospitalId, hospitalId))
+      .orderBy(desc(hospitalChangeLogs.createdAt))
+      .limit(limit);
+  }
+
+  async getRecentHospitalChangeLogs(limit: number = 100): Promise<(HospitalChangeLog & { hospitalName?: string })[]> {
+    const results = await db.select({
+      id: hospitalChangeLogs.id,
+      hospitalId: hospitalChangeLogs.hospitalId,
+      fieldName: hospitalChangeLogs.fieldName,
+      oldValue: hospitalChangeLogs.oldValue,
+      newValue: hospitalChangeLogs.newValue,
+      changedBy: hospitalChangeLogs.changedBy,
+      changeSource: hospitalChangeLogs.changeSource,
+      changeType: hospitalChangeLogs.changeType,
+      ipAddress: hospitalChangeLogs.ipAddress,
+      userAgent: hospitalChangeLogs.userAgent,
+      createdAt: hospitalChangeLogs.createdAt,
+      hospitalName: hospitals.nameEn,
+    })
+      .from(hospitalChangeLogs)
+      .leftJoin(hospitals, eq(hospitalChangeLogs.hospitalId, hospitals.id))
+      .orderBy(desc(hospitalChangeLogs.createdAt))
+      .limit(limit);
+    return results;
   }
 }
 
