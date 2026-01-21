@@ -2562,6 +2562,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get hospital change logs (admin only)
+  app.get("/api/hospitals/:id/change-logs", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const logs = await storage.getHospitalChangeLogs(req.params.id, limit);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching hospital change logs:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get recent hospital change logs across all hospitals (admin only)
+  app.get("/api/admin/hospital-change-logs", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const logs = await storage.getRecentHospitalChangeLogs(limit);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching recent hospital change logs:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Create hospital (admin only)
   app.post("/api/hospitals", isAuthenticated, isAdmin, async (req, res) => {
     try {
