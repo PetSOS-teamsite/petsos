@@ -412,6 +412,32 @@ export const insertHospitalSchema = createInsertSchema(hospitals).omit({
 export type InsertHospital = z.infer<typeof insertHospitalSchema>;
 export type Hospital = typeof hospitals.$inferSelect;
 
+// Hospital Change Log table (audit trail for hospital updates)
+export const hospitalChangeLogs = pgTable("hospital_change_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  hospitalId: varchar("hospital_id").notNull().references(() => hospitals.id, { onDelete: 'cascade' }),
+  fieldName: text("field_name").notNull(), // The field that was changed (e.g., "phone", "open247")
+  oldValue: text("old_value"), // Previous value (stringified)
+  newValue: text("new_value"), // New value (stringified)
+  changedBy: text("changed_by"), // Name of person who made the change
+  changeSource: text("change_source").notNull(), // "access_code" | "verification_code" | "admin" | "api"
+  changeType: text("change_type").notNull().default('update'), // "update" | "confirm" | "status_change"
+  ipAddress: text("ip_address"), // Optional IP for audit
+  userAgent: text("user_agent"), // Optional user agent for audit
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_hospital_change_log_hospital").on(table.hospitalId),
+  index("idx_hospital_change_log_created").on(table.createdAt),
+]);
+
+export const insertHospitalChangeLogSchema = createInsertSchema(hospitalChangeLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertHospitalChangeLog = z.infer<typeof insertHospitalChangeLogSchema>;
+export type HospitalChangeLog = typeof hospitalChangeLogs.$inferSelect;
+
 // Messages table (for tracking hospital broadcasts)
 export const messages = pgTable("messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
