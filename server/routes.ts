@@ -43,6 +43,54 @@ import path from "path";
 import { config } from "./config";
 import { encryptTotpSecret, decryptTotpSecret, isEncryptedSecret } from "./encryption";
 import { handleHospitalReply } from "./services/hospital-ping-scheduler";
+import type { Hospital, InsertHospitalChangeLog } from "@shared/schema";
+
+// Helper function to detect and log hospital field changes
+async function logHospitalChanges(
+  hospitalId: string, 
+  oldData: Hospital, 
+  newData: Record<string, any>,
+  changedBy: string,
+  changeSource: 'access_code' | 'verification_code' | 'admin' | 'api',
+  changeType: 'update' | 'confirm' | 'status_change',
+  ipAddress?: string,
+  userAgent?: string
+): Promise<void> {
+  const changeLogs: InsertHospitalChangeLog[] = [];
+  
+  for (const [key, newValue] of Object.entries(newData)) {
+    const oldValue = (oldData as any)[key];
+    
+    // Skip if values are effectively the same
+    if (oldValue === newValue) continue;
+    if (oldValue === null && newValue === '') continue;
+    if (oldValue === '' && newValue === null) continue;
+    
+    // Convert values to strings for storage
+    const oldValueStr = oldValue === null || oldValue === undefined ? null : String(oldValue);
+    const newValueStr = newValue === null || newValue === undefined ? null : String(newValue);
+    
+    // Skip if string representations are the same
+    if (oldValueStr === newValueStr) continue;
+    
+    changeLogs.push({
+      hospitalId,
+      fieldName: key,
+      oldValue: oldValueStr,
+      newValue: newValueStr,
+      changedBy,
+      changeSource,
+      changeType,
+      ipAddress: ipAddress || null,
+      userAgent: userAgent || null,
+    });
+  }
+  
+  if (changeLogs.length > 0) {
+    await storage.createHospitalChangeLogs(changeLogs);
+    console.log(`[Audit] Logged ${changeLogs.length} changes for hospital ${hospitalId} by ${changedBy} via ${changeSource}`);
+  }
+}
 
 // WhatsApp webhook signature verification
 // Meta signs all webhook payloads with X-Hub-Signature-256 using your app secret
@@ -4260,6 +4308,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
       }
 
+      // Log field-level changes before update
+      await logHospitalChanges(
+        hospital.id,
+        hospital,
+        updateData,
+        'Hospital Owner',
+        'verification_code',
+        'update',
+        req.ip,
+        req.get('user-agent')
+      );
+
       // Update hospital with owner-provided data (uses same storage function as admin)
       const updatedHospital = await storage.updateHospital(req.params.id, updateData);
 
@@ -4305,6 +4365,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (hospital.ownerVerificationCodeExpiresAt && new Date() > new Date(hospital.ownerVerificationCodeExpiresAt)) {
         return res.status(401).json({ message: "Verification code has expired. Please request a new code from the administrator." });
       }
+
+      // Log status change
+      await storage.createHospitalChangeLog({
+        hospitalId: hospital.id,
+        fieldName: 'liveStatus',
+        oldValue: hospital.liveStatus || null,
+        newValue: liveStatus,
+        changedBy: 'Hospital Owner',
+        changeSource: 'verification_code',
+        changeType: 'status_change',
+        ipAddress: req.ip || null,
+        userAgent: req.get('user-agent') || null,
+      });
 
       // Update only the live status
       const updatedHospital = await storage.updateHospital(req.params.id, { liveStatus });
@@ -4389,6 +4462,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid access code" });
       }
 
+      // Log field-level changes before update
+      await logHospitalChanges(
+        hospital.id,
+        hospital,
+        updateData,
+        confirmedByName,
+        'access_code',
+        'update',
+        req.ip,
+        req.get('user-agent')
+      );
+
       // Update hospital with new data and set lastConfirmedAt
       const updatedHospital = await storage.updateHospital(hospital.id, {
         ...updateData,
@@ -4437,6 +4522,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!hospital) {
         return res.status(401).json({ message: "Invalid access code" });
       }
+
+      // Log confirmation action
+      await storage.createHospitalChangeLog({
+        hospitalId: hospital.id,
+        fieldName: 'confirmation',
+        oldValue: hospital.lastConfirmedAt ? hospital.lastConfirmedAt.toISOString() : null,
+        newValue: new Date().toISOString(),
+        changedBy: confirmedByName,
+        changeSource: 'access_code',
+        changeType: 'confirm',
+        ipAddress: req.ip || null,
+        userAgent: req.get('user-agent') || null,
+      });
 
       // Update only the confirmation fields
       const updatedHospital = await storage.updateHospital(hospital.id, {
