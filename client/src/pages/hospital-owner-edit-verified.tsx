@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, Loader2, Check, Clock, Lock, Building2, Stethoscope, Users, DollarSign, Phone, Image as ImageIcon, Upload, XCircle, Camera } from "lucide-react";
+import { ArrowLeft, Loader2, Check, Clock, Lock, Building2, Stethoscope, Users, DollarSign, Phone, Image as ImageIcon, Upload, XCircle, Camera, AlertTriangle, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -272,6 +272,25 @@ export default function HospitalOwnerEditVerifiedPage() {
     },
   });
 
+  const statusToggleMutation = useMutation({
+    mutationFn: async (liveStatus: 'normal' | 'busy' | 'critical_only' | 'full') => {
+      if (!hospital?.id) throw new Error("Hospital not found");
+      const code = verifyForm.getValues("verificationCode");
+      return apiRequest("PATCH", `/api/hospitals/${hospital.id}/status`, { 
+        verificationCode: code,
+        liveStatus 
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Status updated successfully!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/hospitals", hospitalSlug] });
+      queryClient.invalidateQueries({ queryKey: ["/api/hospitals"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to update status", description: error.message, variant: "destructive" });
+    },
+  });
+
   const updateMutation = useMutation({
     mutationFn: async (data: HospitalFormData) => {
       if (!hospital?.id) throw new Error("Hospital not found");
@@ -483,6 +502,72 @@ export default function HospitalOwnerEditVerifiedPage() {
       </div>
 
       <div className="container mx-auto px-4 py-6 max-w-3xl">
+        {/* Quick Status Toggle - Only shown when verified */}
+        {verified && (
+          <Card className="mb-6 border-2 border-blue-200 dark:border-blue-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Activity className="h-5 w-5 text-blue-600" />
+                Quick Status Update
+              </CardTitle>
+              <CardDescription>
+                Current status: <span className="font-semibold">{hospital?.liveStatus || 'normal'}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button
+                  type="button"
+                  variant={hospital?.liveStatus === 'normal' ? 'default' : 'outline'}
+                  className={hospital?.liveStatus === 'normal' ? 'bg-green-600 hover:bg-green-700' : ''}
+                  onClick={() => statusToggleMutation.mutate('normal')}
+                  disabled={statusToggleMutation.isPending || !verified}
+                  data-testid="button-status-normal"
+                >
+                  {statusToggleMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                  Normal
+                </Button>
+                <Button
+                  type="button"
+                  variant={hospital?.liveStatus === 'busy' ? 'default' : 'outline'}
+                  className={hospital?.liveStatus === 'busy' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
+                  onClick={() => statusToggleMutation.mutate('busy')}
+                  disabled={statusToggleMutation.isPending || !verified}
+                  data-testid="button-status-busy"
+                >
+                  {statusToggleMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                  Busy
+                </Button>
+                <Button
+                  type="button"
+                  variant={hospital?.liveStatus === 'critical_only' ? 'default' : 'outline'}
+                  className={hospital?.liveStatus === 'critical_only' ? 'bg-orange-600 hover:bg-orange-700' : ''}
+                  onClick={() => statusToggleMutation.mutate('critical_only')}
+                  disabled={statusToggleMutation.isPending || !verified}
+                  data-testid="button-status-critical"
+                >
+                  {statusToggleMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                  Critical Only
+                </Button>
+                <Button
+                  type="button"
+                  variant={hospital?.liveStatus === 'full' ? 'default' : 'outline'}
+                  className={hospital?.liveStatus === 'full' ? 'bg-red-600 hover:bg-red-700' : ''}
+                  onClick={() => statusToggleMutation.mutate('full')}
+                  disabled={statusToggleMutation.isPending || !verified}
+                  data-testid="button-status-full"
+                >
+                  {statusToggleMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                  Full
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500 mt-3">
+                This status is shown to pet owners when searching for emergency care. Changes are logged for accountability.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         <Form {...hospitalForm}>
           <form onSubmit={hospitalForm.handleSubmit((data) => updateMutation.mutate(data))} className="space-y-6">
             
